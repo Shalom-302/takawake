@@ -1,4 +1,3 @@
-from .routers.sponsor import router as sponsor_router
 # backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,12 +17,10 @@ app.add_middleware(
 def on_startup():
     Base.metadata.create_all(bind=engine)
 
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(admin.router, prefix="/admin", tags=["Admin"])
-
-
 @app.get("/")
 def read_root():
     return {"message": "Hello from Kaapi backend!"}
 
-app.include_router(sponsor_router, prefix="/sponsor", tags=["Sponsor"])
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+

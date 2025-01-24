@@ -17,6 +17,27 @@ from .codegen import (
 
 app = typer.Typer(help="Kaapi CLI - Manage your Kaapi projects easily.")
 
+# A "db_app" for DB commands:
+db_app = typer.Typer(help="Database related commands.")
+app.add_typer(db_app, name="db")
+
+@db_app.command("migrate")
+def db_migrate():
+    """
+    Autogenerate a new Alembic revision for *all* changes, then upgrade to head.
+    """
+    try:
+        typer.echo("Autogenerating Alembic revision...")
+        subprocess.check_call(["alembic", "revision", "--autogenerate", "-m", "Kaapi global changes"])
+
+        typer.echo("Upgrading to head...")
+        subprocess.check_call(["alembic", "upgrade", "head"])
+
+        typer.secho("Migration complete!", fg=typer.colors.GREEN)
+    except subprocess.CalledProcessError:
+        typer.secho("Alembic command failed", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    
 # Sub-Typer for 'generate' commands
 generate_app = typer.Typer(help="Generate new components (models, routes, etc.).")
 app.add_typer(generate_app, name="generate")
