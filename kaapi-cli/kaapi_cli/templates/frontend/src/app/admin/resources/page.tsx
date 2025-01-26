@@ -1,11 +1,13 @@
-// File: frontend/pages/admin/resources/[resource].tsx
+// File: frontend/pages/admin/resources/page.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 
+// Updated Field interface to include optional foreign_key
 interface Field {
   name: string;
   type: string;
   default?: string;
+  foreign_key?: string;  // <--- new
 }
 
 interface ResourceDef {
@@ -40,7 +42,6 @@ export default function AdminIndex() {
       },
     })
       .then((res) => {
-        console.log("hahaha", res)
         if (!res.ok) {
           if (res.status === 401) throw new Error("Unauthorized: Your session has expired.");
           if (res.status === 403) throw new Error("Forbidden: Access denied.");
@@ -60,12 +61,14 @@ export default function AdminIndex() {
       });
   }, []);
 
+  // Add field to local state
   const addField = () => {
     if (!currentField.name || !currentField.type) return;
     setFields([...fields, currentField]);
-    setCurrentField({ name: "", type: "" });
+    setCurrentField({ name: "", type: "", foreign_key: "" });
   };
 
+  // Create the resource (POST /admin/resources)
   const createResource = async () => {
     const token = localStorage.getItem("kaapi_token");
     const body = {
@@ -91,7 +94,9 @@ export default function AdminIndex() {
         setShowModal(false);
         setResourceName("");
         setFields([]);
-        setResources((prev) => [...prev, data]);
+        // If the backend returns a partial resource object, you can push it into resources
+        // or re-fetch. For now we push a dummy entry or re-fetch if you prefer
+        // setResources((prev) => [...prev, data]);
       }
     } catch (err: any) {
       alert("Failed to create resource: " + err.message);
@@ -180,14 +185,24 @@ export default function AdminIndex() {
                 onChange={(e) => setCurrentField({ ...currentField, default: e.target.value })}
                 style={{ marginRight: "10px" }}
               />
+              {/* NEW optional foreign_key input */}
+              <input
+                type="text"
+                placeholder="Foreign key (e.g. post.id)"
+                value={currentField.foreign_key || ""}
+                onChange={(e) => setCurrentField({ ...currentField, foreign_key: e.target.value })}
+                style={{ marginRight: "10px" }}
+              />
+
               <button onClick={addField}>Add Field</button>
             </div>
 
-            <ul>
+            <ul style={{ marginTop: "10px" }}>
               {fields.map((f, idx) => (
                 <li key={idx}>
                   {f.name}:{f.type}
                   {f.default ? ` = ${f.default}` : ""}
+                  {f.foreign_key ? ` (fk=${f.foreign_key})` : ""}
                 </li>
               ))}
             </ul>

@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 
 interface FieldDef {
   name: string;
-  type: string; // e.g., "str", "bool", etc.
+  type: string;
   default?: string;
+  foreign_key?: string; // <--- can be e.g. "post.id"
 }
 
 interface ResourceItem {
@@ -13,22 +14,34 @@ interface ResourceItem {
   [key: string]: any;
 }
 
+// Example: reference data structure for foreign tables
+// e.g. referenceData["post"] = [{ id: 1, title: "Hello" }, ...]
+type ReferenceDataMap = {
+  [tableName: string]: Array<{ id: number; [key: string]: any }>;
+};
+
 export default function ResourcePage({ params }: { params: { resource: string } }) {
   const router = useRouter();
   const { resource } = params;
 
+  // Resource definition
   const [fieldsDef, setFieldsDef] = useState<FieldDef[]>([]);
+  // Items in the current resource
   const [items, setItems] = useState<ResourceItem[]>([]);
+  // Data for creating a new item
   const [newItem, setNewItem] = useState<{ [key: string]: any }>({});
 
-  // Editing resource structure (fields)
+  // For editing the resource structure
   const [isEditingResource, setIsEditingResource] = useState(false);
   const [editedFields, setEditedFields] = useState<FieldDef[]>([]);
   const [newEditedField, setNewEditedField] = useState<FieldDef>({ name: "", type: "" });
 
-  // Editing an individual item row
+  // For editing an individual item
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editItemData, setEditItemData] = useState<{ [key: string]: any }>({});
+
+  // For storing reference data of foreign tables
+  const [referenceData, setReferenceData] = useState<ReferenceDataMap>({});
 
   useEffect(() => {
     if (!resource) return;
@@ -36,7 +49,7 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     fetchItems(resource);
   }, [resource]);
 
-  // --- FETCH RESOURCE DEFINITION ---
+  // Fetch the resource definition (fields array, including foreign_key, etc.)
   const fetchResourceDef = async (resName: string) => {
     try {
       const token = localStorage.getItem("kaapi_token");
@@ -49,14 +62,23 @@ export default function ResourcePage({ params }: { params: { resource: string } 
         return;
       }
       const data = await response.json();
+      // data.fields is an array of { name, type, default, foreign_key }
       setFieldsDef(data.fields);
-      setEditedFields(data.fields); // Prepare for editing the resource structure
+      setEditedFields(data.fields);
+
+      // For each foreign_key, parse the table name and fetch reference data
+      data.fields.forEach((f: FieldDef) => {
+        if (f.foreign_key) {
+          const [table] = f.foreign_key.split(".");
+          fetchReferenceData(table);
+        }
+      });
     } catch (err: any) {
       alert("Failed to fetch resource definition: " + err.message);
     }
   };
 
-  // --- FETCH EXISTING ITEMS FOR THIS RESOURCE ---
+  // Fetch the actual items in this resource
   const fetchItems = async (resName: string) => {
     try {
       const token = localStorage.getItem("kaapi_token");
@@ -75,7 +97,28 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     }
   };
 
-  // --- CREATE A NEW ITEM ---
+  // Utility: fetch data from a related table (like "post") to populate a select
+  const fetchReferenceData = async (table: string) => {
+    // If we already fetched it, skip
+    if (referenceData[table]) return;
+
+    try {
+      const token = localStorage.getItem("kaapi_token");
+      const response = await fetch(`http://localhost:8000/${table}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        console.warn(`Could not fetch reference data for table ${table}`);
+        return;
+      }
+      const data = await response.json();
+      setReferenceData((prev) => ({ ...prev, [table]: data }));
+    } catch (err) {
+      console.warn(`Failed to fetch reference data for ${table}:`, err);
+    }
+  };
+
+  // CREATE a new item
   const createItem = async () => {
     try {
       const token = localStorage.getItem("kaapi_token");
@@ -100,7 +143,7 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     }
   };
 
-  // --- DELETE AN ITEM ---
+  // DELETE an item
   const deleteItem = async (id: number) => {
     try {
       const token = localStorage.getItem("kaapi_token");
@@ -120,9 +163,45 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     }
   };
 
-  // ======================
-  // EDIT RESOURCE STRUCTURE
-  // ======================
+  // Start editing a row
+  const startEditItem = (item: ResourceItem) => {
+    setEditingItemId(item.id);
+    setEditItemData({ ...item });
+  };
+
+  // Cancel editing
+  const cancelEditItem = () => {
+    setEditingItemId(null);
+    setEditItemData({});
+  };
+
+  // Save changes to an item (PUT)
+  const saveItemChanges = async (id: number) => {
+    try {
+      const token = localStorage.getItem("kaapi_token");
+      const response = await fetch(`http://localhost:8000/${resource}/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editItemData),
+      });
+      if (!response.ok) {
+        const errData = await response.json();
+        alert("Error updating item: " + errData.detail);
+        return;
+      }
+      alert("Item updated successfully!");
+      setEditingItemId(null);
+      setEditItemData({});
+      fetchItems(resource);
+    } catch (err: any) {
+      alert("Failed to update item: " + err.message);
+    }
+  };
+
+  // UPDATE RESOURCE structure
   const updateResource = async () => {
     try {
       const token = localStorage.getItem("kaapi_token");
@@ -140,7 +219,6 @@ export default function ResourcePage({ params }: { params: { resource: string } 
         return;
       }
       alert("Resource updated successfully!");
-      // Reflect changes in the displayed fields
       setFieldsDef(editedFields);
       setIsEditingResource(false);
     } catch (err: any) {
@@ -148,6 +226,7 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     }
   };
 
+  // Add a new field to the resource definition
   const addNewEditedField = () => {
     if (!newEditedField.name || !newEditedField.type) {
       alert("Please specify a name and a type for the new field.");
@@ -155,49 +234,6 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     }
     setEditedFields([...editedFields, newEditedField]);
     setNewEditedField({ name: "", type: "" });
-  };
-
-  // ======================
-  // EDIT AN INDIVIDUAL ITEM
-  // ======================
-
-  // 1) Start editing a row
-  const startEditItem = (item: ResourceItem) => {
-    setEditingItemId(item.id);
-    // Make a copy of item data for the form
-    setEditItemData({ ...item });
-  };
-
-  // 2) Cancel editing
-  const cancelEditItem = () => {
-    setEditingItemId(null);
-    setEditItemData({});
-  };
-
-  // 3) Save changes (PUT) to the backend
-  const saveItemChanges = async (id: number) => {
-    try {
-      const token = localStorage.getItem("kaapi_token");
-      const response = await fetch(`http://localhost:8000/${resource}/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(editItemData), // partial update or full update
-      });
-      if (!response.ok) {
-        const errData = await response.json();
-        alert("Error updating item: " + errData.detail);
-        return;
-      }
-      alert("Item updated successfully!");
-      setEditingItemId(null);
-      setEditItemData({});
-      fetchItems(resource); // Refresh the list
-    } catch (err: any) {
-      alert("Failed to update item: " + err.message);
-    }
   };
 
   if (!resource) {
@@ -208,9 +244,7 @@ export default function ResourcePage({ params }: { params: { resource: string } 
     <div style={{ padding: 20 }}>
       <h1>Resource: {resource}</h1>
 
-      {/* ========================================
-          Existing Items Table
-      ========================================= */}
+      {/* ===================== ITEM LIST ===================== */}
       <h2>Existing Items</h2>
       <table border={1} cellPadding={8}>
         <thead>
@@ -231,23 +265,49 @@ export default function ResourcePage({ params }: { params: { resource: string } 
                 <td>{item.id}</td>
                 {fieldsDef.map((f) => {
                   if (isEditingThisRow) {
-                    // Show input field
-                    return (
-                      <td key={f.name}>
-                        <input
-                          type="text"
-                          value={String(editItemData[f.name] || "")}
-                          onChange={(e) =>
-                            setEditItemData({
-                              ...editItemData,
-                              [f.name]: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                    );
+                    // If it's a foreign key, show a <select> if we have referenceData
+                    if (f.foreign_key) {
+                      const [tableName] = f.foreign_key.split(".");
+                      const list = referenceData[tableName] || [];
+                      return (
+                        <td key={f.name}>
+                          <select
+                            value={String(editItemData[f.name] || "")}
+                            onChange={(e) =>
+                              setEditItemData({
+                                ...editItemData,
+                                [f.name]: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="">(None)</option>
+                            {list.map((refItem) => (
+                              <option key={refItem.id} value={refItem.id}>
+                                {refItem.title || refItem.name || refItem.id}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      );
+                    } else {
+                      // Normal field
+                      return (
+                        <td key={f.name}>
+                          <input
+                            type="text"
+                            value={String(editItemData[f.name] || "")}
+                            onChange={(e) =>
+                              setEditItemData({
+                                ...editItemData,
+                                [f.name]: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                      );
+                    }
                   } else {
-                    // Show plain text
+                    // Not editing this row
                     return <td key={f.name}>{String(item[f.name])}</td>;
                   }
                 })}
@@ -274,27 +334,52 @@ export default function ResourcePage({ params }: { params: { resource: string } 
         </tbody>
       </table>
 
-      {/* ========================================
-          Create New Item Form
-      ========================================= */}
+      {/* ===================== CREATE NEW ITEM ===================== */}
       <h2>Create New {resource}</h2>
-      {fieldsDef.map((f) => (
-        <div key={f.name} style={{ marginBottom: "8px" }}>
-          <label>
-            {f.name} ({f.type}):
-            <input
-              type="text"
-              value={newItem[f.name] || ""}
-              onChange={(e) => setNewItem({ ...newItem, [f.name]: e.target.value })}
-            />
-          </label>
-        </div>
-      ))}
+      {fieldsDef.map((f) => {
+        // If it's a foreign key, show a <select>
+        if (f.foreign_key) {
+          const [tableName] = f.foreign_key.split(".");
+          const list = referenceData[tableName] || [];
+          return (
+            <div key={f.name} style={{ marginBottom: "8px" }}>
+              <label>
+                {f.name} (FK to {f.foreign_key}):
+                <select
+                  value={newItem[f.name] || ""}
+                  onChange={(e) => setNewItem({ ...newItem, [f.name]: e.target.value })}
+                  style={{ marginLeft: "10px" }}
+                >
+                  <option value="">(None)</option>
+                  {list.map((refItem) => (
+                    <option key={refItem.id} value={refItem.id}>
+                      {refItem.title || refItem.name || refItem.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          );
+        } else {
+          // Normal text input
+          return (
+            <div key={f.name} style={{ marginBottom: "8px" }}>
+              <label>
+                {f.name} ({f.type}):
+                <input
+                  type="text"
+                  value={newItem[f.name] || ""}
+                  onChange={(e) => setNewItem({ ...newItem, [f.name]: e.target.value })}
+                  style={{ marginLeft: "10px" }}
+                />
+              </label>
+            </div>
+          );
+        }
+      })}
       <button onClick={createItem}>Create</button>
 
-      {/* ========================================
-          Edit Resource Fields
-      ========================================= */}
+      {/* ===================== EDIT RESOURCE FIELDS ===================== */}
       <h2>Edit Resource Fields</h2>
       <button onClick={() => setIsEditingResource(!isEditingResource)}>
         {isEditingResource ? "Cancel Editing" : "Edit Resource"}
@@ -302,7 +387,6 @@ export default function ResourcePage({ params }: { params: { resource: string } 
 
       {isEditingResource && (
         <div style={{ marginTop: 10 }}>
-          {/* Existing fields to edit */}
           {editedFields.map((field, index) => (
             <div key={index} style={{ marginBottom: "8px" }}>
               <label style={{ display: "block" }}>
@@ -344,6 +428,23 @@ export default function ResourcePage({ params }: { params: { resource: string } 
                   style={{ marginLeft: "5px" }}
                 />
               </label>
+              <label style={{ display: "block" }}>
+                Foreign Key:
+                <input
+                  type="text"
+                  placeholder="e.g. post.id"
+                  value={field.foreign_key || ""}
+                  onChange={(e) => {
+                    const updated = [...editedFields];
+                    updated[index].foreign_key = e.target.value;
+                    setEditedFields(updated);
+                    // Also fetch reference data if user typed e.g. "post.id"
+                    const [newTable] = e.target.value.split(".");
+                    fetchReferenceData(newTable);
+                  }}
+                  style={{ marginLeft: "5px" }}
+                />
+              </label>
             </div>
           ))}
 
@@ -374,6 +475,20 @@ export default function ResourcePage({ params }: { params: { resource: string } 
                 type="text"
                 value={newEditedField.default || ""}
                 onChange={(e) => setNewEditedField({ ...newEditedField, default: e.target.value })}
+                style={{ marginLeft: "5px" }}
+              />
+            </label>
+            <label style={{ display: "block" }}>
+              Foreign Key:
+              <input
+                type="text"
+                placeholder="e.g. post.id"
+                value={newEditedField.foreign_key || ""}
+                onChange={(e) => {
+                  setNewEditedField({ ...newEditedField, foreign_key: e.target.value });
+                  const [newTable] = e.target.value.split(".");
+                  fetchReferenceData(newTable);
+                }}
                 style={{ marginLeft: "5px" }}
               />
             </label>

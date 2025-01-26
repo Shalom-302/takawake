@@ -142,22 +142,54 @@ def remove_files_for_resource(resource_name: str, models_dir: Path, routers_dir:
 # =============================
 
 def build_model_code(resource_name: str, fields: list) -> str:
-    import_section = """from sqlalchemy import Column, Integer, String, Boolean, Float, Text
+    """
+    Returns Python code for an SQLAlchemy model with given fields.
+    If a field has foreign_key, we do 'ForeignKey("table.col")'.
+    If a field has relationship, we add a separate line for `relationship("ParentResource", back_populates="comments")`.
+    """
+    class_name = resource_name[0].upper() + resource_name[1:]  # e.g. "comment" => "Comment"
+    table_name = resource_name.lower()
+
+    import_section = """from sqlalchemy import Column, Integer, String, Boolean, Float, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from app.db import Base
 """
 
-    # Capitalize first letter so "sponsor" => "Sponsor"
-    class_name = resource_name[0].upper() + resource_name[1:]
-    table_name = resource_name.lower()
-
+    # We'll store the columns definition
     fields_str = ""
+    # We'll store relationship lines (like: post = relationship("Post", back_populates="comments"))
+    relationship_str = ""
+
     for f in fields:
         col_type = type_to_sqlalchemy_col(f.type)
-        col_default = ""
+        foreign_key_part = ""
+        default_part = ""
+        if f.foreign_key:
+            # e.g. f.foreign_key="post.id"
+            foreign_key_part = f", ForeignKey('{f.foreign_key}')"
+
         if f.default is not None:
-            default_str = parse_default_value(f.default)
-            col_default = f", default={default_str}"
-        fields_str += f"    {f.name} = Column({col_type}{col_default})\n"
+            default_part = f", default={parse_default_value(f.default)}"
+
+        # Build the line: e.g. "post_id = Column(Integer, ForeignKey("post.id"), default=... )"
+        fields_str += f"    {f.name} = Column({col_type}{foreign_key_part}{default_part})\n"
+
+        # If there's a relationship, we add a separate line
+        if f.relationship:
+            # e.g. post = relationship("Post", back_populates="comments", uselist=True/False)
+            # The parent resource is the class_name for the foreign resource
+            parent_class = f.relationship.parent_resource or "Unknown"
+            back_pop = f.relationship.back_populates or ""
+            uselist_part = "" if f.relationship.uselist else ", uselist=False"
+            # relationship name is typically same as parent, or a custom name
+            # here let's assume we call it exactly f.relationship.parent_resource.lower() 
+            # but user might want a custom name
+            rel_name = f.relationship.parent_resource.lower() if f.relationship.parent_resource else f.name
+
+            relationship_str += f"    {rel_name} = relationship(\"{parent_class}\""
+            if back_pop:
+                relationship_str += f", back_populates=\"{back_pop}\""
+            relationship_str += f"{uselist_part})\n"
 
     model_code = f'''{import_section}
 
@@ -165,6 +197,8 @@ class {class_name}(Base):
     __tablename__ = "{table_name}"
     id = Column(Integer, primary_key=True, index=True)
 {fields_str if fields_str else ""}
+
+{relationship_str if relationship_str else ""}
 '''
     return model_code
 
@@ -174,7 +208,7 @@ def build_schemas_code(resource_name: str, fields: list) -> str:
     """
     Builds the Python code for Pydantic schemas (Create, Update, Out).
     """
-    class_name = resource_name
+    class_name = resource_name[0].upper() + resource_name[1:]
     return generate_pydantic_schemas(class_name, fields)
 
 
@@ -290,6 +324,9 @@ class {class_name}Update(BaseModel):
 
 class {class_name}Out(BaseModel):
 {os.linesep.join(lines_out)}
+
+    class Config:
+            orm_mode = True 
 """
     return schema_code
 
@@ -303,34 +340,33 @@ def type_to_sqlalchemy_col(py_type: str) -> str:
     Map a string-based type (e.g. "str", "bool", "int", "float") to an SQLAlchemy column type.
     For unknown types, default to Text.
     """
-    py_type = py_type.lower()
-    if py_type == "str":
+    pt = py_type.lower()
+    if pt == "str":
         return "String"
-    elif py_type == "bool":
+    elif pt == "bool":
         return "Boolean"
-    elif py_type == "int":
+    elif pt == "int":
         return "Integer"
-    elif py_type == "float":
+    elif pt == "float":
         return "Float"
     else:
-        # For now, default to Text for any other type
         return "Text"
 
 def map_type_to_python(py_type: str) -> str:
     """
     Map a string-based type to a Python type used in Pydantic models.
     """
-    py_type = py_type.lower()
-    if py_type == "str":
+    pt = py_type.lower()
+    if pt == "str":
         return "str"
-    elif py_type == "bool":
+    elif pt == "bool":
         return "bool"
-    elif py_type == "int":
+    elif pt == "int":
         return "int"
-    elif py_type == "float":
+    elif pt == "float":
         return "float"
     else:
-        return "str"  # fallback
+        return "str"
 
 def parse_default_value(default_raw: str) -> str:
     """
