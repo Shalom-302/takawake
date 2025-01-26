@@ -1,42 +1,94 @@
 # backend/app/codegen.py
-from pathlib import Path
 import os
+import json
+from pathlib import Path
+
+
+# =============================
+# Public Generation / Removal Functions
+# =============================
+
+def include_model_in_init(resource_name: str, models_init_file: Path):
+    """
+    Adds an import line like 'from .post import Post' to models/__init__.py 
+    if it doesn't already exist.
+    """
+    resource_name_lower = resource_name.lower()
+    class_name = resource_name[0].upper() + resource_name[1:]
+    import_line = f"from .{resource_name_lower} import {class_name}"
+
+    # If __init__.py doesn't exist yet, create it
+    if not models_init_file.exists():
+        models_init_file.write_text(import_line + "\n", encoding="utf-8")
+        return
+
+    # Otherwise read its content
+    content = models_init_file.read_text(encoding="utf-8")
+    # If our import line isn't present, append it
+    if import_line not in content:
+        content += f"\n{import_line}\n"
+        models_init_file.write_text(content, encoding="utf-8")
+
 
 def generate_model_file(resource_name: str, fields: list, models_dir: Path) -> Path:
-    """
-    Creates/overwrites the model .py file in 'models_dir' for the given resource.
-    Returns the path to the created/updated file.
-    """
     resource_name_lower = resource_name.lower()
     code = build_model_code(resource_name, fields)
     file_path = models_dir / f"{resource_name_lower}.py"
     file_path.write_text(code, encoding="utf-8")
+
+    # Also ensure models/__init__.py has an import
+    # e.g. 'from .post import Post'
+    models_init_file = models_dir / "__init__.py"
+    include_model_in_init(resource_name, models_init_file)
+
     return file_path
 
-
-def generate_router_file(resource_name: str, fields: list, routers_dir: Path) -> Path:
+def generate_schemas_file(resource_name: str, fields: list, schemas_dir: Path) -> Path:
     """
-    Creates/overwrites the router .py file in 'routers_dir' for the given resource.
+    Creates/overwrites a file in 'schemas_dir' for the given resource.
+    The file contains the Pydantic Create, Update, and Out schemas.
     Returns the path to the created/updated file.
     """
     resource_name_lower = resource_name.lower()
-    code = build_router_code(resource_name, fields)
-    file_path = routers_dir / f"{resource_name_lower}.py"
+    code = build_schemas_code(resource_name, fields)  # We'll define build_schemas_code below
+    file_path = schemas_dir / f"{resource_name_lower}.py"
     file_path.write_text(code, encoding="utf-8")
+    return file_path
+
+
+def generate_router_file(
+    resource_name: str,
+    fields: list,
+    routers_dir: Path,
+    schemas_dir: Path
+) -> Path:
+    """
+    1) Generates the schemas file in 'schemas_dir' for the resource.
+    2) Creates/overwrites the router .py file in 'routers_dir',
+       referencing the resource's schemas from 'schemas/<resource>.py'.
+    Returns the path to the router file.
+    """
+    resource_name_lower = resource_name.lower()
+
+    # First, generate the schemas
+    generate_schemas_file(resource_name, fields, schemas_dir)
+
+    # Now produce the router code that imports from the new schemas file
+    router_code = build_router_code(resource_name)
+    file_path = routers_dir / f"{resource_name_lower}.py"
+    file_path.write_text(router_code, encoding="utf-8")
     return file_path
 
 
 def include_router_in_main(resource_name: str, main_file: Path):
     """
-    Naive approach to insert import and include_router lines into main.py.
-    If they don't already exist, we append them.
+    Adds import + include_router line to main.py if they don't already exist.
     """
     resource_name_lower = resource_name.lower()
     import_statement = f"from .routers.{resource_name_lower} import router as {resource_name_lower}_router"
     include_statement = f'app.include_router({resource_name_lower}_router, prefix="/{resource_name_lower}", tags=["{resource_name}"])'
 
     if not main_file.exists():
-        # If there's no main_file, there's nothing to modify
         return
 
     content = main_file.read_text(encoding="utf-8")
@@ -47,30 +99,65 @@ def include_router_in_main(resource_name: str, main_file: Path):
     main_file.write_text(content, encoding="utf-8")
 
 
+def remove_router_from_main(resource_name: str, main_file: Path):
+    """
+    Removes the import statement and the include_router line for resource_name
+    from main.py. This is a naive string matching approach.
+    """
+    resource_name_lower = resource_name.lower()
+    import_statement = f"from .routers.{resource_name_lower} import router as {resource_name_lower}_router"
+    include_statement = f'app.include_router({resource_name_lower}_router, prefix="/{resource_name_lower}", tags=["{resource_name}"])'
+
+    if not main_file.exists():
+        return
+
+    content = main_file.read_text(encoding="utf-8")
+    # Remove import_statement line
+    content = content.replace(import_statement + "\n", "")
+    # Remove include_statement line
+    content = content.replace(include_statement + "\n", "")
+    main_file.write_text(content, encoding="utf-8")
+
+
+def remove_files_for_resource(resource_name: str, models_dir: Path, routers_dir: Path, schemas_dir: Path):
+    """
+    Deletes the .py files for model, router, and schemas if they exist for the given resource.
+    """
+    resource_name_lower = resource_name.lower()
+
+    model_file = models_dir / f"{resource_name_lower}.py"
+    router_file = routers_dir / f"{resource_name_lower}.py"
+    schemas_file = schemas_dir / f"{resource_name_lower}.py"
+
+    if model_file.exists():
+        model_file.unlink()
+    if router_file.exists():
+        router_file.unlink()
+    if schemas_file.exists():
+        schemas_file.unlink()
+
+
+# =============================
+# Internal Code-Building Functions
+# =============================
+
 def build_model_code(resource_name: str, fields: list) -> str:
-    """
-    Returns a string containing the Python code for an SQLAlchemy model with the given fields.
-    
-    Note that we assume:
-      - You have 'backend/app/db.py' with `Base`.
-      - This code will *live* in 'backend/app/models/<resource>.py' once generated.
-      - The import below references your future location (some_app.db).
-    """
     import_section = """from sqlalchemy import Column, Integer, String, Boolean, Float, Text
-from app.db import Base   # <-- Adjust this if your path is different
+from app.db import Base
 """
 
-    class_name = resource_name
+    # Capitalize first letter so "sponsor" => "Sponsor"
+    class_name = resource_name[0].upper() + resource_name[1:]
     table_name = resource_name.lower()
 
     fields_str = ""
     for f in fields:
-        col_type = type_to_sqlalchemy_col(f["type"])
+        col_type = type_to_sqlalchemy_col(f.type)
         col_default = ""
-        if f["default"] is not None:
-            default_str = parse_default_value(f["default"])
+        if f.default is not None:
+            default_str = parse_default_value(f.default)
             col_default = f", default={default_str}"
-        fields_str += f"    {f['name']} = Column({col_type}{col_default})\n"
+        fields_str += f"    {f.name} = Column({col_type}{col_default})\n"
 
     model_code = f'''{import_section}
 
@@ -82,25 +169,31 @@ class {class_name}(Base):
     return model_code
 
 
-def build_router_code(resource_name: str, fields: list) -> str:
+
+def build_schemas_code(resource_name: str, fields: list) -> str:
     """
-    Returns a string containing a FastAPI router with basic CRUD endpoints.
-    Uses Pydantic schemas from generate_pydantic_schemas().
-    We assume that once generated, this file will be placed in `backend/app/routers/<resource>.py`.
+    Builds the Python code for Pydantic schemas (Create, Update, Out).
     """
     class_name = resource_name
+    return generate_pydantic_schemas(class_name, fields)
+
+
+def build_router_code(resource_name: str) -> str:
+    """
+    Returns a string containing a FastAPI router with basic CRUD endpoints.
+    Imports Pydantic schemas from 'app.schemas.<resource>.py'.
+    """
+    class_name = resource_name[0].upper() + resource_name[1:]
     lower_name = resource_name.lower()
-    pydantic_code = generate_pydantic_schemas(class_name, fields)
 
     router_code = f'''from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.db import SessionLocal  # <-- Adjust if your path is different
-from app.models.{lower_name} import {class_name}  # reference the newly generated model
-{pydantic_code}
+from app.db import SessionLocal
+from app.models.{lower_name} import {class_name}
+from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {class_name}Out
 
 router = APIRouter()
 
-# Dependency to get DB
 def get_db():
     db = SessionLocal()
     try:
@@ -154,30 +247,37 @@ def delete_{lower_name}(item_id: int, db: Session = Depends(get_db)):
     return router_code
 
 
-def generate_pydantic_schemas(class_name: str, fields: list) -> str:
+def generate_pydantic_schemas(resource_name: str, fields: list) -> str:
     """
-    Return a string containing three Pydantic schemas: 
+    Return a string containing three Pydantic schemas:
       - {class_name}Create
       - {class_name}Update
       - {class_name}Out
+    where 'fields' is a list of objects that have .name, .type, .default.
     """
+    class_name = resource_name[0].upper() + resource_name[1:]
     lines_create = []
     lines_update = []
-    lines_out = ["    id: int"]  # 'id' is included in the "Out" schema
+    lines_out = ["    id: int"]  # 'id' is included in the Out schema by default
 
     for f in fields:
-        py_type = map_type_to_python(f["type"])
+        py_type = map_type_to_python(f.type)
 
         # CREATE schema: required unless there's a default
-        if f["default"] is not None:
-            lines_create.append(f"    {f['name']}: {py_type} = {f['default']}")
+        if f.default is not None:
+            lines_create.append(
+                f"    {f.name}: {py_type} = '{f.default}'" 
+                if py_type == 'str' 
+                else f"    {f.name}: {py_type} = {f.default}" 
+            )
         else:
-            lines_create.append(f"    {f['name']}: {py_type}")
+            lines_create.append(f"    {f.name}: {py_type}")
 
         # UPDATE schema: optional
-        lines_update.append(f"    {f['name']}: {py_type} | None = None")
+        lines_update.append(f"    {f.name}: {py_type} | None = None")
+
         # OUT schema
-        lines_out.append(f"    {f['name']}: {py_type}")
+        lines_out.append(f"    {f.name}: {py_type} | None = None")
 
     schema_code = f"""
 from pydantic import BaseModel
@@ -193,7 +293,10 @@ class {class_name}Out(BaseModel):
 """
     return schema_code
 
-# ============ Helper Functions ============
+
+# =============================
+# Helper Functions
+# =============================
 
 def type_to_sqlalchemy_col(py_type: str) -> str:
     """
@@ -213,7 +316,6 @@ def type_to_sqlalchemy_col(py_type: str) -> str:
         # For now, default to Text for any other type
         return "Text"
 
-
 def map_type_to_python(py_type: str) -> str:
     """
     Map a string-based type to a Python type used in Pydantic models.
@@ -230,10 +332,9 @@ def map_type_to_python(py_type: str) -> str:
     else:
         return "str"  # fallback
 
-
 def parse_default_value(default_raw: str) -> str:
     """
-    Given a default value string (e.g. 'True', '42', 'hello'), produce a Python-friendly expression.
+    Convert a default value string (e.g. 'True', '42', 'hello') into a Python-friendly expression.
     - 'true' or 'false' -> bool
     - digits -> int
     - otherwise -> string literal
@@ -242,8 +343,5 @@ def parse_default_value(default_raw: str) -> str:
     if d == "true" or d == "false":
         return d.capitalize()  # "true" -> "True", "false" -> "False"
     if d.isdigit():
-        # Convert digits to int
         return d
-    # Otherwise treat as string
-    # Escape quotes if needed. For simplicity, we'll wrap in single quotes
     return f"'{default_raw}'"

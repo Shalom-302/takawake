@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .db import Base, engine
-from .routers import auth, admin
+from .routers import auth, admin, migrations
 
 app = FastAPI()
 
@@ -23,4 +23,4 @@ def read_root():
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
-
+app.include_router(migrations.router, prefix="/admin/migrations", tags=["Migrations"])
