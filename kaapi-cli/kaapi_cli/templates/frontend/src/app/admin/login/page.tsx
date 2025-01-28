@@ -21,8 +21,8 @@ export default function AdminLoginPage() {
       // For demonstration, store in local storage:
       localStorage.setItem("kaapi_token", token);
       alert("Login successful");
-      // Redirect to /admin/resources or wherever
-      window.location.href = "/admin/resources";
+      // Redirect to /admin or wherever
+      window.location.href = "/admin";
     } catch (err: any) {
       alert("Login error: " + err.message);
     }

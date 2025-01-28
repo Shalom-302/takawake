@@ -1,4 +1,4 @@
-// File: frontend/pages/admin/resources/page.tsx
+// Page: frontend/pages/admin/resources/page.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 
@@ -117,8 +117,8 @@ export default function AdminIndex() {
   }
 
   return (
-    <div>
-      <h1>Admin Dashboard</h1>
+    <div style={{ padding: 20 }}>
+      <h1>Resources</h1>
       <button onClick={() => setShowModal(true)}>Add New Resource</button>
 
       <ul>

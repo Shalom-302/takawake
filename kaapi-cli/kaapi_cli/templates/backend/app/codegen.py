@@ -214,17 +214,23 @@ def build_schemas_code(resource_name: str, fields: list) -> str:
 
 def build_router_code(resource_name: str) -> str:
     """
-    Returns a string containing a FastAPI router with basic CRUD endpoints.
-    Imports Pydantic schemas from 'app.schemas.<resource>.py'.
+    Returns a string containing a FastAPI router with CRUD endpoints.
+    We inject Casbin permission checks for each route.
+    E.g., 'create', 'read', 'update', 'delete'.
     """
     class_name = resource_name[0].upper() + resource_name[1:]
     lower_name = resource_name.lower()
 
+    # We'll reference a 'require_casbin_permission' function
+    # from 'app.casbin_enforcer import require_casbin_permission'
+    # You can adjust the import path if your code differs.
     router_code = f'''from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from app.db import SessionLocal
 from app.models.{lower_name} import {class_name}
 from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {class_name}Out
+from app.casbin_enforcer import require_casbin_permission  # Adjust path if needed
 
 router = APIRouter()
 
@@ -235,7 +241,11 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/", response_model={class_name}Out)
+@router.post(
+    "/",
+    response_model={class_name}Out,
+    dependencies=[Depends(require_casbin_permission("{lower_name}", "create"))]
+)
 def create_{lower_name}(data: {class_name}Create, db: Session = Depends(get_db)):
     db_obj = {class_name}(**data.dict())
     db.add(db_obj)
@@ -243,18 +253,30 @@ def create_{lower_name}(data: {class_name}Create, db: Session = Depends(get_db))
     db.refresh(db_obj)
     return db_obj
 
-@router.get("/", response_model=list[{class_name}Out])
+@router.get(
+    "/",
+    response_model=List[{class_name}Out],
+    dependencies=[Depends(require_casbin_permission("{lower_name}", "read"))]
+)
 def list_{lower_name}s(db: Session = Depends(get_db)):
     return db.query({class_name}).all()
 
-@router.get("/{{item_id}}", response_model={class_name}Out)
+@router.get(
+    "/{{item_id}}",
+    response_model={class_name}Out,
+    dependencies=[Depends(require_casbin_permission("{lower_name}", "read"))]
+)
 def get_{lower_name}(item_id: int, db: Session = Depends(get_db)):
     obj = db.query({class_name}).filter({class_name}.id == item_id).first()
     if not obj:
         raise HTTPException(status_code=404, detail="{class_name} not found")
     return obj
 
-@router.put("/{{item_id}}", response_model={class_name}Out)
+@router.put(
+    "/{{item_id}}",
+    response_model={class_name}Out,
+    dependencies=[Depends(require_casbin_permission("{lower_name}", "update"))]
+)
 def update_{lower_name}(item_id: int, data: {class_name}Update, db: Session = Depends(get_db)):
     obj = db.query({class_name}).filter({class_name}.id == item_id).first()
     if not obj:
@@ -268,7 +290,10 @@ def update_{lower_name}(item_id: int, data: {class_name}Update, db: Session = De
     db.refresh(obj)
     return obj
 
-@router.delete("/{{item_id}}")
+@router.delete(
+    "/{{item_id}}",
+    dependencies=[Depends(require_casbin_permission("{lower_name}", "delete"))]
+)
 def delete_{lower_name}(item_id: int, db: Session = Depends(get_db)):
     obj = db.query({class_name}).filter({class_name}.id == item_id).first()
     if not obj:

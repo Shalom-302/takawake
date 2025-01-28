@@ -7,4 +7,5 @@ Base = declarative_base()
 # Import each model file here:
 from .resource_definition import ResourceDefinition
 from .user import User
+from .role import Role
 

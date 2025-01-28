@@ -3,8 +3,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import Optional
-import subprocess
-import os
+import subprocess, os, uuid
+from pathlib import Path
 import uuid
 
 from app.db import SessionLocal
@@ -19,32 +19,49 @@ def get_db():
     finally:
         db.close()
 
+def preview_autogenerate_changes():
+    """
+    1) Create a temporary revision file with a random slug
+    2) Read its contents
+    3) Delete it
+    4) Return the text
+    """
+    temp_msg = f"temp_{uuid.uuid4().hex[:8]}"
+    cmd_rev = ["alembic", "revision", "--autogenerate", "-m", temp_msg]
+    
+    # 1) Run alembic revision
+    proc = subprocess.Popen(cmd_rev, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    out, err = proc.communicate()
+    if proc.returncode != 0:
+        raise RuntimeError(f"Autogenerate failed:\n{err}")
+    
+    # 2) Find the created .py file in migrations/versions
+    #    Alembic will print something like "Generating ... migrations/versions/xxxx_temp_<uuid>.py"
+    #    We can parse that from 'out' or just search the folder for a file containing our temp_msg.
+    migrations_dir = Path("migrations/versions/")
+    created_file = None
+    for f in migrations_dir.iterdir():
+        if f.is_file() and temp_msg in f.stem:
+            created_file = f
+            break
+    if not created_file:
+        raise RuntimeError("Could not find the temporary revision file.")
+
+    # 3) Read the file
+    content = created_file.read_text(encoding="utf-8")
+
+    # 4) Remove the temp file
+    created_file.unlink()
+
+    return content  # or parse this further
+
 @router.get("/changes")
-def get_pending_migrations(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    """
-    Generate a draft migration script in "SQL" (dry-run) mode or a temporary file,
-    then parse or return it so the front-end can see what changes are pending.
-    """
+def get_pending_migrations():
     try:
-        # Approach A: Use `alembic revision --autogenerate --sql` to produce raw SQL
-        # that would be applied if you ran upgrade.
-        # This doesn't create an actual .py file in migrations/versions, only the SQL string.
-        cmd = ["alembic", "revision", "--autogenerate", "--sql", "-m", "temp_dry_run"]
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        out, err = process.communicate()
-        if process.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Alembic dry-run failed:\n{err}")
-
-        # 'out' should contain the SQL statements Alembic would apply (or an empty script if no changes).
-        # Return it as plain text or JSON.
-        return {"changes": out or "No pending changes."}
-
+        revision_script = preview_autogenerate_changes()
+        return {"changes": revision_script}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving changes: {str(e)}")
-
+        raise HTTPException(500, f"Error generating preview: {str(e)}")
 
 @router.post("/apply")
 def apply_migrations(

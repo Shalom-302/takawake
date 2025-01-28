@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from pathlib import Path
-from .auth import get_current_user
+from .auth import get_current_user, require_role
 from ..codegen import (
     generate_model_file,
     generate_router_file,
@@ -39,7 +39,7 @@ def get_db():
 def create_resource(
     resource: ResourceDefinitionIn,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role("Admin")),
 ):
     resource_name = resource.resource_name
     fields = resource.fields
@@ -72,7 +72,7 @@ def create_resource(
         "model_file": str(model_path),
         "router_file": str(router_path),
     }
-
+    
 # -----------------------------------
 # LIST ALL RESOURCES
 # -----------------------------------
