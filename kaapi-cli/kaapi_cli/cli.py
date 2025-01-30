@@ -120,6 +120,42 @@ def generate_resource():
     typer.secho(f"\nResource '{resource_name}' generated successfully!\n", fg=typer.colors.GREEN)
 
 
+
+@app.command()
+def template_init():
+    """
+    Initialize template for debugging kaapi
+    """
+    typer.echo("Initializing a new Kaapi project...\n")
+
+    templates_dir = Path(__file__).parent / "templates"
+    target_backend_dir = templates_dir / "backend"
+
+    try:
+        # 2. Generate initial migration
+        typer.echo("Generating initial migration...")
+        subprocess.check_call(
+            ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
+            cwd=str(target_backend_dir),
+            env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
+        )
+
+        # 3. Apply database schema
+        typer.echo("Applying database schema...")
+        subprocess.check_call(
+            ["alembic", "upgrade", "head"],
+            cwd=str(target_backend_dir)
+        )
+
+        typer.secho("Database initialized successfully!", fg=typer.colors.GREEN)
+
+    except subprocess.CalledProcessError as e:
+        typer.secho(f"Alembic error: {str(e)}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    typer.secho("\nKaapi project initialized successfully!", fg=typer.colors.GREEN)
+
+
 @app.command()
 def init():
     """
@@ -210,8 +246,87 @@ def init():
         # Optionally remove the template file
         backend_env_template.unlink()
 
+    backend_env_file = target_backend_dir / ".env"
+    backend_env_file.write_text(f"DB_URL={db_url}\n")  # Simplifié
+
+    try:
+        # 2. Generate initial migration
+        typer.echo("Generating initial migration...")
+        subprocess.check_call(
+            ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
+            cwd=str(target_backend_dir),
+            env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
+        )
+
+        # 3. Apply database schema
+        typer.echo("Applying database schema...")
+        subprocess.check_call(
+            ["alembic", "upgrade", "head"],
+            cwd=str(target_backend_dir)
+        )
+
+        typer.secho("Database initialized successfully!", fg=typer.colors.GREEN)
+
+    except subprocess.CalledProcessError as e:
+        typer.secho(f"Alembic error: {str(e)}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
     typer.secho("\nKaapi project initialized successfully!", fg=typer.colors.GREEN)
 
+
+@app.command()
+def install():
+    """
+    Build the project for production:
+    - Installs backend dependencies
+    - Installs frontend dependencies (Next.js)
+    - Applies database migrations
+    """
+    typer.echo("Building Kaapi project for production...")
+
+    current_dir = Path.cwd()
+    backend_dir = current_dir / "backend"
+    frontend_dir = current_dir / "frontend"
+
+    # Validate project structure
+    if not backend_dir.exists() or not frontend_dir.exists():
+        typer.secho(
+            "Error: Missing backend/frontend directories",
+            fg=typer.colors.RED
+        )
+        raise typer.Exit(code=1)
+
+    # Install backend dependencies
+    try:
+        typer.echo("\nInstalling backend dependencies...")
+        subprocess.check_call(
+            ["pip", "install", "-r", "requirements.txt"],
+            cwd=backend_dir
+        )
+        typer.secho("Dependencies installed!", fg=typer.colors.GREEN)
+    except subprocess.CalledProcessError:
+        typer.secho("Failed to install dependencies", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    # Build frontend
+    try:
+        typer.echo("\nInstalling frontend dependencies...")
+        subprocess.check_call(["npm", "install"], cwd=frontend_dir)
+        typer.secho("Dependencies installed!", fg=typer.colors.GREEN)
+    except subprocess.CalledProcessError:
+        typer.secho("Failed to install dependencies", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    # Apply migrations
+    try:
+        typer.echo("\nRunning database migrations...")
+        subprocess.check_call(["alembic", "upgrade", "head"], cwd=backend_dir)
+        typer.secho("Database migrations applied!", fg=typer.colors.GREEN)
+    except subprocess.CalledProcessError:
+        typer.secho("Migration failed", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    typer.secho("\n🚀 Project built successfully!", fg=typer.colors.GREEN, bold=True)
 
 @app.command()
 def start():
@@ -237,6 +352,7 @@ def start():
     # 2. Start the backend (uvicorn) as a subprocess
     #    We'll assume a typical entry point: app/main.py
     #    If you changed your structure, adapt accordingly.
+   
     uvicorn_cmd = ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
     typer.echo(f"Running backend: {uvicorn_cmd}")
     backend_process = subprocess.Popen(uvicorn_cmd, cwd=backend_dir)

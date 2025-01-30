@@ -8,7 +8,8 @@ config = context.config
 
 fileConfig(config.config_file_name)
 
-from app.db import Base 
+from app.db import Base
+from app.models import *
 
 target_metadata = Base.metadata
 
@@ -17,6 +18,13 @@ DB_URL = os.getenv("DB_URL", "sqlite:///./dev.db")
 
 # 3) Tell Alembic which DB to connect to
 config.set_main_option("sqlalchemy.url", DB_URL)
+
+
+def include_object(object, name, type_, reflected, compare_to):
+    # Exclure la table 'casbin_rule' des migrations autogénérées
+    if type_ == "table" and name == "casbin_rule":
+        return False
+    return True
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode."""
@@ -45,6 +53,7 @@ def run_migrations_online():
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            include_object=include_object,
         )
         with context.begin_transaction():
             context.run_migrations()

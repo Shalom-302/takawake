@@ -8,6 +8,7 @@ from pathlib import Path
 import uuid
 from app.db import get_db
 from .auth import get_current_user
+from dotenv import load_dotenv
 
 router = APIRouter()
 
@@ -19,11 +20,28 @@ def preview_autogenerate_changes():
     3) Delete it
     4) Return the text
     """
+    load_dotenv()
     temp_msg = f"temp_{uuid.uuid4().hex[:8]}"
+    backend_dir = Path(__file__).resolve().parent.parent.parent
     cmd_rev = ["alembic", "revision", "--autogenerate", "-m", temp_msg]
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(backend_dir) 
+
+    env = os.environ.copy()
+    env["DB_URL"] = os.getenv("DB_URL", "sqlite:///./dev.db")
     
+
     # 1) Run alembic revision
-    proc = subprocess.Popen(cmd_rev, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(
+        cmd_rev, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE, 
+        text=True,
+        cwd=str(backend_dir),  # Exécuter depuis le dossier backend
+        env=env
+        )
+    
     out, err = proc.communicate()
     if proc.returncode != 0:
         raise RuntimeError(f"Autogenerate failed:\n{err}")

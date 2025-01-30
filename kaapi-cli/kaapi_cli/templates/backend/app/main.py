@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .db import Base, engine
-from .routers import auth, admin, migrations, auth_provider, admin_advanced, roles
+from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
 
 
 app = FastAPI()
@@ -24,7 +24,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
+    # Base.metadata.create_all(bind=engine)
+    pass
 
 @app.get("/")
 def read_root():
@@ -35,4 +36,4 @@ app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(migrations.router, prefix="/admin/migrations", tags=["Migrations"])
 app.include_router(auth_provider.router, prefix="/auth-providers", tags=["Auth Providers"])
 app.include_router(admin_advanced.router, prefix="/admin-advanced", tags=["Admin Advanced"])
-app.include_router(roles.router, prefix="/roles", tags=["Roles"])
+app.include_router(role.router, prefix="/roles", tags=["Role"])
