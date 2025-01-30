@@ -82,16 +82,17 @@ export default function ResourcePage({ params }: { params: { resource: string } 
   const fetchItems = async (resName: string) => {
     try {
       const token = localStorage.getItem("kaapi_token");
-      const response = await fetch(`http://localhost:8000/${resName}`, {
+      const response = await fetch(`http://localhost:8000/${resName}?filters[price][$gte]=32`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const errData = await response.json();
-        alert("Error fetching items: " + errData.detail);
+        alert("Error fetching items: " + JSON.stringify(errData.detail));
         return;
       }
       const data = await response.json();
-      setItems(data);
+      console.log("hahaha", data)
+      setItems(data ?? []);
     } catch (err: any) {
       alert("Failed to fetch items: " + err.message);
     }
@@ -135,6 +136,8 @@ export default function ResourcePage({ params }: { params: { resource: string } 
         alert("Error creating item: " + errData.detail);
         return;
       }
+      const data = await response.json();
+      console.log("hehehe", data)
       alert("Created new item successfully!");
       setNewItem({});
       fetchItems(resource);

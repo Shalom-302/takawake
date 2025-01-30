@@ -1,4 +1,4 @@
-# kaapi-cli/kaapi_cli/codegen.py
+# backend/app/codegen.py
 import os
 import json
 from pathlib import Path
@@ -212,96 +212,67 @@ def build_schemas_code(resource_name: str, fields: list) -> str:
     return generate_pydantic_schemas(class_name, fields)
 
 
-def build_router_code(resource_name: str) -> str:
+def build_router_code(resource_name: str, class_name: str, schema_out: str) -> str:
     """
-    Returns a string containing a FastAPI router with CRUD endpoints.
-    We inject Casbin permission checks for each route.
-    E.g., 'create', 'read', 'update', 'delete'.
+    Generate a FastAPI router using create_crud_router for resource-level + field-level Casbin checks.
+    Allows for overriding or extending routes in resource-specific routers.
+    
+    Parameters:
+    - resource_name: Name of the resource (e.g., "book")
+    - class_name: Name of the model class (e.g., "Book")
+    - schema_out: Name of the output schema class (e.g., "BookOut")
+    
+    Returns:
+    - A string containing the router code.
     """
-    class_name = resource_name[0].upper() + resource_name[1:]
     lower_name = resource_name.lower()
 
-    # We'll reference a 'require_casbin_permission' function
-    # from 'app.casbin_enforcer import require_casbin_permission'
-    # You can adjust the import path if your code differs.
-    router_code = f'''from fastapi import APIRouter, Depends, HTTPException
+    router_code = f'''from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app.db import SessionLocal
+from typing import Any
 from app.models.{lower_name} import {class_name}
-from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {class_name}Out
-from app.casbin_enforcer import require_casbin_permission  # Adjust path if needed
+from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {schema_out}
+from app.crud_base import create_crud_router
+from app.routers.auth import get_current_user
+from app.casbin_setup import get_casbin_enforcer
+from app.db import get_db
 
-router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@router.post(
-    "/",
-    response_model={class_name}Out,
-    dependencies=[Depends(require_casbin_permission("{lower_name}", "create"))]
+# Instantiate CRUD router for the '{lower_name}' resource
+router = create_crud_router(
+    model={class_name},
+    schema_create={class_name}Create,
+    schema_update={class_name}Update,
+    resource_name="{lower_name}",
+    exclude_routes=[]  # Exclude routes dynamically, e.g., ["create", "list", "get"]
 )
-def create_{lower_name}(data: {class_name}Create, db: Session = Depends(get_db)):
-    db_obj = {class_name}(**data.dict())
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
 
-@router.get(
-    "/",
-    response_model=List[{class_name}Out],
-    dependencies=[Depends(require_casbin_permission("{lower_name}", "read"))]
-)
-def list_{lower_name}s(db: Session = Depends(get_db)):
-    return db.query({class_name}).all()
+# ---------------------------
+# Example: Override the 'create' method for custom behavior
+# ---------------------------
+# Uncomment and modify the following code if you need custom logic
 
-@router.get(
-    "/{{item_id}}",
-    response_model={class_name}Out,
-    dependencies=[Depends(require_casbin_permission("{lower_name}", "read"))]
-)
-def get_{lower_name}(item_id: int, db: Session = Depends(get_db)):
-    obj = db.query({class_name}).filter({class_name}.id == item_id).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="{class_name} not found")
-    return obj
+# @router.post("/", response_model={schema_out}, name="create_{lower_name}")
+# async def custom_create_{lower_name}(
+#     data: {class_name}Create,
+#     db: Session = Depends(get_db),
+#     current_user: Any = Depends(get_current_user),
+#     enforcer: Any = Depends(get_casbin_enforcer),
+# ):
+#     # Custom create logic here
+#     return {{"message": "Custom create logic for {lower_name}!"}}
 
-@router.put(
-    "/{{item_id}}",
-    response_model={class_name}Out,
-    dependencies=[Depends(require_casbin_permission("{lower_name}", "update"))]
-)
-def update_{lower_name}(item_id: int, data: {class_name}Update, db: Session = Depends(get_db)):
-    obj = db.query({class_name}).filter({class_name}.id == item_id).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="{class_name} not found")
-
-    update_data = data.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(obj, key, value)
-
-    db.commit()
-    db.refresh(obj)
-    return obj
-
-@router.delete(
-    "/{{item_id}}",
-    dependencies=[Depends(require_casbin_permission("{lower_name}", "delete"))]
-)
-def delete_{lower_name}(item_id: int, db: Session = Depends(get_db)):
-    obj = db.query({class_name}).filter({class_name}.id == item_id).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="{class_name} not found")
-
-    db.delete(obj)
-    db.commit()
-    return {{"detail": "Deleted successfully"}}
+# ---------------------------
+# Example: Add a custom route
+# ---------------------------
+# @router.post("/custom-action/{{item_id}}", response_model={schema_out})
+# async def custom_action(
+#     item_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: Any = Depends(get_current_user),
+#     enforcer: Any = Depends(get_casbin_enforcer),
+# ):
+#     # Custom action logic here
+#     return {{"message": "Custom action executed on {lower_name}!"}}
 '''
     return router_code
 

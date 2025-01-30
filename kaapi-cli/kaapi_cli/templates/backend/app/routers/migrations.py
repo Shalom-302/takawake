@@ -6,18 +6,11 @@ from typing import Optional
 import subprocess, os, uuid
 from pathlib import Path
 import uuid
-
-from app.db import SessionLocal
+from app.db import get_db
 from .auth import get_current_user
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 def preview_autogenerate_changes():
     """

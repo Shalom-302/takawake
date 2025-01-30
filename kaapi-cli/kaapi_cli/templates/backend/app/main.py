@@ -7,9 +7,17 @@ from .routers import auth, admin, migrations, auth_provider, admin_advanced, rol
 
 app = FastAPI()
 
+# Allow requests from frontend
+origins = [
+    "http://localhost:3000",  # Frontend URL
+    "http://127.0.0.1:3000",  # Alternative localhost
+    "*"  # Allow all origins (optional, use only for development)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Your Next.js frontend origin
+    allow_origins=origins,
+    allow_credentials=True,  # Enable credentials (if needed for authentication)
     allow_methods=["*"],  # Allow all methods including OPTIONS
     allow_headers=["*"],
 )

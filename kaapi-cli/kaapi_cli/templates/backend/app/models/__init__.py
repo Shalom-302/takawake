@@ -1,11 +1,8 @@
 # app/models/__init__.py
 
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from app.db import Base  # <-- Import from db.py
 
 # Import each model file here:
 from .resource_definition import ResourceDefinition
 from .user import User
 from .role import Role
-

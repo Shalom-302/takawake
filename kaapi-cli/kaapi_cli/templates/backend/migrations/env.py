@@ -8,10 +8,7 @@ config = context.config
 
 fileConfig(config.config_file_name)
 
-# 1) Import the 'Base' from your models package
-#    "app.models.__init__.py" should import all actual model files 
-#    (comment.py, post.py, etc.) so that Base.metadata includes them all.
-from app.models import Base
+from app.db import Base 
 
 target_metadata = Base.metadata
 

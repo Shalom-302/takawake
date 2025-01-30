@@ -1,18 +1,11 @@
 # File: backend/app/routers/admin_advanced.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
 from app.routers.auth import require_role
 from typing import Optional
+from app.db import get_db
 
 router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/settings")
 def get_advanced_settings(
