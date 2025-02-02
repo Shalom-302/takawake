@@ -212,20 +212,20 @@ def build_schemas_code(resource_name: str, fields: list) -> str:
     return generate_pydantic_schemas(class_name, fields)
 
 
-def build_router_code(resource_name: str, class_name: str, schema_out: str) -> str:
+def build_router_code(resource_name: str) -> str:
     """
     Generate a FastAPI router using create_crud_router for resource-level + field-level Casbin checks.
     Allows for overriding or extending routes in resource-specific routers.
     
     Parameters:
     - resource_name: Name of the resource (e.g., "book")
-    - class_name: Name of the model class (e.g., "Book")
-    - schema_out: Name of the output schema class (e.g., "BookOut")
     
     Returns:
     - A string containing the router code.
     """
+    class_name = resource_name[0].upper() + resource_name[1:]
     lower_name = resource_name.lower()
+    schema_out= f"{class_name}Out"
 
     router_code = f'''from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -242,6 +242,7 @@ router = create_crud_router(
     model={class_name},
     schema_create={class_name}Create,
     schema_update={class_name}Update,
+    schema_out={schema_out},
     resource_name="{lower_name}",
     exclude_routes=[]  # Exclude routes dynamically, e.g., ["create", "list", "get"]
 )
@@ -250,7 +251,7 @@ router = create_crud_router(
 # Example: Override the 'create' method for custom behavior
 # ---------------------------
 # Uncomment and modify the following code if you need custom logic
-
+# # from app.plugins.advanced_audit.models import AuditLog
 # @router.post("/", response_model={schema_out}, name="create_{lower_name}")
 # async def custom_create_{lower_name}(
 #     data: {class_name}Create,
@@ -259,6 +260,9 @@ router = create_crud_router(
 #     enforcer: Any = Depends(get_casbin_enforcer),
 # ):
 #     # Custom create logic here
+#     # Log the audit event for create
+#            log_details = f"Created {resource_name} with data: "
+#            log_audit_event(db, current_user.id, "create", resource_name, log_details)
 #     return {{"message": "Custom create logic for {lower_name}!"}}
 
 # ---------------------------
@@ -323,7 +327,7 @@ class {class_name}Out(BaseModel):
 {os.linesep.join(lines_out)}
 
     class Config:
-            orm_mode = True 
+            from_attributes = True 
 """
     return schema_code
 

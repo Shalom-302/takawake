@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session, joinedload
 from typing import Type, List, Any, Optional, Dict, Union
+import json
 from pydantic import BaseModel
 from app.db import get_db
 from app.casbin_setup import get_casbin_enforcer
@@ -8,7 +9,20 @@ from app.routers.auth import get_current_user
 from app.casbin_enforcer import require_casbin_permission
 from urllib.parse import parse_qs
 from sqlalchemy import or_, and_
-import json
+
+
+# Import the AuditLog model from the advanced_audit plugin
+from app.plugins.advanced_audit.models import AuditLog
+
+
+def log_audit_event(db: Session, user_id: int, action: str, resource: str, details: Optional[str] = None) -> None:
+    """
+    Creates an audit log entry in the database.
+    """
+    log = AuditLog(user_id=user_id, action=action, resource=resource, details=details)
+    db.add(log)
+    db.commit()
+
 
 def parse_filters(query_params: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -134,6 +148,7 @@ def create_crud_router(
     model: Type[Any],
     schema_create: Type[BaseModel],
     schema_update: Type[BaseModel],
+    schema_out: Type[BaseModel],
     resource_name: str,
     exclude_routes: Optional[List[str]] = None,  # New optional parameter
 ) -> APIRouter:
@@ -185,7 +200,10 @@ def create_crud_router(
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)
-            return db_obj
+            # Log the audit event for create
+            log_details = f"Created {resource_name} with data: {json.dumps(data_dict)}"
+            log_audit_event(db, current_user.id, "create", resource_name, log_details)
+            return schema_out.from_orm(db_obj)
 
     # ---------------------------
     # LIST
@@ -236,7 +254,7 @@ def create_crud_router(
             # Apply field-level permission checks
             for obj in all_objs:
                 if enforcer.enforce(role_name, resource_name, "read"):
-                    results.append(obj)
+                    results.append(schema_out.from_orm(obj))
                 else:
                     partial_data = {column.name: getattr(obj, column.name)
                                     for column in obj.__table__.columns
@@ -312,9 +330,12 @@ def create_crud_router(
 
             db.commit()
             db.refresh(obj)
+            # Log audit event for update
+            log_details = f"Updated {resource_name} id {item_id} with data: {json.dumps(update_data)}"
+            log_audit_event(db, current_user.id, "update", resource_name, log_details)
 
             if enforcer.enforce(role_name, resource_name, "read"):
-                return obj
+                return schema_out.from_orm(obj)
             else:
                 partial_data = {column.name: getattr(obj, column.name)
                                 for column in obj.__table__.columns
@@ -324,7 +345,7 @@ def create_crud_router(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"No fields allowed for read on updated {resource_name} item"
                     )
-                return partial_data
+                return schema_out.from_orm(partial_data)
 
     # ---------------------------
     # DELETE
@@ -334,6 +355,7 @@ def create_crud_router(
         async def delete_item(
             item_id: int,
             db: Session = Depends(get_db),
+            current_user: Any = Depends(get_current_user),
         ):
             obj = db.query(model).filter(model.id == item_id).first()
             if not obj:
@@ -341,6 +363,9 @@ def create_crud_router(
 
             db.delete(obj)
             db.commit()
+            # Log audit event for delete
+            log_details = f"Deleted {resource_name} id {item_id}"
+            log_audit_event(db, current_user.id, "delete", resource_name, log_details)
             return {"detail": f"Deleted successfully from {model.__name__}"}
 
     return router

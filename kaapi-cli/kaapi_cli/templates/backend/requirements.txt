@@ -6,3 +6,7 @@ pyjwt
 alembic
 casbin
 casbin_sqlalchemy_adapter
+celery
+redis
+prometheus-client
+requests

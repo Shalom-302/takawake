@@ -37,6 +37,11 @@ export default function AdminIndexPage() {
           </Link>
         </li>
         <li>
+          <Link href="/admin/plugins">
+            Plugins
+          </Link>
+        </li>
+        <li>
           <Link href="/admin/auth-providers">
             Auth Providers
           </Link>

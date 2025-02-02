@@ -249,27 +249,27 @@ def init():
     backend_env_file = target_backend_dir / ".env"
     backend_env_file.write_text(f"DB_URL={db_url}\n")  # Simplifié
 
-    try:
-        # 2. Generate initial migration
-        typer.echo("Generating initial migration...")
-        subprocess.check_call(
-            ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
-            cwd=str(target_backend_dir),
-            env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
-        )
+    # try:
+    #     # 2. Generate initial migration
+    #     typer.echo("Generating initial migration...")
+    #     subprocess.check_call(
+    #         ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
+    #         cwd=str(target_backend_dir),
+    #         env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
+    #     )
 
-        # 3. Apply database schema
-        typer.echo("Applying database schema...")
-        subprocess.check_call(
-            ["alembic", "upgrade", "head"],
-            cwd=str(target_backend_dir)
-        )
+    #     # 3. Apply database schema
+    #     typer.echo("Applying database schema...")
+    #     subprocess.check_call(
+    #         ["alembic", "upgrade", "head"],
+    #         cwd=str(target_backend_dir)
+    #     )
 
-        typer.secho("Database initialized successfully!", fg=typer.colors.GREEN)
+    #     typer.secho("Database initialized successfully!", fg=typer.colors.GREEN)
 
-    except subprocess.CalledProcessError as e:
-        typer.secho(f"Alembic error: {str(e)}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    # except subprocess.CalledProcessError as e:
+    #     typer.secho(f"Alembic error: {str(e)}", fg=typer.colors.RED)
+    #     raise typer.Exit(code=1)
 
     typer.secho("\nKaapi project initialized successfully!", fg=typer.colors.GREEN)
 

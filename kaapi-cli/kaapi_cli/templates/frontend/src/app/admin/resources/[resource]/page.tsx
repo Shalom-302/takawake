@@ -82,7 +82,7 @@ export default function ResourcePage({ params }: { params: { resource: string } 
   const fetchItems = async (resName: string) => {
     try {
       const token = localStorage.getItem("kaapi_token");
-      const response = await fetch(`http://localhost:8000/${resName}?filters[price][$gte]=32`, {
+      const response = await fetch(`http://localhost:8000/${resName}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
