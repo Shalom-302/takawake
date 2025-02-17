@@ -1,0 +1,63 @@
+# alerts.yml
+groups:
+- name: kaapi-alerts
+  rules:
+  - alert: HighRequestLatency
+    expr: http_request_duration_seconds_bucket{le="0.5"} / http_request_duration_seconds_count < 0.9
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency on {{ $labels.route }}"
+
+  - alert: DatabaseDown
+    expr: db_connected == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Database connection lost"
+
+  - alert: HighErrorRate
+    expr: |
+      sum(rate(http_requests_total{status=~"5.."}[5m])) 
+      / 
+      sum(rate(http_requests_total[5m])) > 0.05
+    for: 5m
+    labels:
+      severity: critical
+      dashboard: http-metrics
+      panel: error-rate
+    annotations:
+      summary: "High error rate detected: {{ $value | humanizePercentage }}"
+      description: "Error rate exceeds 5% threshold for 5 minutes on route {{ $labels.route }}"
+      
+  - alert: HighRequestLatency
+  expr: |
+    avg(rate(http_request_duration_seconds_sum[5m])) 
+    / 
+    rate(http_request_duration_seconds_count[5m]) > 1
+  for: 2m
+  labels:
+    severity: warning
+    dashboard: http-metrics
+    panel: latency-trends
+  annotations:
+    summary: "High average latency: {{ $value | humanizeDuration }}"
+    description: "Average request latency exceeds 1s on {{ $labels.route }}"
+
+- alert: P95LatencySpike
+  expr: |
+    histogram_quantile(0.95, 
+      sum by(le, route) (
+        rate(http_request_duration_seconds_bucket[5m])
+      )
+    ) > 2
+  for: 1m
+  labels:
+    severity: critical
+    dashboard: http-metrics
+    panel: latency-trends  
+  annotations:
+    summary: "P95 latency spike: {{ $value | humanizeDuration }}"
+    description: "95th percentile latency exceeds 2s on {{ $labels.route }}"

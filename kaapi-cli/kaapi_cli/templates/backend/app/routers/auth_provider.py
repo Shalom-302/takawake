@@ -14,9 +14,6 @@ def list_providers():
     """
     return [
         {"name": "email", "status": "enabled"},
-        {"name": "facebook", "status": "disabled"},
-        {"name": "google", "status": "disabled"},
-        {"name": "msal", "status": "disabled"},
         # etc.
     ]
 
@@ -37,11 +34,4 @@ def oauth_login(provider: str, request: Request):
     Example route that handles redirect or token exchange for an OAuth provider.
     In a real scenario, you'd integrate MSAL or Facebook/Google via a library.
     """
-    if provider == "google":
-        # handle google oauth
-        pass
-    elif provider == "facebook":
-        # handle facebook
-        pass
-    # etc.
     return {"detail": f"Auth with {provider} not fully implemented"}

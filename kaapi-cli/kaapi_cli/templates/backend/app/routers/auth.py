@@ -9,6 +9,7 @@ import jwt
 import hashlib
 import datetime
 import os
+from app.plugins.custom_auth import load_auth_providers
 
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME")  # load from .env in real usage
 ALGORITHM = "HS256"
@@ -77,8 +78,7 @@ def require_role(*allowed_roles: str):
         return current_user
     return wrapper
 
-
-
+router.include_router(load_auth_providers(["email"]))
 
 class Token(BaseModel):
     access_token: str
@@ -87,23 +87,23 @@ class LoginModel(BaseModel):
     username: str
     password: str
 
-@router.post("/login", response_model=Token)
-def login(data: LoginModel, db: Session = Depends(get_db)):
-    # 1. Find user by username
-    user = db.query(User).filter(User.username == data.username).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+# @router.post("/login", response_model=Token)
+# def login(data: LoginModel, db: Session = Depends(get_db)):
+#     # 1. Find user by username
+#     user = db.query(User).filter(User.username == data.username).first()
+#     if not user:
+#         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    # 2. Verify password
-    hashed_input = hashlib.sha256(data.password.encode()).hexdigest()
-    if hashed_input != user.hashed_password:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+#     # 2. Verify password
+#     hashed_input = hashlib.sha256(data.password.encode()).hexdigest()
+#     if hashed_input != user.hashed_password:
+#         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    # 3. Generate JWT
-    payload = {
-        "sub": str(user.id),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),  # token valid 1h
-        "iat": datetime.datetime.utcnow()
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-    return {"access_token": token}
+#     # 3. Generate JWT
+#     payload = {
+#         "sub": str(user.id),
+#         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),  # token valid 1h
+#         "iat": datetime.datetime.utcnow()
+#     }
+#     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+#     return {"access_token": token}

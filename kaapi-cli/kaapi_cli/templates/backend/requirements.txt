@@ -10,3 +10,4 @@ celery
 redis
 prometheus-client
 requests
+psutil==5.9.5
