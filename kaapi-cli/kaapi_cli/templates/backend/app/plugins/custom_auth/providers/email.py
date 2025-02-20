@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ...base import BaseAuthProvider, AuthResult
+from ..base import BaseAuthProvider, AuthResult
 from app.db import get_db
 from app.models.user import User
 import hashlib
@@ -12,13 +12,13 @@ class EmailAuthProvider(BaseAuthProvider):
     name = "email"
     description = "Email/password authentication"
 
-    def _register_routes(self):
-        self.router.add_api_route(
-            "/login/email",
-            self.handle_login,
-            methods=["POST"],
-            response_model=AuthResult
-        )
+    # def _register_routes(self):
+    #     self.router.add_api_route(
+    #         "/login/email",
+    #         self.handle_login,
+    #         methods=["POST"],
+    #         response_model=AuthResult
+    #     )
 
     async def handle_login(self, username: str, password: str, db: Session = Depends(get_db)):
         return await self.authenticate({"username": username, "password": password}, db)
@@ -39,3 +39,11 @@ class EmailAuthProvider(BaseAuthProvider):
         }
         token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
         return AuthResult(access_token=token)
+    
+    async def handle_register(self, username: str, password: str, db: Session = Depends(get_db)):
+        hashed_input = hashlib.sha256(password.encode()).hexdigest()
+        db_user = User(username=username, hashed_password=hashed_input)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return {"message": "User created"}

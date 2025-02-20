@@ -9,7 +9,8 @@ import jwt
 import hashlib
 import datetime
 import os
-from app.plugins.custom_auth import load_auth_providers
+# from app.plugins.custom_auth import load_auth_providers
+from app.plugins.custom_auth.main import get_router
 
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME")  # load from .env in real usage
 ALGORITHM = "HS256"
@@ -78,7 +79,8 @@ def require_role(*allowed_roles: str):
         return current_user
     return wrapper
 
-router.include_router(load_auth_providers(["email"]))
+# router.include_router(load_auth_providers(["email"]))
+router.include_router(get_router())
 
 class Token(BaseModel):
     access_token: str
