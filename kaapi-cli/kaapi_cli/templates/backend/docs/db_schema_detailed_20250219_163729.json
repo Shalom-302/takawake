@@ -1,0 +1,347 @@
+{
+  "tables": {
+    "alembic_version": {
+      "columns": [
+        {
+          "name": "version_num",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "kaapi_audit_logs": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "resource",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "details",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "kaapi_plugins": {
+      "columns": [
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_kaapi_plugins_name",
+          "unique": 0,
+          "columns": [
+            "name"
+          ]
+        }
+      ]
+    },
+    "kaapi_resources": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "fields",
+          "type": "JSON",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_kaapi_resources_id",
+          "unique": 0,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_kaapi_resources_name",
+          "unique": 1,
+          "columns": [
+            "name"
+          ]
+        }
+      ]
+    },
+    "kaapi_scheduled_jobs": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "cron_expr",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "task_name",
+          "type": "VARCHAR(200)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "args",
+          "type": "JSON",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": 0,
+          "default": "DATETIME('now')"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "kaapi_webhooks": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "event",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR(500)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "secret",
+          "type": "VARCHAR(200)",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "is_enabled",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": 0,
+          "default": "'{}'"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": 0,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "role": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_role_id",
+          "unique": 0,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    "user": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 1,
+          "default": null
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        },
+        {
+          "name": "role_id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": 0,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_user_id",
+          "unique": 0,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    }
+  },
+  "relationships": [
+    {
+      "source_table": "user",
+      "source_columns": [
+        "role_id"
+      ],
+      "target_table": "role",
+      "target_columns": [
+        "id"
+      ]
+    }
+  ]
+}

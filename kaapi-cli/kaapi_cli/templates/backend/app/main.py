@@ -2,16 +2,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
+import socketio
+
 from .db import Base, engine, SessionLocal
 from app.casbin_setup import get_casbin_enforcer
-
 from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_router
 from app.plugins.webhooks.main import get_router as get_webhooks_router
 from app.plugins.advanced_audit.main import get_router as get_audit_router
 
 from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
+from app.plugins.websockets.main import sio
 
 app = FastAPI()
+
+# Register Socket.IO app
+socket_app = socketio.ASGIApp(
+    socketio_server=sio,
+    other_asgi_app=app,
+    # Do not remove this configuration: https://github.com/pyropy/fastapi-socketio/issues/51
+    socketio_path='/ws/socket.io',
+)
+app.mount('/ws', socket_app)
 
 # CORS
 origins = [
@@ -36,10 +47,17 @@ def on_startup():
     # (2) Optional DB checks or migrations
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
+    missing_tables = []
     for table_name in Base.metadata.tables.keys():
         if table_name not in existing_tables:
             print(f"🟢 Creating new table: {table_name}")
-            # etc.
+            missing_tables.append(table_name)
+    
+    if missing_tables:
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[Base.metadata.tables[name] for name in missing_tables]
+        )
 
     # (3) Casbin rule sync
     enforcer = get_casbin_enforcer()

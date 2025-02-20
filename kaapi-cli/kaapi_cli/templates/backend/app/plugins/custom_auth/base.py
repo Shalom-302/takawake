@@ -11,17 +11,21 @@ class BaseAuthProvider(ABC):
     name: str
     description: str
     enabled: bool = False
+
+class UserAuthBase(BaseModel):
+    username: str
+    password: str
     
-    def __init__(self):
-        self.router = APIRouter()
-        self._register_routes()
+    # def __init__(self):
+    #     self.router = APIRouter()
+    #     self._register_routes()
 
-    @abstractmethod
-    def _register_routes(self):
-        """Register FastAPI routes for this provider"""
-        pass
+    # @abstractmethod
+    # def _register_routes(self):
+    #     """Register FastAPI routes for this provider"""
+    #     pass
 
-    @abstractmethod
-    async def authenticate(self, credentials: dict, db: Session) -> AuthResult:
-        """Core authentication logic"""
-        pass
+    # @abstractmethod
+    # async def authenticate(self, credentials: dict, db: Session) -> AuthResult:
+    #     """Core authentication logic"""
+    #     pass
