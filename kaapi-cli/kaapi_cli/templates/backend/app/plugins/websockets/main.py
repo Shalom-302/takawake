@@ -1,8 +1,16 @@
 import logging
 import jwt
+from fastapi import APIRouter,  Response
 
 from .conf import sio
 
+def get_router():
+    router = APIRouter(tags=["Websocket"])
+    
+    @router.get("/websocket")
+    async def manage_websocket():
+        print("ok")
+    return router
 
 @sio.event
 async def connect(sid, environ, auth):

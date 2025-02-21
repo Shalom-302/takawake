@@ -17,17 +17,6 @@ def list_providers():
         # etc.
     ]
 
-@router.post("/enable-provider")
-def enable_provider(name: str):
-    """
-    Example: set a provider as enabled in your DB or config.
-    """
-    # pseudo-code:
-    # provider = db.query(Provider).filter(Provider.name==name).first()
-    # provider.status = "enabled"
-    # db.commit()
-    return {"detail": f"Provider {name} enabled"}
-
 @router.post("/auth/{provider}")
 def oauth_login(provider: str, request: Request):
     """

@@ -12,3 +12,5 @@ def get_router():
             content=generate_latest(), 
             media_type=CONTENT_TYPE_LATEST
         )
+    
+    return router

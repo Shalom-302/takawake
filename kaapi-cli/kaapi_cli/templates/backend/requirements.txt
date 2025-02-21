@@ -14,3 +14,5 @@ psutil==5.9.5
 httpx
 python-socketio[async]
 aio_pika
+pydantic_core
+email-validator

@@ -9,8 +9,11 @@ from app.casbin_setup import get_casbin_enforcer
 from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_router
 from app.plugins.webhooks.main import get_router as get_webhooks_router
 from app.plugins.advanced_audit.main import get_router as get_audit_router
-
-from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
+from app.plugins.monitoring.main import get_router as get_monitoring_router
+from app.plugins.messaging.main import get_router as get_messaging_router
+from app.plugins.websockets.main import get_router as get_websockets_router
+from app.plugins.custom_auth.main import get_router as get_auth_providers_router
+from .routers import auth, admin, migrations, admin_advanced, role
 from app.plugins.websockets.main import sio
 
 app = FastAPI()
@@ -68,11 +71,16 @@ def on_startup():
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(migrations.router, prefix="/admin/migrations", tags=["Migrations"])
-app.include_router(auth_provider.router, prefix="/auth-providers", tags=["Auth Providers"])
 app.include_router(admin_advanced.router, prefix="/admin-advanced", tags=["Admin Advanced"])
 app.include_router(role.router, prefix="/roles", tags=["Role"])
 app.include_router(get_webhooks_router(), prefix="/plugins/webhooks", tags=["Webhooks"])
 app.include_router(get_audit_router(), prefix="/plugins/advanced_audit", tags=["Advanced Audit"])
+app.include_router(get_monitoring_router(), prefix="/plugins/monitoring", tags=["Advanced Monitoring"])
+app.include_router(get_messaging_router(), prefix="/plugins/messaging", tags=["Messaging"])
+app.include_router(get_websockets_router(), prefix="/plugins/websockets", tags=["Websockets"])
+app.include_router(get_auth_providers_router(), prefix="/plugins/auth-providers", tags=["Auth Providers"])
+
+
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle

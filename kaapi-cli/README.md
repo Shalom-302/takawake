@@ -46,6 +46,151 @@ VALUES (1, "admin", "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1
 INSERT INTO user (id, username, hashed_password, role_id)
 VALUES (2, "editor", "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8", 2);
 
+
+-- EMAIL (activé par défaut)
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  1,
+  'EMAIL',
+  'email_client_id_placeholder',
+  'email_secret_key_placeholder',
+  'https://votre-domaine.com/email/redirect',
+  TRUE
+);
+
+-- FACEBOOK
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  2,
+  'FACEBOOK',
+  'facebook_client_id_placeholder',
+  'facebook_secret_key_placeholder',
+  'https://votre-domaine.com/facebook/redirect',
+  FALSE
+);
+
+-- GOOGLE
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  3,
+  'GOOGLE',
+  'google_client_id_placeholder',
+  'google_secret_key_placeholder',
+  'https://votre-domaine.com/google/redirect',
+  FALSE
+);
+
+-- GITHUB
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  4,
+  'GITHUB',
+  'github_client_id_placeholder',
+  'github_secret_key_placeholder',
+  'https://votre-domaine.com/github/redirect',
+  FALSE
+);
+
+-- GITLAB
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  5,
+  'GITLAB',
+  'gitlab_client_id_placeholder',
+  'gitlab_secret_key_placeholder',
+  'https://votre-domaine.com/gitlab/redirect',
+  FALSE
+);
+
+-- APPLE
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  6,
+  'APPLE',
+  'apple_client_id_placeholder',
+  'apple_secret_key_placeholder',
+  'https://votre-domaine.com/apple/redirect',
+  FALSE
+);
+
+-- LINKEDIN
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  7,
+  'LINKEDIN',
+  'linkedin_client_id_placeholder',
+  'linkedin_secret_key_placeholder',
+  'https://votre-domaine.com/linkedin/redirect',
+  FALSE
+);
+
+-- MICROSOFT
+INSERT INTO kaapi_provider_config (
+  id,
+  provider,
+  client_id,
+  secret_key,
+  webhook_redirect_uri,
+  is_active
+)
+VALUES (
+  8,
+  'MICROSOFT',
+  'microsoft_client_id_placeholder',
+  'microsoft_secret_key_placeholder',
+  'https://votre-domaine.com/microsoft/redirect',
+  FALSE
+);
+
 ```
 decrypted value == password
 

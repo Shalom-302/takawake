@@ -8,7 +8,7 @@ from app.db import Base  # Use the central Base
 
 
 class AuthProviderEnum(enum.Enum):
-    # EMAIL = "email"
+    EMAIL = "email"
     FACEBOOK = "facebook"
     GOOGLE = "google"
     GITHUB = "github"

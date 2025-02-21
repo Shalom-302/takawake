@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from httpx import AsyncClient
-
+import logging
+from pydantic import BaseModel
 from app.db import get_db
 from .providers.google import GoogleOAuth
 from .providers.facebook import FacebookOAuth
@@ -28,6 +29,16 @@ PROVIDER_CLASSES = {
     AuthProviderEnum.APPLE.value: AppleOAuth,
 }
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
+class ProviderToggleRequest(BaseModel):
+    name: str
+    enable: bool
+
+
 def create_oauth_instance(provider_config: ProviderConfig):
     provider_class = PROVIDER_CLASSES.get(provider_config.provider.value)
     if not provider_class:
@@ -42,6 +53,12 @@ def create_oauth_instance(provider_config: ProviderConfig):
 
 def get_router() -> APIRouter:
     router = APIRouter(tags=["authentication"])
+
+    def get_all_providers(db: Session = Depends(get_db)):
+        """Get all provider configurations from database"""
+        providers = db.query(ProviderConfig).all()
+        return providers
+    
 
     def get_active_providers(db: Session = Depends(get_db)):
         """Get all active provider configurations from database"""
@@ -61,26 +78,63 @@ def get_router() -> APIRouter:
         """Handle email login"""
         email_auth_provider = EmailAuthProvider()
         auth_result = await email_auth_provider.handle_login(user_auth.username, user_auth.password, db)
+        if auth_result:
+            logger.info(f'Successful login attempt for user: {user_auth.username}')
+        else:
+            logger.warning(f'Failed login attempt for user: {user_auth.username}')
         return auth_result
-    
-    @router.post("/email/register")
+
+    @router.post("/email/register")         
     async def handle_register(
         user_auth: UserAuthBase,
         db: Session = Depends(get_db)
     ):
         """Handle email registration"""
-        auth_result = await EmailAuthProvider.handle_register(user_auth.username, user_auth.password, db)
+        try:
+            auth_result = await EmailAuthProvider.handle_register(user_auth.username, user_auth.password, db)
+            logger.info(f'Successful registration for user: {user_auth.username}')
+            return auth_result
+        except Exception as e:
+            logger.error(f'Error during registration for user {user_auth.username}: {str(e)}')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+    @router.post("/email/login")
+    async def handle_login(
+        user_auth: UserAuthBase,
+        db: Session = Depends(get_db)
+    ):
+        """Handle email login"""
+        email_auth_provider = EmailAuthProvider()
+        auth_result = await email_auth_provider.handle_login(user_auth.username, user_auth.password, db)
+        if auth_result:
+            logger.info(f'Successful login attempt for user: {user_auth.username}')
+        else:
+            logger.warning(f'Failed login attempt for user: {user_auth.username}')
         return auth_result
 
     @router.get("/providers")
     async def list_providers(db: Session = Depends(get_db)):
-        """List all available and active authentication providers"""
-        providers = get_active_providers(db)
-        return [
-            {"name": name, "enabled": True}
-            for name in providers.keys()
-        ]
+        """List all available providers"""
+        providers = get_all_providers(db)
+        return providers
 
+
+    @router.post("/enable-provider")
+    def enable_provider(request: ProviderToggleRequest, db: Session = Depends(get_db)):
+        """
+        Example: set a provider as enabled in your DB or config.
+        """
+        provider = db.query(ProviderConfig).filter(ProviderConfig.provider == request.name).first()
+        print("HUHUHUS", provider)
+        if not provider:
+            return {"detail": f"Provider {request.name} not found"}
+
+        provider.is_active = request.enable
+        print("HUHUHU", provider)
+        db.commit()
+        return {"detail": f"Provider {request.name} is now set to {request.enable}"}
+    
     @router.get("/{provider}/login")
     async def oauth_login(provider: str, db: Session = Depends(get_db)):
         """Initialize OAuth login flow for a specific provider"""

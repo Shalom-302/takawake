@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 
 interface Provider {
-  name: string;
-  status: string; // "enabled" or "disabled"
+  provider: string;
+  is_active: boolean; // "enabled" or "disabled"
 }
 
 export default function AuthProvidersPage() {
@@ -21,7 +21,7 @@ export default function AuthProvidersPage() {
     setError(null);
     const token = localStorage.getItem("kaapi_token");
     try {
-      const res = await fetch("http://localhost:8000/auth-providers/providers", {
+      const res = await fetch("http://localhost:8000/plugins/auth-providers/providers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) {
@@ -39,17 +39,19 @@ export default function AuthProvidersPage() {
 
   const toggleProvider = async (providerName: string, enable: boolean) => {
     const token = localStorage.getItem("kaapi_token");
+    console.log("hihi", providerName)
     try {
-      const res = await fetch(`http://localhost:8000/auth-providers/enable-provider`, {
+      const res = await fetch(`http://localhost:8000/plugins/auth-providers/enable-provider`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ name: providerName, enable })
+        body: JSON.stringify({ name: providerName?.toUpperCase(), enable })
       });
       if (!res.ok) {
         const errData = await res.json();
+        console.log("hehehe", errData.detail)
         alert("Error toggling provider: " + errData.detail);
       } else {
         alert(`Provider ${providerName} is now ${enable ? "enabled" : "disabled"}`);
@@ -76,14 +78,14 @@ export default function AuthProvidersPage() {
         </thead>
         <tbody>
           {providers.map((p) => (
-            <tr key={p.name}>
-              <td>{p.name}</td>
-              <td>{p.status}</td>
+            <tr key={p.provider}>
+              <td>{p.provider}</td>
+              <td>{p.is_active ? "True": "False"}</td>
               <td>
-                {p.status === "enabled" ? (
-                  <button onClick={() => toggleProvider(p.name, false)}>Disable</button>
+                {p.is_active ? (
+                  <button onClick={() => toggleProvider(p.provider, false)}>Disable</button>
                 ) : (
-                  <button onClick={() => toggleProvider(p.name, true)}>Enable</button>
+                  <button onClick={() => toggleProvider(p.provider, true)}>Enable</button>
                 )}
               </td>
             </tr>
