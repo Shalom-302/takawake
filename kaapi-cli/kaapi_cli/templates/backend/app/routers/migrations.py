@@ -8,7 +8,7 @@ from pathlib import Path
 import uuid
 from app.db import get_db
 from .auth import get_current_user
-from dotenv import load_dotenv
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -20,7 +20,6 @@ def preview_autogenerate_changes():
     3) Delete it
     4) Return the text
     """
-    load_dotenv()
     temp_msg = f"temp_{uuid.uuid4().hex[:8]}"
     backend_dir = Path(__file__).resolve().parent.parent.parent
     cmd_rev = ["alembic", "revision", "--autogenerate", "-m", temp_msg]
@@ -29,7 +28,8 @@ def preview_autogenerate_changes():
     env["PYTHONPATH"] = str(backend_dir) 
 
     env = os.environ.copy()
-    env["DB_URL"] = os.getenv("DB_URL", "sqlite:///./dev.db")
+    env["DB_URL"] = settings.DB_URL
+    # env["DB_URL"] = os.getenv("DB_URL", "sqlite:///./dev.db")
     
 
     # 1) Run alembic revision

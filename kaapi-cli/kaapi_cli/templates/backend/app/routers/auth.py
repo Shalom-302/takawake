@@ -8,11 +8,11 @@ from app.models.user import User
 import jwt
 import hashlib
 import datetime
-import os
 # from app.plugins.custom_auth import load_auth_providers
 from app.plugins.custom_auth.main import get_router
+from app.core.config import settings
 
-SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME")  # load from .env in real usage
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 
 router = APIRouter()
@@ -59,7 +59,7 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalid user ID"
         )
-
+    print("======>",user_id)
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

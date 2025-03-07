@@ -1,0 +1,61 @@
+from functools import lru_cache
+from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings."""
+    
+    # Database
+    DB_URL: str = "sqlite:///./dev.db"
+    
+    # Security
+    SECRET_KEY: str = "CHANGE_ME"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM: str = "HS256"
+    
+    # CORS
+    CORS_ORIGINS: list[str] = ["*"]
+    CORS_METHODS: list[str] = ["*"]
+    CORS_HEADERS: list[str] = ["*"]
+    
+    # API
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "KAAPI Backend"
+    
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+    
+    # Messaging
+    GMAIL_USERNAME: Optional[str] = None
+    GMAIL_PASSWORD: Optional[str] = None
+    SENDGRID_API_KEY: Optional[str] = None
+    INFOBIP_API_KEY: Optional[str] = None
+    INFOBIP_BASE_URL: Optional[str] = None
+    INFOBIP_FROM_NUMBER: Optional[str] = None
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_FROM_NUMBER: Optional[str] = None
+    ONESIGNAL_APP_ID: Optional[str] = None
+    ONESIGNAL_REST_API_KEY: Optional[str] = None
+    
+    # RabbitMQ
+    RABBITMQ_USERNAME: str = "guest"
+    RABBITMQ_PASSWORD: str = "guest"
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    
+    # Logging
+    LOKI_URL: str = "http://localhost:3100"
+    
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
+
+
+settings = get_settings()

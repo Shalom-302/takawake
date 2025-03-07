@@ -1,11 +1,9 @@
 # backend/app/db.py (example)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import os
-from dotenv import load_dotenv
+from app.core.config import settings
 
-load_dotenv()
-DB_URL = os.getenv("DB_URL", "sqlite:///./dev.db")
+DB_URL = settings.DB_URL
 
 engine = create_engine(DB_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
