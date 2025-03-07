@@ -1,13 +1,13 @@
 import socketio
-import os
+from app.core.config import settings
 
 
-RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
-RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
-RABBITMQ_PORT = os.getenv("RABBITMQ_PORT", 5672)
+RABBITMQ_USERNAME = settings.RABBITMQ_USERNAME
+RABBITMQ_PASSWORD = settings.RABBITMQ_PASSWORD
+RABBITMQ_HOST = settings.RABBITMQ_HOST
+RABBITMQ_PORT = settings.RABBITMQ_PORT
 
-SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME")  # load from .env in real usage
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 
 sio = socketio.AsyncServer(

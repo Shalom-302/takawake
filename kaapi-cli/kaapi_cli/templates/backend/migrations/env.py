@@ -5,6 +5,7 @@ from alembic import context
 from datetime import datetime
 import json
 import shutil
+from app.core.config import settings
 
 # The Alembic Config object
 config = context.config
@@ -17,7 +18,7 @@ from app.models import *
 target_metadata = Base.metadata
 
 # 2) Load DB_URL from environment (or fallback)
-DB_URL = os.getenv("DB_URL", "sqlite:///./dev.db")
+DB_URL = settings.DB_URL
 
 # 3) Tell Alembic which DB to connect to
 config.set_main_option("sqlalchemy.url", DB_URL)

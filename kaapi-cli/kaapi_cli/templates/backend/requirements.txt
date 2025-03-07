@@ -16,3 +16,5 @@ python-socketio[async]
 aio_pika
 pydantic_core
 email-validator
+pydantic-settings
+sse-starlette

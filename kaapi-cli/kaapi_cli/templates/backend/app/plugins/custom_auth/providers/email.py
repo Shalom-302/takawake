@@ -6,7 +6,7 @@ from app.models.user import User
 import hashlib
 import jwt
 import datetime
-import os
+from app.core.config import settings
 
 class EmailAuthProvider(BaseAuthProvider):
     name = "email"
@@ -37,7 +37,7 @@ class EmailAuthProvider(BaseAuthProvider):
             "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
             "auth_provider": self.name
         }
-        token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
         return AuthResult(access_token=token)
     
     async def handle_register(self, username: str, password: str, db: Session = Depends(get_db)):

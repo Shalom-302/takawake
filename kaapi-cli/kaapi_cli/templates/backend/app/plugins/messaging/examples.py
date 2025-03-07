@@ -2,43 +2,43 @@
 Examples of using the messaging plugin with different providers and message types.
 """
 
-import os
 from typing import List
 from . import Message, MessageRecipient, EmailTemplate, MessageType
 from .factory import MessagingProviderFactory
+from app.core.config import settings
 
 class MessagingExamples:
     def __init__(self):
         # Initialize providers with credentials
         self.gmail_provider = MessagingProviderFactory.create_provider(
             "gmail",
-            username=os.getenv("GMAIL_USERNAME"),
-            password=os.getenv("GMAIL_PASSWORD")
+            username=settings.GMAIL_USERNAME,
+            password=settings.GMAIL_PASSWORD
         )
         
         self.sendgrid_provider = MessagingProviderFactory.create_provider(
             "sendgrid",
-            api_key=os.getenv("SENDGRID_API_KEY")
+            api_key=settings.SENDGRID_API_KEY
         )
         
         self.infobip_provider = MessagingProviderFactory.create_provider(
             "infobip",
-            api_key=os.getenv("INFOBIP_API_KEY"),
-            base_url=os.getenv("INFOBIP_BASE_URL"),
-            from_number=os.getenv("INFOBIP_FROM_NUMBER")
+            api_key=settings.INFOBIP_API_KEY,
+            base_url=settings.INFOBIP_BASE_URL,
+            from_number=settings.INFOBIP_FROM_NUMBER
         )
         
         self.twilio_provider = MessagingProviderFactory.create_provider(
             "twilio",
-            account_sid=os.getenv("TWILIO_ACCOUNT_SID"),
-            auth_token=os.getenv("TWILIO_AUTH_TOKEN"),
-            from_number=os.getenv("TWILIO_FROM_NUMBER")
+            account_sid=settings.TWILIO_ACCOUNT_SID,
+            auth_token=settings.TWILIO_AUTH_TOKEN,
+            from_number=settings.TWILIO_FROM_NUMBER
         )
         
         self.push_provider = MessagingProviderFactory.create_provider(
             "onesignal",
-            app_id=os.getenv("ONESIGNAL_APP_ID"),
-            rest_api_key=os.getenv("ONESIGNAL_REST_API_KEY")
+            app_id=settings.ONESIGNAL_APP_ID,
+            rest_api_key=settings.ONESIGNAL_REST_API_KEY
         )
 
     def send_welcome_email(self, user_data: dict) -> bool:

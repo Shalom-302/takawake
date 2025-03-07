@@ -1,13 +1,10 @@
 # File: app/casbin_setup.py
 import casbin
 from casbin_sqlalchemy_adapter import Adapter
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from app.core.config import settings
 
 # Often you call it DATABASE_URL, but DB_URL is fine if that's your actual env var
-DATABASE_URL = os.getenv("DB_URL", "sqlite:///./dev.db")
+DATABASE_URL = settings.DB_URL
 
 def get_casbin_enforcer():
     """

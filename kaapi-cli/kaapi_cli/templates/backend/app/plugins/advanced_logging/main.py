@@ -6,6 +6,7 @@ from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from .schemas import LogEntryCreate
 from .loki_client import LokiClient
 from app.db import SessionLocal, get_db
+from app.core.config import settings
 
 # We define a global plugin "enabled" flag, read from ENV or DB
 ADV_LOGGING_ENABLED = True
@@ -21,7 +22,7 @@ LOG_EVENTS_COUNTER = Counter(
 )
 
 # Initialize a Loki client with an environment variable or fallback
-LOKI_URL = os.getenv("LOKI_URL", "http://localhost:3100")
+LOKI_URL = settings.LOKI_URL
 loki_client = LokiClient(LOKI_URL)
 
 def get_router() -> APIRouter:
