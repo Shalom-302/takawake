@@ -1,6 +1,6 @@
 # backend/app/models/resource_definition.py
 from sqlalchemy import Column, Integer, String, Text, JSON
-from app.db import Base
+from app.core.db import Base
 
 class ResourceDefinition(Base):
     __tablename__ = "kaapi_resources"

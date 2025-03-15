@@ -2,7 +2,7 @@ import importlib
 import os
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List
-from app.db import get_db, SessionLocal
+from app.core.db import get_db, SessionLocal
 from sqlalchemy.orm import Session
 from app.models.plugin import KaapiPlugin
 from app.schemas.plugin import PluginStateSchema

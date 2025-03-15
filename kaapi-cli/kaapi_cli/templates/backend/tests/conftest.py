@@ -8,7 +8,7 @@ import hashlib
 import datetime
 
 from app.main import app, init_db
-from app.db import Base, get_db
+from app.core.db import Base, get_db
 from app.models.user import User
 from app.models.role import Role
 from app.models.resource_definition import ResourceDefinition

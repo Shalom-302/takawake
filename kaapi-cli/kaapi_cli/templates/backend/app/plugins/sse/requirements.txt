@@ -1,0 +1,6 @@
+# Server-Sent Events Plugin Dependencies
+sse-starlette>=1.6.5  # SSE implementation for Starlette/FastAPI
+aiohttp>=3.8.4  # Async HTTP client/server
+starlette>=0.37.2  # ASGI framework
+httpx>=0.24.1  # HTTP client
+asyncio-extras>=1.3.2  # Additional asyncio utilities

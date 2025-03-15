@@ -10,9 +10,9 @@ import os
 from datetime import datetime
 
 from app.crud_base import create_crud_router, parse_filters, apply_filters
-from app.db import get_db
+from app.core.db import get_db
 from app.casbin_setup import get_casbin_enforcer
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"

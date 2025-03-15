@@ -6,7 +6,7 @@ from typing import Optional
 import subprocess, os, uuid
 from pathlib import Path
 import uuid
-from app.db import get_db
+from app.core.db import get_db
 from .auth import get_current_user
 from app.core.config import settings
 

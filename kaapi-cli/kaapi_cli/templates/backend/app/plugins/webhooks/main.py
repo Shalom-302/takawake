@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from .schemas import WebhookCreate, WebhookUpdate
 from .models import WebhookSubscription
-from app.db import get_db
-from app.routers.auth import get_current_user  # or your own auth
+from app.core.db import get_db
+from app.core.security import get_current_user  # or your own auth
 from app.casbin_setup import get_casbin_enforcer  # optional, if you do RBAC checks
 
 def get_router() -> APIRouter:

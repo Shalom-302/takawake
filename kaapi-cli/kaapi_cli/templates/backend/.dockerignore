@@ -1,0 +1,51 @@
+# Version control
+.git
+.gitignore
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Development/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Local data
+*.sqlite3
+*.db
+data/
+
+# Logs
+logs/
+*.log
+
+# Documentation
+docs/
+README.md
+
+# Node.js (if any)
+node_modules/
+npm-debug.log
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

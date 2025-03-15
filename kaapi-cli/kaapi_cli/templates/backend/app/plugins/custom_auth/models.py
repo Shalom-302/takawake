@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, Enum
 import enum
 
 from datetime import datetime
-from app.db import Base  # Use the central Base
+from app.core.db import Base  # Use the central Base
 
 
 class AuthProviderEnum(enum.Enum):

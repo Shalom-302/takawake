@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session, joinedload
 from typing import Type, List, Any, Optional, Dict, Union
 import json
 from pydantic import BaseModel
-from app.db import get_db
+from app.core.db import get_db
 from app.casbin_setup import get_casbin_enforcer
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 from app.casbin_enforcer import require_casbin_permission
 from urllib.parse import parse_qs
 from sqlalchemy import or_, and_

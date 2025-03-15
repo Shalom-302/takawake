@@ -1,0 +1,565 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --font-instrument: var(--font-instrument-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-black: oklch(0 0 0);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gray-900: oklch(0.05 0 0);
+  --color-gray-800: oklch(0.1 0 0);
+  --color-gray-700: oklch(0.18 0 0);
+  --color-emerald-400: oklch(0.72 0.2 150);
+  --color-purple-400: oklch(0.7 0.2 300);
+  --color-amber-400: oklch(0.78 0.2 75);
+  --color-blue-400: oklch(0.7 0.2 240);
+  --color-blue-500: oklch(0.4 0.2 250);
+  --color-teal-400: oklch(0.7 0.15 190);
+  --color-green-400: oklch(0.85 0.2 140);
+  --color-navy-900: oklch(0.2 0.02 260);
+  --color-blue-50: oklch(0.95 0.03 250);
+
+  /* Variables principales */
+  --color-primary: var(--color-blue-500);
+  --color-secondary: var(--color-teal-400);
+  --color-accent: var(--color-green-400);
+  --color-dark: var(--color-navy-900);
+  --color-light: var(--color-blue-50);
+
+  --radius-xl: 1rem;
+  /* Angles carrés pour le design tech */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Utilitaires pour éléments tech */
+.grid-bg {
+  /* Background propre */
+  background: none;
+}
+
+/* Patterns tech améliorés pour le hero */
+.hero-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Pattern professionnel ultra-subtil */
+  background: 
+    /* Un léger dégradé pour ajouter de la profondeur */ radial-gradient(
+    circle at 80% 20%,
+    rgba(0, 48, 135, 0.01) 0%,
+    transparent 60%
+  );
+  z-index: 1;
+}
+
+.tech-dots {
+  /* Pas de points */
+  display: none;
+}
+
+.tech-line {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  /* Ligne très subtile */
+  background: linear-gradient(
+    90deg,
+    transparent 10%,
+    rgba(0, 0, 0, 0.01) 50%,
+    transparent 90%
+  );
+  z-index: 1;
+}
+
+.tech-squares {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.tech-square {
+  position: absolute;
+  /* Carrés minimalistes presque invisibles */
+  border: 1px solid rgba(0, 0, 0, 0.008);
+  background: rgba(255, 255, 255, 0.01);
+  z-index: 1;
+}
+
+.tech-border {
+  position: relative;
+  border: 1px solid rgba(15, 82, 186, 0.2);
+}
+
+.tech-card {
+  background-color: var(--color-dark);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.tech-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
+}
+
+/* Effet glassmorphism amélioré */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.05);
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05) 10%,
+    rgba(0, 0, 0, 0.01) 70%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 4px 16px rgba(0, 30, 150, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.glassmorphism::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  mask: linear-gradient(to bottom, rgba(255, 255, 255, 1), transparent);
+  -webkit-mask: linear-gradient(to bottom, rgba(255, 255, 255, 1), transparent);
+  pointer-events: none;
+}
+
+.glassmorphism::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  pointer-events: none;
+}
+
+.glassmorphism:hover {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 
+    0 8px 32px rgba(0, 50, 150, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transform: translateY(-3px);
+}
+
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 100% 100%, rgba(0, 100, 255, 0.03), transparent 40%),
+                linear-gradient(135deg, rgba(0, 50, 200, 0.01) 0%, transparent 40%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Styles pour le terminal */
+.terminal-window {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.terminal-header {
+  background-color: #f7f7f7;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.terminal-body {
+  background-color: #282c34;
+  padding: 16px;
+  color: #fff;
+  line-height: 1.6;
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 20px;
+  background-color: #fff;
+  animation: cursor-blink 1s infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  50% {
+    transform: translateX(100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(100%) skewX(-12deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 4s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.delay-100 {
+  animation-delay: 0.3s;
+}
+
+.delay-200 {
+  animation-delay: 0.6s;
+}
+
+/* Animations pour les éléments du hero */
+@keyframes floatUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Styles pour les cartes de fonctionnalités */
+.feature-card-large {
+  transition: all 0.3s ease;
+  position: relative;
+  isolation: isolate;
+}
+
+.feature-card-large:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card-small {
+  transition: all 0.3s ease;
+}
+
+.feature-card-small:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Styles pour les espaces d'illustrations */
+.feature-card-large .h-64 {
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card-large .h-64::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(79, 70, 229, 0.05) 0%,
+    transparent 70%
+  );
+  top: -150px;
+  left: -50px;
+  z-index: 1;
+}
+
+.feature-card-large .h-64::after {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(
+    circle,
+    rgba(79, 70, 229, 0.05) 0%,
+    transparent 70%
+  );
+  bottom: -100px;
+  right: -50px;
+  z-index: 1;
+}
+
+/* Pattern subtil pour l'espace d'illustration */
+.feature-card-large:nth-child(1) .h-64 {
+  background-image: radial-gradient(
+      circle at 80% 30%,
+      rgba(79, 70, 229, 0.04) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 20% 70%,
+      rgba(79, 70, 229, 0.03) 0%,
+      transparent 50%
+    );
+}
+
+.feature-card-large:nth-child(2) .h-64 {
+  background-image: radial-gradient(
+      circle at 30% 20%,
+      rgba(79, 70, 229, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 70% 80%,
+      rgba(79, 70, 229, 0.04) 0%,
+      transparent 50%
+    );
+}
+
+/* Effet flottant pour les badges d'icônes */
+.feature-card-large .absolute.-bottom-6 {
+  transition: transform 0.3s ease;
+}
+
+.feature-card-large:hover .absolute.-bottom-6 {
+  transform: translateY(-3px);
+}
+
+/* Animation pour les cartes */
+@keyframes cardAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-card-large,
+.feature-card-small {
+  animation: cardAppear 0.5s ease-out forwards;
+}
+
+.feature-card-small:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.feature-card-small:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.feature-card-small:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+/* Effet de survol amélioré pour les petites cartes */
+.feature-card-small {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.feature-card-small::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(79, 70, 229, 0.03),
+    transparent 70%
+  );
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.feature-card-small:hover::before {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Effets sur les icônes des cartes */
+.feature-card-small .text-primary {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.feature-card-small:hover .text-primary {
+  transform: scale(1.1);
+  color: rgba(79, 70, 229, 0.9);
+}
+
+/* Effet de profondeur pour les blocs principaux */
+.feature-section {
+  position: relative;
+}
+
+.feature-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(79, 70, 229, 0.03),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Effet de pulsation pour les points accent dans les illustrations */
+@keyframes pulseDot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+}
+
+.feature-card-large .rounded-full.bg-primary {
+  animation: pulseDot 3s infinite ease-in-out;
+}
+
+.feature-card-large .rounded-full.bg-primary:nth-child(odd) {
+  animation: pulseDot 3s infinite ease-in-out;
+  animation-delay: 0.5s;
+}
+
+.feature-card-large .rounded-full.bg-primary:nth-child(even) {
+  animation: pulseDot 3s infinite ease-in-out;
+  animation-delay: 1s;
+}
+
+/* Glassmorphism effect */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+.glassmorphism-dark {
+  background: rgba(23, 25, 35, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.plugin-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.plugin-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.see-more-btn {
+  transition: all 0.3s ease;
+}
+
+.see-more-btn:hover svg {
+  transform: translateX(5px);
+}
+
+/* Animation du curseur clignotant */
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-cursor-blink {
+  animation: cursor-blink 1s infinite;
+}
+
+/* Ajout de l'animation du curseur clignotant pour le composant TypeWriter */
+.TypeWriter {
+  display: inline-block;
+  width: 10px;
+  height: 20px;
+  background-color: #fff;
+  animation: cursor-blink 1s infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}

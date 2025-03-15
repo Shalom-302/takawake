@@ -13,7 +13,7 @@ from ..codegen import (
     remove_files_for_resource,
 )
 from sqlalchemy.orm import Session
-from app.db import get_db
+from app.core.db import get_db
 from app.models.resource_definition import ResourceDefinition
 from app.schemas.resource_definition import (
     ResourceDefinitionIn,

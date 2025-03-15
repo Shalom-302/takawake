@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from collections import defaultdict
 
-from app.db import SessionLocal
+from app.core.db import SessionLocal
 from app.models.role import Role
 from app.models.user import User
 from app.models.resource_definition import ResourceDefinition
 from app.schemas.role import RoleCreate, RoleUpdate, RoleOut
 from app.schemas.permission import PermissionSchema
-from app.routers.auth import require_role
+from app.core.security import require_role
 
 from casbin import Enforcer
 from app.casbin_setup import get_casbin_enforcer  # your Casbin config

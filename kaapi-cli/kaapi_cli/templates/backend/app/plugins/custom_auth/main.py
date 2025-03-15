@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from httpx import AsyncClient
 import logging
 from pydantic import BaseModel
-from app.db import get_db
+from app.core.db import get_db
 from .providers.google import GoogleOAuth
 from .providers.facebook import FacebookOAuth
 from .providers.github import GithubOAuth

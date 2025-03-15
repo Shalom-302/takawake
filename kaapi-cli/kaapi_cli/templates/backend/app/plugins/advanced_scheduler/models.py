@@ -1,7 +1,7 @@
 # app/plugins/advanced_scheduler/models.py
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, text, JSON
 from datetime import datetime
-from app.db import Base  # <--- import the central Base
+from app.core.db import Base  # <--- import the central Base
 
 class ScheduledJob(Base):
     __tablename__ = "kaapi_scheduled_jobs"

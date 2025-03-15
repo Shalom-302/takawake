@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
+from app.core.db import SessionLocal
 from app.models.user import User
 import jwt
 import hashlib
@@ -59,7 +59,6 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalid user ID"
         )
-    print("======>",user_id)
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

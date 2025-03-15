@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..base import BaseAuthProvider, AuthResult
-from app.db import get_db
-from app.models.user import User
+from app.core.db import get_db
+# from app.models.user import User
 import hashlib
 import jwt
 import datetime

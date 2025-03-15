@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict
 from sqlalchemy.orm import Session
-from app.db import get_db
+from app.core.db import get_db
 from .models import ScheduledJob
 from .tasks import celery_app, sample_task, long_running_task
 from .schemas import JobCreateSchema

@@ -1,20 +1,81 @@
-fastapi
+# Kaapi - Core Dependencies
+# ========================
+# Le fichier principal des dépendances contient les packages essentiels
+# Pour les dépendances spécifiques aux plugins, voir les fichiers requirements.txt 
+# dans chaque dossier de plugin (app/plugins/*/requirements.txt)
+# Vous pouvez également utiliser le script install_plugin_requirements.py pour installer toutes 
+# les dépendances des plugins automatiquement.
+
+# Web Framework
+fastapi==0.115.11
 uvicorn
+starlette>=0.37.2
+pydantic==2.10.6
+pydantic_core
+pydantic-settings
 python-dotenv
+
+# API & Network
+httpx
+requests
+aiohttp==3.8.4
+sse-starlette
+aiofiles==24.1.0
+python-socketio[async]
+email-validator
+
+# Database
 sqlalchemy
-pyjwt
+sqlalchemy[asyncio]==2.0.30
 alembic
-casbin
-casbin_sqlalchemy_adapter
+asyncpg==0.29.0
+aiosqlite==0.20.0
+
+# Data Management
+sqlalchemy
+pydantic>=2.0.0
+pydantic-settings
+pandas>=2.0.0
+
+# Messaging & Queue
 celery
 redis
-prometheus-client
-requests
-psutil==5.9.5
-httpx
-python-socketio[async]
 aio_pika
-pydantic_core
-email-validator
-pydantic-settings
-sse-starlette
+
+# Security
+pyjwt
+python-jose>=3.3.0
+passlib>=1.7.4
+casbin
+casbin_sqlalchemy_adapter
+cryptography==44.0.2
+pyotp==2.7.0
+qrcode[pil]==7.4.2
+fastapi-limiter==0.1.6
+hvac==2.3.0
+
+# Monitoring & Observability
+prometheus-client
+psutil==5.9.5
+
+# Task Scheduling
+apscheduler
+
+# Integration
+slack-sdk==3.27.1
+
+# Serialization & Configuration
+pyyaml==6.0.2
+dicttoxml==1.7.16
+jinja2>=3.1.2
+
+# Plugin Dependencies
+# ------------------
+# To install all plugin dependencies:
+# $ python install_plugin_requirements.py
+#
+# To install dependencies of a specific plugin:
+# $ python install_plugin_requirements.py --plugin nom_plugin
+#
+# To generate a consolidated requirements file with all plugin dependencies:
+# $ python install_plugin_requirements.py --generate

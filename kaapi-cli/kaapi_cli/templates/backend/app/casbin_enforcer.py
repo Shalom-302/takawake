@@ -1,6 +1,6 @@
 # File: app/casbin_enforcer.py
 from fastapi import Depends, HTTPException
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 from app.casbin_setup import get_casbin_enforcer
 
 def require_casbin_permission(obj: str, act: str):

@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from datetime import datetime
-from app.db import Base  # Use the central Base
+from app.core.db import Base  # Use the central Base
 
 class AuditLog(Base):
     __tablename__ = "kaapi_audit_logs"

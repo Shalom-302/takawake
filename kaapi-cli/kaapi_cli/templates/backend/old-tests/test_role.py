@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash
 
 from app.main import app
-from app.db import Base, get_db
+from app.core.db import Base, get_db
 from app.models.role import Role
 from app.models.user import User
 from app.models.resource_definition import ResourceDefinition

@@ -40,7 +40,16 @@ class LokiClient:
 
         url = f"{self.loki_url}/loki/api/v1/push"
         try:
+            print(f"Sending log to Loki at: {url}")
+            print(f"Payload: {payload}")
             resp = requests.post(url, json=payload, timeout=5)
+            print(f"Loki response status: {resp.status_code}")
+            if resp.status_code != 204 and resp.status_code >= 400:
+                print(f"Loki error response: {resp.text}")
             resp.raise_for_status()
+            print("Successfully sent log to Loki")
         except requests.RequestException as e:
             print(f"Error pushing log to Loki: {e}")
+            print(f"URL: {url}, Headers: {e.response.headers if hasattr(e, 'response') and e.response else 'No response'}")
+            if hasattr(e, 'response') and e.response:
+                print(f"Response content: {e.response.text}")

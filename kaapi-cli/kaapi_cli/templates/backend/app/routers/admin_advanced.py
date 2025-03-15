@@ -1,9 +1,9 @@
 # File: backend/app/routers/admin_advanced.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.routers.auth import require_role
+from app.core.security import require_role
 from typing import Optional
-from app.db import get_db
+from app.core.db import get_db
 
 router = APIRouter()
 

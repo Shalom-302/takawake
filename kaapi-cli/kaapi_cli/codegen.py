@@ -152,7 +152,7 @@ def build_model_code(resource_name: str, fields: list) -> str:
 
     import_section = """from sqlalchemy import Column, Integer, String, Boolean, Float, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from app.db import Base
+from app.core.db import Base
 """
 
     # We'll store the columns definition
@@ -233,9 +233,9 @@ from typing import Any
 from app.models.{lower_name} import {class_name}
 from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {schema_out}
 from app.crud_base import create_crud_router
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 from app.casbin_setup import get_casbin_enforcer
-from app.db import get_db
+from app.core.db import get_db
 
 # Instantiate CRUD router for the '{lower_name}' resource
 router = create_crud_router(

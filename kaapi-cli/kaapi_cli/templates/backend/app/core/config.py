@@ -2,12 +2,12 @@ from functools import lru_cache
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     """Application settings."""
     
     # Database
     DB_URL: str = "sqlite:///./dev.db"
+    ASYNC_DB_URL: str = "sqlite+aiosqlite:///./dev.db"
     
     # Security
     SECRET_KEY: str = "CHANGE_ME"
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     RABBITMQ_PORT: int = 5672
     
     # Logging
-    LOKI_URL: str = "http://localhost:3100"
+    LOKI_URL: str = "http://loki:3100"
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

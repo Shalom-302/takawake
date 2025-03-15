@@ -5,7 +5,7 @@ import os
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from .schemas import LogEntryCreate
 from .loki_client import LokiClient
-from app.db import SessionLocal, get_db
+from app.core.db import SessionLocal, get_db
 from app.core.config import settings
 
 # We define a global plugin "enabled" flag, read from ENV or DB

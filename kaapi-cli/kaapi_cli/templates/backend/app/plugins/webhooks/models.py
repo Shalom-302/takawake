@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, text, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
-from app.db import Base  # import the shared Base from your main DB setup
+from app.core.db import Base  # import the shared Base from your main DB setup
 
 class WebhookSubscription(Base):
     __tablename__ = "kaapi_webhooks"

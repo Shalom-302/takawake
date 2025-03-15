@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Boolean
-from app.db import Base
+from app.core.db import Base
 
 class KaapiPlugin(Base):
     __tablename__ = "kaapi_plugins"

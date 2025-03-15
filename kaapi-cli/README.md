@@ -210,7 +210,7 @@ from app.models.{lower_name} import {class_name}
 from app.schemas.{lower_name} import {class_name}Create, {class_name}Update, {class_name}Out
 from app.crud_base import CrudBase
 from app.casbin_setup import get_casbin_enforcer
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 from app.casbin_enforcer import require_casbin_permission
 
 # Instantiate CrudBase for the '{lower_name}' resource
@@ -290,3 +290,49 @@ router = {lower_name}_crud.router
     return router_code
 
 ```
+
+
+## Frontend
+- Configuration environnementale manquante
+- Gestion d'erreur insuffisante
+- Absence de tests E2E (Cypress)
+
+## Backend
+
+- Sécurité :
+  - Secrets en clair dans le code
+  - Pas de rotation de clés
+  - RBAC partiellement implémenté
+
+- Performance: 
+  - 
+
+## Monitoring
+- Configuration d'alertes basique
+- Pas de hiérarchisation des sévérités
+- Métriques custom manquantes
+
+Goulot d'étranglement : Pas de health check entre composants
+Single Point of Failure : Redis utilisé pour les sessions et Celery
+
+5. Roadmap recommandée :
+Sprint Sécurité (2 semaines) :
+Implémentation Vault
+Audit CORS/RBAC
+Chiffrement données sensibles
+Sprint Fiabilité (1 semaine) :
+Health checks endpoints
+Circuit breakers
+Alerting amélioré
+Sprint Tests (3 semaines) :
+Couverture 80% backend
+Tests E2E critiques
+Intégration SonarQube
+
+
+# Tester une injection SQL
+curl "http://localhost:8000/search?q=' OR 1=1;--"
+
+# Tester un XSS
+curl -X POST http://localhost:8000/comment -d "content=<script>alert(1)</script>"
+

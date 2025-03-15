@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from app.db import get_db
+from app.core.db import get_db
 from .models import AuditLog
 from .schemas import AuditLogCreate, AuditLogOut
 

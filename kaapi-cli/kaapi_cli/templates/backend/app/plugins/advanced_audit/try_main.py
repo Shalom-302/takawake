@@ -6,9 +6,9 @@ from typing import Any
 from .models import AuditLog
 from .schemas import AuditLogCreate, AuditLogUpdate, AuditLogOut
 from app.crud_base import create_crud_router
-from app.routers.auth import get_current_user
+from app.core.security import get_current_user
 from app.casbin_setup import get_casbin_enforcer
-from app.db import get_db
+from app.core.db import get_db
 
 # Instantiate CRUD router for the 'post' resource
 get_router = create_crud_router(
