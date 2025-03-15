@@ -25,6 +25,7 @@ from app.plugins.advanced_scheduler.main import get_router as get_advanced_sched
 from app.plugins.ai_integration.main import router as ai_integration_router
 from app.plugins.data_exchange.main import data_exchange_router
 from app.plugins.file_storage.main import router as file_storage_router
+from app.plugins.payment.main import init_app as init_payment_plugin
 from app.plugins.privacy_compliance import router as privacy_compliance_router
 from app.plugins.pwa_support import router as pwa_support_router
 from app.plugins.workflow.main import router as workflow_router
@@ -39,7 +40,6 @@ from app.plugins.security.intrusion_detection import IntrusionDetector
 from app.plugins.security.mfa_service import MFAService
 from app.plugins.security.waf import WebApplicationFirewall, ThreatIntelFeed
 from app.plugins.security.main import crypto_router
-from app.plugins.security.main import app as security_app
 from app.plugins.security.security_config import load_security_config
 
 # Add Prometheus metrics
@@ -125,6 +125,10 @@ def init_db():
         # (3) Casbin rule sync
         enforcer = get_casbin_enforcer()
         print(" Database initialization finished")
+        
+        # Initialize payment plugin
+        init_payment_plugin(app)
+        print("🟢 Payment plugin initialized")
     finally:
         db.close()
     print("✅ Startup finished")

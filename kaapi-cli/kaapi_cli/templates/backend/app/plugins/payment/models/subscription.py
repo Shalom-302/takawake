@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Foreig
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field, validator
 
-from app.db.base import Base
+from app.core.db import Base
 from app.models.user import User
 
 class SubscriptionStatus(str, Enum):
@@ -48,13 +48,13 @@ class SubscriptionDB(Base):
     status = Column(String, nullable=False, default=SubscriptionStatus.DRAFT.value)
     
     # Customer information
-    customer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    customer = relationship("User", foreign_keys=[customer_id], backref="subscriptions")
+    customer_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    customer = relationship("User", foreign_keys=[customer_id], backref="subscriptions", primaryjoin="SubscriptionDB.customer_id == User.id")
     customer_email = Column(String, nullable=True)
     
     # Created by information
-    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id], primaryjoin="SubscriptionDB.created_by_id == User.id")
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -81,7 +81,7 @@ class SubscriptionDB(Base):
     auto_renew = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    subscription_metadata = Column(JSON, nullable=True)
     
     # Payments related to this subscription
     payments = relationship("PaymentDB", backref="subscription", 
@@ -146,7 +146,7 @@ class SubscriptionItemDB(Base):
     provider_item_id = Column(String, nullable=True)
     
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    item_metadata = Column(JSON, nullable=True)
     
     @property
     def total_price(self) -> float:
@@ -166,8 +166,8 @@ class SubscriptionHistoryDB(Base):
     status_after = Column(String, nullable=True)
     
     # User information
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    user = relationship("User")
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    user = relationship("User", foreign_keys=[user_id], primaryjoin="SubscriptionHistoryDB.user_id == User.id")
     
     # Timestamp
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -184,7 +184,7 @@ class SubscriptionItemCreate(BaseModel):
     currency: str
     quantity: int = 1
     product_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    item_metadata: Optional[Dict[str, Any]] = None
 
 class SubscriptionCreate(BaseModel):
     """Subscription create model."""
@@ -204,7 +204,7 @@ class SubscriptionCreate(BaseModel):
     trial_start_date: Optional[datetime] = None
     trial_end_date: Optional[datetime] = None
     auto_renew: bool = True
-    metadata: Optional[Dict[str, Any]] = None
+    subscription_metadata: Optional[Dict[str, Any]] = None
     items: Optional[List[SubscriptionItemCreate]] = None
     
     @validator('customer_id', 'customer_email')
@@ -247,7 +247,7 @@ class SubscriptionUpdate(BaseModel):
     trial_start_date: Optional[datetime] = None
     trial_end_date: Optional[datetime] = None
     auto_renew: Optional[bool] = None
-    metadata: Optional[Dict[str, Any]] = None
+    subscription_metadata: Optional[Dict[str, Any]] = None
 
 class SubscriptionItemResponse(BaseModel):
     """Subscription item response model."""
@@ -260,11 +260,11 @@ class SubscriptionItemResponse(BaseModel):
     quantity: int
     product_id: Optional[str] = None
     provider_item_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    item_metadata: Optional[Dict[str, Any]] = None
     total_price: float
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SubscriptionResponse(BaseModel):
     """Subscription response model."""
@@ -291,7 +291,7 @@ class SubscriptionResponse(BaseModel):
     payment_provider: Optional[str] = None
     provider_subscription_id: Optional[str] = None
     auto_renew: bool
-    metadata: Optional[Dict[str, Any]] = None
+    subscription_metadata: Optional[Dict[str, Any]] = None
     items: List[SubscriptionItemResponse] = []
     is_active: bool
     is_past_due: bool
@@ -300,7 +300,7 @@ class SubscriptionResponse(BaseModel):
     days_until_next_billing: Optional[int] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SubscriptionCancelRequest(BaseModel):
     """Subscription cancellation request model."""
@@ -312,3 +312,35 @@ class SubscriptionPauseRequest(BaseModel):
     """Subscription pause request model."""
     resume_at: Optional[datetime] = None
     reason: Optional[str] = None
+
+class SubscriptionRequest(BaseModel):
+    """Subscription request model for payment providers.
+    
+    This model is used when sending subscription requests to payment providers.
+    """
+    subscription_id: str
+    customer_email: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    amount: float
+    currency: str
+    billing_period: str
+    billing_interval: int = 1
+    description: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    trial_enabled: bool = False
+    trial_end_date: Optional[datetime] = None
+    subscription_metadata: Optional[Dict[str, Any]] = None
+    return_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+    webhook_url: Optional[str] = None
+    
+    @property
+    def customer(self) -> Dict[str, Any]:
+        """Get customer information as a dictionary."""
+        return {
+            "email": self.customer_email,
+            "name": self.customer_name,
+            "phone": self.customer_phone
+        }

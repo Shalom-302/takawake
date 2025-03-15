@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     
     # Logging
     LOKI_URL: str = "http://loki:3100"
+    ENVIRONMENT: str = "development"
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

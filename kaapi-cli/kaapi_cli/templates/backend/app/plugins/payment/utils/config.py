@@ -9,8 +9,8 @@ import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
 
-from pydantic import BaseSettings, Field
-
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from ..models.provider import PaymentProviderConfig
 
 logger = logging.getLogger("kaapi.payment.config")
@@ -54,9 +54,25 @@ class PaymentSettings(BaseSettings):
     # Extra settings from config file
     _extra_config: Dict[str, Any] = {}
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Additional environment variables that were previously accepted automatically by Pydantic v1
+    # but need to be explicitly defined in v2
+    db_url: Optional[str] = None
+    secret_key: Optional[str] = None
+    access_token_expire_minutes: Optional[str] = None
+    algorithm: Optional[str] = None
+    celery_broker_url: Optional[str] = None
+    celery_result_backend: Optional[str] = None
+    rabbitmq_username: Optional[str] = None
+    rabbitmq_password: Optional[str] = None
+    rabbitmq_host: Optional[str] = None
+    rabbitmq_port: Optional[str] = None
+    loki_url: Optional[str] = None
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "allow"  # Permettre les champs supplémentaires
+    }
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -184,3 +200,52 @@ class PaymentSettings(BaseSettings):
 
 # Create a global instance
 payment_settings = PaymentSettings()
+
+def load_payment_config() -> Dict[str, Any]:
+    """
+    Load payment configuration from environment variables and config file.
+    
+    Returns:
+        Dict containing all payment configuration settings
+    """
+    # Force load config file
+    payment_settings._load_config_file()
+    
+    # Convert to dict for easier access in other modules
+    config_dict = {
+        "base_url": payment_settings.base_url,
+        "is_test_mode": payment_settings.is_test_mode,
+        "mpesa": payment_settings.get_provider_config("mpesa"),
+        "flutterwave": payment_settings.get_provider_config("flutterwave"),
+        "stripe": payment_settings.get_provider_config("stripe"),
+        "paypal": payment_settings.get_provider_config("paypal"),
+        "paystack": payment_settings.get_provider_config("paystack"),
+        "approval": {
+            "default_workflow": payment_settings.default_approval_workflow,
+            "threshold": payment_settings.require_approval_threshold
+        }
+    }
+    
+    logger.info(f"Loaded payment config with {len(config_dict)} providers")
+    return config_dict
+
+def init_payment_settings():
+    """
+    Initialize payment settings and validate configuration.
+    
+    This function should be called during application startup to ensure
+    that all payment providers have valid configurations.
+    """
+    logger.info("Initializing payment settings")
+    
+    # Validate provider configurations
+    providers = ["mpesa", "flutterwave", "stripe", "paypal", "paystack"]
+    enabled_providers = []
+    
+    for provider in providers:
+        if payment_settings.is_provider_enabled(provider):
+            enabled_providers.append(provider)
+    
+    logger.info(f"Enabled payment providers: {', '.join(enabled_providers)}")
+    
+    return payment_settings

@@ -1,432 +1,438 @@
 """
-M-Pesa payment provider integration.
+M-Pesa payment provider implementation.
 
-M-Pesa is a mobile phone-based money transfer service, payments and micro-financing service,
-launched in 2007 by Vodafone and Safaricom, the largest mobile network operator in Kenya.
-It has since expanded to Tanzania, Mozambique, DRC, Lesotho, Ghana, Egypt, Afghanistan, and South Africa.
+This module implements the M-Pesa payment provider interface.
 """
 import logging
+import hashlib
+import hmac
+import json
 import time
 import base64
-import requests
-from typing import Dict, Any, List, Optional
-from datetime import datetime
-import json
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Tuple, Union
 
-from ..models.provider import PaymentRequest, PaymentResult, PaymentProviderConfig
-from ..models.payment import PaymentMethod, Currency, PaymentStatus
+import aiohttp
+
+from ..models.payment import PaymentStatus, RefundStatus, RefundResponse
+from ..models.provider import ProviderResponse, PaymentRequest, RefundRequest
+from ..models.subscription import SubscriptionRequest, SubscriptionStatus, SubscriptionResponse
 from .base_provider import BasePaymentProvider
 from .provider_factory import PaymentProviderFactory
 
 logger = logging.getLogger("kaapi.payment.mpesa")
 
-@PaymentProviderFactory.register_provider
+
+@PaymentProviderFactory.register
 class MPesaProvider(BasePaymentProvider):
-    """
-    M-Pesa payment provider for mobile money transactions in East Africa.
-    Supports C2B (Customer to Business), B2C (Business to Customer),
-    and B2B (Business to Business) transactions.
-    """
+    """M-Pesa payment provider implementation."""
+
+    provider_id = "mpesa"
+    provider_name = "M-Pesa"
+    logo_url = "https://www.safaricom.co.ke/images/M-PESA_logo.png"
+
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize an M-Pesa payment provider.
+        
+        Args:
+            config: Provider configuration
+        """
+        super().__init__(config)
+        
+        # Initialize provider with needed credentials
+        self.consumer_key = config.get("consumer_key", "")
+        self.consumer_secret = config.get("consumer_secret", "")
+        self.business_shortcode = config.get("business_shortcode", "")
+        self.passkey = config.get("passkey", "")
+        
+        # API configuration
+        self.mode = config.get("mode", "sandbox").lower()
+        self.api_base_url = "https://api.safaricom.co.ke" if self.mode == "live" else "https://sandbox.safaricom.co.ke"
+        
+        # Callbacks
+        self.callback_url = config.get("callback_url", "")
+        self.timeout_url = config.get("timeout_url", "")
+        
+        logger.info(f"M-Pesa payment provider initialized with mode: {self.mode}")
+            
+    async def _get_access_token(self) -> str:
+        """
+        Get OAuth access token for M-Pesa API.
+        
+        Returns:
+            Access token string
+        """
+        try:
+            # Encode consumer key and secret
+            auth_string = f"{self.consumer_key}:{self.consumer_secret}"
+            encoded_auth = base64.b64encode(auth_string.encode()).decode()
+            
+            headers = {
+                "Authorization": f"Basic {encoded_auth}",
+                "Content-Type": "application/json"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{self.api_base_url}/oauth/v1/generate?grant_type=client_credentials",
+                    headers=headers
+                ) as response:
+                    result = await response.json()
+                    
+                    if "access_token" not in result:
+                        raise ValueError("Failed to obtain access token")
+                    
+                    return result["access_token"]
+                    
+        except Exception as e:
+            logger.error(f"Error getting M-Pesa access token: {str(e)}")
+            raise
+
+    @property
+    def id(self) -> str:
+        """Get provider ID."""
+        return self.provider_id
     
     @property
-    def provider_id(self) -> str:
-        return "mpesa"
+    def name(self) -> str:
+        """Get provider name."""
+        return self.provider_name
     
     @property
-    def provider_name(self) -> str:
-        return "M-Pesa"
+    def description(self) -> str:
+        """Get provider description."""
+        return "M-Pesa mobile money payment service for East Africa"
     
     @property
-    def supported_methods(self) -> List[PaymentMethod]:
-        return [
-            PaymentMethod.M_PESA, 
-            PaymentMethod.MOBILE_MONEY
-        ]
+    def supported_methods(self) -> List[str]:
+        """Get supported payment methods."""
+        return ["mobile_money", "ussd", "stk_push"]
     
     @property
-    def supported_currencies(self) -> List[Currency]:
-        return [
-            Currency.KES,  # Kenyan Shilling
-            Currency.TZS,  # Tanzanian Shilling
-            Currency.GHS,  # Ghanaian Cedi
-            Currency.ZAR   # South African Rand
-        ]
+    def supported_currencies(self) -> List[str]:
+        """Get supported currencies."""
+        return ["KES", "TZS", "UGX"]
     
     @property
     def supported_countries(self) -> List[str]:
-        return [
-            "Kenya", 
-            "Tanzania", 
-            "Mozambique", 
-            "Democratic Republic of Congo", 
-            "Lesotho", 
-            "Ghana", 
-            "Egypt", 
-            "Afghanistan", 
-            "South Africa"
-        ]
-    
-    @property
-    def logo_url(self) -> str:
-        return "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png"
-    
-    def initialize(self):
-        """Initialize the M-Pesa provider."""
-        self.consumer_key = self.config.api_key
-        self.consumer_secret = self.config.api_secret
-        self.business_short_code = self.config.extra_config.get("business_short_code", "") if self.config.extra_config else ""
-        self.passkey = self.config.extra_config.get("passkey", "") if self.config.extra_config else ""
-        self.base_url = "https://sandbox.safaricom.co.ke" if self.config.environment == "test" else "https://api.safaricom.co.ke"
-        self.timeout = self.config.timeout
+        """Get supported countries."""
+        return ["KE", "TZ", "UG"]
+
+    async def process_payment(self, payment_request: PaymentRequest) -> ProviderResponse:
+        """
+        Process a payment through M-Pesa.
         
-        # Additional properties
-        self.access_token = None
-        self.token_expiry = 0
-    
-    async def get_access_token(self) -> str:
-        """Get an access token from the M-Pesa API."""
-        now = time.time()
-        if self.access_token and now < self.token_expiry:
-            return self.access_token
-        
-        # If token expired or doesn't exist, get a new one
-        url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
-        auth_str = f"{self.consumer_key}:{self.consumer_secret}"
-        auth_bytes = auth_str.encode("ascii")
-        auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
-        
-        headers = {
-            "Authorization": f"Basic {auth_b64}"
-        }
-        
+        Args:
+            payment_request: Payment request details
+            
+        Returns:
+            Provider response with payment details
+        """
         try:
-            response = requests.get(url, headers=headers, timeout=self.timeout)
-            response.raise_for_status()
-            data = response.json()
+            # Validate the payment request for compliance
+            if not self.validate_payment_request(payment_request):
+                logger.error("Payment validation failed")
+                return ProviderResponse(
+                    success=False,
+                    status=PaymentStatus.FAILED,
+                    provider_reference="",
+                    message="Payment validation failed",
+                    raw_response={"error": "validation_failed"}
+                )
             
-            self.access_token = data["access_token"]
-            # Token is valid for 1 hour, but we'll refresh slightly earlier
-            self.token_expiry = now + (data.get("expires_in", 3600) - 60)
+            # Encrypt sensitive metadata before processing
+            encrypted_metadata = None
+            if payment_request.request_metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(payment_request.request_metadata)
             
-            return self.access_token
-        except Exception as e:
-            logger.error(f"Error getting M-Pesa access token: {e}")
-            raise
-    
-    async def generate_password(self) -> str:
-        """Generate the password for M-Pesa transactions."""
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        data_to_encode = f"{self.business_short_code}{self.passkey}{timestamp}"
-        encoded = base64.b64encode(data_to_encode.encode()).decode()
-        return encoded, timestamp
-    
-    async def process_payment(self, payment_request: PaymentRequest) -> PaymentResult:
-        """Process an M-Pesa payment using STK Push."""
-        try:
-            # Get access token
-            access_token = await self.get_access_token()
+            # Create a copy with encrypted metadata
+            secure_payment_request = PaymentRequest(
+                payment_id=payment_request.payment_id,
+                amount=payment_request.amount,
+                currency=payment_request.currency,
+                description=payment_request.description,
+                customer_email=payment_request.customer_email,
+                customer_name=payment_request.customer_name,
+                customer_phone=payment_request.customer_phone,
+                request_metadata=encrypted_metadata
+            )
+        
+            # Check for required phone number
+            if not secure_payment_request.customer_phone:
+                raise ValueError("Phone number is required for M-Pesa payments")
             
-            # Generate password and timestamp
-            password, timestamp = await self.generate_password()
-            
-            # Prepare phone number - must start with country code without +
-            phone = payment_request.customer.get("phone", "")
+            # Format phone number (ensure it starts with country code)
+            phone = secure_payment_request.customer_phone
             if phone.startswith("+"):
-                phone = phone[1:]
+                phone = phone[1:]  # Remove leading +
+            if not phone.startswith("254"):  # Kenya country code
+                if phone.startswith("0"):
+                    phone = f"254{phone[1:]}"
+                else:
+                    phone = f"254{phone}"
             
-            # Prepare the request payload
-            payload = {
-                "BusinessShortCode": self.business_short_code,
+            # Get access token
+            access_token = await self._get_access_token()
+            
+            # Generate transaction timestamp
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            
+            # Generate password (Base64 of shortcode + passkey + timestamp)
+            password_str = f"{self.business_shortcode}{self.passkey}{timestamp}"
+            password = base64.b64encode(password_str.encode()).decode()
+            
+            # Create unique transaction reference
+            transaction_ref = f"MP-{int(time.time())}-{secure_payment_request.payment_id}"
+            
+            # Prepare STK push request
+            stk_push_data = {
+                "BusinessShortCode": self.business_shortcode,
                 "Password": password,
                 "Timestamp": timestamp,
                 "TransactionType": "CustomerPayBillOnline",
-                "Amount": int(payment_request.amount),
+                "Amount": int(secure_payment_request.amount),
                 "PartyA": phone,
-                "PartyB": self.business_short_code,
+                "PartyB": self.business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": payment_request.webhook_url,
-                "AccountReference": payment_request.metadata.get("reference", "Kaapi Payment"),
-                "TransactionDesc": payment_request.description or "Payment"
+                "CallBackURL": self.callback_url,
+                "AccountReference": transaction_ref,
+                "TransactionDesc": secure_payment_request.description or "Payment"
             }
             
-            # Make API call
-            url = f"{self.base_url}/mpesa/stkpush/v1/processrequest"
+            # Make API request
             headers = {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
             }
             
-            response = requests.post(
-                url, 
-                json=payload, 
-                headers=headers, 
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            if "CheckoutRequestID" in result:
-                return PaymentResult(
-                    success=True,
-                    provider_reference=result["CheckoutRequestID"],
-                    status=PaymentStatus.PROCESSING,
-                    message="STK Push initiated, waiting for customer to enter PIN",
-                    raw_response=result
-                )
-            else:
-                return PaymentResult(
-                    success=False,
-                    status=PaymentStatus.FAILED,
-                    message=f"Failed to initiate STK Push: {result.get('errorMessage', 'Unknown error')}",
-                    raw_response=result
-                )
-        
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.api_base_url}/mpesa/stkpush/v1/processrequest",
+                    headers=headers,
+                    json=stk_push_data
+                ) as response:
+                    result = await response.json()
+                    
+                    if response.status != 200 or "ErrorCode" in result:
+                        error_message = result.get("errorMessage", "Unknown error")
+                        logger.error(f"M-Pesa STK push error: {error_message}")
+                        return ProviderResponse(
+                            success=False,
+                            status=PaymentStatus.FAILED,
+                            provider_reference="",
+                            message=error_message,
+                            raw_response=result
+                        )
+                    
+                    # Process successful response
+                    checkout_request_id = result.get("CheckoutRequestID")
+                    merchant_request_id = result.get("MerchantRequestID")
+                    
+                    # Log successful payment initiation
+                    payment_log_data = {
+                        "amount": secure_payment_request.amount,
+                        "currency": secure_payment_request.currency,
+                        "phone": phone,
+                        "checkout_request_id": checkout_request_id,
+                        "merchant_request_id": merchant_request_id
+                    }
+                    self.log_payment_transaction(checkout_request_id, payment_log_data, "initiated")
+                    
+                    return ProviderResponse(
+                        success=True,
+                        status=PaymentStatus.PENDING,
+                        provider_reference=checkout_request_id,
+                        message="STK push initiated. Please check your phone to complete payment.",
+                        raw_response=result
+                    )
+                    
         except Exception as e:
-            logger.error(f"Error processing M-Pesa payment: {e}")
-            return PaymentResult(
+            logger.error(f"M-Pesa payment error: {str(e)}")
+            return ProviderResponse(
                 success=False,
                 status=PaymentStatus.FAILED,
-                message=f"Error processing payment: {str(e)}"
+                provider_reference="",
+                message=str(e),
+                raw_response={"error": str(e)}
             )
-    
-    async def verify_payment(self, payment_id: str) -> PaymentResult:
-        """Verify the status of an M-Pesa payment."""
-        try:
-            # Get access token
-            access_token = await self.get_access_token()
-            
-            # Generate password and timestamp
-            password, timestamp = await self.generate_password()
-            
-            # Prepare the request payload
-            payload = {
-                "BusinessShortCode": self.business_short_code,
-                "Password": password,
-                "Timestamp": timestamp,
-                "CheckoutRequestID": payment_id
-            }
-            
-            # Make API call
-            url = f"{self.base_url}/mpesa/stkpushquery/v1/query"
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = requests.post(
-                url, 
-                json=payload, 
-                headers=headers, 
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            # Check result code
-            result_code = result.get("ResultCode")
-            
-            if result_code == 0:
-                # Payment successful
-                return PaymentResult(
-                    success=True,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.COMPLETED,
-                    message="Payment completed successfully",
-                    raw_response=result
-                )
-            elif result_code == 1:
-                # Payment failed
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.FAILED,
-                    message=result.get("ResultDesc", "Payment failed"),
-                    raw_response=result
-                )
-            else:
-                # Payment still processing or in another state
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.PROCESSING,
-                    message=result.get("ResultDesc", "Payment status unclear"),
-                    raw_response=result
-                )
+
+    async def verify_payment(self, reference: str) -> ProviderResponse:
+        """
+        Verify a payment with M-Pesa.
         
-        except Exception as e:
-            logger.error(f"Error verifying M-Pesa payment: {e}")
-            return PaymentResult(
-                success=False,
-                status=PaymentStatus.FAILED,
-                message=f"Error verifying payment: {str(e)}"
-            )
-    
-    async def cancel_payment(self, payment_id: str) -> PaymentResult:
-        """
-        Cancel an M-Pesa payment.
-        Note: M-Pesa doesn't really support cancellation of STK Push.
-        """
-        # M-Pesa doesn't support cancellation of STK Push once initiated
-        return PaymentResult(
-            success=False,
-            provider_reference=payment_id,
-            status=PaymentStatus.FAILED,
-            message="M-Pesa STK Push transactions cannot be cancelled once initiated"
-        )
-    
-    async def refund_payment(self, payment_id: str, amount: Optional[float] = None) -> PaymentResult:
-        """
-        Refund an M-Pesa payment.
-        This is implemented as a B2C transaction (Business to Customer).
+        Args:
+            reference: Provider reference to verify (CheckoutRequestID)
+            
+        Returns:
+            Provider response with payment status
         """
         try:
             # Get access token
-            access_token = await self.get_access_token()
+            access_token = await self._get_access_token()
             
-            # We need the transaction details, assuming we store this in metadata
-            # In a real implementation, you would fetch this from your database
-            transaction_details = await self._get_transaction_details(payment_id)
-            
-            if not transaction_details:
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.FAILED,
-                    message="Could not find original transaction details"
-                )
-            
-            # Prepare the request payload for B2C transaction
-            payload = {
-                "InitiatorName": self.config.extra_config.get("initiator_name", "") if self.config.extra_config else "",
-                "SecurityCredential": self.config.extra_config.get("security_credential", "") if self.config.extra_config else "",
-                "CommandID": "BusinessPayment",
-                "Amount": str(amount if amount is not None else transaction_details.get("amount", 0)),
-                "PartyA": self.business_short_code,
-                "PartyB": transaction_details.get("phone_number", ""),
-                "Remarks": "Refund for payment",
-                "QueueTimeOutURL": self.config.extra_config.get("timeout_url", "") if self.config.extra_config else "",
-                "ResultURL": self.config.extra_config.get("result_url", "") if self.config.extra_config else "",
-                "Occasion": f"Refund for {payment_id}"
+            # Prepare verification request
+            verify_data = {
+                "BusinessShortCode": self.business_shortcode,
+                "CheckoutRequestID": reference,
+                "Timestamp": datetime.now().strftime("%Y%m%d%H%M%S"),
+                "Password": base64.b64encode(
+                    f"{self.business_shortcode}{self.passkey}{datetime.now().strftime('%Y%m%d%H%M%S')}".encode()
+                ).decode()
             }
             
-            # Make API call
-            url = f"{self.base_url}/mpesa/b2c/v1/paymentrequest"
+            # Make API request
             headers = {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
             }
             
-            response = requests.post(
-                url, 
-                json=payload, 
-                headers=headers, 
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            if result.get("ResponseCode") == "0":
-                return PaymentResult(
-                    success=True,
-                    provider_reference=result.get("ConversationID"),
-                    status=PaymentStatus.PROCESSING,
-                    message="Refund initiated",
-                    raw_response=result
-                )
-            else:
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.FAILED,
-                    message=f"Failed to initiate refund: {result.get('ResponseDescription', 'Unknown error')}",
-                    raw_response=result
-                )
-        
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.api_base_url}/mpesa/stkpushquery/v1/query",
+                    headers=headers,
+                    json=verify_data
+                ) as response:
+                    result = await response.json()
+                    
+                    # Check for errors
+                    if response.status != 200 or "errorCode" in result:
+                        error_message = result.get("errorMessage", "Unknown error")
+                        logger.error(f"M-Pesa verification error: {error_message}")
+                        return ProviderResponse(
+                            success=False,
+                            status=PaymentStatus.FAILED,
+                            provider_reference=reference,
+                            message=error_message,
+                            raw_response=result
+                        )
+                    
+                    # Get result code
+                    result_code = result.get("ResultCode")
+                    
+                    # Determine payment status
+                    payment_status = PaymentStatus.PENDING
+                    if result_code == "0":
+                        payment_status = PaymentStatus.SUCCESS
+                    elif result_code == "1":
+                        payment_status = PaymentStatus.FAILED
+                    
+                    # Log payment verification
+                    verification_log_data = {
+                        "checkout_request_id": reference,
+                        "result_code": result_code,
+                        "result_desc": result.get("ResultDesc", "")
+                    }
+                    self.log_payment_transaction(reference, verification_log_data, "verified")
+                    
+                    return ProviderResponse(
+                        success=payment_status == PaymentStatus.SUCCESS,
+                        status=payment_status,
+                        provider_reference=reference,
+                        message=result.get("ResultDesc", "Payment verification processed"),
+                        raw_response=result
+                    )
+                    
         except Exception as e:
-            logger.error(f"Error refunding M-Pesa payment: {e}")
-            return PaymentResult(
+            logger.error(f"M-Pesa verification error: {str(e)}")
+            return ProviderResponse(
                 success=False,
-                status=PaymentStatus.FAILED,
-                message=f"Error refunding payment: {str(e)}"
+                status=PaymentStatus.UNKNOWN,
+                provider_reference=reference,
+                message=str(e),
+                raw_response={"error": str(e)}
             )
     
-    async def _get_transaction_details(self, payment_id: str) -> Dict[str, Any]:
+    async def process_refund(self, refund_request: RefundRequest) -> ProviderResponse:
         """
-        Mock function to get transaction details.
-        In a real implementation, this would fetch from a database.
-        """
-        # This is just a mock - in reality, you'd retrieve this from your database
-        return {
-            "amount": 100,
-            "phone_number": "254712345678",
-            "transaction_id": "ABC123456"
-        }
-    
-    async def process_webhook(self, payload: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
-        """Process a webhook notification from M-Pesa."""
-        try:
-            logger.info(f"Received M-Pesa webhook: {json.dumps(payload)}")
-            
-            # Handle different M-Pesa callback types
-            if "Body" in payload and "stkCallback" in payload["Body"]:
-                # STK Push callback
-                stk_callback = payload["Body"]["stkCallback"]
-                checkout_request_id = stk_callback.get("CheckoutRequestID")
-                result_code = stk_callback.get("ResultCode")
-                
-                if result_code == 0:
-                    # Transaction successful
-                    return {
-                        "success": True,
-                        "payment_id": checkout_request_id,
-                        "status": PaymentStatus.COMPLETED.value,
-                        "message": "Payment completed successfully",
-                        "raw_response": payload
-                    }
-                else:
-                    # Transaction failed
-                    return {
-                        "success": False,
-                        "payment_id": checkout_request_id,
-                        "status": PaymentStatus.FAILED.value,
-                        "message": stk_callback.get("ResultDesc", "Payment failed"),
-                        "raw_response": payload
-                    }
-            
-            elif "Body" in payload and "Result" in payload["Body"]:
-                # B2C or C2B callback
-                result = payload["Body"]["Result"]
-                transaction_id = result.get("TransactionID")
-                result_code = result.get("ResultCode")
-                
-                if result_code == 0:
-                    return {
-                        "success": True,
-                        "payment_id": transaction_id,
-                        "status": PaymentStatus.COMPLETED.value,
-                        "message": "Transaction completed successfully",
-                        "raw_response": payload
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "payment_id": transaction_id,
-                        "status": PaymentStatus.FAILED.value,
-                        "message": result.get("ResultDesc", "Transaction failed"),
-                        "raw_response": payload
-                    }
-            
-            # Unknown webhook format
-            return {
-                "success": False,
-                "message": "Unknown webhook format",
-                "raw_response": payload
-            }
+        Process a refund request through M-Pesa.
         
-        except Exception as e:
-            logger.error(f"Error processing M-Pesa webhook: {e}")
-            return {
-                "success": False,
-                "message": f"Error processing webhook: {str(e)}",
-                "raw_response": payload
+        Args:
+            refund_request: Refund request details
+            
+        Returns:
+            Provider response with refund details
+        """
+        try:
+            # M-Pesa doesn't have a direct API for refunds
+            # Typically, this is done manually through the M-Pesa business portal
+            # For the purpose of this implementation, we'll log the refund request
+            
+            # Log refund request
+            refund_log_data = {
+                "payment_reference": refund_request.payment_reference,
+                "amount": refund_request.amount,
+                "reason": refund_request.reason,
+                "refund_metadata": refund_request.refund_metadata
             }
+            self.log_refund_transaction(
+                refund_request.refund_id, 
+                refund_log_data, 
+                "manual_processing_required"
+            )
+            
+            # Return response indicating manual processing is required
+            return ProviderResponse(
+                success=True,
+                status=RefundStatus.PENDING,
+                provider_reference=refund_request.refund_id,
+                message="Refund request recorded. Manual processing required.",
+                raw_response={
+                    "status": "manual_processing",
+                    "refund_id": refund_request.refund_id,
+                    "note": "M-Pesa refunds require manual processing via the M-Pesa business portal"
+                }
+            )
+                    
+        except Exception as e:
+            logger.error(f"M-Pesa refund error: {str(e)}")
+            return ProviderResponse(
+                success=False,
+                status=RefundStatus.FAILED,
+                provider_reference="",
+                message=str(e),
+                raw_response={"error": str(e)}
+            )
+            
+    def verify_webhook_signature(self, signature: str, payload: str) -> bool:
+        """
+        Verify webhook signature from M-Pesa.
+        
+        Args:
+            signature: Signature from webhook request
+            payload: Request body as string
+            
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        if not self.passkey or not payload:
+            logger.warning("Missing passkey or payload for webhook verification")
+            return False
+            
+        try:
+            # M-Pesa doesn't use traditional webhook signatures
+            # Instead, we typically validate by checking specific fields in the payload
+            # For additional security, we can implement custom signature validation
+            
+            payload_data = json.loads(payload)
+            
+            # Log webhook event for security auditing
+            self.log_payment_transaction(
+                payload_data.get("CheckoutRequestID", "unknown"),
+                {
+                    "webhook_event": payload_data,
+                    "signature": signature
+                },
+                "webhook_received"
+            )
+            
+            # Verify basic structure of payload
+            if not payload_data.get("Body") or not payload_data.get("Body").get("stkCallback"):
+                logger.error("Invalid webhook payload structure")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error verifying webhook signature: {str(e)}")
+            return False

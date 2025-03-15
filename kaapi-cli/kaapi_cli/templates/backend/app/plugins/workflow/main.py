@@ -15,6 +15,14 @@ from app.plugins.workflow.routes.transitions import router as transitions_router
 from app.plugins.workflow.routes.instances import router as instances_router
 from app.plugins.workflow.routes.approvals import router as approvals_router
 
+# Export workflow engine and classes
+from .engine import (
+    workflow_engine,
+    WorkflowDefinition,
+    WorkflowStep,
+    WorkflowContext,
+    WorkflowEngine
+)
 
 # Create main plugin router
 router = APIRouter(prefix="/workflow", tags=["workflow"])
@@ -42,4 +50,14 @@ async def plugin_info():
             "State transitions with triggers",
             "Workflow history tracking"
         ]
+    }
+
+
+def init_app(app):
+    """Initialize the workflow plugin."""
+    app.include_router(router)
+    return {
+        "name": "workflow",
+        "description": "Workflow & Approval System",
+        "version": "1.0.0"
     }

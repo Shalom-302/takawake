@@ -102,7 +102,7 @@ async def create_payment_service(
         status=PaymentStatus.DRAFT.value,
         payment_method=payment.payment_method.value,
         provider=payment.provider,
-        metadata=payment.metadata,
+        payment_metadata=payment.payment_metadata,
         created_by_id=current_user.id,
         customer_id=payment.customer_id or current_user.id
     )
@@ -171,8 +171,8 @@ async def update_payment_service(
     if payment.description is not None:
         db_payment.description = payment.description
     
-    if payment.metadata is not None:
-        db_payment.metadata = payment.metadata
+    if payment.payment_metadata is not None:
+        db_payment.payment_metadata = payment.payment_metadata
     
     if payment.provider is not None:
         db_payment.provider = payment.provider
@@ -251,7 +251,7 @@ async def process_payment_service(
             "payment_id": db_payment.id,
             "reference": db_payment.reference,
             "description": db_payment.description,
-            **(db_payment.metadata if db_payment.metadata else {})
+            **(db_payment.payment_metadata if db_payment.payment_metadata else {})
         },
         description=db_payment.description or f"Payment {db_payment.reference}",
         return_url=payment_settings.get_return_url(db_payment.id),

@@ -101,7 +101,7 @@ payment_approver = Table(
     "payment_approver",
     Base.metadata,
     Column("payment_id", Integer, ForeignKey("payments.id")),
-    Column("user_id", Integer, ForeignKey("users.id")),
+    Column("user_id", Integer, ForeignKey("user.id")),
 )
 
 # Database models
@@ -118,16 +118,23 @@ class PaymentDB(Base):
     payment_method = Column(String, nullable=False)
     provider = Column(String, nullable=True)
     provider_reference = Column(String, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    payment_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by_id = Column(Integer, ForeignKey("users.id"))
-    customer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("user.id"))
+    customer_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    subscription_id = Column(Integer, ForeignKey("payment_subscriptions.id"), nullable=True)
     
     # Relationships
-    created_by = relationship("User", foreign_keys=[created_by_id], backref="created_payments")
-    customer = relationship("User", foreign_keys=[customer_id], backref="customer_payments")
-    approvers = relationship("User", secondary=payment_approver, backref="payment_approvals")
+    created_by = relationship("User", foreign_keys=[created_by_id], backref="created_payments", primaryjoin="PaymentDB.created_by_id == User.id")
+    customer = relationship("User", foreign_keys=[customer_id], backref="customer_payments", primaryjoin="PaymentDB.customer_id == User.id")
+    approvers = relationship(
+        "User", 
+        secondary=payment_approver, 
+        backref="payment_approvals",
+        primaryjoin="PaymentDB.id == payment_approver.c.payment_id",
+        secondaryjoin="payment_approver.c.user_id == User.id"
+    )
     approval_steps = relationship("PaymentApprovalStepDB", back_populates="payment", cascade="all, delete-orphan")
     transactions = relationship("PaymentTransactionDB", back_populates="payment", cascade="all, delete-orphan")
     refunds = relationship("PaymentRefundDB", back_populates="payment", cascade="all, delete-orphan")
@@ -142,7 +149,7 @@ class PaymentApprovalStepDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     payment_id = Column(Integer, ForeignKey("payments.id"))
-    approver_id = Column(Integer, ForeignKey("users.id"))
+    approver_id = Column(Integer, ForeignKey("user.id"))
     status = Column(String, nullable=False, default=ApprovalStatus.PENDING.value)
     comments = Column(String, nullable=True)
     step_order = Column(Integer, nullable=False)
@@ -151,7 +158,7 @@ class PaymentApprovalStepDB(Base):
     
     # Relationships
     payment = relationship("PaymentDB", back_populates="approval_steps")
-    approver = relationship("User")
+    approver = relationship("User", foreign_keys=[approver_id], primaryjoin="PaymentApprovalStepDB.approver_id == User.id")
 
 class PaymentTransactionDB(Base):
     """Database model for a payment transaction."""
@@ -164,8 +171,8 @@ class PaymentTransactionDB(Base):
     status = Column(String, nullable=False)
     provider = Column(String, nullable=False)
     provider_reference = Column(String, nullable=True)
-    transaction_type = Column(String, nullable=False)  # e.g., payment, refund, capture, etc.
-    metadata = Column(JSON, nullable=True)
+    transaction_type = Column(String, nullable=False)
+    transaction_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -184,18 +191,14 @@ class PaymentRefundDB(Base):
     status = Column(String, default=RefundStatus.PENDING.value, nullable=False)
     provider = Column(String, nullable=True)
     provider_reference = Column(String, nullable=True)
-    metadata = Column(JSON, nullable=True)
-    
-    # Relations
-    refunded_by_id = Column(Integer, ForeignKey("users.id"))
-    
-    # Timestamps
+    refund_metadata = Column(JSON, nullable=True)
+    refunded_by_id = Column(Integer, ForeignKey("user.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     payment = relationship("PaymentDB", back_populates="refunds")
-    transaction = relationship("PaymentTransactionDB", uselist=False, foreign_keys=[id])
+    refunded_by = relationship("User", foreign_keys=[refunded_by_id], primaryjoin="PaymentRefundDB.refunded_by_id == User.id")
 
 # Pydantic models
 class PaymentBase(BaseModel):
@@ -204,7 +207,7 @@ class PaymentBase(BaseModel):
     currency: Currency = Field(..., description="Payment currency")
     payment_method: PaymentMethod = Field(..., description="Payment method")
     description: Optional[str] = Field(None, description="Payment description")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    payment_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     customer_id: Optional[int] = Field(None, description="Customer ID if different from creator")
 
 class PaymentCreate(PaymentBase):
@@ -220,7 +223,7 @@ class PaymentUpdate(BaseModel):
     currency: Optional[Currency] = Field(None, description="Payment currency")
     payment_method: Optional[PaymentMethod] = Field(None, description="Payment method")
     description: Optional[str] = Field(None, description="Payment description")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    payment_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     provider: Optional[str] = Field(None, description="Payment provider")
 
 class PaymentApproval(BaseModel):
@@ -231,7 +234,7 @@ class RefundCreate(BaseModel):
     """Schema for creating a refund."""
     amount: float = Field(..., gt=0, description="Refund amount")
     reason: Optional[str] = Field(None, description="Refund reason")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    refund_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 class RefundResponse(BaseModel):
     """Schema for refund response."""
@@ -244,13 +247,13 @@ class RefundResponse(BaseModel):
     status: str
     provider: Optional[str] = None
     provider_reference: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    refund_metadata: Optional[Dict[str, Any]] = None
     refunded_by_id: int
     created_at: datetime
     updated_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ApprovalStepResponse(BaseModel):
     """Schema for payment approval step response."""
@@ -264,7 +267,7 @@ class ApprovalStepResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TransactionResponse(BaseModel):
     """Schema for payment transaction response."""
@@ -275,11 +278,11 @@ class TransactionResponse(BaseModel):
     provider: str
     provider_reference: Optional[str]
     transaction_type: str
-    metadata: Optional[Dict[str, Any]]
+    transaction_metadata: Optional[Dict[str, Any]]
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class PaymentResponse(BaseModel):
     """Schema for payment response."""
@@ -292,7 +295,7 @@ class PaymentResponse(BaseModel):
     payment_method: PaymentMethod
     provider: Optional[str]
     provider_reference: Optional[str]
-    metadata: Optional[Dict[str, Any]]
+    payment_metadata: Optional[Dict[str, Any]]
     created_at: datetime
     updated_at: datetime
     created_by_id: int
@@ -311,4 +314,4 @@ class PaymentResponse(BaseModel):
         return v
 
     class Config:
-        orm_mode = True
+        from_attributes = True

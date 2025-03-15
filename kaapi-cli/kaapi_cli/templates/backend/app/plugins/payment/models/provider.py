@@ -20,7 +20,7 @@ class ProviderResponse(BaseModel):
     countries: List[str] = Field(..., description="Countries where this provider is available")
     is_enabled: bool = Field(..., description="Whether this provider is enabled")
     is_test_mode: bool = Field(..., description="Whether this provider is in test mode")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    provider_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 class PaymentProviderConfig(BaseModel):
     """Configuration for a payment provider."""
@@ -38,7 +38,7 @@ class PaymentRequest(BaseModel):
     currency: Currency
     payment_method: PaymentMethod
     customer: Dict[str, Any]
-    metadata: Optional[Dict[str, Any]] = None
+    request_metadata: Optional[Dict[str, Any]] = None
     return_url: Optional[str] = None
     cancel_url: Optional[str] = None
     webhook_url: Optional[str] = None
@@ -50,7 +50,7 @@ class RefundRequest(BaseModel):
     currency: Currency
     payment_reference: str
     reason: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    refund_metadata: Dict[str, Any] = {}
     
     @property
     def is_partial(self) -> bool:
@@ -58,7 +58,7 @@ class RefundRequest(BaseModel):
         # This is a simplistic check that assumes the original payment
         # information would be looked up by the provider. For a real implementation,
         # we might want to include the original payment amount here.
-        return self.metadata.get("is_partial", True)
+        return self.refund_metadata.get("is_partial", True)
 
 class PaymentResult(BaseModel):
     """Result of a payment processing operation."""

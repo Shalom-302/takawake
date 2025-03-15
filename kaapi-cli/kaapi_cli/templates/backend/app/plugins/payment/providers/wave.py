@@ -9,11 +9,12 @@ import aiohttp
 import hmac
 import hashlib
 import base64
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 
-from ..models.provider import PaymentProviderConfig, PaymentRequest, ProviderResponse, RefundRequest, RefundResponse
-from ..models.payment import PaymentStatus, RefundStatus
+from ..models.provider import PaymentProviderConfig, PaymentRequest, ProviderResponse, RefundRequest
+from ..models.payment import PaymentStatus, RefundStatus, RefundResponse
 from ..models.subscription import (
     SubscriptionCreate,
     SubscriptionResponse,
@@ -37,17 +38,49 @@ class WaveProvider(BasePaymentProvider):
     def __init__(self, config: PaymentProviderConfig):
         """Initialize the provider with configuration."""
         super().__init__(config)
-        self.api_base_url = "https://api.wave.com"
-        self.api_key = config.secret_key
-        self.api_client_id = config.public_key
-        self.webhook_secret = config.webhook_secret
-        self.payment_success_url = config.success_url
-        self.payment_cancel_url = config.cancel_url
+        
+        # Set API URLs and configuration
+        self.api_base_url = config.get("api_base_url", "https://api.wave.com")
+        self.payment_success_url = config.get("success_url") 
+        self.payment_cancel_url = config.get("cancel_url")
+        
+        # Securely store credentials
+        self._store_credentials(config)
+        
+        # Store provider metadata
         self.metadata = {
             "website": "https://wave.com/",
             "docs": "https://developer.wave.com/"
         }
+        
+        logger.info(f"Wave payment provider initialized")
     
+    def _store_credentials(self, config: PaymentProviderConfig) -> None:
+        """
+        Securely store provider credentials.
+        
+        Args:
+            config: Provider configuration
+        """
+        credentials = {
+            "api_key": config.get("secret_key"),
+            "api_client_id": config.get("public_key"),
+            "webhook_secret": config.get("webhook_secret")
+        }
+        
+        # Use the security module to store credentials
+        self.security.store_provider_credentials(self.provider_id, credentials)
+    
+    def _get_credentials(self) -> Dict[str, str]:
+        """
+        Retrieve the stored credentials.
+        
+        Returns:
+            Dictionary with credential key-value pairs
+        """
+        credentials = self.security.get_provider_credentials(self.provider_id)
+        return credentials
+        
     @property
     def id(self) -> str:
         """Get provider ID."""
@@ -94,6 +127,16 @@ class WaveProvider(BasePaymentProvider):
             Provider response with payment details
         """
         try:
+            # Validate payment request 
+            if not self.validate_payment_request(payment_request):
+                logger.error("Payment validation failed: Invalid payment data")
+                return ProviderResponse(
+                    provider_id=self.provider_id,
+                    payment_id=payment_request.payment_id,
+                    status=PaymentStatus.FAILED.value,
+                    message="Payment validation failed: Invalid payment data"
+                )
+            
             amount = payment_request.amount
             currency = payment_request.currency.upper()
             description = payment_request.description
@@ -102,16 +145,29 @@ class WaveProvider(BasePaymentProvider):
             
             if not phone_number:
                 logger.error("Phone number is required for Wave payments")
-                raise ValueError("Phone number is required for Wave payments")
+                return ProviderResponse(
+                    provider_id=self.provider_id,
+                    payment_id=payment_request.payment_id,
+                    status=PaymentStatus.FAILED.value,
+                    message="Phone number is required for Wave payments"
+                )
                 
             # Format amount with correct decimals based on currency
             # Wave requires amount in the smallest currency unit (e.g., cents for USD)
             amount_in_cents = int(amount * 100)
             
+            # Get API credentials securely
+            credentials = self._get_credentials()
+            
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {credentials.get('api_key')}",
                 "Content-Type": "application/json"
             }
+            
+            # Encrypt sensitive metadata
+            encrypted_metadata = {}
+            if payment_request.metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(payment_request.metadata)
             
             payload = {
                 "amount": amount_in_cents,
@@ -127,9 +183,26 @@ class WaveProvider(BasePaymentProvider):
                 "metadata": {
                     "payment_id": payment_request.payment_id,
                     "customer_id": payment_request.customer_id,
+                    "encrypted_data": encrypted_metadata,
                     "source": "kaapi"
                 }
             }
+            
+            # Log the payment request attempt
+            payment_log_data = {
+                "payment_id": payment_request.payment_id,
+                "amount": amount,
+                "currency": currency,
+                "customer_email": customer_email,
+                "description": description,
+                "payment_method": "mobile_money"
+            }
+            
+            self.log_payment_transaction(
+                payment_request.payment_id,
+                payment_log_data,
+                "initiated"
+            )
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -139,15 +212,43 @@ class WaveProvider(BasePaymentProvider):
                 ) as response:
                     result = await response.json()
                     
+                    # Update payment log with response
+                    payment_log_data["provider_response"] = result
+                    
                     if response.status != 200 or result.get("status") != "success":
-                        logger.error(f"Wave payment error: {result}")
-                        raise ValueError(f"Failed to process payment: {result.get('message', 'Unknown error')}")
+                        error_message = result.get('message', 'Unknown error')
+                        logger.error(f"Wave payment error: {error_message}")
+                        
+                        # Log failure
+                        self.log_payment_transaction(
+                            payment_request.payment_id,
+                            payment_log_data,
+                            "failed"
+                        )
+                        
+                        return ProviderResponse(
+                            provider_id=self.provider_id,
+                            payment_id=payment_request.payment_id,
+                            status=PaymentStatus.FAILED.value,
+                            message=f"Failed to process payment: {error_message}"
+                        )
                     
                     payment_data = result.get("data", {})
                     
+                    # Log successful payment initiation
+                    payment_log_data["checkout_url"] = payment_data.get("checkout_url")
+                    payment_log_data["provider_payment_id"] = payment_data.get("id")
+                    
+                    self.log_payment_transaction(
+                        payment_request.payment_id,
+                        payment_log_data,
+                        "pending"
+                    )
+                    
                     return ProviderResponse(
                         provider_id=self.provider_id,
-                        payment_id=payment_data.get("id"),
+                        payment_id=payment_request.payment_id,
+                        provider_payment_id=payment_data.get("id"),
                         amount=amount,
                         currency=currency,
                         status=PaymentStatus.PENDING.value,
@@ -161,8 +262,23 @@ class WaveProvider(BasePaymentProvider):
                     )
         
         except Exception as e:
-            logger.error(f"Wave payment error: {str(e)}")
-            raise ValueError(f"Failed to process payment: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Wave payment error: {error_message}")
+            
+            # Log exception
+            if payment_request and hasattr(payment_request, 'payment_id'):
+                self.log_payment_transaction(
+                    payment_request.payment_id,
+                    {"error": error_message},
+                    "error"
+                )
+            
+            return ProviderResponse(
+                provider_id=self.provider_id,
+                payment_id=payment_request.payment_id if payment_request and hasattr(payment_request, 'payment_id') else None,
+                status=PaymentStatus.FAILED.value,
+                message=f"Error processing payment: {error_message}"
+            )
     
     async def verify_payment(self, payment_id: str) -> ProviderResponse:
         """
@@ -175,10 +291,25 @@ class WaveProvider(BasePaymentProvider):
             Provider response with payment details
         """
         try:
+            # Get API credentials securely
+            credentials = self._get_credentials()
+            
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {credentials.get('api_key')}",
                 "Content-Type": "application/json"
             }
+            
+            # Log verification attempt
+            verification_log_data = {
+                "provider_payment_id": payment_id,
+                "verification_time": datetime.now().isoformat()
+            }
+            
+            self.log_payment_transaction(
+                payment_id,
+                verification_log_data,
+                "verification_initiated"
+            )
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -187,30 +318,68 @@ class WaveProvider(BasePaymentProvider):
                 ) as response:
                     result = await response.json()
                     
+                    # Update verification log with response
+                    verification_log_data["provider_response"] = result
+                    
                     if response.status != 200 or result.get("status") != "success":
-                        logger.error(f"Wave payment verification error: {result}")
-                        raise ValueError(f"Failed to verify payment: {result.get('message', 'Unknown error')}")
+                        error_message = result.get('message', 'Unknown error')
+                        logger.error(f"Wave payment verification error: {error_message}")
+                        
+                        # Log verification failure
+                        self.log_payment_transaction(
+                            payment_id,
+                            verification_log_data,
+                            "verification_failed"
+                        )
+                        
+                        return ProviderResponse(
+                            provider_id=self.provider_id,
+                            provider_payment_id=payment_id,
+                            status=PaymentStatus.UNKNOWN.value,
+                            message=f"Failed to verify payment: {error_message}"
+                        )
                     
                     payment_data = result.get("data", {})
+                    
+                    # Extract payment details from metadata
+                    metadata = payment_data.get("metadata", {})
+                    app_payment_id = metadata.get("payment_id")
                     
                     # Map Wave payment status to internal status
                     wave_status = payment_data.get("status", "").lower()
                     if wave_status == "successful" or wave_status == "success":
                         status = PaymentStatus.SUCCESSFUL.value
+                        log_status = "completed"
                     elif wave_status == "pending":
                         status = PaymentStatus.PENDING.value
+                        log_status = "pending"
                     elif wave_status == "failed":
                         status = PaymentStatus.FAILED.value
+                        log_status = "failed"
                     elif wave_status == "cancelled" or wave_status == "canceled":
                         status = PaymentStatus.CANCELED.value
+                        log_status = "canceled"
                     else:
                         status = PaymentStatus.UNKNOWN.value
+                        log_status = "unknown"
                     
                     amount = payment_data.get("amount", 0) / 100  # Convert from cents to base unit
                     
+                    # Log verification result
+                    verification_log_data["status"] = status
+                    verification_log_data["amount"] = amount
+                    verification_log_data["currency"] = payment_data.get("currency")
+                    
+                    self.log_payment_transaction(
+                        app_payment_id or payment_id,
+                        verification_log_data,
+                        log_status
+                    )
+                    
                     return ProviderResponse(
                         provider_id=self.provider_id,
-                        payment_id=payment_id,
+                        payment_id=app_payment_id,
+                        provider_payment_id=payment_id,
                         amount=amount,
                         currency=payment_data.get("currency"),
                         status=status,
@@ -226,8 +395,22 @@ class WaveProvider(BasePaymentProvider):
                     )
         
         except Exception as e:
-            logger.error(f"Wave payment verification error: {str(e)}")
-            raise ValueError(f"Failed to verify payment: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Wave payment verification error: {error_message}")
+            
+            # Log exception during verification
+            self.log_payment_transaction(
+                payment_id,
+                {"error": error_message},
+                "verification_error"
+            )
+            
+            return ProviderResponse(
+                provider_id=self.provider_id,
+                provider_payment_id=payment_id,
+                status=PaymentStatus.UNKNOWN.value,
+                message=f"Error verifying payment: {error_message}"
+            )
     
     async def cancel_payment(self, payment_id: str) -> ProviderResponse:
         """
@@ -241,7 +424,7 @@ class WaveProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -296,8 +479,16 @@ class WaveProvider(BasePaymentProvider):
             # Wave requires amount in the smallest currency unit (e.g., cents for USD)
             amount_in_cents = int(amount * 100)
             
+            # Get API credentials securely
+            credentials = self._get_credentials()
+            
+            # Encrypt sensitive metadata if available
+            encrypted_metadata = {}
+            if hasattr(refund_request, 'metadata') and refund_request.metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(refund_request.metadata)
+            
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {credentials.get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -306,9 +497,24 @@ class WaveProvider(BasePaymentProvider):
                 "reason": reason,
                 "metadata": {
                     "refund_id": refund_request.refund_id,
+                    "encrypted_data": encrypted_metadata,
                     "source": "kaapi"
                 }
             }
+            
+            # Log refund initiation
+            refund_log_data = {
+                "refund_id": refund_request.refund_id,
+                "payment_id": payment_id,
+                "amount": amount,
+                "reason": reason
+            }
+            
+            self.log_refund_transaction(
+                refund_request.refund_id,
+                refund_log_data,
+                "initiated"
+            )
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -318,11 +524,37 @@ class WaveProvider(BasePaymentProvider):
                 ) as response:
                     result = await response.json()
                     
+                    # Update refund log with response
+                    refund_log_data["provider_response"] = result
+                    
                     if response.status != 200 or result.get("status") != "success":
-                        logger.error(f"Wave refund error: {result}")
-                        raise ValueError(f"Failed to process refund: {result.get('message', 'Unknown error')}")
+                        error_message = result.get('message', 'Unknown error')
+                        logger.error(f"Wave refund error: {error_message}")
+                        
+                        # Log failure
+                        self.log_refund_transaction(
+                            refund_request.refund_id,
+                            refund_log_data,
+                            "failed"
+                        )
+                        
+                        return RefundResponse(
+                            provider_id=self.provider_id,
+                            refund_id=refund_request.refund_id,
+                            payment_id=payment_id,
+                            status=RefundStatus.FAILED.value,
+                            message=f"Failed to process refund: {error_message}"
+                        )
                     
                     refund_data = result.get("data", {})
+                    
+                    # Log successful refund initiation
+                    refund_log_data["provider_refund_id"] = refund_data.get("id")
+                    self.log_refund_transaction(
+                        refund_request.refund_id,
+                        refund_log_data,
+                        "pending"
+                    )
                     
                     return RefundResponse(
                         provider_id=self.provider_id,
@@ -339,9 +571,25 @@ class WaveProvider(BasePaymentProvider):
                     )
         
         except Exception as e:
-            logger.error(f"Wave refund error: {str(e)}")
-            raise ValueError(f"Failed to process refund: {str(e)}")
-    
+            error_message = str(e)
+            logger.error(f"Wave refund error: {error_message}")
+            
+            # Log exception
+            if refund_request and hasattr(refund_request, 'refund_id'):
+                self.log_refund_transaction(
+                    refund_request.refund_id,
+                    {"error": error_message, "payment_id": getattr(refund_request, 'payment_id', None)},
+                    "error"
+                )
+            
+            return RefundResponse(
+                provider_id=self.provider_id,
+                refund_id=getattr(refund_request, 'refund_id', None),
+                payment_id=getattr(refund_request, 'payment_id', None),
+                status=RefundStatus.FAILED.value,
+                message=f"Error processing refund: {error_message}"
+            )
+            
     async def verify_refund(self, refund_id: str) -> RefundResponse:
         """
         Verify a refund with Wave.
@@ -353,10 +601,25 @@ class WaveProvider(BasePaymentProvider):
             Refund response with details
         """
         try:
+            # Get API credentials securely
+            credentials = self._get_credentials()
+            
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {credentials.get('api_key')}",
                 "Content-Type": "application/json"
             }
+            
+            # Log verification attempt
+            verification_log_data = {
+                "refund_id": refund_id,
+                "verification_time": datetime.now().isoformat()
+            }
+            
+            self.log_refund_transaction(
+                refund_id,
+                verification_log_data,
+                "verification_initiated"
+            )
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -365,9 +628,26 @@ class WaveProvider(BasePaymentProvider):
                 ) as response:
                     result = await response.json()
                     
+                    # Update verification log with response
+                    verification_log_data["provider_response"] = result
+                    
                     if response.status != 200 or result.get("status") != "success":
-                        logger.error(f"Wave refund verification error: {result}")
-                        raise ValueError(f"Failed to verify refund: {result.get('message', 'Unknown error')}")
+                        error_message = result.get('message', 'Unknown error')
+                        logger.error(f"Wave refund verification error: {error_message}")
+                        
+                        # Log verification failure
+                        self.log_refund_transaction(
+                            refund_id,
+                            verification_log_data,
+                            "verification_failed"
+                        )
+                        
+                        return RefundResponse(
+                            provider_id=self.provider_id,
+                            refund_id=refund_id,
+                            status=RefundStatus.UNKNOWN.value,
+                            message=f"Failed to verify refund: {error_message}"
+                        )
                     
                     refund_data = result.get("data", {})
                     
@@ -375,18 +655,38 @@ class WaveProvider(BasePaymentProvider):
                     wave_status = refund_data.get("status", "").lower()
                     if wave_status == "successful" or wave_status == "success":
                         status = RefundStatus.SUCCESSFUL.value
+                        log_status = "completed"
                     elif wave_status == "pending":
                         status = RefundStatus.PENDING.value
+                        log_status = "pending"
                     elif wave_status == "failed":
                         status = RefundStatus.FAILED.value
+                        log_status = "failed"
                     else:
                         status = RefundStatus.UNKNOWN.value
+                        log_status = "unknown"
                     
                     amount = refund_data.get("amount", 0) / 100  # Convert from cents to base unit
+                    
+                    # Extract app-specific refund ID from metadata if available
+                    metadata = refund_data.get("metadata", {})
+                    app_refund_id = metadata.get("refund_id")
+                    
+                    # Log verification result
+                    verification_log_data["status"] = status
+                    verification_log_data["amount"] = amount
+                    verification_log_data["currency"] = refund_data.get("currency")
+                    
+                    self.log_refund_transaction(
+                        app_refund_id or refund_id,
+                        verification_log_data,
+                        log_status
+                    )
                     
                     return RefundResponse(
                         provider_id=self.provider_id,
                         refund_id=refund_id,
+                        app_refund_id=app_refund_id,
                         payment_id=refund_data.get("payment_id"),
                         amount=amount,
                         currency=refund_data.get("currency"),
@@ -400,8 +700,22 @@ class WaveProvider(BasePaymentProvider):
                     )
         
         except Exception as e:
-            logger.error(f"Wave refund verification error: {str(e)}")
-            raise ValueError(f"Failed to verify refund: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Wave refund verification error: {error_message}")
+            
+            # Log exception during verification
+            self.log_refund_transaction(
+                refund_id,
+                {"error": error_message},
+                "verification_error"
+            )
+            
+            return RefundResponse(
+                provider_id=self.provider_id,
+                refund_id=refund_id,
+                status=RefundStatus.UNKNOWN.value,
+                message=f"Error verifying refund: {error_message}"
+            )
     
     async def handle_webhook(self, payload: Dict[str, Any], signature: str) -> Dict[str, Any]:
         """
@@ -415,11 +729,41 @@ class WaveProvider(BasePaymentProvider):
             Dictionary with processed webhook result
         """
         try:
+            # Log webhook receipt
+            webhook_log_data = {
+                "event_type": payload.get("event", "unknown"),
+                "webhook_time": datetime.now().isoformat(),
+                "payload_size": len(json.dumps(payload)) if payload else 0
+            }
+            
+            webhook_id = str(int(time.time()))  # Use current timestamp as ID
+            
+            self.log_payment_transaction(
+                webhook_id,
+                webhook_log_data,
+                "webhook_received"
+            )
+            
             # Verify the webhook signature
-            is_valid = self._verify_webhook_signature(payload, signature)
+            is_valid = self.verify_webhook_signature(payload, signature)
             if not is_valid:
                 logger.error("Invalid Wave webhook signature")
-                raise ValueError("Invalid webhook signature")
+                
+                # Log invalid signature
+                webhook_log_data["signature_valid"] = False
+                self.log_payment_transaction(
+                    webhook_id,
+                    webhook_log_data,
+                    "webhook_invalid_signature"
+                )
+                
+                return {
+                    "status": "error",
+                    "message": "Invalid webhook signature"
+                }
+            
+            # Log valid signature
+            webhook_log_data["signature_valid"] = True
             
             event_type = payload.get("event", "")
             event_data = payload.get("data", {})
@@ -428,60 +772,142 @@ class WaveProvider(BasePaymentProvider):
             if "payment.success" in event_type:
                 # Payment successful webhook
                 payment_id = event_data.get("id")
+                metadata = event_data.get("metadata", {})
+                app_payment_id = metadata.get("payment_id")
+                
+                # Log webhook processing
+                webhook_log_data["provider_payment_id"] = payment_id
+                webhook_log_data["app_payment_id"] = app_payment_id
+                webhook_log_data["status"] = PaymentStatus.SUCCESSFUL.value
+                
+                self.log_payment_transaction(
+                    app_payment_id or payment_id,
+                    webhook_log_data,
+                    "webhook_processed_payment_success"
+                )
+                
                 return {
                     "event": "payment.success",
-                    "payment_id": payment_id,
+                    "payment_id": app_payment_id,
+                    "provider_payment_id": payment_id,
                     "status": PaymentStatus.SUCCESSFUL.value,
                     "amount": event_data.get("amount", 0) / 100,  # Convert from cents
                     "currency": event_data.get("currency"),
                     "transaction_id": event_data.get("transaction_id"),
-                    "metadata": event_data.get("metadata", {})
+                    "metadata": metadata
                 }
                 
             elif "payment.failed" in event_type:
                 # Payment failed webhook
                 payment_id = event_data.get("id")
+                metadata = event_data.get("metadata", {})
+                app_payment_id = metadata.get("payment_id")
+                
+                # Log webhook processing
+                webhook_log_data["provider_payment_id"] = payment_id
+                webhook_log_data["app_payment_id"] = app_payment_id
+                webhook_log_data["status"] = PaymentStatus.FAILED.value
+                webhook_log_data["failure_reason"] = event_data.get("failure_reason")
+                
+                self.log_payment_transaction(
+                    app_payment_id or payment_id,
+                    webhook_log_data,
+                    "webhook_processed_payment_failed"
+                )
+                
                 return {
                     "event": "payment.failed",
-                    "payment_id": payment_id,
+                    "payment_id": app_payment_id,
+                    "provider_payment_id": payment_id,
                     "status": PaymentStatus.FAILED.value,
                     "reason": event_data.get("failure_reason"),
-                    "metadata": event_data.get("metadata", {})
+                    "metadata": metadata
                 }
                 
             elif "refund.success" in event_type:
                 # Refund successful webhook
                 refund_id = event_data.get("id")
+                metadata = event_data.get("metadata", {})
+                app_refund_id = metadata.get("refund_id")
+                
+                # Log webhook processing
+                webhook_log_data["provider_refund_id"] = refund_id
+                webhook_log_data["app_refund_id"] = app_refund_id
+                webhook_log_data["status"] = RefundStatus.SUCCESSFUL.value
+                
+                self.log_refund_transaction(
+                    app_refund_id or refund_id,
+                    webhook_log_data,
+                    "webhook_processed_refund_success"
+                )
+                
                 return {
                     "event": "refund.success",
-                    "refund_id": refund_id,
+                    "refund_id": app_refund_id,
+                    "provider_refund_id": refund_id,
                     "payment_id": event_data.get("payment_id"),
                     "status": RefundStatus.SUCCESSFUL.value,
                     "amount": event_data.get("amount", 0) / 100,  # Convert from cents
                     "currency": event_data.get("currency"),
-                    "metadata": event_data.get("metadata", {})
+                    "metadata": metadata
                 }
                 
             elif "refund.failed" in event_type:
                 # Refund failed webhook
                 refund_id = event_data.get("id")
+                metadata = event_data.get("metadata", {})
+                app_refund_id = metadata.get("refund_id")
+                
+                # Log webhook processing
+                webhook_log_data["provider_refund_id"] = refund_id
+                webhook_log_data["app_refund_id"] = app_refund_id
+                webhook_log_data["status"] = RefundStatus.FAILED.value
+                webhook_log_data["failure_reason"] = event_data.get("failure_reason")
+                
+                self.log_refund_transaction(
+                    app_refund_id or refund_id,
+                    webhook_log_data,
+                    "webhook_processed_refund_failed"
+                )
+                
                 return {
                     "event": "refund.failed",
-                    "refund_id": refund_id,
+                    "refund_id": app_refund_id,
+                    "provider_refund_id": refund_id,
                     "payment_id": event_data.get("payment_id"),
                     "status": RefundStatus.FAILED.value,
                     "reason": event_data.get("failure_reason"),
-                    "metadata": event_data.get("metadata", {})
+                    "metadata": metadata
                 }
+            
+            # Log unsupported event
+            webhook_log_data["status"] = "ignored"
+            self.log_payment_transaction(
+                webhook_id,
+                webhook_log_data,
+                "webhook_ignored"
+            )
             
             # Return empty dict for unsupported events
             return {"event": event_type, "status": "ignored"}
             
         except Exception as e:
-            logger.error(f"Wave webhook error: {str(e)}")
-            raise ValueError(f"Failed to process webhook: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Wave webhook error: {error_message}")
+            
+            # Log exception
+            self.log_payment_transaction(
+                str(int(time.time())),
+                {"error": error_message, "payload": payload},
+                "webhook_error"
+            )
+            
+            return {
+                "status": "error",
+                "message": f"Failed to process webhook: {error_message}"
+            }
     
-    def _verify_webhook_signature(self, payload: Dict[str, Any], signature: str) -> bool:
+    def verify_webhook_signature(self, payload: Dict[str, Any], signature: str) -> bool:
         """
         Verify the webhook signature from Wave.
         
@@ -493,25 +919,53 @@ class WaveProvider(BasePaymentProvider):
             True if signature is valid, False otherwise
         """
         try:
-            if not self.webhook_secret:
+            credentials = self._get_credentials()
+            webhook_secret = credentials.get("webhook_secret")
+            
+            if not webhook_secret:
                 logger.warning("No webhook secret configured for Wave")
                 return False
                 
             # Create the signature using HMAC-SHA256
             payload_string = json.dumps(payload, separators=(',', ':'))
             computed_signature = hmac.new(
-                self.webhook_secret.encode(),
+                webhook_secret.encode(),
                 payload_string.encode(),
                 hashlib.sha256
             ).hexdigest()
             
-            # Compare signatures
+            # Compare signatures using constant-time comparison to prevent timing attacks
             return hmac.compare_digest(computed_signature, signature)
             
         except Exception as e:
-            logger.error(f"Wave webhook signature verification error: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Wave webhook signature verification error: {error_message}")
             return False
-
+            
+    def log_refund_transaction(self, refund_id: str, data: Dict[str, Any], status: str) -> None:
+        """
+        Log a refund transaction.
+        
+        Args:
+            refund_id: Refund ID
+            data: Transaction data
+            status: Transaction status
+        """
+        try:
+            # Create log entry with standardized fields
+            log_entry = {
+                "provider": self.provider_id,
+                "refund_id": refund_id,
+                "timestamp": datetime.now().isoformat(),
+                "status": status,
+                "data": data
+            }
+            
+            # Use the security module to log the transaction
+            self.security.log_transaction("refund", log_entry)
+        except Exception as e:
+            logger.error(f"Failed to log refund transaction: {str(e)}")
+    
     async def create_subscription(self, subscription_request: SubscriptionCreate) -> SubscriptionResponse:
         """
         Create a subscription through Wave.
@@ -562,7 +1016,7 @@ class WaveProvider(BasePaymentProvider):
             amount_in_cents = int(amount * 100)
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -663,7 +1117,7 @@ class WaveProvider(BasePaymentProvider):
             auto_renew = subscription_update.auto_renew
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -734,7 +1188,7 @@ class WaveProvider(BasePaymentProvider):
             current_subscription = await self.get_subscription(subscription_id)
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -816,7 +1270,7 @@ class WaveProvider(BasePaymentProvider):
             current_subscription = await self.get_subscription(subscription_id)
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -929,7 +1383,7 @@ class WaveProvider(BasePaymentProvider):
             
             # Subscription is still active, re-enable auto-renew
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -937,14 +1391,17 @@ class WaveProvider(BasePaymentProvider):
             auto_renew = metadata.get("auto_renew_before_pause", True)
             
             payload = {
-                "auto_renew": auto_renew,
-                "metadata": {
+                "auto_renew": auto_renew
+            }
+            
+            # If metadata provided, update it
+            if metadata:
+                payload["metadata"] = {
                     **metadata,
                     "is_paused": False,
                     "resumed_at": datetime.now().isoformat(),
                     "auto_renew": auto_renew
                 }
-            }
             
             # Remove the paused-related metadata
             if "paused_at" in payload["metadata"]:
@@ -1001,7 +1458,7 @@ class WaveProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -1124,7 +1581,7 @@ class WaveProvider(BasePaymentProvider):
                 return []
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -1172,7 +1629,7 @@ class WaveProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -1244,7 +1701,7 @@ class WaveProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self._get_credentials().get('api_key')}",
                 "Content-Type": "application/json"
             }
             
@@ -1339,3 +1796,28 @@ class WaveProvider(BasePaymentProvider):
         }
         
         return status_map.get(status.lower() if status else "", SubscriptionStatus.UNKNOWN.value)
+
+    def log_payment_transaction(self, payment_id: str, data: Dict[str, Any], status: str) -> None:
+        """
+        Log a payment transaction.
+        
+        Args:
+            payment_id: Payment ID
+            data: Transaction data
+            status: Transaction status
+        """
+        # Implement logging logic here
+        pass
+
+    def encrypt_sensitive_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Encrypt sensitive data.
+        
+        Args:
+            data: Data to encrypt
+            
+        Returns:
+            Encrypted data
+        """
+        # Implement encryption logic here
+        pass

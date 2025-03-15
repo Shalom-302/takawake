@@ -80,7 +80,7 @@ async def create_subscription_service(
         payment_method_id=subscription.payment_method_id,
         payment_provider=provider_name,
         auto_renew=subscription.auto_renew,
-        metadata=subscription.metadata
+        subscription_metadata=subscription.subscription_metadata
     )
     
     # Calculate next billing date
@@ -105,7 +105,7 @@ async def create_subscription_service(
                 currency=item.currency,
                 quantity=item.quantity,
                 product_id=item.product_id,
-                metadata=item.metadata
+                item_metadata=item.item_metadata
             )
             db.add(db_item)
     
@@ -180,7 +180,7 @@ async def activate_subscription_service(
         trial_start_date=db_subscription.trial_start_date,
         trial_end_date=db_subscription.trial_end_date,
         auto_renew=db_subscription.auto_renew,
-        metadata=db_subscription.metadata
+        subscription_metadata=db_subscription.subscription_metadata
     )
     
     try:
@@ -403,12 +403,12 @@ async def update_subscription_service(
     if update_data.auto_renew is not None:
         db_subscription.auto_renew = update_data.auto_renew
     
-    if update_data.metadata is not None:
+    if update_data.subscription_metadata is not None:
         # Merge metadata rather than replace
-        if db_subscription.metadata:
-            db_subscription.metadata.update(update_data.metadata)
+        if db_subscription.subscription_metadata:
+            db_subscription.subscription_metadata.update(update_data.subscription_metadata)
         else:
-            db_subscription.metadata = update_data.metadata
+            db_subscription.subscription_metadata = update_data.subscription_metadata
     
     # Update with provider if necessary (if subscription is already active with provider)
     provider_updated = False
@@ -516,6 +516,20 @@ async def cancel_subscription_service(
     
     db_subscription.updated_at = datetime.utcnow()
     
+    # Store cancellation details in metadata
+    if not db_subscription.subscription_metadata:
+        db_subscription.subscription_metadata = {}
+    
+    db_subscription.subscription_metadata = {
+        **db_subscription.subscription_metadata,
+        "cancellation": {
+            "reason": cancel_request.reason,
+            "requested_at": datetime.utcnow().isoformat(),
+            "requested_by": current_user.id if current_user else None,
+            "cancel_at_period_end": cancel_request.cancel_at_period_end
+        }
+    }
+    
     # Add history record
     history = SubscriptionHistoryDB(
         subscription_id=db_subscription.id,
@@ -585,6 +599,20 @@ async def pause_subscription_service(
     db_subscription.status = SubscriptionStatus.PAUSED.value
     db_subscription.updated_at = datetime.utcnow()
     
+    # Store pause details in metadata
+    if not db_subscription.subscription_metadata:
+        db_subscription.subscription_metadata = {}
+    
+    db_subscription.subscription_metadata = {
+        **db_subscription.subscription_metadata,
+        "pause": {
+            "reason": pause_request.reason,
+            "paused_at": datetime.utcnow().isoformat(),
+            "paused_by": current_user.id if current_user else None,
+            "resume_at": pause_request.resume_at.isoformat() if pause_request.resume_at else None
+        }
+    }
+    
     # Add history record
     history = SubscriptionHistoryDB(
         subscription_id=db_subscription.id,
@@ -651,6 +679,18 @@ async def resume_subscription_service(
     # Update subscription in database
     db_subscription.status = SubscriptionStatus.ACTIVE.value
     db_subscription.updated_at = datetime.utcnow()
+    
+    # Store resume details in metadata
+    if not db_subscription.subscription_metadata:
+        db_subscription.subscription_metadata = {}
+    
+    db_subscription.subscription_metadata = {
+        **db_subscription.subscription_metadata,
+        "resume": {
+            "resumed_at": datetime.utcnow().isoformat(),
+            "resumed_by": current_user.id if current_user else None
+        }
+    }
     
     # Add history record
     history = SubscriptionHistoryDB(
@@ -765,26 +805,22 @@ async def create_invoice_for_subscription(
         )
     
     # Create payment record
-    payment_create = PaymentCreate(
+    payment_data = PaymentCreate(
         amount=db_subscription.amount,
-        currency=db_subscription.currency,
-        description=f"Subscription payment for {db_subscription.name}",
-        payment_method_id=db_subscription.payment_method_id,
+        currency=Currency(db_subscription.currency),
+        description=f"Invoice for subscription {db_subscription.name} - {datetime.utcnow().strftime('%Y-%m-%d')}",
+        payment_method="subscription",
         provider=db_subscription.payment_provider,
-        require_approval=False,  # Subscription payments don't require approval
-        metadata={
+        customer_id=db_subscription.customer_id,
+        payment_metadata={
             "subscription_id": db_subscription.id,
             "billing_period": db_subscription.billing_period,
-            "is_subscription_payment": True
+            "invoice_date": datetime.utcnow().isoformat()
         }
     )
     
-    # Add customer info to payment
-    if db_subscription.customer_id:
-        payment_create.customer_id = db_subscription.customer_id
-    
     # Create the payment
-    payment = await create_payment_service(db, payment_create, current_user)
+    payment = await create_payment_service(db, payment_data, current_user)
     
     # Update subscription with payment
     db_subscription.updated_at = datetime.utcnow()

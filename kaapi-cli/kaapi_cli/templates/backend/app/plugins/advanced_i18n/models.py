@@ -5,7 +5,7 @@ Database models for the Advanced Internationalization plugin.
 from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, JSON, Text, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.core.db.base_class import Base
+from app.core.db import Base
 
 
 class Language(Base):

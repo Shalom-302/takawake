@@ -11,11 +11,14 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-token
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
     tty: true
     depends_on:
       - db
       - redis
+      - vault
     networks:
       - kaapi-network
 
@@ -51,9 +54,12 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/kaapi
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=development
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-token
     depends_on:
       - db
       - redis
+      - vault
     networks:
       - kaapi-network
 
@@ -68,6 +74,19 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     restart: always
+    networks:
+      - kaapi-network
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: kaapi-vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=dev-token
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
     networks:
       - kaapi-network
 

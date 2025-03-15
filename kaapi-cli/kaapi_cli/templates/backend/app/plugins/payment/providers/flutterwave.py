@@ -1,413 +1,564 @@
 """
-Flutterwave payment provider integration.
+Flutterwave payment provider implementation.
 
-Flutterwave is a payment technology company that provides payment infrastructure
-for global merchants and payment service providers across Africa. It supports
-various payment methods including cards, mobile money, bank transfers, and USSD.
+This module implements the Flutterwave payment provider interface.
 """
 import logging
-import requests
-from typing import Dict, Any, List, Optional
+import hashlib
+import hmac
 import json
-import uuid
+import time
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Tuple, Union
 
-from ..models.provider import PaymentRequest, PaymentResult, PaymentProviderConfig
-from ..models.payment import PaymentMethod, Currency, PaymentStatus
+import aiohttp
+
+from ..models.payment import PaymentStatus, RefundStatus, RefundResponse
+from ..models.provider import ProviderResponse, PaymentRequest, RefundRequest
+from ..models.subscription import SubscriptionRequest, SubscriptionStatus, SubscriptionResponse
 from .base_provider import BasePaymentProvider
 from .provider_factory import PaymentProviderFactory
 
 logger = logging.getLogger("kaapi.payment.flutterwave")
 
-@PaymentProviderFactory.register_provider
+@PaymentProviderFactory.register
 class FlutterwaveProvider(BasePaymentProvider):
-    """
-    Flutterwave payment provider for processing payments across Africa.
-    Supports multiple payment methods including mobile money, cards, bank transfers,
-    and country-specific payment methods.
-    """
+    """Flutterwave payment provider implementation."""
+
+    provider_id = "flutterwave"
+    provider_name = "Flutterwave"
+    logo_url = "https://flutterwave.com/images/logo-colored.svg"
+
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize a Flutterwave payment provider.
+        
+        Args:
+            config: Provider configuration
+        """
+        super().__init__(config)
+        
+        # Initialize provider with needed credentials
+        self.secret_key = config.get("secret_key", "")
+        self.public_key = config.get("public_key", "")
+        self.encryption_key = config.get("encryption_key", "")
+        
+        # API configuration
+        self.api_base_url = "https://api.flutterwave.com/v3"
+        self.webhook_secret = config.get("webhook_secret", "")
+        
+        # Callback URLs
+        self.redirect_url = config.get("redirect_url", "")
+        self.webhook_url = config.get("webhook_url", "")
+        
+        logger.info("Flutterwave payment provider initialized")
     
     @property
-    def provider_id(self) -> str:
-        return "flutterwave"
+    def id(self) -> str:
+        """Get provider ID."""
+        return self.provider_id
     
     @property
-    def provider_name(self) -> str:
-        return "Flutterwave"
-    
-    @property
-    def supported_methods(self) -> List[PaymentMethod]:
-        return [
-            PaymentMethod.CREDIT_CARD,
-            PaymentMethod.DEBIT_CARD,
-            PaymentMethod.BANK_TRANSFER,
-            PaymentMethod.MOBILE_MONEY,
-            PaymentMethod.USSD,
-            PaymentMethod.MTN_MOBILE_MONEY,
-            PaymentMethod.AIRTEL_MONEY,
-            PaymentMethod.ORANGE_MONEY,
-            PaymentMethod.CHIPPER_CASH,
-            PaymentMethod.FLW_BANK_TRANSFER,
-            PaymentMethod.M_PESA
-        ]
-    
-    @property
-    def supported_currencies(self) -> List[Currency]:
-        return [
-            Currency.NGN,
-            Currency.KES,
-            Currency.GHS,
-            Currency.USD,
-            Currency.EUR,
-            Currency.ZAR,
-            Currency.XOF,
-            Currency.UGX,
-            Currency.TZS,
-            Currency.RWF
-        ]
-    
-    @property
-    def supported_countries(self) -> List[str]:
-        return [
-            "Nigeria",
-            "Ghana",
-            "Kenya",
-            "Uganda",
-            "Tanzania",
-            "South Africa",
-            "Zambia",
-            "Cameroon",
-            "Côte d'Ivoire",
-            "Senegal",
-            "Rwanda"
-        ]
-    
-    @property
-    def logo_url(self) -> str:
-        return "https://asset.brandfetch.io/idFdo8ulhr/idvkEkW5mD.png"
-    
-    def initialize(self):
-        """Initialize the Flutterwave provider."""
-        self.secret_key = self.config.api_secret
-        self.public_key = self.config.api_key
-        self.merchant_id = self.config.merchant_id
-        self.base_url = "https://api.flutterwave.com/v3"
-        self.timeout = self.config.timeout
-    
-    async def process_payment(self, payment_request: PaymentRequest) -> PaymentResult:
-        """Process a payment with Flutterwave."""
+    def name(self) -> str:
+        """Get provider name."""
+        return self.provider_name
+
+    async def process_payment(self, payment_request: PaymentRequest) -> ProviderResponse:
+        """
+        Process a payment through Flutterwave.
+        
+        Args:
+            payment_request: Payment request details
+            
+        Returns:
+            Provider response with payment details
+        """
         try:
-            # Map payment method to Flutterwave payment type
-            payment_type = self._map_payment_method(payment_request.payment_method)
+            # Validate payment request
+            if not self.validate_payment_request(payment_request):
+                logger.error("Payment validation failed: Invalid payment data")
+                return ProviderResponse(
+                    success=False,
+                    payment_id=payment_request.payment_id,
+                    provider_payment_id=None,
+                    redirect_url=None,
+                    status=PaymentStatus.FAILED.value,
+                    message="Payment failed due to validation errors",
+                    raw_response={"errors": ["Invalid payment data"]}
+                )
             
-            # Generate a unique transaction reference
-            tx_ref = payment_request.metadata.get("reference", str(uuid.uuid4()))
+            # Encrypt sensitive metadata before processing
+            encrypted_metadata = {}
+            if payment_request.metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(payment_request.metadata)
             
-            # Basic payload for all payment types
-            payload = {
+            # Extract customer information
+            customer_name = payment_request.customer_name or "Customer"
+            customer_email = payment_request.customer_email or ""
+            customer_phone = payment_request.customer_phone or ""
+            
+            # Split name into first name and last name (required by Flutterwave)
+            name_parts = customer_name.split(maxsplit=1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else first_name
+            
+            # Generate transaction reference
+            tx_ref = f"FW-{int(time.time())}-{payment_request.payment_id}"
+            
+            # Prepare payment data
+            payment_data = {
                 "tx_ref": tx_ref,
                 "amount": payment_request.amount,
-                "currency": payment_request.currency.value,
-                "redirect_url": payment_request.return_url,
-                "customer": {
-                    "email": payment_request.customer.get("email", ""),
-                    "phone_number": payment_request.customer.get("phone", ""),
-                    "name": payment_request.customer.get("name", "")
+                "currency": payment_request.currency.upper(),
+                "redirect_url": self.redirect_url,
+                "payment_options": "card,banktransfer,ussd,mpesa",  # Enable multiple payment options
+                "meta": {
+                    "payment_id": payment_request.payment_id,
+                    "metadata": encrypted_metadata
                 },
-                "meta": payment_request.metadata or {},
+                "customer": {
+                    "email": customer_email,
+                    "phone_number": customer_phone,
+                    "name": customer_name
+                },
                 "customizations": {
-                    "title": "Kaapi Payment",
+                    "title": "Payment for " + (payment_request.description or "Order"),
                     "description": payment_request.description or "Payment",
-                    "logo": "https://example.com/logo.png"  # Replace with your logo
+                    "logo": ""  # Optional logo URL
                 }
             }
             
-            # Add payment type-specific fields
-            if payment_type:
-                if payment_type in ["mobile_money_ghana", "mobile_money_uganda", "mobile_money_zambia", "mobile_money_rwanda"]:
-                    country_code = self._get_country_code(payment_type)
-                    network = self._get_mobile_network(payment_request.metadata)
+            # Make API request
+            headers = {
+                "Authorization": f"Bearer {self.secret_key}",
+                "Content-Type": "application/json"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.api_base_url}/payments",
+                    headers=headers,
+                    json=payment_data
+                ) as response:
+                    result = await response.json()
                     
-                    payload["payment_type"] = payment_type
-                    payload["mobile_money"] = {
-                        "phone": payment_request.customer.get("phone", ""),
-                        "network": network,
-                        "country": country_code
-                    }
-                
-                elif payment_type == "mpesa":
-                    payload["payment_type"] = payment_type
-                
-                elif payment_type == "ussd":
-                    payload["payment_type"] = payment_type
-                    payload["ussd"] = {
-                        "code": payment_request.metadata.get("ussd_code", "")
-                    }
-                
-                elif payment_type == "bank_transfer":
-                    payload["payment_type"] = payment_type
-                    payload["duration"] = payment_request.metadata.get("duration", 2)  # In days
-                    payload["is_permanent"] = False
-                
-                # For card payments, no specific payment_type is needed
-            
-            # Make the API call
-            url = f"{self.base_url}/payments"
-            headers = {
-                "Authorization": f"Bearer {self.secret_key}",
-                "Content-Type": "application/json"
-            }
-            
-            response = requests.post(
-                url,
-                json=payload,
-                headers=headers,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            # Check if the request was successful
-            if result.get("status") == "success":
-                data = result.get("data", {})
-                return PaymentResult(
-                    success=True,
-                    provider_reference=data.get("id"),
-                    status=PaymentStatus.PENDING_APPROVAL,
-                    message="Payment initiated",
-                    payment_url=data.get("link"),
-                    raw_response=result
-                )
-            else:
-                return PaymentResult(
-                    success=False,
-                    status=PaymentStatus.FAILED,
-                    message=result.get("message", "Payment initialization failed"),
-                    raw_response=result
-                )
+                    if response.status != 200 or result.get("status") != "success":
+                        error_message = result.get("message", "Unknown error")
+                        logger.error(f"Flutterwave payment error: {error_message}")
+                        
+                        # Log failed payment attempt
+                        self.log_payment_transaction(
+                            tx_ref,
+                            {
+                                "payment_id": payment_request.payment_id,
+                                "amount": payment_request.amount,
+                                "currency": payment_request.currency,
+                                "error": error_message,
+                                "provider_response": result
+                            },
+                            "failed"
+                        )
+                        
+                        return ProviderResponse(
+                            success=False,
+                            payment_id=payment_request.payment_id,
+                            provider_payment_id=None,
+                            redirect_url=None,
+                            status=PaymentStatus.FAILED.value,
+                            message=f"Failed to initiate payment: {error_message}",
+                            raw_response=result
+                        )
+                    
+                    # Extract payment URL and data
+                    data = result.get("data", {})
+                    payment_link = data.get("link")
+                    flw_ref = data.get("flw_ref")
+                    transaction_id = data.get("id")
+                    
+                    if not payment_link:
+                        logger.error(f"Flutterwave missing payment link: {result}")
+                        return ProviderResponse(
+                            success=False,
+                            payment_id=payment_request.payment_id,
+                            provider_payment_id=None,
+                            redirect_url=None,
+                            status=PaymentStatus.FAILED.value,
+                            message="Invalid response from Flutterwave: missing payment link",
+                            raw_response=result
+                        )
+                    
+                    # Log payment transaction
+                    self.log_payment_transaction(
+                        transaction_id or tx_ref,
+                        {
+                            "payment_id": payment_request.payment_id,
+                            "tx_ref": tx_ref,
+                            "flw_ref": flw_ref,
+                            "amount": payment_request.amount,
+                            "currency": payment_request.currency,
+                            "provider_response": result
+                        },
+                        "initiated"
+                    )
+                    
+                    return ProviderResponse(
+                        success=True,
+                        payment_id=payment_request.payment_id,
+                        provider_payment_id=str(transaction_id) if transaction_id else flw_ref,
+                        redirect_url=payment_link,
+                        status=PaymentStatus.PENDING.value,
+                        message="Payment initiated successfully. Redirect customer to the payment link.",
+                        raw_response=result
+                    )
         
         except Exception as e:
-            logger.error(f"Error processing Flutterwave payment: {e}")
-            return PaymentResult(
+            logger.error(f"Error processing Flutterwave payment: {str(e)}")
+            return ProviderResponse(
                 success=False,
-                status=PaymentStatus.FAILED,
-                message=f"Error processing payment: {str(e)}"
+                payment_id=payment_request.payment_id,
+                provider_payment_id=None,
+                redirect_url=None,
+                status=PaymentStatus.FAILED.value,
+                message=f"Error processing payment: {str(e)}",
+                raw_response={"error": str(e)}
             )
-    
-    def _map_payment_method(self, payment_method: PaymentMethod) -> Optional[str]:
-        """Map internal payment method to Flutterwave payment type."""
-        mapping = {
-            PaymentMethod.CREDIT_CARD: None,  # For cards, don't specify payment_type
-            PaymentMethod.DEBIT_CARD: None,
-            PaymentMethod.BANK_TRANSFER: "bank_transfer",
-            PaymentMethod.MOBILE_MONEY: None,  # Needs to be specified based on country
-            PaymentMethod.USSD: "ussd",
-            PaymentMethod.MTN_MOBILE_MONEY: "mobile_money_ghana",  # Default to Ghana, can be overridden
-            PaymentMethod.AIRTEL_MONEY: "mobile_money_uganda",  # Default to Uganda, can be overridden
-            PaymentMethod.ORANGE_MONEY: "orange",
-            PaymentMethod.M_PESA: "mpesa"
-        }
-        return mapping.get(payment_method)
-    
-    def _get_country_code(self, payment_type: str) -> str:
-        """Get country code for mobile money payment type."""
-        mapping = {
-            "mobile_money_ghana": "GH",
-            "mobile_money_uganda": "UG",
-            "mobile_money_zambia": "ZM",
-            "mobile_money_rwanda": "RW"
-        }
-        return mapping.get(payment_type, "")
-    
-    def _get_mobile_network(self, metadata: Optional[Dict[str, Any]]) -> str:
-        """Get mobile network from metadata or return default."""
-        if not metadata:
-            return "MTN"  # Default to MTN
-        
-        return metadata.get("network", "MTN")
-    
-    async def verify_payment(self, payment_id: str) -> PaymentResult:
-        """Verify the status of a Flutterwave payment."""
-        try:
-            url = f"{self.base_url}/transactions/{payment_id}/verify"
-            headers = {
-                "Authorization": f"Bearer {self.secret_key}",
-                "Content-Type": "application/json"
-            }
-            
-            response = requests.get(
-                url,
-                headers=headers,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            if result.get("status") == "success":
-                data = result.get("data", {})
-                status = data.get("status", "")
-                
-                # Map Flutterwave status to internal status
-                payment_status = PaymentStatus.PENDING_APPROVAL
-                if status.lower() == "successful":
-                    payment_status = PaymentStatus.COMPLETED
-                elif status.lower() == "failed":
-                    payment_status = PaymentStatus.FAILED
-                elif status.lower() == "cancelled":
-                    payment_status = PaymentStatus.CANCELLED
-                
-                return PaymentResult(
-                    success=payment_status == PaymentStatus.COMPLETED,
-                    provider_reference=payment_id,
-                    status=payment_status,
-                    message=f"Payment {status.lower()}",
-                    raw_response=result
-                )
-            else:
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.FAILED,
-                    message=result.get("message", "Payment verification failed"),
-                    raw_response=result
-                )
-        
-        except Exception as e:
-            logger.error(f"Error verifying Flutterwave payment: {e}")
-            return PaymentResult(
-                success=False,
-                status=PaymentStatus.FAILED,
-                message=f"Error verifying payment: {str(e)}"
-            )
-    
-    async def cancel_payment(self, payment_id: str) -> PaymentResult:
+
+    async def verify_payment(self, provider_payment_id: str) -> ProviderResponse:
         """
-        Cancel a Flutterwave payment.
-        Note: Flutterwave does not have a direct cancellation API for payments.
-        This is more of a placeholder and would just mark the payment as cancelled in your system.
+        Verify a payment status with Flutterwave.
+        
+        Args:
+            provider_payment_id: Flutterwave transaction ID
+            
+        Returns:
+            Provider response with payment status
         """
-        return PaymentResult(
-            success=False,
-            provider_reference=payment_id,
-            status=PaymentStatus.FAILED,
-            message="Flutterwave does not support direct payment cancellation via API"
-        )
-    
-    async def refund_payment(self, payment_id: str, amount: Optional[float] = None) -> PaymentResult:
-        """Refund a Flutterwave payment."""
         try:
-            url = f"{self.base_url}/transactions/{payment_id}/refund"
             headers = {
                 "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
-            payload = {}
-            if amount is not None:
-                payload["amount"] = amount
+            # Check if provider_payment_id is a transaction ID or reference
+            is_transaction_id = provider_payment_id.isdigit()
             
-            response = requests.post(
-                url,
-                json=payload,
-                headers=headers,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
+            # Determine the appropriate endpoint
+            endpoint = f"{self.api_base_url}/transactions/{provider_payment_id}/verify" if is_transaction_id else \
+                       f"{self.api_base_url}/transactions/verify_by_reference?tx_ref={provider_payment_id}"
             
-            if result.get("status") == "success":
-                data = result.get("data", {})
-                return PaymentResult(
-                    success=True,
-                    provider_reference=data.get("id"),
-                    status=PaymentStatus.REFUNDED,
-                    message="Payment refunded successfully",
-                    raw_response=result
-                )
-            else:
-                return PaymentResult(
-                    success=False,
-                    provider_reference=payment_id,
-                    status=PaymentStatus.FAILED,
-                    message=result.get("message", "Refund failed"),
-                    raw_response=result
-                )
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint, headers=headers) as response:
+                    result = await response.json()
+                    
+                    # Log verification attempt
+                    self.log_payment_transaction(
+                        provider_payment_id,
+                        {
+                            "verification_method": "transaction_id" if is_transaction_id else "tx_ref",
+                            "provider_response": result
+                        },
+                        "verified"
+                    )
+                    
+                    if response.status != 200 or result.get("status") != "success":
+                        error_message = result.get("message", "Unknown error")
+                        logger.error(f"Flutterwave verification error: {error_message}")
+                        return ProviderResponse(
+                            success=False,
+                            payment_id=None,  # We don't have this information at verification
+                            provider_payment_id=provider_payment_id,
+                            redirect_url=None,
+                            status=PaymentStatus.UNKNOWN.value,
+                            message=f"Payment verification failed: {error_message}",
+                            raw_response=result
+                        )
+                    
+                    # Extract payment details
+                    data = result.get("data", {})
+                    status = data.get("status", "").lower()
+                    amount = data.get("amount")
+                    currency = data.get("currency")
+                    payment_id = data.get("meta", {}).get("payment_id")
+                    
+                    # Map status to internal status
+                    if status == "successful":
+                        internal_status = PaymentStatus.SUCCESS.value
+                        success = True
+                    elif status == "failed":
+                        internal_status = PaymentStatus.FAILED.value
+                        success = False
+                    elif status in ["pending", "new"]:
+                        internal_status = PaymentStatus.PENDING.value
+                        success = False
+                    else:
+                        internal_status = PaymentStatus.UNKNOWN.value
+                        success = False
+                    
+                    return ProviderResponse(
+                        success=success,
+                        payment_id=payment_id,
+                        provider_payment_id=provider_payment_id,
+                        redirect_url=None,
+                        status=internal_status,
+                        message=f"Payment status: {status}",
+                        raw_response=result
+                    )
         
         except Exception as e:
-            logger.error(f"Error refunding Flutterwave payment: {e}")
-            return PaymentResult(
+            logger.error(f"Error verifying Flutterwave payment: {str(e)}")
+            return ProviderResponse(
                 success=False,
-                status=PaymentStatus.FAILED,
-                message=f"Error refunding payment: {str(e)}"
+                payment_id=None,
+                provider_payment_id=provider_payment_id,
+                redirect_url=None,
+                status=PaymentStatus.UNKNOWN.value,
+                message=f"Error verifying payment: {str(e)}",
+                raw_response={"error": str(e)}
             )
-    
-    async def process_webhook(self, payload: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
-        """Process a webhook notification from Flutterwave."""
+
+    async def process_refund(self, refund_request: RefundRequest) -> ProviderResponse:
+        """
+        Process a refund through Flutterwave.
+        
+        Args:
+            refund_request: Refund request details
+            
+        Returns:
+            Provider response with refund status
+        """
         try:
-            logger.info(f"Received Flutterwave webhook: {json.dumps(payload)}")
+            transaction_id = refund_request.provider_payment_id
+            
+            # Prepare refund data
+            refund_data = {
+                "id": transaction_id,
+                "amount": refund_request.amount
+            }
+            
+            # Encrypt any sensitive metadata
+            if refund_request.metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(refund_request.metadata)
+                # Add to log later since Flutterwave API doesn't accept this field
+            
+            headers = {
+                "Authorization": f"Bearer {self.secret_key}",
+                "Content-Type": "application/json"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.api_base_url}/transactions/{transaction_id}/refund",
+                    headers=headers,
+                    json=refund_data
+                ) as response:
+                    result = await response.json()
+                    
+                    # Log refund attempt
+                    refund_metadata = refund_request.metadata or {}
+                    if hasattr(refund_request, 'refund_id') and refund_request.refund_id:
+                        refund_ref = refund_request.refund_id
+                    else:
+                        refund_ref = f"refund-{transaction_id}-{int(time.time())}"
+                    
+                    self.log_refund_transaction(
+                        refund_ref,
+                        {
+                            "transaction_id": transaction_id,
+                            "amount": refund_request.amount,
+                            "currency": refund_request.currency,
+                            "reason": refund_request.reason if hasattr(refund_request, 'reason') else None,
+                            "metadata": refund_metadata,
+                            "provider_response": result
+                        },
+                        "processed"
+                    )
+                    
+                    if response.status != 200 or result.get("status") != "success":
+                        error_message = result.get("message", "Unknown error")
+                        logger.error(f"Flutterwave refund error: {error_message}")
+                        return ProviderResponse(
+                            success=False,
+                            payment_id=refund_request.payment_id if hasattr(refund_request, 'payment_id') else None,
+                            provider_payment_id=transaction_id,
+                            redirect_url=None,
+                            status=RefundStatus.FAILED.value,
+                            message=f"Refund failed: {error_message}",
+                            raw_response=result
+                        )
+                    
+                    # Extract refund details
+                    data = result.get("data", {})
+                    refund_id = data.get("id")
+                    status = data.get("status", "").lower()
+                    
+                    # Map status to internal status
+                    if status == "completed":
+                        internal_status = RefundStatus.SUCCESS.value
+                        success = True
+                    elif status == "pending":
+                        internal_status = RefundStatus.PENDING.value
+                        success = True
+                    else:
+                        internal_status = RefundStatus.FAILED.value
+                        success = False
+                    
+                    return ProviderResponse(
+                        success=success,
+                        payment_id=refund_request.payment_id if hasattr(refund_request, 'payment_id') else None,
+                        provider_payment_id=refund_id or transaction_id,
+                        redirect_url=None,
+                        status=internal_status,
+                        message=f"Refund status: {status}",
+                        raw_response=result
+                    )
+        
+        except Exception as e:
+            logger.error(f"Error processing Flutterwave refund: {str(e)}")
+            return ProviderResponse(
+                success=False,
+                payment_id=refund_request.payment_id if hasattr(refund_request, 'payment_id') else None,
+                provider_payment_id=refund_request.provider_payment_id,
+                redirect_url=None,
+                status=RefundStatus.FAILED.value,
+                message=f"Error processing refund: {str(e)}",
+                raw_response={"error": str(e)}
+            )
+
+    def verify_webhook_signature(self, payload: Dict[str, Any], signature: str) -> bool:
+        """
+        Verify Flutterwave webhook signature.
+        
+        Args:
+            payload: Raw request body as string or dict
+            signature: Signature from HTTP header
+            
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        try:
+            if not self.webhook_secret:
+                logger.warning("Flutterwave webhook secret not configured")
+                return False
+            
+            # Convert payload to string if it's a dict
+            if isinstance(payload, dict):
+                payload_str = json.dumps(payload)
+            else:
+                payload_str = payload
+            
+            # Calculate HMAC signature
+            computed_signature = hmac.new(
+                self.webhook_secret.encode(),
+                payload_str.encode(),
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Log webhook verification
+            self.log_payment_transaction(
+                str(int(time.time())),  # Use timestamp as ID if we don't have a specific one
+                {
+                    "event_type": "webhook_verification",
+                    "signature_valid": hmac.compare_digest(computed_signature, signature),
+                    "payload_size": len(payload_str)
+                },
+                "webhook_received"
+            )
+            
+            # Compare signatures (constant-time comparison to prevent timing attacks)
+            return hmac.compare_digest(computed_signature, signature)
+            
+        except Exception as e:
+            logger.error(f"Error verifying Flutterwave webhook signature: {str(e)}")
+            return False
+
+    async def handle_webhook(self, payload: Dict[str, Any], headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        """
+        Handle webhook data from Flutterwave.
+        
+        Args:
+            payload: Webhook payload
+            headers: Webhook headers
+            
+        Returns:
+            Processed webhook data or None if verification failed
+        """
+        try:
+            # Get the signature from headers
+            signature = headers.get("verif-hash")
+            
+            if not signature:
+                logger.warning("Missing Flutterwave webhook signature header (verif-hash)")
+                return None
             
             # Verify webhook signature
-            signature = headers.get("verif-hash")
-            if not signature or signature != self.config.webhook_secret:
-                logger.warning("Invalid webhook signature")
-                return {
-                    "success": False,
-                    "message": "Invalid webhook signature"
-                }
+            if not self.verify_webhook_signature(payload, signature):
+                logger.warning("Invalid Flutterwave webhook signature")
+                return None
             
-            # Extract data
-            event = payload.get("event")
+            # Process event based on type
+            event_type = payload.get("event", "")
             data = payload.get("data", {})
-            transaction_id = data.get("id")
-            tx_ref = data.get("tx_ref")
             
-            if event == "charge.completed":
+            # Log webhook processing
+            event_id = data.get("id", f"webhook-{int(time.time())}")
+            tx_ref = data.get("tx_ref", "unknown")
+            
+            self.log_payment_transaction(
+                event_id,
+                {
+                    "event_type": event_type,
+                    "tx_ref": tx_ref,
+                    "processor_response": data.get("processor_response", ""),
+                    "amount": data.get("amount"),
+                    "currency": data.get("currency")
+                },
+                "webhook_processed"
+            )
+            
+            if event_type == "charge.completed":
                 status = data.get("status", "").lower()
                 
                 if status == "successful":
-                    return {
-                        "success": True,
-                        "payment_id": transaction_id,
-                        "reference": tx_ref,
-                        "status": PaymentStatus.COMPLETED.value,
-                        "message": "Payment completed successfully",
-                        "raw_response": payload
-                    }
+                    internal_status = PaymentStatus.SUCCESS.value
                 elif status == "failed":
-                    return {
-                        "success": False,
-                        "payment_id": transaction_id,
-                        "reference": tx_ref,
-                        "status": PaymentStatus.FAILED.value,
-                        "message": "Payment failed",
-                        "raw_response": payload
-                    }
-            
-            elif event == "transfer.completed":
-                # For refunds or B2C transfers
+                    internal_status = PaymentStatus.FAILED.value
+                else:
+                    internal_status = PaymentStatus.PENDING.value
+                
                 return {
-                    "success": True,
-                    "payment_id": transaction_id,
-                    "reference": tx_ref,
-                    "status": PaymentStatus.COMPLETED.value,
-                    "is_transfer": True,
-                    "message": "Transfer completed successfully",
-                    "raw_response": payload
+                    "event_type": event_type,
+                    "provider_payment_id": str(data.get("id", "")),
+                    "tx_ref": tx_ref,
+                    "status": internal_status,
+                    "amount": data.get("amount"),
+                    "currency": data.get("currency"),
+                    "customer": data.get("customer", {}),
+                    "processed": True,
+                    "metadata": data.get("meta", {})
                 }
             
-            # Default response for unhandled events
+            elif event_type == "transfer.completed":
+                # Handle wallet transfer events
+                status = data.get("status", "").lower()
+                
+                return {
+                    "event_type": event_type,
+                    "provider_payment_id": str(data.get("id", "")),
+                    "reference": data.get("reference", ""),
+                    "status": status,
+                    "amount": data.get("amount"),
+                    "currency": data.get("currency"),
+                    "processed": True,
+                    "metadata": data.get("meta", {})
+                }
+            
+            # For other events, just return the event data
             return {
-                "success": True,
-                "payment_id": transaction_id,
-                "reference": tx_ref,
-                "status": PaymentStatus.PENDING_APPROVAL.value,
-                "message": f"Received webhook event: {event}",
-                "raw_response": payload
+                "event_type": event_type,
+                "processed": True,
+                "data": data
             }
-        
+            
         except Exception as e:
-            logger.error(f"Error processing Flutterwave webhook: {e}")
-            return {
-                "success": False,
-                "message": f"Error processing webhook: {str(e)}",
-                "raw_response": payload
-            }
+            logger.error(f"Error handling Flutterwave webhook: {str(e)}")
+            return None

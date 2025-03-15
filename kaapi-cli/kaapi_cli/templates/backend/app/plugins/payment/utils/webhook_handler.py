@@ -13,7 +13,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import Request, HTTPException, status, Depends
 
-from app.db.session import get_db
+from app.core.db import get_db
 from ..models.payment import PaymentDB, PaymentStatus, PaymentTransactionDB
 from ..providers.provider_factory import PaymentProviderFactory
 from .config import payment_settings

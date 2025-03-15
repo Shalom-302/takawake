@@ -1,51 +1,55 @@
 """
 PayStack payment provider implementation.
 
-This module provides integration with the PayStack payment service.
+This module implements the PayStack payment provider interface.
 """
 import logging
-import json
-import aiohttp
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-import hmac
 import hashlib
-import base64
+import hmac
+import json
+import time
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Tuple, Union
 
-from ..models.provider import PaymentProviderConfig, PaymentRequest, ProviderResponse, RefundRequest, RefundResponse
-from ..models.payment import PaymentStatus, RefundStatus
-from ..models.subscription import (
-    SubscriptionCreate, 
-    SubscriptionResponse, 
-    SubscriptionUpdate,
-    SubscriptionCancelRequest, 
-    SubscriptionStatus
-)
+import aiohttp
+
+from ..models.payment import PaymentStatus, RefundStatus, RefundResponse
+from ..models.provider import ProviderResponse, PaymentRequest, RefundRequest
+from ..models.subscription import SubscriptionRequest, SubscriptionStatus, SubscriptionResponse
 from .base_provider import BasePaymentProvider
 from .provider_factory import PaymentProviderFactory
 
 logger = logging.getLogger("kaapi.payment.paystack")
 
+
 @PaymentProviderFactory.register
-class PayStackProvider(BasePaymentProvider):
+class PaystackProvider(BasePaymentProvider):
     """PayStack payment provider implementation."""
-    
+
     provider_id = "paystack"
     provider_name = "PayStack"
     logo_url = "https://website-v3-assets.s3.amazonaws.com/assets/img/hero/Paystack-mark-white-twitter.png"
     
-    def __init__(self, config: PaymentProviderConfig):
-        """Initialize the provider with configuration."""
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize a PayStack payment provider.
+        
+        Args:
+            config: Provider configuration
+        """
         super().__init__(config)
+        
+        # Initialize with needed credentials
+        self.secret_key = config.get("secret_key", "")
+        self.public_key = config.get("public_key", "")
+        
         self.api_base_url = "https://api.paystack.co"
-        self.api_key = config.secret_key
-        self.webhook_secret = config.webhook_secret
-        self.payment_success_url = config.success_url
-        self.payment_cancel_url = config.cancel_url
-        self.metadata = {
-            "website": "https://paystack.com/",
-            "docs": "https://paystack.com/docs/api/"
-        }
+        self.webhook_secret = config.get("webhook_secret", "")
+        
+        # Callbacks
+        self.callback_url = config.get("callback_url", "")
+        
+        logger.info("PayStack payment provider initialized")
     
     @property
     def id(self) -> str:
@@ -93,18 +97,34 @@ class PayStackProvider(BasePaymentProvider):
             Provider response with payment details
         """
         try:
+            # Validate the payment request for PCI compliance
+            if not self.validate_payment_request(payment_request):
+                logger.error("Payment validation failed")
+                return ProviderResponse(
+                    success=False,
+                    status=PaymentStatus.FAILED,
+                    provider_reference="",
+                    message="Payment validation failed",
+                    raw_response={"error": "validation_failed"}
+                )
+                
             # Prepare the payment data for PayStack
             payment_data = {
                 "amount": int(payment_request.amount * 100),  # PayStack amount is in kobo (1/100 of currency)
                 "email": payment_request.customer_email,
                 "currency": payment_request.currency,
-                "callback_url": self.payment_success_url,
+                "callback_url": self.callback_url,
                 "metadata": {
                     "order_id": payment_request.order_id,
                     "customer_id": payment_request.customer_id,
                     "custom_fields": payment_request.metadata if payment_request.metadata else {}
                 }
             }
+            
+            # Encrypt sensitive metadata before processing
+            if payment_request.metadata:
+                encrypted_metadata = self.encrypt_sensitive_data(payment_request.metadata)
+                payment_data["metadata"]["custom_fields"] = encrypted_metadata
             
             # Add reference if provided
             if payment_request.reference:
@@ -116,7 +136,7 @@ class PayStackProvider(BasePaymentProvider):
             
             # Initialize the payment
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -142,6 +162,15 @@ class PayStackProvider(BasePaymentProvider):
                     data = result.get("data", {})
                     authorization_url = data.get("authorization_url")
                     reference = data.get("reference")
+                    
+                    # Log successful payment transaction
+                    payment_log_data = {
+                        "amount": payment_request.amount,
+                        "currency": payment_request.currency,
+                        "customer_id": payment_request.customer_id,
+                        "reference": reference
+                    }
+                    self.log_payment_transaction(reference, payment_log_data, "initialized")
                     
                     return ProviderResponse(
                         success=True,
@@ -174,7 +203,7 @@ class PayStackProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -209,6 +238,15 @@ class PayStackProvider(BasePaymentProvider):
                     # Extract metadata if available
                     metadata = data.get("metadata", {})
                     order_id = metadata.get("order_id") if metadata else None
+                    
+                    # Log successful payment verification
+                    payment_log_data = {
+                        "amount": amount,
+                        "currency": currency,
+                        "customer_id": metadata.get("customer_id"),
+                        "reference": reference
+                    }
+                    self.log_payment_transaction(reference, payment_log_data, "verified")
                     
                     return ProviderResponse(
                         success=payment_status == PaymentStatus.SUCCESS,
@@ -287,7 +325,7 @@ class PayStackProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -322,6 +360,15 @@ class PayStackProvider(BasePaymentProvider):
                     # Map PayStack refund status to our status
                     internal_status = self._map_paystack_refund_status_to_internal(refund_status)
                     
+                    # Log successful refund transaction
+                    refund_log_data = {
+                        "amount": refund_request.amount,
+                        "currency": refund_request.currency,
+                        "customer_id": refund_request.customer_id,
+                        "reference": refund_reference
+                    }
+                    self.log_refund_transaction(refund_reference, refund_log_data, "processed")
+                    
                     return ProviderResponse(
                         success=True,
                         status=internal_status,
@@ -352,7 +399,7 @@ class PayStackProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -379,6 +426,15 @@ class PayStackProvider(BasePaymentProvider):
                     
                     # Map PayStack refund status to our status
                     internal_status = self._map_paystack_refund_status_to_internal(refund_status)
+                    
+                    # Log successful refund verification
+                    refund_log_data = {
+                        "amount": data.get("amount", 0) / 100,
+                        "currency": data.get("currency", "NGN"),
+                        "customer_id": data.get("customer", {}).get("customer_id"),
+                        "reference": reference
+                    }
+                    self.log_refund_transaction(reference, refund_log_data, "verified")
                     
                     return ProviderResponse(
                         success=internal_status != RefundStatus.FAILED,
@@ -553,7 +609,7 @@ class PayStackProvider(BasePaymentProvider):
         
         return status_map.get(status.lower(), RefundStatus.UNKNOWN)
 
-    async def create_subscription(self, subscription: SubscriptionCreate) -> SubscriptionResponse:
+    async def create_subscription(self, subscription: SubscriptionRequest) -> SubscriptionResponse:
         """
         Create a new subscription with PayStack.
         
@@ -583,7 +639,7 @@ class PayStackProvider(BasePaymentProvider):
             
             # Create the subscription
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -654,7 +710,7 @@ class PayStackProvider(BasePaymentProvider):
             logger.error(f"PayStack subscription error: {str(e)}")
             raise ValueError(f"Failed to create subscription: {str(e)}")
     
-    async def update_subscription(self, subscription_id: str, update_data: SubscriptionUpdate) -> SubscriptionResponse:
+    async def update_subscription(self, subscription_id: str, update_data: SubscriptionRequest) -> SubscriptionResponse:
         """
         Update an existing subscription with PayStack.
         
@@ -671,7 +727,7 @@ class PayStackProvider(BasePaymentProvider):
         try:
             # Get current subscription
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -743,7 +799,7 @@ class PayStackProvider(BasePaymentProvider):
             logger.error(f"PayStack subscription update error: {str(e)}")
             raise ValueError(f"Failed to update subscription: {str(e)}")
     
-    async def cancel_subscription(self, subscription_id: str, cancel_request: SubscriptionCancelRequest) -> SubscriptionResponse:
+    async def cancel_subscription(self, subscription_id: str, cancel_request: SubscriptionRequest) -> SubscriptionResponse:
         """
         Cancel a subscription with PayStack.
         
@@ -756,7 +812,7 @@ class PayStackProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -835,7 +891,7 @@ class PayStackProvider(BasePaymentProvider):
             logger.warning("PayStack doesn't support pausing subscriptions, disabling instead")
             
             # Use cancel subscription method as PayStack doesn't have pause
-            cancel_request = SubscriptionCancelRequest(reason="Paused by user")
+            cancel_request = SubscriptionRequest(reason="Paused by user")
             return await self.cancel_subscription(subscription_id, cancel_request)
                 
         except Exception as e:
@@ -912,7 +968,7 @@ class PayStackProvider(BasePaymentProvider):
         """
         try:
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -993,7 +1049,7 @@ class PayStackProvider(BasePaymentProvider):
                 return []
             
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.secret_key}",
                 "Content-Type": "application/json"
             }
             
@@ -1064,7 +1120,7 @@ class PayStackProvider(BasePaymentProvider):
         
         # Create new customer
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json"
         }
         
@@ -1097,7 +1153,7 @@ class PayStackProvider(BasePaymentProvider):
             Customer code or None if not found
         """
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json"
         }
         
@@ -1141,7 +1197,7 @@ class PayStackProvider(BasePaymentProvider):
         
         # Create new plan
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json"
         }
         
@@ -1189,7 +1245,7 @@ class PayStackProvider(BasePaymentProvider):
             Plan code or None if not found
         """
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json"
         }
         

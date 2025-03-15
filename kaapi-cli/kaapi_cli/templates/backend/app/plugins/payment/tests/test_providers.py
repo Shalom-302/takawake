@@ -13,7 +13,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.core.db import get_db
 from app.models.user import User
 from ..models.payment import (
     PaymentDB, 
@@ -26,6 +26,7 @@ from ..models.provider import PaymentRequest, ProviderResponse, PaymentProviderC
 from ..providers.base_provider import BasePaymentProvider
 from ..providers.provider_factory import PaymentProviderFactory
 from ..utils.config import payment_settings
+from app.core.security import get_current_active_user
 
 logger = logging.getLogger("kaapi.payment.test")
 
@@ -35,6 +36,8 @@ class MockPaymentProvider(BasePaymentProvider):
     
     This provider simulates successful and failed payments based on configuration.
     """
+    
+    provider_name = "mock_provider"
     
     def __init__(self, config: PaymentProviderConfig):
         """Initialize the mock provider."""
@@ -305,7 +308,7 @@ class MockPaymentProvider(BasePaymentProvider):
         logger.info(f"Webhook payload: {payload}")
 
 # Register the mock provider
-PaymentProviderFactory.register_provider(MockPaymentProvider)
+PaymentProviderFactory.register(MockPaymentProvider)
 
 async def create_test_payment(
     db: Session,

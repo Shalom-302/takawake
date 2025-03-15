@@ -9,7 +9,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, Depends, Request, Body
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.core.db import get_db
 from ..utils.webhook_handler import handle_webhook
 
 logger = logging.getLogger("kaapi.payment.webhook_routes")

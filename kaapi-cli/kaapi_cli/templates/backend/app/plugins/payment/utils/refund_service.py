@@ -72,7 +72,7 @@ async def create_refund(
         reason=refund_data.reason,
         status=RefundStatus.PENDING.value,
         provider=payment.provider,
-        metadata=refund_data.metadata,
+        refund_metadata=refund_data.refund_metadata,
         refunded_by_id=current_user.id
     )
     
@@ -228,8 +228,8 @@ async def cancel_refund(
     
     # Cancel refund
     refund.status = RefundStatus.FAILED.value
-    refund.metadata = {
-        **(refund.metadata or {}),
+    refund.refund_metadata = {
+        **(refund.refund_metadata or {}),
         "cancelled_by": current_user.id,
         "cancelled_at": datetime.utcnow().isoformat(),
         "cancelled_reason": "Cancelled by user"

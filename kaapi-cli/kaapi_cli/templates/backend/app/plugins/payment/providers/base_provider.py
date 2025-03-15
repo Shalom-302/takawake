@@ -15,6 +15,7 @@ from ..models.provider import (
 )
 from ..models.payment import PaymentStatus, RefundStatus
 from ..models.subscription import SubscriptionCreate, SubscriptionResponse, SubscriptionUpdate, SubscriptionCancelRequest
+from ..security import payment_security
 
 logger = logging.getLogger("kaapi.payment.provider")
 
@@ -24,6 +25,114 @@ class BasePaymentProvider(ABC):
     def __init__(self, config: PaymentProviderConfig):
         """Initialize the provider with configuration."""
         self.config = config
+        self.security = payment_security
+        
+        # Initialize security settings
+        self._init_security()
+    
+    def _init_security(self):
+        """Initialize security settings for the provider."""
+        # Store credentials securely if needed
+        if not hasattr(self.config, 'credentials_stored') or not self.config.credentials_stored:
+            try:
+                provider_id = self.id
+                credentials = {
+                    key: value for key, value in self.config.__dict__.items()
+                    if key.endswith('_key') or key.endswith('_secret') or key.endswith('_token')
+                }
+                
+                if credentials:
+                    self.security.store_provider_credentials(provider_id, credentials)
+                    setattr(self.config, 'credentials_stored', True)
+                    logger.info(f"Stored credentials for provider: {provider_id}")
+            except Exception as e:
+                logger.warning(f"Failed to store credentials: {str(e)}")
+    
+    def encrypt_sensitive_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Encrypt sensitive data before storing or processing.
+        
+        Args:
+            data: Dictionary containing potentially sensitive data
+            
+        Returns:
+            Dictionary with sensitive fields encrypted
+        """
+        return self.security.encrypt_sensitive_data(data)
+    
+    def decrypt_sensitive_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Decrypt sensitive data.
+        
+        Args:
+            data: Dictionary containing encrypted sensitive data
+            
+        Returns:
+            Dictionary with sensitive fields decrypted
+        """
+        return self.security.decrypt_sensitive_data(data)
+    
+    def log_payment_transaction(self, transaction_id: str, payment_data: Dict[str, Any], status: str):
+        """
+        Log a payment transaction securely.
+        
+        Args:
+            transaction_id: Unique transaction identifier
+            payment_data: Payment data to log
+            status: Status of the transaction
+        """
+        try:
+            # Encrypt sensitive data before logging
+            encrypted_data = self.encrypt_sensitive_data(payment_data)
+            
+            self.security.log_payment_transaction(
+                provider_id=self.id,
+                transaction_id=transaction_id,
+                payment_data=encrypted_data,
+                status=status
+            )
+        except Exception as e:
+            logger.error(f"Failed to log payment transaction: {str(e)}")
+    
+    def log_refund_transaction(self, transaction_id: str, refund_data: Dict[str, Any], status: str):
+        """
+        Log a refund transaction securely.
+        
+        Args:
+            transaction_id: Unique transaction identifier
+            refund_data: Refund data to log
+            status: Status of the transaction
+        """
+        try:
+            # Encrypt sensitive data before logging
+            encrypted_data = self.encrypt_sensitive_data(refund_data)
+            
+            self.security.log_refund_transaction(
+                provider_id=self.id,
+                transaction_id=transaction_id,
+                refund_data=encrypted_data,
+                status=status
+            )
+        except Exception as e:
+            logger.error(f"Failed to log refund transaction: {str(e)}")
+    
+    def validate_payment_request(self, payment_request: PaymentRequest) -> bool:
+        """
+        Validate a payment request for PCI compliance and security.
+        
+        Args:
+            payment_request: Payment request to validate
+            
+        Returns:
+            True if valid, False otherwise
+        """
+        try:
+            # Convert to dict if needed
+            payment_data = payment_request.dict() if hasattr(payment_request, 'dict') else payment_request
+            return self.security.validate_payment_data(payment_data)
+        except Exception as e:
+            logger.error(f"Payment validation error: {str(e)}")
+            return False
     
     @property
     @abstractmethod
@@ -201,32 +310,11 @@ class BasePaymentProvider(ABC):
         pass
 
     @abstractmethod
-    async def cancel_subscription(self, subscription_id: str, cancel_request: SubscriptionCancelRequest) -> SubscriptionResponse:
+    async def cancel_subscription(self, request: SubscriptionCancelRequest) -> SubscriptionResponse:
         """Cancel a subscription with the provider."""
         pass
-
+    
     @abstractmethod
-    async def pause_subscription(self, subscription_id: str) -> SubscriptionResponse:
-        """Pause a subscription with the provider."""
+    async def get_subscription(self, subscription_id: str) -> SubscriptionResponse:
+        """Get information about a subscription from the provider."""
         pass
-
-    @abstractmethod
-    async def resume_subscription(self, subscription_id: str) -> SubscriptionResponse:
-        """Resume a paused subscription with the provider."""
-        pass
-
-    @abstractmethod
-    async def get_subscription(self, subscription_id: str) -> Dict[str, Any]:
-        """Get subscription details from the provider."""
-        pass
-
-    @abstractmethod
-    async def list_customer_subscriptions(self, customer_id: str) -> List[Dict[str, Any]]:
-        """List all subscriptions for a customer."""
-        pass
-
-    @property
-    @abstractmethod
-    def supports_subscriptions(self) -> bool:
-        """Whether this provider supports subscriptions."""
-        return False

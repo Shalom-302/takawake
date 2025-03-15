@@ -1,115 +1,185 @@
 """
-Factory for creating payment provider instances.
+Provider factory for payment providers.
 
-This module contains a factory class for creating instances of payment providers.
+This module provides a factory for creating payment provider instances.
 """
-import importlib
 import logging
-import pkgutil
-import inspect
-import sys
-import os
-from typing import Dict, Type, Optional, List
+import importlib
+from typing import Dict, Any, Type, List, Optional
 
-from ..models.provider import PaymentProviderConfig, ProviderResponse
+from ..models.provider import ProviderResponse
 from .base_provider import BasePaymentProvider
+from ..security import payment_security
 
-# Import providers here to register them
-from .hub2 import Hub2Provider
-from .paystack import PaystackProvider
-from .wave import WaveProvider
-from .paydunya import PayDunyaProvider
-from .cinetpay import CinetPayProvider
+# N'importez pas les providers ici, ils seront importés dans la méthode register_all
+# pour éviter les importations circulaires
 
 logger = logging.getLogger("kaapi.payment.factory")
 
+
 class PaymentProviderFactory:
-    """Factory for creating payment provider instances."""
+    """
+    Factory for creating payment provider instances.
+    
+    This factory maintains a registry of payment provider classes and
+    can create instances of them based on provider name.
+    """
     
     _providers: Dict[str, Type[BasePaymentProvider]] = {}
-    _provider_instances: Dict[str, BasePaymentProvider] = {}
     
     @classmethod
-    def register_provider(cls, provider_class: Type[BasePaymentProvider]):
-        """Register a payment provider class."""
-        provider_id = provider_class.provider_id
-        cls._providers[provider_id] = provider_class
-        logger.info(f"Registered payment provider: {provider_id}")
+    def register(cls, provider_class: Type[BasePaymentProvider]) -> Type[BasePaymentProvider]:
+        """
+        Register a payment provider class with the factory.
+        
+        Args:
+            provider_class: Provider class to register
+            
+        Returns:
+            The provider class (for decorator use)
+        """
+        provider_name = provider_class.provider_name
+        cls._providers[provider_name] = provider_class
+        logger.info(f"Registered payment provider: {provider_name}")
         return provider_class
     
     @classmethod
-    def get_provider(cls, provider_id: str, config: Optional[PaymentProviderConfig] = None) -> Optional[BasePaymentProvider]:
-        """Get a provider instance by ID."""
-        if provider_id in cls._provider_instances:
-            return cls._provider_instances[provider_id]
+    def create_provider(cls, provider_name: str, config: Dict[str, Any]) -> Optional[BasePaymentProvider]:
+        """
+        Create a payment provider instance.
         
-        if provider_id not in cls._providers:
-            logger.warning(f"Payment provider not found: {provider_id}")
+        Args:
+            provider_name: Name of the provider to create
+            config: Provider configuration
+            
+        Returns:
+            Provider instance, or None if provider not found
+        """
+        # Apply security best practices to the configuration
+        secure_config = cls._apply_security_to_config(provider_name, config)
+        
+        # Create provider instance
+        provider_class = cls._providers.get(provider_name)
+        if provider_class:
+            try:
+                provider = provider_class(secure_config)
+                logger.info(f"Created payment provider: {provider_name}")
+                return provider
+            except Exception as e:
+                logger.error(f"Failed to create payment provider {provider_name}: {str(e)}")
+                return None
+        else:
+            logger.error(f"Payment provider not found: {provider_name}")
             return None
-        
-        provider_class = cls._providers[provider_id]
-        if config is None:
-            from ..utils.config import payment_settings
-            config = payment_settings.get_provider_config(provider_id)
-            
-        provider = provider_class(config)
-        cls._provider_instances[provider_id] = provider
-        logger.info(f"Initialized payment provider: {provider_id}")
-        return provider
     
     @classmethod
-    def get_all_providers(cls) -> List[ProviderResponse]:
-        """Get information about all registered providers."""
-        results = []
+    def get_available_providers(cls) -> List[str]:
+        """
+        Get a list of available provider names.
         
-        for provider_id, provider_class in cls._providers.items():
-            from ..utils.config import payment_settings
-            config = payment_settings.get_provider_config(provider_id)
-            is_enabled = payment_settings.is_provider_enabled(provider_id)
-            
-            # Create a temporary instance if needed to get properties
-            if provider_id not in cls._provider_instances and is_enabled:
-                provider = provider_class(config)
-            else:
-                provider = cls._provider_instances.get(provider_id)
-            
-            if provider:
-                provider_info = ProviderResponse(
-                    id=provider_id,
-                    name=provider.provider_name,
-                    description=getattr(provider_class, "__doc__", "").strip(),
-                    logo_url=getattr(provider, "logo_url", None),
-                    supported_methods=provider.supported_methods,
-                    supported_currencies=provider.supported_currencies,
-                    countries=provider.supported_countries,
-                    is_enabled=is_enabled,
-                    is_test_mode=config.environment == "test" if config else True,
-                    metadata=getattr(provider, "metadata", None)
-                )
-                results.append(provider_info)
-        
-        return results
+        Returns:
+            List of provider names
+        """
+        return list(cls._providers.keys())
     
     @classmethod
-    def load_providers(cls):
-        """Load all provider modules."""
-        # Import all provider modules to trigger registration
-        try:
-            import app.plugins.payment.providers.stripe
-            import app.plugins.payment.providers.paypal
-            import app.plugins.payment.providers.mpesa
-            import app.plugins.payment.providers.flutterwave
-            import app.plugins.payment.providers.paystack
-            import app.plugins.payment.providers.orange_money
-            import app.plugins.payment.providers.mtn_mobile_money
-            import app.plugins.payment.providers.wave
-            import app.plugins.payment.providers.hub2
-            import app.plugins.payment.providers.paydunya
-            import app.plugins.payment.providers.cinetpay
-            
-            logger.info("All payment providers loaded successfully")
-        except ImportError as e:
-            logger.warning(f"Failed to load payment providers: {e}")
+    def get_provider_names(cls) -> List[str]:
+        """
+        Get a list of all registered provider names.
+        
+        Returns:
+            List of provider names
+        """
+        return list(cls._providers.keys())
 
-# Initialize providers
-PaymentProviderFactory.load_providers()
+    @classmethod
+    def register_all(cls):
+        """
+        Register all available payment providers.
+        
+        Import all provider modules and register their provider classes.
+        """
+        try:
+            # Import provider modules here to avoid circular imports
+            from . import cinetpay
+            from . import paystack
+            from . import flutterwave
+            from . import mpesa
+            from . import hub2
+            from . import paydunya
+            from . import wave
+            
+            for provider_module in [cinetpay, paystack, flutterwave, mpesa, hub2, paydunya, wave]:
+                for attr_name in dir(provider_module):
+                    attr = getattr(provider_module, attr_name)
+                    if isinstance(attr, type) and issubclass(attr, BasePaymentProvider) and attr != BasePaymentProvider:
+                        logger.debug(f"Found provider class: {attr_name}")
+                        cls.register(attr)
+        except ImportError as e:
+            logger.error(f"Error importing payment providers: {str(e)}")
+            # Continue even if some providers cannot be imported
+
+    @classmethod
+    def _apply_security_to_config(cls, provider_name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Apply security measures to provider configuration.
+        
+        This method attempts to retrieve stored credentials from the vault and
+        combines them with the provided configuration.
+        
+        Args:
+            provider_name: Name of the provider
+            config: Original provider configuration
+            
+        Returns:
+            Secure provider configuration
+        """
+        try:
+            # Try to get credentials from vault
+            stored_credentials = payment_security.get_provider_credentials(provider_name)
+            
+            if stored_credentials:
+                # Merge stored credentials with provided config
+                # Config takes precedence over stored credentials
+                secure_config = {**stored_credentials, **config}
+                logger.info(f"Retrieved secure credentials for provider: {provider_name}")
+                return secure_config
+            else:
+                # No stored credentials, use provided config
+                logger.info(f"No stored credentials found for provider: {provider_name}")
+                return config
+                
+        except Exception as e:
+            logger.warning(f"Error retrieving secure credentials for {provider_name}: {str(e)}")
+            return config
+
+    @classmethod
+    def initialize_provider_from_config(cls, provider_name: str, config: Dict[str, Any]) -> Optional[BasePaymentProvider]:
+        """
+        Initialize a payment provider from configuration.
+        
+        This is a convenience method that creates a provider instance and
+        applies any necessary setup.
+        
+        Args:
+            provider_name: Name of the provider to initialize
+            config: Provider configuration
+            
+        Returns:
+            Initialized provider instance, or None if provider not found or initialization failed
+        """
+        try:
+            provider = cls.create_provider(provider_name, config)
+            if provider:
+                logger.info(f"Successfully initialized provider: {provider_name}")
+                return provider
+            else:
+                logger.error(f"Failed to create provider instance: {provider_name}")
+                return None
+        except Exception as e:
+            logger.error(f"Error initializing provider {provider_name}: {str(e)}")
+            return None
+
+
+# Register all providers
+PaymentProviderFactory.register_all()

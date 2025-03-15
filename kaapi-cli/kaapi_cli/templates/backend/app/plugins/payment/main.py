@@ -16,8 +16,7 @@ from typing import Dict, Any, List
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
 
-from app.db.session import init_db
-from app.db.base import Base
+from app.core.db import Base, engine
 from app.core.config import settings
 
 from .models.payment import PaymentDB, PaymentApprovalStepDB, PaymentTransactionDB, PaymentRefundDB
@@ -33,11 +32,7 @@ logger = logging.getLogger("kaapi.payment")
 
 def create_tables():
     """Create all necessary database tables."""
-    # Import base class to ensure all models are registered
-    from app.db.base import Base
-    from .models.payment import PaymentDB, PaymentApprovalStepDB, PaymentTransactionDB, PaymentRefundDB
-    from .models.subscription import SubscriptionDB, SubscriptionItemDB, SubscriptionHistoryDB
-    
+
     # Create tables
     logger.info("Creating payment plugin tables if they don't exist")
     Base.metadata.create_all(bind=engine)
@@ -97,7 +92,7 @@ def init_providers() -> None:
     config = load_payment_config()
     
     # Import all provider modules to ensure they register themselves
-    from .providers import mpesa, flutterwave, stripe, paypal, paystack
+    from .providers import mpesa, flutterwave, stripe, paypal, paystack, cinetpay
     
     # Initialize registered providers with their configurations
     for provider_id, provider_config in config.get("providers", {}).items():
@@ -108,7 +103,7 @@ def init_providers() -> None:
             except Exception as e:
                 logger.error(f"Failed to initialize payment provider {provider_id}: {str(e)}")
     
-    logger.info(f"Initialized {len(PaymentProviderFactory.get_providers())} payment providers")
+    logger.info(f"Initialized {len(PaymentProviderFactory.get_available_providers())} payment providers")
 
 def get_plugin_info() -> Dict[str, Any]:
     """
@@ -177,12 +172,11 @@ from typing import List, Dict, Any, Optional
 import logging
 
 from app.core.db import get_db
-from app.routers.auth import get_current_active_user
+from app.core.security import get_current_active_user
 from app.models.user import User
 from app.plugins.workflow.main import workflow_engine
 
 from .models.payment import (
-    Payment, 
     PaymentCreate, 
     PaymentUpdate, 
     PaymentStatus,

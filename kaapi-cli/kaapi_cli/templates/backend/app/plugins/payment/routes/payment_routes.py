@@ -9,9 +9,9 @@ from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Body
 from sqlalchemy.orm import Session
 
-from app.core.auth import get_current_active_user
+from app.core.security import get_current_active_user
 from app.models.user import User
-from app.db.session import get_db
+from app.core.db import get_db
 from ..models.payment import (
     PaymentCreate, 
     PaymentUpdate,
