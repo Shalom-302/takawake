@@ -1,14 +1,25 @@
 """
-Payment provider factory.
+Factory for creating payment provider instances.
 
-This module provides a factory for creating payment provider instances based on configuration.
+This module contains a factory class for creating instances of payment providers.
 """
 import importlib
 import logging
-from typing import Dict, List, Type, Optional
+import pkgutil
+import inspect
+import sys
+import os
+from typing import Dict, Type, Optional, List
 
 from ..models.provider import PaymentProviderConfig, ProviderResponse
 from .base_provider import BasePaymentProvider
+
+# Import providers here to register them
+from .hub2 import Hub2Provider
+from .paystack import PaystackProvider
+from .wave import WaveProvider
+from .paydunya import PayDunyaProvider
+from .cinetpay import CinetPayProvider
 
 logger = logging.getLogger("kaapi.payment.factory")
 
@@ -84,19 +95,21 @@ class PaymentProviderFactory:
         """Load all provider modules."""
         # Import all provider modules to trigger registration
         try:
-            import app.plugins.payment.providers.stripe_provider
-            import app.plugins.payment.providers.paypal_provider
-            import app.plugins.payment.providers.mpesa_provider
-            import app.plugins.payment.providers.flutterwave_provider
-            import app.plugins.payment.providers.paystack_provider
-            import app.plugins.payment.providers.orange_money_provider
-            import app.plugins.payment.providers.mtn_mobile_money_provider
-            import app.plugins.payment.providers.wave_provider
+            import app.plugins.payment.providers.stripe
+            import app.plugins.payment.providers.paypal
+            import app.plugins.payment.providers.mpesa
+            import app.plugins.payment.providers.flutterwave
+            import app.plugins.payment.providers.paystack
+            import app.plugins.payment.providers.orange_money
+            import app.plugins.payment.providers.mtn_mobile_money
+            import app.plugins.payment.providers.wave
             import app.plugins.payment.providers.hub2
+            import app.plugins.payment.providers.paydunya
+            import app.plugins.payment.providers.cinetpay
             
             logger.info("All payment providers loaded successfully")
         except ImportError as e:
-            logger.error(f"Error loading payment providers: {e}")
+            logger.warning(f"Failed to load payment providers: {e}")
 
 # Initialize providers
 PaymentProviderFactory.load_providers()
