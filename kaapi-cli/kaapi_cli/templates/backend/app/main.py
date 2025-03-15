@@ -1,9 +1,8 @@
 # backend/app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
 import socketio
-from fastapi import Request
 import time
 
 from .core.db import Base, engine, SessionLocal
@@ -43,7 +42,6 @@ from app.plugins.security.security_config import load_security_config
 
 # Ajout pour Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry
-from fastapi import Response
 import psutil
 import logging
 
@@ -62,6 +60,11 @@ DISK_USAGE = Gauge('system_disk_usage', 'Disk usage', registry=REGISTRY)
 security_config = load_security_config()
 
 app = FastAPI(title=settings.PROJECT_NAME)
+
+# Add Root metrics endpoint for Prometheus scraping
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 # Register Socket.IO app
 socket_app = socketio.ASGIApp(

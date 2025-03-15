@@ -357,19 +357,9 @@
       },
       "targets": [
         {
-          "expr": "count_over_time({job=\"kaapi_advanced_logging\"} | json | level=\"error\" [1h])",
-          "legendFormat": "error",
+          "expr": "sum by(level) (count_over_time({plugin=\"advanced_logging\", level=~\"info|error|warning|debug\"} [1h]))",
+          "legendFormat": "{{level}}",
           "refId": "A"
-        },
-        {
-          "expr": "count_over_time({job=\"kaapi_advanced_logging\"} | json | level=\"warning\" [1h])",
-          "legendFormat": "warning",
-          "refId": "B"
-        },
-        {
-          "expr": "count_over_time({job=\"kaapi_advanced_logging\"} | json | level=\"info\" [1h])",
-          "legendFormat": "info",
-          "refId": "C"
         }
       ],
       "title": "Log Levels Distribution",
@@ -430,7 +420,7 @@
       },
       "targets": [
         {
-          "expr": "sum(count_over_time({job=\"kaapi_advanced_logging\"} | json [1m])) by (level)",
+          "expr": "sum by(level) (count_over_time({plugin=\"advanced_logging\", level=~\"info|error|warning|debug\"} [5m]))",
           "legendFormat": "{{level}}",
           "refId": "A"
         }
