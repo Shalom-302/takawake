@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, FastAPI, Response
 from typing import Dict
 import uuid
 import os
+import logging
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from .schemas import LogEntryCreate
 from .loki_client import LokiClient
@@ -21,8 +22,9 @@ LOG_EVENTS_COUNTER = Counter(
     "Count of log events created via advanced_logging plugin"
 )
 
-# Initialize a Loki client with an environment variable or fallback
-LOKI_URL = settings.LOKI_URL
+# Initialize a Loki client with the environment variable from settings
+LOKI_URL = os.environ.get("LOKI_URL", settings.LOKI_URL)
+logging.info(f"Initializing Loki client with URL: {LOKI_URL}")
 loki_client = LokiClient(LOKI_URL)
 
 def get_router() -> APIRouter:
