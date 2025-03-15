@@ -59,7 +59,7 @@ Before running the test data generation script, make sure to install the require
 
 ```bash
 # Navigate to the advanced_logging plugin directory
-cd app/app/plugins/advanced_logging
+cd app/plugins/advanced_logging
 
 # Install the required dependencies
 pip install -r requirements.txt
@@ -78,7 +78,7 @@ The `generate_log_events.py` script creates various sample log entries to popula
 ```bash
 # Run from the plugin directory
 docker exec -it kaapi-api bash
-cd app/app/plugins/advanced_logging
+cd app/plugins/advanced_logging
 python generate_log_events.py --db-url "postgresql://postgres:postgres@localhost:5432/kaapi" --count 500
 ```
 

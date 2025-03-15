@@ -67,7 +67,7 @@ The Advanced Audit plugin is included in the default Kaapi installation. To ensu
 docker exec -it kaapi-api bash
 
 # Navigate to the advanced audit plugin directory
-cd app/app/plugins/advanced_audit
+cd app/plugins/advanced_audit
 
 # Install the required dependencies
 pip install -r requirements.txt
@@ -88,7 +88,7 @@ To test the Advanced Audit dashboard with simulated events, use Docker to run th
 docker exec -it kaapi-api bash
 
 # Navigate to the advanced audit plugin directory
-cd app/app/plugins/advanced_audit
+cd app/plugins/advanced_audit
 
 # Generate audit events
 python generate_audit_events.py
