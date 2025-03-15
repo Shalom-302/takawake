@@ -139,7 +139,7 @@
       },
       "targets": [
         {
-          "expr": "sum(main_http_requests_total) by (status)",
+          "expr": "sum(kaapi_http_requests_total) by (status)",
           "interval": "",
           "legendFormat": "Code {{status}}",
           "refId": "A"
@@ -201,16 +201,10 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "sum(main_http_requests_total{status=~\"5.*\"}) / sum(main_http_requests_total) or vector(0)",
+          "expr": "sum(kaapi_http_requests_total{status=~\"5.*\"}) / sum(kaapi_http_requests_total)",
           "interval": "",
-          "legendFormat": "5xx Errors",
+          "legendFormat": "Error Rate",
           "refId": "A"
-        },
-        {
-          "expr": "sum(main_http_requests_total{status=~\"4.*\"}) / sum(main_http_requests_total) or vector(0)",
-          "interval": "",
-          "legendFormat": "4xx Errors",
-          "refId": "B"
         }
       ],
       "title": "Error Rate",
@@ -288,15 +282,15 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(main_http_requests_total{status=~\"4.*\"}[5m])) by (endpoint)",
+          "expr": "sum(rate(kaapi_http_requests_total[5m])) by (status)",
           "interval": "",
-          "legendFormat": "{{endpoint}} (4xx)",
+          "legendFormat": "{{status}}",
           "refId": "A"
         }
       ],
-      "title": "Client Errors (4xx) by Endpoint",
+      "title": "Status Code Rate",
       "type": "timeseries",
-      "description": "Rate of 4xx errors per endpoint"
+      "description": "Rate of requests per HTTP status code"
     },
     {
       "datasource": "Prometheus",
@@ -369,15 +363,15 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(main_http_requests_total{status=~\"5.*\"}[5m])) by (endpoint)",
+          "expr": "topk(5, sum(kaapi_http_requests_total{status=~\"4.*|5.*\"}) by (endpoint))",
           "interval": "",
-          "legendFormat": "{{endpoint}} (5xx)",
+          "legendFormat": "{{endpoint}}",
           "refId": "A"
         }
       ],
-      "title": "Server Errors (5xx) by Endpoint",
+      "title": "Top 5 Endpoints with Errors",
       "type": "timeseries",
-      "description": "Rate of 5xx errors per endpoint"
+      "description": "Top 5 endpoints with the most errors (4xx and 5xx)"
     },
     {
       "datasource": "Prometheus",
@@ -478,7 +472,7 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "sum(main_http_requests_total) by (status)",
+          "expr": "sum(kaapi_http_requests_total) by (status)",
           "interval": "",
           "legendFormat": "{{status}}",
           "refId": "A"

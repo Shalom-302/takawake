@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
 import socketio
 import time
+import threading
+import logging
 
 from .core.db import Base, engine, SessionLocal
 from app.casbin_setup import get_casbin_enforcer
@@ -41,21 +43,17 @@ from app.plugins.security.main import app as security_app
 from app.plugins.security.security_config import load_security_config
 
 # Ajout pour Prometheus metrics
-from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry
+from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
 import psutil
-import logging
-
-# Créer un registre personnalisé pour éviter les conflits avec le plugin de monitoring
-REGISTRY = CollectorRegistry()
 
 # Définition des métriques simples avec des préfixes uniques pour éviter les conflits
-MAIN_REQUEST_COUNT = Counter('main_http_requests_total', 'Total count of requests', ['method', 'endpoint', 'status'], registry=REGISTRY)
-MAIN_REQUEST_TIME = Summary('main_http_request_processing_seconds', 'Time spent processing request', ['method', 'endpoint', 'status'], registry=REGISTRY)
+MAIN_REQUEST_COUNT = Counter('kaapi_http_requests_total', 'Total count of requests', ['method', 'endpoint', 'status'])
+MAIN_REQUEST_TIME = Summary('kaapi_http_request_processing_seconds', 'Time spent processing request', ['method', 'endpoint', 'status'])
 
 # Définition des métriques système
-CPU_USAGE = Gauge('system_cpu_usage', 'CPU usage', registry=REGISTRY)
-MEMORY_USAGE = Gauge('system_memory_usage', 'Memory usage', registry=REGISTRY)
-DISK_USAGE = Gauge('system_disk_usage', 'Disk usage', registry=REGISTRY)
+CPU_USAGE = Gauge('kaapi_system_cpu_usage_percent', 'CPU usage percentage')
+MEMORY_USAGE = Gauge('kaapi_system_memory_usage_percent', 'Memory usage percentage')
+DISK_USAGE = Gauge('kaapi_system_disk_usage_percent', 'Disk usage percentage')
 
 security_config = load_security_config()
 
@@ -135,6 +133,16 @@ def init_db():
 def on_startup():
     """Initialize database and plugins on application startup."""
     init_db()
+    
+    # Initialize audit metrics with existing data
+    from app.plugins.advanced_audit import initialize_audit_metrics
+    from app.core.db import SessionLocal
+    db = SessionLocal()
+    try:
+        initialize_audit_metrics(db)
+    finally:
+        db.close()
+        
     print("✅ Startup finished")
 
 # Initialize API versioning plugin
@@ -174,9 +182,33 @@ app.include_router(plugin_manager_router)
 
 def update_system_metrics():
     """Update system metrics for monitoring"""
-    CPU_USAGE.set(psutil.cpu_percent())
-    MEMORY_USAGE.set(psutil.virtual_memory().percent)
-    DISK_USAGE.set(psutil.disk_usage('/').percent)
+    try:
+        # CPU usage (en pourcentage)
+        CPU_USAGE.set(psutil.cpu_percent())
+        
+        # Memory usage (en pourcentage)
+        MEMORY_USAGE.set(psutil.virtual_memory().percent)
+        
+        # Disk usage (en pourcentage)
+        DISK_USAGE.set(psutil.disk_usage('/').percent)
+        
+        logging.debug(f"Updated system metrics: CPU={psutil.cpu_percent()}%, Memory={psutil.virtual_memory().percent}%, Disk={psutil.disk_usage('/').percent}%")
+    except Exception as e:
+        logging.error(f"Error updating system metrics: {str(e)}")
+
+# Fonction pour mettre à jour les métriques système en arrière-plan
+def system_metrics_background_task():
+    while True:
+        try:
+            update_system_metrics()
+            time.sleep(5)  # Mise à jour toutes les 5 secondes
+        except Exception as e:
+            logging.error(f"Error in system metrics background task: {str(e)}")
+            time.sleep(10)  # Pause plus longue en cas d'erreur
+
+# Démarrer la tâche d'arrière-plan pour mettre à jour les métriques système
+system_metrics_thread = threading.Thread(target=system_metrics_background_task, daemon=True)
+system_metrics_thread.start()
 
 @app.get("/metrics")
 def read_metrics():
@@ -185,7 +217,7 @@ def read_metrics():
         update_system_metrics()
         
         # Generate Prometheus metrics from our custom registry
-        output = generate_latest(REGISTRY)
+        output = generate_latest()
         
         return Response(content=output, media_type=CONTENT_TYPE_LATEST)
     except Exception as e:

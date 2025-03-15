@@ -96,7 +96,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(main_http_requests_total[1m])) by (endpoint)",
+          "expr": "sum(rate(kaapi_http_requests_total[5m])) by (endpoint)",
           "interval": "",
           "legendFormat": "{{endpoint}}",
           "refId": "A"
@@ -160,7 +160,7 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "sum(main_http_requests_total)",
+          "expr": "sum(kaapi_http_requests_total)",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -224,9 +224,9 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "sum(rate(main_http_request_processing_seconds_sum[5m])) / sum(rate(main_http_request_processing_seconds_count[5m]))",
+          "expr": "avg(kaapi_http_request_processing_seconds_sum / kaapi_http_request_processing_seconds_count) by (endpoint)",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{endpoint}}",
           "refId": "A"
         }
       ],
@@ -309,7 +309,7 @@
       },
       "targets": [
         {
-          "expr": "sum by(endpoint) (rate(main_http_request_processing_seconds_sum[5m])) / sum by(endpoint) (rate(main_http_request_processing_seconds_count[5m]))",
+          "expr": "sum by(endpoint) (rate(kaapi_http_request_processing_seconds_sum[5m])) / sum by(endpoint) (rate(kaapi_http_request_processing_seconds_count[5m]))",
           "interval": "",
           "legendFormat": "{{endpoint}}",
           "refId": "A"
@@ -372,7 +372,7 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "sum(main_http_requests_total) by (endpoint)",
+          "expr": "sum(kaapi_http_requests_total) by (endpoint)",
           "interval": "",
           "legendFormat": "{{endpoint}}",
           "refId": "A"

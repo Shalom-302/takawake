@@ -117,10 +117,11 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         try:
-            # Skip security middleware for metrics endpoint, root endpoint, and advanced logging endpoints
+            # Exemptions pour les endpoints spécifiques
             if (request.url.path == "/metrics" or 
                 request.url.path == "/" or 
-                request.url.path.startswith("/plugins/advanced-logging/")):
+                request.url.path.startswith("/plugins/advanced-logging/") or
+                request.url.path == "/plugins/advanced_audit/metrics"):
                 return await call_next(request)
                 
             # WAF check first

@@ -2,11 +2,11 @@
 # A simple Loki HTTP client
 import requests
 import time
-from typing import Dict
+from typing import Dict, List, Any
 import logging
 import json
 import socket
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 
 class LokiClient:
     def __init__(self, loki_url: str):
@@ -97,3 +97,55 @@ class LokiClient:
         except Exception as general_error:
             logging.error(f"Unexpected error when pushing to Loki: {general_error}")
             return False
+    
+    def query_logs(self, labels: Dict[str, str] = None, limit: int = 1000) -> List[Dict[str, Any]]:
+        """
+        Query logs from Loki using LogQL
+        Returns a list of log entries with level, message, and labels
+        """
+        if labels is None:
+            labels = {}
+        
+        # Build the LogQL query string from the labels
+        query_parts = []
+        for k, v in labels.items():
+            query_parts.append(f'{k}="{v}"')
+        
+        logql_query = "{" + ", ".join(query_parts) + "}"
+        params = {
+            "query": logql_query,
+            "limit": str(limit)
+        }
+        
+        url = f"{self.loki_url}/loki/api/v1/query_range?{urlencode(params)}"
+        logging.info(f"Querying Loki logs: {url}")
+        
+        try:
+            resp = requests.get(url, timeout=10)
+            if resp.status_code != 200:
+                logging.error(f"Error querying Loki: {resp.status_code} - {resp.text}")
+                return []
+            
+            data = resp.json()
+            logging.info(f"Loki query response: {json.dumps(data)}")
+            
+            # Extract the log entries from the Loki response
+            logs = []
+            for stream in data.get("data", {}).get("result", []):
+                stream_labels = stream.get("stream", {})
+                level = stream_labels.get("level", "INFO")
+                
+                for value in stream.get("values", []):
+                    timestamp, message = value
+                    logs.append({
+                        "level": level,
+                        "message": message,
+                        "labels": stream_labels
+                    })
+            
+            logging.info(f"Retrieved {len(logs)} logs from Loki")
+            return logs
+        except Exception as e:
+            logging.error(f"Error querying logs from Loki: {e}")
+            # Return an empty list in case of error
+            return []

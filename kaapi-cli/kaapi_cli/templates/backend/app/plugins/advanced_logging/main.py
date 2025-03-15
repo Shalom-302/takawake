@@ -3,11 +3,12 @@ from typing import Dict
 import uuid
 import os
 import logging
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST, Gauge
 from .schemas import LogEntryCreate
 from .loki_client import LokiClient
 from app.core.db import SessionLocal, get_db
 from app.core.config import settings
+import time
 
 # We define a global plugin "enabled" flag, read from ENV or DB
 ADV_LOGGING_ENABLED = True
@@ -22,10 +23,58 @@ LOG_EVENTS_COUNTER = Counter(
     "Count of log events created via advanced_logging plugin"
 )
 
+# Prometheus gauge for log events by level
+LOG_EVENTS_BY_LEVEL = Gauge(
+    "kaapi_advanced_logging_events_by_level",
+    "Count of log events by level",
+    ["level"]
+)
+
+# Prometheus gauge for timestamp of the last log event
+LAST_LOG_EVENT_TIMESTAMP = Gauge(
+    "kaapi_advanced_logging_last_event_timestamp",
+    "Timestamp of the last log event"
+)
+
 # Initialize a Loki client with the environment variable from settings
 LOKI_URL = os.environ.get("LOKI_URL", settings.LOKI_URL)
 logging.info(f"Initializing Loki client with URL: {LOKI_URL}")
 loki_client = LokiClient(LOKI_URL)
+
+# Function to initialize metrics from existing logs
+def initialize_log_metrics():
+    try:
+        # Query Loki for existing logs
+        # This is a simplified version - in a real implementation, 
+        # you would need to use the Loki API to query logs
+        logs = loki_client.query_logs({"plugin": "advanced_logging"})
+        
+        # If we can't get logs from Loki, try to use the in-memory store
+        if not logs and LOG_STORE:
+            logs = LOG_STORE.values()
+        
+        # Count logs by level
+        level_counts = {}
+        for log in logs:
+            level = log.get("level", "INFO")
+            level_counts[level] = level_counts.get(level, 0) + 1
+        
+        # Update the Prometheus gauges
+        for level, count in level_counts.items():
+            LOG_EVENTS_BY_LEVEL.labels(level=level).set(count)
+            LOG_EVENTS_COUNTER.inc(count)
+        
+        # Set the last log event timestamp if there are logs
+        if logs:
+            LAST_LOG_EVENT_TIMESTAMP.set(time.time())
+        
+        logging.info(f"Initialized log metrics with {sum(level_counts.values())} logs")
+        logging.info(f"Logs by level: {level_counts}")
+    except Exception as e:
+        logging.error(f"Error initializing log metrics: {e}")
+
+# Initialize metrics when the module is loaded
+initialize_log_metrics()
 
 def get_router() -> APIRouter:
     router = APIRouter()
@@ -58,6 +107,8 @@ def get_router() -> APIRouter:
 
         # 1) increment prometheus counter
         LOG_EVENTS_COUNTER.inc()
+        LOG_EVENTS_BY_LEVEL.labels(level=entry.level).inc()
+        LAST_LOG_EVENT_TIMESTAMP.set(time.time())
 
         # 2) store in memory (optional)
         log_id = str(uuid.uuid4())

@@ -11,3 +11,18 @@ datasources:
     access: proxy
     url: http://loki:3100
     isDefault: false
+    
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: kaapi-db:5432
+    database: postgres
+    user: postgres
+    secureJsonData:
+      password: postgres
+    jsonData:
+      sslmode: "disable"
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleTimeSec: 3600
+      timescaledb: false
