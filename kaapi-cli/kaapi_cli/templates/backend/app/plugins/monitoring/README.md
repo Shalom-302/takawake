@@ -177,7 +177,7 @@ If you want to see an alert in action immediately, you can create a quick test a
    * Rule name: "Quick Test Alert"
    * For Grafana managed alerts, use:
      * Data source: Prometheus
-     * Expression: `sum(rate(http_requests_total{status=~"4.."}[1m])) > 0`
+     * Expression: `sum(rate(kaapi_http_requests_total{status=~"4.."}[1m])) > 0`
      * This will trigger as soon as any 4xx errors are detected
    * Set "Evaluate every" to "10s" (the minimum)
    * Set "For" to "0m" (trigger immediately)
@@ -192,6 +192,8 @@ docker exec kaapi-api bash -c "cd app/plugins/monitoring && python generate_http
 ```
 
 This should trigger your test alert within seconds.
+
+> **Important Note About Metrics Names**: The Kaapi application prefixes all its metrics with `kaapi_`. When creating alert rules, be sure to use metrics names like `kaapi_http_requests_total` and `kaapi_http_request_processing_seconds_bucket` rather than the generic names like `http_requests_total`.
 
 #### Alert Overview Dashboard
 
@@ -222,7 +224,52 @@ Alerts are routed based on the configuration in `alertmanager.yml`. The current 
 * **SOC Team**: Special channel for security-related alerts (intrusion detection)
 * **DevOps Team**: For specific crypto health check failures
 
-### Customizing Alert Routes
+### Configuring Email Notifications for Alerts
+
+To receive alert notifications by email when an alert is triggered, follow these steps:
+
+1. **Update the AlertManager Configuration**:
+
+   Edit the `alertmanager.yml` file to configure your email settings:
+
+   ```yaml
+   receivers:
+     - name: 'email-notifications'
+       email_configs:
+         - to: 'your-email@example.com'           # Change to your email address
+           from: 'alertmanager@yourdomain.com'    # Change to a valid sender address
+           smarthost: 'smtp.yourdomain.com:587'   # Your SMTP server and port
+           auth_username: 'your-smtp-username'    # SMTP authentication username
+           auth_identity: 'your-smtp-username'    # Usually same as auth_username
+           auth_password: 'your-smtp-password'    # SMTP authentication password
+           send_resolved: true                    # Send a resolution notification
+   ```
+
+2. **Configure SMTP Settings**:
+
+   For Gmail as an example:
+
+   ```yaml
+   smarthost: 'smtp.gmail.com:587'
+   auth_username: 'your-gmail@gmail.com'
+   auth_identity: 'your-gmail@gmail.com'
+   auth_password: 'your-app-password'  # Use an App Password if 2FA is enabled
+   ```
+
+3. **Restart AlertManager**:
+
+   ```bash
+   docker restart alertmanager
+   ```
+
+4. **Test the Email Configuration**:
+
+   Trigger a test alert using the HTTP traffic generator and verify that you receive an email notification.
+
+> **Security Note**: Never commit SMTP credentials to your repository. For production environments, consider using Docker secrets or environment variables to inject sensitive credentials.
+> **Gmail Users**: If you're using Gmail, you might need to create an "App Password" in your Google Account security settings if you have 2-factor authentication enabled.
+
+### Custom Alert Routes
 
 To customize how alerts are routed:
 
