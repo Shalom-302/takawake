@@ -388,16 +388,17 @@
       "type": "timeseries"
     },
     {
-      "datasource": "PostgreSQL",
-      "description": "Liste complète des événements d'audit avec détails",
+      "datasource": "Prometheus",
+      "description": "Liste des événements d'audit organisés par ressource et action",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "align": "auto",
             "displayMode": "auto",
+            "fillOpacity": 80,
             "filterable": true
           },
           "mappings": [],
@@ -409,58 +410,10 @@
                 "value": null
               }
             ]
-          }
+          },
+          "unit": "none"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "action"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "resource"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "created_at"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 180
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "log_entry"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 450
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -471,46 +424,131 @@
       "id": 100,
       "options": {
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "created_at"
-          }
-        ]
+        "footer": {
+          "show": false,
+          "reducer": ["sum"],
+          "countRows": false
+        }
       },
       "pluginVersion": "8.0.6",
       "targets": [
         {
+          "expr": "sum by (resource, action) (kaapi_advanced_audit_events_total)",
           "format": "table",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT \n  id,\n  created_at,\n  resource,\n  action,\n  user_id,\n  details,\n  CONCAT(TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'), ' [', resource, '] ', action, ' by user ', COALESCE(CAST(user_id as TEXT), 'system')) as log_entry\nFROM kaapi_audit_logs\nORDER BY created_at DESC\nLIMIT 200",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{resource}} - {{action}}",
+          "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Logs d'audit complets",
+      "title": "Distribution des événements d'audit par ressource et action",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value #A": false
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value #A": 3,
+              "action": 2,
+              "resource": 1
+            },
+            "renameByName": {
+              "Value #A": "Nombre",
+              "action": "Action",
+              "resource": "Ressource"
+            }
+          }
+        }
+      ],
       "type": "table"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Chronologie des derniers événements d'audit",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 101,
+      "interval": "1m",
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.0.6",
+      "targets": [
+        {
+          "expr": "sum by(action) (increase(kaapi_advanced_audit_events_total{action=~\".+\"}[5m]))",
+          "interval": "",
+          "legendFormat": "{{action}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Activité d'audit récente (5 min) par type d'action",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
