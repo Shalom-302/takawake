@@ -1,10 +1,8 @@
 # Kaapi - Core Dependencies
 # ========================
-# Le fichier principal des dépendances contient les packages essentiels
-# Pour les dépendances spécifiques aux plugins, voir les fichiers requirements.txt 
-# dans chaque dossier de plugin (app/plugins/*/requirements.txt)
-# Vous pouvez également utiliser le script install_plugin_requirements.py pour installer toutes 
-# les dépendances des plugins automatiquement.
+# The main requirements file contains essential packages
+# For plugin-specific dependencies, see requirements.txt in each plugin directory
+# You can also use the install_plugin_requirements.py script to install all plugin dependencies automatically.
 
 # Web Framework
 fastapi==0.115.11

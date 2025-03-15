@@ -19,24 +19,8 @@ REQUEST_LATENCY = Histogram(
     ['method', 'endpoint']
 )
 
-CPU_USAGE = Gauge(
-    'system_cpu_usage', 
-    'Current CPU usage percentage'
-)
-
-MEMORY_USAGE = Gauge(
-    'system_memory_usage_bytes', 
-    'Current memory usage in bytes'
-)
-
-# Fonction pour mettre à jour les métriques système
-def update_system_metrics():
-    # Mise à jour des métriques système
-    try:
-        CPU_USAGE.set(psutil.cpu_percent())
-        MEMORY_USAGE.set(psutil.virtual_memory().used)
-    except Exception as e:
-        print(f"Erreur lors de la mise à jour des métriques système: {str(e)}")
+# Remove duplicate system metrics
+# CPU_USAGE and MEMORY_USAGE are removed since they are already defined in main.py
 
 def get_router():
     router = APIRouter(tags=["Monitoring"])
@@ -44,31 +28,28 @@ def get_router():
     @router.get("/metrics")
     async def metrics_endpoint():
         """
-        Endpoint pour exposer les métriques Prometheus.
-        Utilisé par Prometheus pour scraper les données de monitoring.
+        Endpoint to expose Prometheus metrics.
+        Used by Prometheus to scrape monitoring data.
         """
         try:
-            # Mise à jour des métriques système avant de générer le rapport
-            update_system_metrics()
-            
-            # Générer les métriques au format Prometheus
+            # Generate metrics in Prometheus format
             prometheus_metrics = generate_latest()
             return Response(
                 content=prometheus_metrics, 
                 media_type=CONTENT_TYPE_LATEST
             )
         except Exception as e:
-            # En cas d'erreur, renvoyer une réponse avec un message d'erreur
+            # In case of error, return a response with an error message
             return Response(
                 content=f"Error generating metrics: {str(e)}",
                 status_code=500
             )
     
-    # Ajouter des endpoints supplémentaires pour tester et générer des métriques manuellement
+    # Add endpoints for testing and manually generating metrics
     @router.get("/record-request")
     async def record_request(request: Request, path: str, status_code: int = 200, latency: float = 0.1):
         """
-        Endpoint de test pour enregistrer manuellement une requête dans les métriques.
+        Endpoint to manually record a request in metrics.
         """
         REQUEST_COUNT.labels(
             method=request.method,
@@ -82,5 +63,30 @@ def get_router():
         ).observe(latency)
         
         return {"message": "Request recorded in metrics"}
+    
+    @router.get("/info")
+    async def get_system_info():
+        """
+        Retrieves current system information.
+        Used to display general system information.
+        """
+        try:
+            cpu_percent = psutil.cpu_percent()
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+            
+            return {
+                "cpu_usage_percent": cpu_percent,
+                "memory_usage_percent": memory.percent,
+                "memory_total_gb": round(memory.total / (1024**3), 2),
+                "memory_used_gb": round(memory.used / (1024**3), 2),
+                "disk_usage_percent": disk.percent,
+                "disk_total_gb": round(disk.total / (1024**3), 2),
+                "disk_used_gb": round(disk.used / (1024**3), 2)
+            }
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error retrieving system information: {str(e)}")
+            return {"error": str(e)}
     
     return router

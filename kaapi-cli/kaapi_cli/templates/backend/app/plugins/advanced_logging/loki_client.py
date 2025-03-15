@@ -58,7 +58,7 @@ class LokiClient:
             logging.info(f"Sending log to Loki at: {url}")
             logging.info(f"Payload: {json.dumps(payload)}")
             
-            # Tentative d'établir une connexion pour vérifier la disponibilité de Loki
+            # Try to establish a connection to verify Loki availability
             # Parse host and port from the Loki URL
             parsed_url = urlparse(self.loki_url)
             host = parsed_url.hostname
@@ -76,7 +76,7 @@ class LokiClient:
                 logging.error(f"Cannot connect to Loki: {socket_error}")
                 s.close()
                 
-            # Envoi de la requête HTTP
+            # Send the HTTP request
             resp = requests.post(url, json=payload, timeout=5)
             logging.info(f"Loki response status: {resp.status_code}")
             logging.info(f"Loki response headers: {resp.headers}")

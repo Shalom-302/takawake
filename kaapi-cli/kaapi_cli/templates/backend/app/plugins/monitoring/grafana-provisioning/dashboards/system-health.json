@@ -1,6 +1,6 @@
 {
   "title": "System Health",
-  "description": "Dashboard for monitoring system health metrics",
+  "description": "Dashboard for monitoring system health",
   "annotations": {
     "list": [
       {
@@ -36,6 +36,10 @@
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 60
+              },
+              {
                 "color": "red",
                 "value": 80
               }
@@ -60,6 +64,7 @@
           "fields": "",
           "values": false
         },
+        "orientation": "auto",
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
         "text": {}
@@ -67,15 +72,15 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "kaapi_system_cpu_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_cpu_usage_percent) by ()",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
       "title": "CPU Usage",
-      "type": "gauge",
-      "description": "Current CPU usage in percentage"
+      "type": "gauge"
     },
     {
       "datasource": "Prometheus",
@@ -91,6 +96,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
               },
               {
                 "color": "red",
@@ -117,6 +126,7 @@
           "fields": "",
           "values": false
         },
+        "orientation": "auto",
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
         "text": {}
@@ -124,15 +134,15 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "kaapi_system_memory_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_memory_usage_percent) by ()",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
       "title": "Memory Usage",
-      "type": "gauge",
-      "description": "Current memory usage in percentage"
+      "type": "gauge"
     },
     {
       "datasource": "Prometheus",
@@ -148,6 +158,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
               },
               {
                 "color": "red",
@@ -174,6 +188,7 @@
           "fields": "",
           "values": false
         },
+        "orientation": "auto",
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
         "text": {}
@@ -181,18 +196,19 @@
       "pluginVersion": "8.0.6",
       "targets": [
         {
-          "expr": "kaapi_system_disk_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_disk_usage_percent) by ()",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
       "title": "Disk Usage",
-      "type": "gauge",
-      "description": "Current disk usage in percentage"
+      "type": "gauge"
     },
     {
       "datasource": "Prometheus",
+      "description": "CPU usage trend over the period",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -203,15 +219,15 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "scheme",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -238,122 +254,12 @@
           },
           "unit": "percent"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3F7FE4",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 8
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "expr": "kaapi_system_cpu_usage_percent",
-          "interval": "",
-          "legendFormat": "CPU Usage",
-          "refId": "A"
-        }
-      ],
-      "title": "CPU Usage Trend",
-      "type": "timeseries",
-      "description": "CPU usage percentage over time"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Memory (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6670E5",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
         "y": 8
       },
       "id": 5,
@@ -369,18 +275,19 @@
       },
       "targets": [
         {
-          "expr": "kaapi_system_memory_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_cpu_usage_percent) by ()",
           "interval": "",
-          "legendFormat": "Memory Usage",
+          "legendFormat": "CPU Usage",
           "refId": "A"
         }
       ],
-      "title": "Memory Usage Trend",
-      "type": "timeseries",
-      "description": "Memory usage percentage over time"
+      "title": "CPU Usage Trend",
+      "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
+      "description": "Memory usage trend over the period",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -391,15 +298,15 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "scheme",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -426,28 +333,12 @@
           },
           "unit": "percent"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Disk (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9D7FE4",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 8,
-        "x": 16,
+        "x": 8,
         "y": 8
       },
       "id": 6,
@@ -463,18 +354,19 @@
       },
       "targets": [
         {
-          "expr": "kaapi_system_disk_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_memory_usage_percent) by ()",
           "interval": "",
-          "legendFormat": "Disk Usage",
+          "legendFormat": "Memory Usage",
           "refId": "A"
         }
       ],
-      "title": "Disk Usage Trend",
-      "type": "timeseries",
-      "description": "Disk usage percentage over time"
+      "title": "Memory Usage Trend",
+      "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
+      "description": "Disk usage trend over the period",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -485,15 +377,15 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 35,
-            "gradientMode": "scheme",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -520,59 +412,13 @@
           },
           "unit": "percent"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3F7FE4",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Memory (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6670E5",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Disk (%)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9D7FE4",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 16
+        "w": 8,
+        "x": 16,
+        "y": 8
       },
       "id": 7,
       "options": {
@@ -587,27 +433,110 @@
       },
       "targets": [
         {
-          "expr": "kaapi_system_cpu_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_disk_usage_percent) by ()",
           "interval": "",
-          "legendFormat": "CPU Usage",
+          "legendFormat": "Disk Usage",
+          "refId": "A"
+        }
+      ],
+      "title": "Disk Usage Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "max(kaapi_system_cpu_usage_percent) by ()",
+          "interval": "",
+          "legendFormat": "CPU",
           "refId": "A"
         },
         {
-          "expr": "kaapi_system_memory_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_memory_usage_percent) by ()",
           "interval": "",
-          "legendFormat": "Memory Usage",
+          "legendFormat": "Memory",
           "refId": "B"
         },
         {
-          "expr": "kaapi_system_disk_usage_percent",
+          "exemplar": true,
+          "expr": "max(kaapi_system_disk_usage_percent) by ()",
           "interval": "",
-          "legendFormat": "Disk Usage",
+          "legendFormat": "Disk",
           "refId": "C"
         }
       ],
-      "title": "System Usage Trend",
-      "type": "timeseries",
-      "description": "System usage percentage over time"
+      "title": "Resource Usage Over Time",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
@@ -626,6 +555,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "uid": "system_health",
+  "title": "System Health",
+  "uid": "system-health",
   "version": 1
 }

@@ -37,7 +37,6 @@ class ThreatIntelFeed:
 
 class WebApplicationFirewall:
     def __init__(self, config: dict, intel_feed: ThreatIntelFeed):
-        # Utiliser l'accès direct aux attributs au lieu de la méthode .get()
         self.rules = self._compile_rules(config.rules if hasattr(config, 'rules') else [])
         self.mode = config.mode if hasattr(config, 'mode') else 'block'
         self.rate_limiter = {}
@@ -47,7 +46,6 @@ class WebApplicationFirewall:
     def _compile_rules(self, rules):
         compiled = []
         for rule in rules:
-            # Accès direct aux attributs plutôt que d'utiliser la notation d'indexation
             pattern = re.compile(rule.pattern, re.IGNORECASE)
             compiled.append((pattern, rule.action))
         return compiled

@@ -42,18 +42,18 @@ from app.plugins.security.main import crypto_router
 from app.plugins.security.main import app as security_app
 from app.plugins.security.security_config import load_security_config
 
-# Ajout pour Prometheus metrics
+# Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
 import psutil
 
-# Définition des métriques simples avec des préfixes uniques pour éviter les conflits
+# Define simple metrics with unique prefixes to avoid conflicts
 MAIN_REQUEST_COUNT = Counter('kaapi_http_requests_total', 'Total count of requests', ['method', 'endpoint', 'status'])
 MAIN_REQUEST_TIME = Summary('kaapi_http_request_processing_seconds', 'Time spent processing request', ['method', 'endpoint', 'status'])
 
-# Définition des métriques système
-CPU_USAGE = Gauge('kaapi_system_cpu_usage_percent', 'CPU usage percentage')
-MEMORY_USAGE = Gauge('kaapi_system_memory_usage_percent', 'Memory usage percentage')
-DISK_USAGE = Gauge('kaapi_system_disk_usage_percent', 'Disk usage percentage')
+# Define system metrics
+CPU_USAGE = Gauge('kaapi_system_cpu_usage_percent', 'CPU usage percentage', labelnames=['source'])
+MEMORY_USAGE = Gauge('kaapi_system_memory_usage_percent', 'Memory usage percentage', labelnames=['source'])
+DISK_USAGE = Gauge('kaapi_system_disk_usage_percent', 'Disk usage percentage', labelnames=['source'])
 
 security_config = load_security_config()
 
@@ -184,29 +184,29 @@ def update_system_metrics():
     """Update system metrics for monitoring"""
     try:
         # CPU usage (en pourcentage)
-        CPU_USAGE.set(psutil.cpu_percent())
+        CPU_USAGE.labels(source="main").set(psutil.cpu_percent())
         
         # Memory usage (en pourcentage)
-        MEMORY_USAGE.set(psutil.virtual_memory().percent)
+        MEMORY_USAGE.labels(source="main").set(psutil.virtual_memory().percent)
         
         # Disk usage (en pourcentage)
-        DISK_USAGE.set(psutil.disk_usage('/').percent)
+        DISK_USAGE.labels(source="main").set(psutil.disk_usage('/').percent)
         
         logging.debug(f"Updated system metrics: CPU={psutil.cpu_percent()}%, Memory={psutil.virtual_memory().percent}%, Disk={psutil.disk_usage('/').percent}%")
     except Exception as e:
         logging.error(f"Error updating system metrics: {str(e)}")
 
-# Fonction pour mettre à jour les métriques système en arrière-plan
+# Function to update system metrics in the background
 def system_metrics_background_task():
     while True:
         try:
             update_system_metrics()
-            time.sleep(5)  # Mise à jour toutes les 5 secondes
+            time.sleep(5)  # Update every 5 seconds
         except Exception as e:
             logging.error(f"Error in system metrics background task: {str(e)}")
-            time.sleep(10)  # Pause plus longue en cas d'erreur
+            time.sleep(10)  # Pause longer in case of error
 
-# Démarrer la tâche d'arrière-plan pour mettre à jour les métriques système
+# Start background task to update system metrics
 system_metrics_thread = threading.Thread(target=system_metrics_background_task, daemon=True)
 system_metrics_thread.start()
 
@@ -233,18 +233,18 @@ def read_metrics():
 def read_root():
     return {"message": "Hello from Kaapi backend!"}
 
-# Ajout d'un middleware pour les métriques
+# Add metrics middleware
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
     request_path = request.url.path
-    # Ne pas compter les requêtes vers l'endpoint de métriques
+    # Do not count requests to the metrics endpoint
     if request_path == "/metrics":
         return await call_next(request)
     
-    # Enregistrer le début du traitement
+    # Record the start time
     start_time = time.time()
     
-    # Traiter la requête
+    # Process the request
     try:
         response = await call_next(request)
         status_code = response.status_code
@@ -252,15 +252,15 @@ async def metrics_middleware(request: Request, call_next):
         status_code = 500
         raise e
     finally:
-        # Mesurer le temps de traitement
+        # Measure the processing time
         process_time = time.time() - start_time
-        # Incrémenter le compteur de requêtes
+        # Increment the request counter
         MAIN_REQUEST_COUNT.labels(
             method=request.method, 
             endpoint=request_path,
             status=status_code
         ).inc()
-        # Enregistrer le temps de traitement
+        # Record the processing time
         MAIN_REQUEST_TIME.labels(
             method=request.method,
             endpoint=request_path,

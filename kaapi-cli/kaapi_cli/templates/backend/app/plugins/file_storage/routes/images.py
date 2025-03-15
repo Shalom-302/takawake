@@ -409,7 +409,7 @@ async def optimize_image(
                 file_url=result_url,
                 file_size=file_size,
                 content_type=content_type,
-                description=f"Image optimisée à partir de {filename}",
+                description=f"Image optimized from {filename}",
                 tags=["optimized"],
                 created_by=current_user.id
             )

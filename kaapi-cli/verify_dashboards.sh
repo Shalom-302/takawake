@@ -1,19 +1,19 @@
 #!/bin/bash
 
-echo "Vérification des métriques et des tableaux de bord..."
+echo "Verification of metrics and dashboards..."
 
-# Vérifier les métriques Prometheus
-echo "✅ Vérification des métriques Prometheus de l'API"
+# Verify Prometheus metrics
+echo "✅ Verification of Prometheus metrics from the API"
 curl -s http://localhost:8000/metrics | grep -E "kaapi_http_requests_total|kaapi_system_cpu_usage_percent" | head -5
 
-# Générer du trafic pour les dashboards
-echo -e "\n✅ Génération de trafic HTTP pour les dashboards"
+# Generate traffic for dashboards
+echo -e "\n✅ Generation of HTTP traffic for dashboards"
 for i in {1..5}; do 
   curl -s http://localhost:8000/ > /dev/null
   curl -s http://localhost:8000/docs > /dev/null
-  # Générer quelques erreurs 404 pour le dashboard HTTP Status
+  # Generate some 404 errors for the HTTP Status dashboard
   curl -s http://localhost:8000/chemin-inexistant-$i > /dev/null 2>&1
-  # Créer quelques logs
+  # Create some logs
   curl -s -X POST http://localhost:8000/plugins/advanced_logging/logs \
     -H "Content-Type: application/json" \
     -d "{\"level\": \"INFO\", \"message\": \"Test log message $i\", \"labels\": {\"source\": \"test\"}}" > /dev/null
@@ -21,7 +21,7 @@ for i in {1..5}; do
   sleep 1
 done
 
-echo -e "\n✅ URLs des tableaux de bord Grafana"
+echo -e "\n✅ URLs of Grafana dashboards"
 echo "1. API Performance:   http://localhost:3000/d/api-performance"
 echo "2. HTTP Status Codes: http://localhost:3000/d/http-status"
 echo "3. System Health:     http://localhost:3000/d/system-health"

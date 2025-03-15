@@ -13,6 +13,7 @@ from datetime import datetime
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 from . import initialize_audit_metrics
+from .loki_integration import push_audit_log_to_loki
 
 def get_router() -> APIRouter:
     router = APIRouter()
@@ -50,6 +51,15 @@ def get_router() -> APIRouter:
         
         # Update last event timestamp
         LAST_AUDIT_EVENT_TIMESTAMP.set(time.time())
+        
+        # Push log to Loki with the specified format
+        push_audit_log_to_loki(
+            user_id=log.user_id,
+            action=log.action,
+            resource=log.resource,
+            details=log.details,
+            timestamp=log.created_at.timestamp() if log.created_at else None
+        )
         
         return log
 

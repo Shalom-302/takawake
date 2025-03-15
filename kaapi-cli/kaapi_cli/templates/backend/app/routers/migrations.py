@@ -38,7 +38,7 @@ def preview_autogenerate_changes():
         stdout=subprocess.PIPE, 
         stderr=subprocess.PIPE, 
         text=True,
-        cwd=str(backend_dir),  # Exécuter depuis le dossier backend
+        cwd=str(backend_dir),  # Execute from the backend directory
         env=env
         )
     

@@ -37,7 +37,7 @@ class ConsentType(PyEnum):
     PRIVACY = "privacy"         # Acceptance of privacy policy
 
 
-# Table d'association pour les catégories de cookies et leurs paramètres
+# Table association for cookie categories and their parameters
 cookie_category_settings = Table(
     "privacy_cookie_category_settings",
     Base.metadata,

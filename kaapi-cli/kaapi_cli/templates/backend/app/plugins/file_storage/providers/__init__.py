@@ -18,7 +18,7 @@ class StorageProviderType(str, Enum):
     S3 = "s3"
     GCS = "gcs"
 
-# Mapping des types de fournisseurs vers leurs classes d'implémentation
+# Mapping supplier types to their implementation classes
 PROVIDER_IMPLEMENTATIONS = {
     StorageProviderType.LOCAL: LocalStorageProvider,
     StorageProviderType.MINIO: MinioStorageProvider,

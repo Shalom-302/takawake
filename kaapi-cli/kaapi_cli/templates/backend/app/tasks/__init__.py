@@ -1,6 +1,6 @@
 # app/tasks/__init__.py
-# Ce fichier importe toutes les tâches Celery pour les rendre disponibles
+# This file imports all Celery tasks to make them available
 
-# Exemple de tâches à importer (uncomment when tasks are created)
+# Example tasks to import (uncomment when tasks are created)
 # from .email_tasks import send_email
 # from .report_tasks import generate_report

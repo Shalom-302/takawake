@@ -138,6 +138,54 @@ docker compose -f docker-compose.observability.yml kill -s SIGHUP prometheus
 open http://localhost:3000/alerting/list
 ```
 
+## Generating Test Data for Dashboards
+
+To verify that your dashboards and monitoring systems are functioning correctly, you can use the included data generation scripts. These will create realistic data patterns for visualizing in Grafana.
+
+### Generate Database Load
+
+The `generate_db_load.py` script creates database load to populate the database-performance dashboard:
+
+```bash
+# Run from the project root
+cd app/plugins/monitoring
+python generate_db_load.py --db-url "postgresql://postgres:postgres@localhost:5432/kaapi" --duration 60 --connections 10
+```
+
+Options:
+- `--db-url`: PostgreSQL database URL (default: "postgresql://postgres:postgres@localhost:5432/kaapi")
+- `--table`: Table name to use for testing (default: "monitoring_test")
+- `--duration`: Duration of the test in seconds (default: 60)
+- `--connections`: Number of concurrent connections (default: 5)
+- `--delay`: Delay between queries in seconds (default: 0.1)
+
+### Generate HTTP Traffic
+
+The `generate_http_traffic.py` script creates HTTP requests with various status codes to populate the http-status dashboard:
+
+```bash
+# Run from the project root
+cd app/plugins/monitoring
+python generate_http_traffic.py --base-url "http://localhost:8000" --duration 60 --requests-per-second 10
+```
+
+Options:
+- `--base-url`: Base URL for the API (default: "http://localhost:8000")
+- `--duration`: Duration of the test in seconds (default: 60)
+- `--requests-per-second`: Number of requests per second (default: 5)
+
+### Verifying Dashboard Data
+
+After running the data generation scripts:
+
+1. Open Grafana at http://localhost:3001
+2. Navigate to the corresponding dashboards:
+   - System Health: Overall system metrics
+   - Database Performance: Database query performance
+   - HTTP Status: API status code distribution
+   - API Performance: Request latency and throughput
+
+You should see data appearing in the charts and panels. If some panels display "No Data", check the Prometheus configuration and ensure that metrics are being collected properly.
 
 **9. Additional Resources**
 - [Prometheus Documentation](https://prometheus.io/docs/introduction/overview/)

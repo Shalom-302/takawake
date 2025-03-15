@@ -1,5 +1,5 @@
 """
-Module principal pour le plugin de conformité RGPD (GDPR)
+Main module for the GDPR compliance plugin
 """
 
 import json

@@ -123,3 +123,41 @@ You can customize the plugin by modifying the following files:
 ## Contributing
 
 Contributions to the API Changelog plugin are welcome. Please feel free to submit issues or pull requests.
+
+## Testing and Dashboard Visualization
+
+To test the API versioning functionality and populate related Grafana dashboards with representative data, you can use the included data generation script:
+
+### Generate API Traffic
+
+The `generate_api_traffic.py` script creates sample API requests against various endpoints to populate API-related dashboards in Grafana:
+
+```bash
+# Run from the project root
+cd app/plugins/api_versioning
+python generate_api_traffic.py --base-url "http://localhost:8000" --duration 60 --requests-per-second 10
+```
+
+Options:
+- `--base-url`: Base URL for the API (default: "http://localhost:8000")
+- `--duration`: Duration of the test in seconds (default: 60)
+- `--requests-per-second`: Number of requests per second (default: 5)
+- `--auth-token`: Optional authentication token for protected endpoints
+
+### Verifying Dashboard Data
+
+After running the script:
+
+1. Open Grafana at http://localhost:3001
+2. Navigate to the "API Performance" dashboard
+3. You should see various visualizations including:
+   - Request volume by endpoint
+   - Response time distribution
+   - Success/failure rates
+   - Version usage statistics
+   - Request methods distribution
+
+If some panels display "No Data", ensure that:
+- The API server is running and accessible
+- The endpoints being tested exist and are properly configured
+- Prometheus is correctly scraping the metrics

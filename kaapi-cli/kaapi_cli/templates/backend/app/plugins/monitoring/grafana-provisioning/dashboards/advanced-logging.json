@@ -1,6 +1,6 @@
 {
-  "title": "Advanced Logging Dashboard",
-  "description": "Dashboard for visualizing logs from the Advanced Logging plugin",
+  "title": "Logging",
+  "description": "Dashboard for visualizing logs from the Logging plugin",
   "annotations": {
     "list": [
       {

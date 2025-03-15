@@ -549,6 +549,35 @@
       "timeShift": null,
       "title": "Activité d'audit récente (5 min) par type d'action",
       "type": "timeseries"
+    },
+    {
+      "datasource": "Loki",
+      "description": "Affichage des logs d'audit au format exact : dateheure [resource] action by user ID",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "id": 102,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "expr": "{job=\"kaapi_advanced_audit\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs d'audit complets",
+      "type": "logs"
     }
   ],
   "refresh": "10s",
@@ -568,7 +597,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Advanced Audit Dashboard",
+  "title": "Audit",
   "uid": "advanced-audit",
   "version": 1
 }

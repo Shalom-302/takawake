@@ -247,7 +247,7 @@ def init():
         backend_env_template.unlink()
 
     backend_env_file = target_backend_dir / ".env"
-    backend_env_file.write_text(f"DB_URL={db_url}\n")  # Simplifié
+    backend_env_file.write_text(f"DB_URL={db_url}\n")  # Simplified
 
     # try:
     #     # 2. Generate initial migration

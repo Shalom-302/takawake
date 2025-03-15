@@ -31,7 +31,7 @@ class MFAService:
 
     async def verify_mfa_code(self, user_id: str, code: str) -> bool:
         if self.failed_attempts[user_id] >= 3:
-            raise PermissionError("Trop de tentatives échouées")
+            raise PermissionError("Too many failed attempts")
             
         secret = self.mfa_secrets.get(user_id)
         if not secret or not pyotp.TOTP(secret).verify(code, valid_window=2):
