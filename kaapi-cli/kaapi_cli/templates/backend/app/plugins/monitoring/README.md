@@ -1,193 +1,128 @@
-# README.md
-## Production Monitoring
+# Monitoring Plugin
 
-## Validation Checklist
+This plugin provides comprehensive monitoring capabilities for your FastAPI application.
 
-✅ **Basic Health Checks**:
-```bash
-# Verify metrics endpoint
-curl -s http://localhost:8000/metrics | jq .
+## Features
 
-# Check Prometheus targets
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
+* **Prometheus Integration**: Exports metrics in Prometheus format
+* **Performance Metrics**: Tracks request duration, database query time, and more
+* **Health Checks**: Includes endpoints for checking system health
+* **Customizable Dashboard**: Pre-configured Grafana dashboard for visualization
+* **Low Overhead**: Minimal impact on application performance
 
-# Test Alertmanager connectivity
-curl -s http://localhost:9093/-/healthy
-```
-✅ **Configuration Validation**:
+## Installation
 
-```bash
-# Validate Prometheus config
-docker exec prometheus promtool check config /etc/prometheus/prometheus.yml
+The monitoring plugin is pre-installed with Kaapi. No additional installation steps are required.
 
-# Check alert rules syntax
-docker exec prometheus promtool check rules /etc/prometheus/alerts.yml
+## Usage
 
-# Verify Alertmanager config
-docker exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
-```
+### Prometheus Metrics
 
-✅ **Grafana Setup Verification**:
+The plugin automatically collects metrics for each endpoint. Access the metrics at:
 
 ```bash
-# Check datasource health
-curl -u admin:admin http://localhost:3000/api/datasources/1/health
+curl [http://localhost:8000/metrics](http://localhost:8000/metrics)
 ```
 
-## Troubleshooting Common Issues
-
-❗ **Docker Compose Errors**:
-- Ensure port 9090/9093/3000 are available
-- Verify file permissions on mounted volumes
-
-❗ **Missing Metrics**:
-- Confirm application exposes /metrics endpoint
-- Check Prometheus service discovery config
-
-❗ **Alert Notifications**:
-- Validate SLACK_WEBHOOK_URL environment variable
-- Test Alertmanager configuration with:
-  ```bash
-  docker exec alertmanager amtool config test /etc/alertmanager/alertmanager.yml
-  ```
-  
-**2. Final Configuration Checks**:
-```bash
-docker compose -f docker-compose.observability.yml config --services
-# Should output: prometheus alertmanager grafana
-```
-
-**3. Alert Rule Verification**:
+### Health Check
 
 ```bash
-docker exec prometheus promtool check rules /etc/prometheus/alerts.yml
+curl [http://localhost:8000/health](http://localhost:8000/health)
 ```
 
-**4. Endpoint Smoke Test**:
+Response:
 
-```bash
-curl -s http://localhost:9090/-/ready && \
-curl -s http://localhost:9093/-/ready && \
-curl -s http://localhost:3000/api/health
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "uptime": "10h 30m 5s"
+}
 ```
 
-```bash
-docker compose -f docker-compose.observability.yml down && \
-docker compose -f docker-compose.observability.yml up -d
-```
+### Grafana Integration
 
-**5. Access Grafana at http://localhost:3000**
-
-| HighRequestLatency | avg >1s     | 2m       | warning  |
-| P95LatencySpike    | p95 >2s     | 1m       | critical |
-| DatabaseDown       | db down     | 2m       | critical |
-| HighErrorRate      | avg >5%     | 5m       | critical |
-
-**6. Monitor and Resolve Issues**
-- Check Prometheus and Alertmanager logs
-- Look for unexpected high request latencies or errors
-- Review recording rules and alert rules
-- Adjust thresholds as needed
-- Re-test configuration
-
-**7. Clean Up**
-```bash
-docker compose -f docker-compose.observability.yml down
-```
-
-**8. Next Steps**
-- Consider adding additional alert rules for specific routes or services
-- Monitor and resolve any issues that occur
-- Re-test configuration
-- Clean up if no longer needed
-
-## Alert Relationships
-
-```mermaid
-flowchart TD
-    CriticalAlerts -->|suppress| WarningAlerts
-    LatencySpikes -->|group with| DatabaseIssues
-    HighErrorRate -.->|trigger| OnCallPaging
-```
-Key Rules:
-
-Critical alerts suppress warnings/info for same routes
-Related alerts group into single notifications
-Infrastructure issues take priority over app-layer alerts
-
-3. **Validation Commands**:
-```bash
-# Check Alertmanager config
-docker compose -f docker-compose.observability.yml exec alertmanager \
-  amtool check-config /etc/alertmanager/alertmanager.yml
-
-# Test inhibition
-curl -XPOST http://localhost:9093/api/v1/alerts -d'[
-  {"labels": {"alertname": "HighErrorRate", "severity": "critical", "route": "/api"}},
-  {"labels": {"alertname": "HighRequestLatency", "severity": "warning", "route": "/api"}}
-]'
-```
-
-Final Steps:
-```bash
-# Reload configurations
-docker compose -f docker-compose.observability.yml kill -s SIGHUP alertmanager
-docker compose -f docker-compose.observability.yml kill -s SIGHUP prometheus
-
-# Verify in Grafana
-open http://localhost:3000/alerting/list
-```
-
-## Generating Test Data for Dashboards
-
-To verify that your dashboards and monitoring systems are functioning correctly, you can use the included data generation scripts. These will create realistic data patterns for visualizing in Grafana.
+1. Access Grafana at [http://localhost:3001](http://localhost:3001)
+2. Log in with the default credentials (admin/admin)
+3. Navigate to Dashboards > Browse
+4. Select the "Application Monitoring" dashboard
 
 ### Generate Database Load
 
-The `generate_db_load.py` script creates database load to populate the database-performance dashboard:
+To test the monitoring dashboard with simulated database load, you need to use Docker to run the script inside the API container:
 
 ```bash
-# Run from the project root
-cd app/plugins/monitoring
-python generate_db_load.py --db-url "postgresql://postgres:postgres@localhost:5432/kaapi" --duration 60 --connections 10
+# Access the API container shell
+docker exec -it kaapi-api bash
+
+# Navigate to the monitoring plugin directory
+cd app/app/plugins/monitoring
+
+# Generate database load
+python generate_db_load.py --duration 60
 ```
 
 Options:
-- `--db-url`: PostgreSQL database URL (default: "postgresql://postgres:postgres@localhost:5432/kaapi")
-- `--table`: Table name to use for testing (default: "monitoring_test")
-- `--duration`: Duration of the test in seconds (default: 60)
-- `--connections`: Number of concurrent connections (default: 5)
-- `--delay`: Delay between queries in seconds (default: 0.1)
+
+* `--db-url`: PostgreSQL database URL (default: "postgresql://postgres:postgres@localhost:5432/kaapi")
+* `--duration`: Duration in seconds to generate load (default: 60)
+* `--queries-per-second`: Number of queries per second to execute (default: 10)
+* `--query-types`: Types of queries to execute (options: select, insert, update, delete, all)
 
 ### Generate HTTP Traffic
 
-The `generate_http_traffic.py` script creates HTTP requests with various status codes to populate the http-status dashboard:
+To test the monitoring dashboard with simulated HTTP traffic, use Docker to run the script inside the API container:
 
 ```bash
-# Run from the project root
-cd app/plugins/monitoring
-python generate_http_traffic.py --base-url "http://localhost:8000" --duration 60 --requests-per-second 10
+# Access the API container shell
+docker exec -it kaapi-api bash
+
+# Navigate to the monitoring plugin directory
+cd app/app/plugins/monitoring
+
+# Generate HTTP traffic
+python generate_http_traffic.py --duration 60 --requests-per-second 10
 ```
 
 Options:
-- `--base-url`: Base URL for the API (default: "http://localhost:8000")
-- `--duration`: Duration of the test in seconds (default: 60)
-- `--requests-per-second`: Number of requests per second (default: 5)
+
+* `--base-url`: Base URL for the API (default: "[http://localhost:8000](http://localhost:8000)")
+* `--duration`: Duration in seconds to generate traffic (default: 60)
+* `--requests-per-second`: Number of requests per second (default: 10)
+* `--endpoints`: Comma-separated list of endpoints to target (default: all available endpoints)
 
 ### Verifying Dashboard Data
 
-After running the data generation scripts:
+After running both scripts:
 
-1. Open Grafana at http://localhost:3001
-2. Navigate to the corresponding dashboards:
-   - System Health: Overall system metrics
-   - Database Performance: Database query performance
-   - HTTP Status: API status code distribution
-   - API Performance: Request latency and throughput
+1. Open Grafana at [http://localhost:3001](http://localhost:3001)
+2. Navigate to the "Application Monitoring" dashboard
+3. You should see data populating various panels
 
-You should see data appearing in the charts and panels. If some panels display "No Data", check the Prometheus configuration and ensure that metrics are being collected properly.
+## Configuration
 
-**9. Additional Resources**
-- [Prometheus Documentation](https://prometheus.io/docs/introduction/overview/)
-- [Alertmanager Documentation](https://prometheus.io/docs/alerting/overview/)
-- [Grafana Documentation](https://grafana.com/docs/grafana/latest/)
+Configure the plugin via environment variables:
+
+```bash
+PROMETHEUS_MULTIPROC_DIR=/tmp  # Required for multi-process setups
+METRICS_PREFIX=app_            # Prefix for all metrics
+ENABLE_DATABASE_METRICS=true   # Track database performance
+ENABLE_REQUEST_METRICS=true    # Track HTTP request performance
+```
+
+## Troubleshooting
+
+### No Data in Grafana
+
+If you don't see data in Grafana:
+
+* Verify Prometheus is running (`docker ps`)
+* Check that metrics are being exposed (`curl [http://localhost:8000/metrics](http://localhost:8000/metrics)`)
+* Ensure Prometheus is scraping your application (`curl [http://localhost:9090/targets](http://localhost:9090/targets)`)
+* Check Grafana data source configuration
+
+### Common Issues
+
+* Missing data: Increase the frequency of metrics collection
+* High cardinality warnings: Reduce the number of unique label combinations
+* Performance impact: Adjust collection frequency or disable high-overhead metrics

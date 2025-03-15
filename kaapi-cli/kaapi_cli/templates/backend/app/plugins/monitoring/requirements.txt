@@ -7,3 +7,7 @@ memray>=1.10.0  # For memory profiling
 opentelemetry-api>=1.20.0  # OpenTelemetry API
 opentelemetry-sdk>=1.20.0  # OpenTelemetry SDK
 opentelemetry-exporter-otlp>=1.20.0  # OpenTelemetry OTLP exporter
+
+# Load generation script dependencies
+asyncpg>=0.28.0  # Asynchronous PostgreSQL client
+aiohttp>=3.8.5  # Asynchronous HTTP client

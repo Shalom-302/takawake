@@ -128,13 +128,29 @@ Contributions to the API Changelog plugin are welcome. Please feel free to submi
 
 To test the API versioning functionality and populate related Grafana dashboards with representative data, you can use the included data generation script:
 
+### Prerequisites
+
+Before running the test data generation script, make sure to install the required dependencies:
+
+```bash
+# Navigate to the api_versioning plugin directory
+cd app/plugins/api_versioning
+
+# Install the required dependencies
+pip install -r requirements.txt
+```
+
+This will install all the necessary packages including:
+
+* `aiohttp` for generating HTTP requests
+* Other required dependencies
+
 ### Generate API Traffic
 
 The `generate_api_traffic.py` script creates sample API requests against various endpoints to populate API-related dashboards in Grafana:
 
 ```bash
-# Run from the project root
-cd app/plugins/api_versioning
+# Run from the plugin directory
 python generate_api_traffic.py --base-url "http://localhost:8000" --duration 60 --requests-per-second 10
 ```
 
