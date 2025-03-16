@@ -5,4 +5,4 @@ Provides verification and identity management capabilities with adaptable approa
 for regions with different infrastructure levels.
 """
 
-from .main import get_router, initialize_plugin, get_plugin_info
+from .main import get_api_router as get_router, on_plugin_init as initialize_plugin, get_plugin_info

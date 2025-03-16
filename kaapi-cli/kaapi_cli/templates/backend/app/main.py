@@ -41,7 +41,9 @@ from app.plugins.security.mfa_service import MFAService
 from app.plugins.security.waf import WebApplicationFirewall, ThreatIntelFeed
 from app.plugins.security.main import crypto_router
 from app.plugins.security.security_config import load_security_config
-
+from app.plugins.kyc.main import get_admin_router as get_kyc_admin_router, get_api_router as get_kyc_api_router, on_plugin_init as init_kyc_plugin
+from app.plugins.business_alerts.main import business_alerts_plugin
+from app.plugins.digital_signature.main import digital_signature_plugin
 
 from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
 
@@ -138,6 +140,18 @@ def init_db():
         from app.plugins.offline_sync.main import initialize_plugin as init_offline_sync_plugin
         init_offline_sync_plugin(app)
         print("🟢 Offline Sync plugin initialized")
+        
+        # Initialize KYC plugin
+        init_kyc_plugin(app)
+        print("🟢 KYC plugin initialized")
+        
+        # Initialize Business Alerts plugin
+        business_alerts_plugin.init_app(app)
+        print("🟢 Business Alerts plugin initialized")
+        
+        # Initialize Digital Signature plugin
+        digital_signature_plugin.init_app(app)
+        print("🟢 Digital Signature plugin initialized")
     finally:
         db.close()
     print("✅ Startup finished")
@@ -199,6 +213,10 @@ app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA
 app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])
 app.include_router(get_api_gateway_router(), prefix="/admin/api-gateway", tags=["API Gateway"])
 app.include_router(get_offline_sync_router(), prefix="/plugins/offline-sync", tags=["Offline Sync"])
+app.include_router(get_kyc_admin_router(), prefix="/admin", tags=["KYC Admin"])
+app.include_router(get_kyc_api_router(), prefix="/api", tags=["KYC"])
+app.include_router(business_alerts_plugin.router, prefix="/plugins/business-alerts", tags=["Business Alerts"])
+app.include_router(digital_signature_plugin.router, prefix="/plugins/digital-signature", tags=["Digital Signature"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle

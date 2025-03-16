@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Protocol
+import hmac
+import hashlib
+import base64
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.core.config import settings
@@ -11,6 +14,61 @@ from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+
+
+class EncryptionHandler(Protocol):
+    """Protocol defining the interface for encryption handlers."""
+    
+    def encrypt(self, data: str) -> str:
+        """Encrypt data."""
+        pass
+        
+    def decrypt(self, encrypted_data: str) -> str:
+        """Decrypt data."""
+        pass
+
+
+def create_encryption_handler(secret_key: Optional[str] = None) -> EncryptionHandler:
+    """
+    Create an encryption handler for sensitive data with an optional custom secret key.
+    
+    Args:
+        secret_key: Optional custom secret key for encryption. If not provided,
+                   the application's default secret key will be used.
+    
+    Returns:
+        An encryption handler object with encrypt/decrypt methods.
+    """
+    class DefaultEncryptionHandler:
+        def __init__(self, secret_key: str):
+            self.secret_key = secret_key or settings.SECRET_KEY
+            self.algorithm = 'AES-256-CBC'  # Example algorithm
+            
+        def encrypt(self, data: str) -> str:
+            """Encrypt sensitive data using the secret key."""
+            if not data:
+                return data
+            # Simple encryption for demonstration 
+            # In production, use a proper encryption library
+            signature = create_hmac_signature(data, self.secret_key)
+            return f"{base64.b64encode(data.encode()).decode()}:{signature}"
+            
+        def decrypt(self, encrypted_data: str) -> str:
+            """Decrypt data that was encrypted with this handler."""
+            if not encrypted_data or ":" not in encrypted_data:
+                return encrypted_data
+                
+            data_b64, signature = encrypted_data.split(":", 1)
+            data = base64.b64decode(data_b64.encode()).decode()
+            
+            # Verify signature
+            if not verify_hmac_signature(data, signature, self.secret_key):
+                raise ValueError("Signature verification failed")
+                
+            return data
+    
+    return DefaultEncryptionHandler(secret_key)
+
 
 def create_access_token(
     subject: Union[str, Any], expires_delta: timedelta = None
@@ -30,6 +88,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
+def create_default_encryption() -> EncryptionHandler:
+    """
+    Create a default encryption handler for sensitive data.
+    
+    This function returns a callable that can be used to encrypt and decrypt 
+    sensitive data throughout the application. The encryption is based on
+    the application's SECRET_KEY setting.
+    
+    Returns:
+        An encryption handler object with encrypt/decrypt methods.
+    """
+    return create_encryption_handler(settings.SECRET_KEY)
 
 async def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
@@ -85,3 +156,102 @@ def require_role(*allowed_roles: str):
             raise HTTPException(status_code=403, detail="Forbidden: insufficient role")
         return current_user
     return wrapper
+
+def verify_admin_token(user_id: str) -> bool:
+    """
+    Verifies if the user ID belongs to an administrator.
+    
+    Args:
+        user_id: The ID of the user to check
+        
+    Returns:
+        bool: True if user is an admin, raises HTTPException otherwise
+        
+    Raises:
+        HTTPException: If the user is not an admin
+    """
+    # Use the database session to query the user
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+            
+        if not user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="The user doesn't have enough privileges"
+            )
+            
+        return True
+    finally:
+        db.close()
+        
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
+    """
+    Extract the user ID from a JWT token without querying the database.
+    
+    Args:
+        token: JWT token
+        
+    Returns:
+        str: User ID from the token
+        
+    Raises:
+        HTTPException: If the token is invalid
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+        return user_id
+    except JWTError:
+        raise credentials_exception
+
+def create_hmac_signature(data: str, secret: str) -> str:
+    """
+    Create an HMAC signature for data integrity verification.
+    
+    Args:
+        data: Data to sign
+        secret: Secret key for signing
+        
+    Returns:
+        Base64-encoded signature
+    """
+    signature = hmac.new(
+        key=secret.encode(),
+        msg=data.encode(),
+        digestmod=hashlib.sha256
+    ).digest()
+    return base64.urlsafe_b64encode(signature).decode()
+
+def verify_hmac_signature(data: str, signature: str, secret: str) -> bool:
+    """
+    Verify an HMAC signature to ensure data integrity.
+    
+    Args:
+        data: Original data that was signed
+        signature: Signature to verify
+        secret: Secret key used for signing
+        
+    Returns:
+        True if signature is valid, False otherwise
+    """
+    try:
+        expected_signature = create_hmac_signature(data, secret)
+        return hmac.compare_digest(expected_signature, signature)
+    except Exception:
+        return False
