@@ -37,9 +37,9 @@ async def create_api_key(
     
     Note: The full API key will only be shown once upon creation.
     """
-    # Vérification de sécurité - chiffrement des métadonnées sensibles
+    # Security check - encryption of sensitive metadata
     if current_user.is_superuser or str(current_user.id) == api_key_create.owner_id:
-        # Créer une nouvelle clé API
+        # Create a new API key
         api_key_db, plain_key = ApiKeyDB.create_key(
             name=api_key_create.name,
             owner_id=api_key_create.owner_id,
@@ -147,14 +147,14 @@ async def get_api_key(
     
     # Check permissions
     if not current_user.is_superuser and api_key.owner_id != str(current_user.id):
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to access API key {key_id} by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only view your own API keys"
         )
     
-    # Journalisation pour audit
+    # Logging for audit
     logger.info(f"API key {key_id} viewed by user {current_user.id}")
     
     return api_key
@@ -182,7 +182,7 @@ async def delete_api_key(
     
     # Check permissions
     if not current_user.is_superuser and api_key.owner_id != str(current_user.id):
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to delete API key {key_id} by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -193,7 +193,7 @@ async def delete_api_key(
     db.delete(api_key)
     db.commit()
     
-    # Journalisation pour audit
+    # Logging for audit
     logger.info(f"API key {key_id} deleted by user {current_user.id}")
     
     return None
@@ -221,7 +221,7 @@ async def revoke_api_key(
     
     # Check permissions
     if not current_user.is_superuser and api_key.owner_id != str(current_user.id):
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to revoke API key {key_id} by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -234,7 +234,7 @@ async def revoke_api_key(
     db.commit()
     db.refresh(api_key)
     
-    # Journalisation pour audit
+    # Logging for audit
     logger.info(f"API key {key_id} revoked by user {current_user.id}")
     
     return api_key
@@ -263,7 +263,7 @@ async def get_api_key_permissions(
     
     # Check permissions
     if not current_user.is_superuser and api_key.owner_id != str(current_user.id):
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to access API key permissions {key_id} by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -276,7 +276,7 @@ async def get_api_key_permissions(
     # Convert to scope strings
     scopes = [f"{perm.namespace}.{perm.resource}.{perm.action}" for perm in permissions]
     
-    # Journalisation pour audit
+    # Logging for audit
     logger.info(f"API key permissions for {key_id} viewed by user {current_user.id}")
     
     return scopes
@@ -295,7 +295,7 @@ async def list_audit_logs(
     Only superusers can access this endpoint.
     """
     if not current_user.is_superuser:
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to access audit logs by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -360,7 +360,7 @@ async def list_api_endpoints(
     Only superusers can access this endpoint.
     """
     if not current_user.is_superuser:
-        # Journalisation des tentatives non autorisées
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to access API registry by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -404,7 +404,7 @@ async def list_api_namespaces(
     Only superusers can access this endpoint.
     """
     if not current_user.is_superuser:
-        # Audit logging
+        # Logging unauthorized attempts
         logger.warning(f"Unauthorized attempt to access API namespaces by user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

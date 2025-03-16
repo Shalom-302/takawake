@@ -2,7 +2,6 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect
-import socketio
 import time
 import threading
 import logging
@@ -17,7 +16,6 @@ from app.plugins.webhooks.main import get_router as get_webhooks_router
 from app.plugins.advanced_audit.main import get_router as get_audit_router
 from app.plugins.monitoring.main import get_router as get_monitoring_router
 from app.plugins.messaging.main import get_router as get_messaging_router
-from app.plugins.websockets.main import get_router as get_websockets_router
 from app.plugins.custom_auth.main import get_router as get_auth_providers_router
 from app.plugins.api_versioning.main import router as api_versioning_router
 from app.plugins.api_versioning.integration import register_with_main_app
@@ -32,9 +30,7 @@ from app.plugins.pwa_support import router as pwa_support_router
 from app.plugins.workflow.main import router as workflow_router
 from app.plugins.api_gateway.main import initialize_plugin as init_api_gateway_plugin
 from app.plugins.api_gateway.main import get_router as get_api_gateway_router
-from app.plugins.websockets.main import sio
 from app.plugins.offline_sync.main import get_router as get_offline_sync_router
-from app.plugins.sse.stream import Stream
 from app.plugins.security.middleware import SecurityMiddlewareEnhanced
 from app.plugins.security.intrusion_detection import IntrusionDetector
 from app.plugins.security.mfa_service import MFAService
@@ -44,9 +40,10 @@ from app.plugins.security.security_config import load_security_config
 from app.plugins.kyc.main import get_admin_router as get_kyc_admin_router, get_api_router as get_kyc_api_router, on_plugin_init as init_kyc_plugin
 from app.plugins.business_alerts.main import business_alerts_plugin
 from app.plugins.digital_signature.main import digital_signature_plugin
+from app.plugins.recommendation.main import recommendation_plugin
+from app.plugins.messaging_service.main import messaging_service
 
 from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
-
 
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
@@ -69,19 +66,6 @@ app = FastAPI(title=settings.PROJECT_NAME)
 @app.get("/metrics")
 def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
-
-# Register Socket.IO app
-socket_app = socketio.ASGIApp(
-    socketio_server=sio,
-    other_asgi_app=app,
-    # Do not remove this configuration: https://github.com/pyropy/fastapi-socketio/issues/51
-    socketio_path='/ws/socket.io',
-)
-app.mount('/ws', socket_app)
-
-# Override Stream dependency
-_stream = Stream()
-app.dependency_overrides[Stream] = lambda: _stream
 
 # CORS Middleware
 origins = settings.CORS_ORIGINS
@@ -152,6 +136,10 @@ def init_db():
         # Initialize Digital Signature plugin
         digital_signature_plugin.init_app(app)
         print("🟢 Digital Signature plugin initialized")
+        
+        # Initialize messaging service plugin
+        messaging_service.init_app(app)
+        print("🟢 Messaging Service plugin initialized")
     finally:
         db.close()
     print("✅ Startup finished")
@@ -197,7 +185,6 @@ app.include_router(get_webhooks_router(), prefix="/plugins/webhooks", tags=["Web
 app.include_router(get_audit_router(), prefix="/plugins/advanced_audit", tags=["Advanced Audit"])
 app.include_router(get_monitoring_router(), prefix="/plugins/monitoring", tags=["Advanced Monitoring"])
 app.include_router(get_messaging_router(), prefix="/plugins/messaging", tags=["Messaging"])
-app.include_router(get_websockets_router(), prefix="/plugins/websockets", tags=["Websockets"])
 app.include_router(get_auth_providers_router(), prefix="/plugins/auth-providers", tags=["Auth Providers"])
 app.include_router(crypto_router, prefix="/plugins/security", tags=["Security"])
 app.include_router(api_versioning_router, prefix="/plugins/api-versioning", tags=["API Versioning"])
@@ -217,6 +204,8 @@ app.include_router(get_kyc_admin_router(), prefix="/admin", tags=["KYC Admin"])
 app.include_router(get_kyc_api_router(), prefix="/api", tags=["KYC"])
 app.include_router(business_alerts_plugin.router, prefix="/plugins/business-alerts", tags=["Business Alerts"])
 app.include_router(digital_signature_plugin.router, prefix="/plugins/digital-signature", tags=["Digital Signature"])
+app.include_router(recommendation_plugin.router, prefix="/plugins/recommendation", tags=["Recommendation"])
+app.include_router(messaging_service.router, prefix="/plugins/messaging-service", tags=["Messaging Service"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
@@ -225,13 +214,13 @@ app.include_router(plugin_manager_router)
 def update_system_metrics():
     """Update system metrics for monitoring"""
     try:
-        # CPU usage (en pourcentage)
+        # CPU usage (in percentage)
         CPU_USAGE.labels(source="main").set(psutil.cpu_percent())
         
-        # Memory usage (en pourcentage)
+        # Memory usage (in percentage)
         MEMORY_USAGE.labels(source="main").set(psutil.virtual_memory().percent)
         
-        # Disk usage (en pourcentage)
+        # Disk usage (in percentage)
         DISK_USAGE.labels(source="main").set(psutil.disk_usage('/').percent)
         
         logging.debug(f"Updated system metrics: CPU={psutil.cpu_percent()}%, Memory={psutil.virtual_memory().percent}%, Disk={psutil.disk_usage('/').percent}%")

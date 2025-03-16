@@ -1,6 +1,0 @@
-# WebSockets Plugin Dependencies
-websockets>=11.0.3  # WebSocket implementation for asyncio
-python-socketio>=5.9.0  # Socket.IO server
-starlette>=0.37.2  # ASGI framework with WebSocket support
-uvicorn>=0.23.2  # ASGI server with WebSocket support
-websocket-client>=1.6.3  # WebSocket client library

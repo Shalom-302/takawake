@@ -117,7 +117,7 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         try:
-            # Exemptions pour les endpoints spécifiques
+            # Exemptions for specific endpoints
             if (request.url.path == "/metrics" or 
                 request.url.path == "/" or 
                 request.url.path.startswith("/plugins/advanced-logging/") or
@@ -137,10 +137,10 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
                 logging.error(f"SecurityMiddleware: WAF error: {str(waf_error)}", exc_info=True)
                 # Continue processing even if WAF fails
             
-            # Vérifier si user existe dans request.state
+            # Check if user exists in request.state
             if not hasattr(request.state, "user"):
                 logging.warning("SecurityMiddleware: No user found in request state")
-                request.state.user = None  # Définir une valeur par défaut pour éviter l'erreur
+                request.state.user = None  # Define a default value to avoid error
             
             user = request.state.user
             logging.debug(f"SecurityMiddleware: User retrieved: {user.id if user else 'anonymous'}")

@@ -69,7 +69,7 @@ class ApiKeyResponse(ApiKeyBase):
     
     class Config:
         """Pydantic config."""
-        orm_mode = True
+        from_attributes = True
 
 
 class ApiKeyList(BaseModel):
@@ -101,7 +101,7 @@ class ApiAuditLogResponse(BaseModel):
     
     class Config:
         """Pydantic config."""
-        orm_mode = True
+        from_attributes = True
 
 
 class ApiAuditLogList(BaseModel):
@@ -127,7 +127,7 @@ class RateLimitResponse(BaseModel):
     
     class Config:
         """Pydantic config."""
-        orm_mode = True
+        from_attributes = True
 
 
 class RateLimitList(BaseModel):

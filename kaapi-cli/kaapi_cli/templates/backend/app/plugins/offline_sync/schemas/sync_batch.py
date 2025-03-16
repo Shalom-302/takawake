@@ -38,7 +38,7 @@ class SyncBatchInDB(SyncBatchBase):
     status: SyncStatus
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SyncBatchResponse(SyncBatchInDB):

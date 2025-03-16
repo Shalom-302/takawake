@@ -61,7 +61,7 @@ class SyncOperationInDB(SyncOperationBase):
     batch_id: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SyncOperationResponse(SyncOperationInDB):

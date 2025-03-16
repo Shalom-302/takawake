@@ -21,7 +21,7 @@ class SignatureCreate(SignatureBase):
     document_name: str = Field(..., description="Name of the document to sign")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "document_name": "contract.pdf",
                 "description": "Employment contract signature",
@@ -40,8 +40,8 @@ class SignatureResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if status is failed")
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "document_name": "contract.pdf",
@@ -57,7 +57,7 @@ class SignatureVerify(BaseModel):
     signature_id: str = Field(..., description="ID of the signature to verify")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "signature_id": "123e4567-e89b-12d3-a456-426614174000"
             }
@@ -74,7 +74,7 @@ class SignatureVerifyResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if verification failed")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "verified": True,
                 "document_name": "contract.pdf",
@@ -95,7 +95,7 @@ class BatchSignatureRequest(BaseModel):
     signature_type: str = Field("standard", description="Type of signature to apply to all documents")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "document_ids": ["doc1", "doc2", "doc3"],
                 "description": "Batch signing of quarterly reports",
@@ -111,7 +111,7 @@ class EvidenceCreate(BaseModel):
     include_timestamp_proof: bool = Field(True, description="Whether to include timestamp proof")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "signature_id": "123e4567-e89b-12d3-a456-426614174000",
                 "include_certificate_chain": True,
@@ -130,8 +130,8 @@ class EvidenceResponse(BaseModel):
     expires_at: Optional[datetime] = Field(None, description="When the evidence expires")
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "signature_id": "123e4567-e89b-12d3-a456-426614174000",

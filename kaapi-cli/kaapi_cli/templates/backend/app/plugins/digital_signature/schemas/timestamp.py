@@ -20,7 +20,7 @@ class TimestampCreate(TimestampBase):
     data_source: Optional[str] = Field(None, description="Source of the data being timestamped")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "data_source": "quarterly_report.pdf",
                 "description": "Timestamp for Q1 financial report"
@@ -39,8 +39,8 @@ class TimestampResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if status is failed")
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "timestamp": "2025-03-16T19:30:45Z",
@@ -58,7 +58,7 @@ class TimestampVerify(BaseModel):
     data: Optional[str] = Field(None, description="Base64-encoded data to verify against the timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "timestamp_id": "123e4567-e89b-12d3-a456-426614174000",
                 "data": "YmFzZTY0IGVuY29kZWQgZGF0YSBoZXJl"
@@ -75,7 +75,7 @@ class TimestampVerifyResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if verification failed")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "verified": True,
                 "timestamp": "2025-03-16T19:30:45Z",

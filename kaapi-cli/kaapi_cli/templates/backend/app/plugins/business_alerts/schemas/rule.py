@@ -60,7 +60,7 @@ class RuleResponse(RuleBase):
     
     class Config:
         """Pydantic configuration."""
-        orm_mode = True
+        from_attributes = True
 
 class RuleFilter(BaseModel):
     """Schema for filtering rules in list endpoints."""

@@ -68,7 +68,7 @@ groups:
   # Comment it out or remove it in production environments.
   # ====================================================================
   - alert: TestAlertSimple
-    expr: up{job="kaapi-api"} < 2  # Cette condition est toujours vraie car 'up' vaut 0 ou 1
+    expr: up{job="kaapi-api"} < 2  # This condition is always true because 'up' is 0 or 1
     for: 0m
     labels:
       severity: warning
@@ -76,7 +76,7 @@ groups:
       dashboard: http-metrics
     annotations:
       summary: "Test alert: Simple condition always true"
-      description: "Cette alerte se déclenche toujours car la valeur de 'up' est toujours inférieure à 2"
+      description: "This alert triggers always because the value of 'up' is always less than 2"
       runbook_url: "https://wiki.example.com/monitoring/test-alerts"
 
   # ====================================================================

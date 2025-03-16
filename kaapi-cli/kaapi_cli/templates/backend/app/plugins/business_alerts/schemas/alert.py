@@ -48,7 +48,7 @@ class AlertResponse(AlertBase):
     
     class Config:
         """Pydantic configuration."""
-        orm_mode = True
+        from_attributes = True
         
 class AlertFilter(BaseModel):
     """Schema for filtering alerts in list endpoints."""

@@ -188,7 +188,7 @@ class CinetPayProvider(BasePaymentProvider):
                 "return_url": self.return_url,
                 "cancel_url": self.cancel_url,
                 "notify_url": self.notify_url,
-                "metadata": {  # Cette clé reste "metadata" car c'est ce qu'attend l'API de CinetPay
+                "metadata": {  # This key remains "metadata" because that's what CinetPay expects
                     "payment_id": payment_request.payment_id,
                     "encrypted_data": encrypted_metadata,
                     "source": "kaapi"
@@ -561,7 +561,7 @@ class CinetPayProvider(BasePaymentProvider):
                 "amount": refund_request.amount,
                 "currency": refund_request.currency.value,
                 "reason": refund_request.reason or "Customer refund request",
-                "metadata": {  # Cette clé reste "metadata" car c'est ce qu'attend l'API de CinetPay
+                "metadata": {  # This key remains "metadata" because that's what CinetPay expects
                     "refund_id": refund_request.refund_metadata.get("refund_id", ""),
                     "encrypted_data": encrypted_metadata,
                     "source": "kaapi"
@@ -1182,7 +1182,7 @@ class CinetPayProvider(BasePaymentProvider):
             transaction_data = {
                 "provider": self.provider_id,
                 "event_type": event_type,
-                "transaction_metadata": data  # Changé de "metadata" à "transaction_metadata"
+                "transaction_metadata": data  # Changed from "metadata" to "transaction_metadata"
             }
             
             # Log transaction data for debugging
@@ -1221,7 +1221,7 @@ class CinetPayProvider(BasePaymentProvider):
                 "provider": self.provider_id,
                 "event_type": event_type,
                 "refund_id": refund_id,
-                "refund_metadata": data  # Changé de "metadata" à "refund_metadata"
+                "refund_metadata": data  # Changed from "metadata" to "refund_metadata"
             }
             
             # Log transaction data for debugging

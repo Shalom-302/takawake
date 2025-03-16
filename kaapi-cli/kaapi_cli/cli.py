@@ -137,7 +137,7 @@ def template_init():
         subprocess.check_call(
             ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
             cwd=str(target_backend_dir),
-            env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
+            env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Key to resolve imports
         )
 
         # 3. Apply database schema
@@ -255,7 +255,7 @@ def init():
     #     subprocess.check_call(
     #         ["alembic", "revision", "--autogenerate", "-m", "Initial tables"],
     #         cwd=str(target_backend_dir),
-    #         env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Clé pour résoudre les imports
+    #         env={**os.environ, "PYTHONPATH": str(target_backend_dir / "app")}  # Key to resolve imports
     #     )
 
     #     # 3. Apply database schema

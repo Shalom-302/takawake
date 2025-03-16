@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script pour générer une charge sur la base de données PostgreSQL
-et tester les tableaux de bord de monitoring.
+Script to generate a load on the PostgreSQL database
+and test monitoring dashboards.
 """
 
 import asyncio
@@ -14,33 +14,33 @@ import asyncpg
 import argparse
 from datetime import datetime
 
-# Configuration du logging
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Configuration par défaut
+# Default configuration
 DEFAULT_DB_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
-DEFAULT_DURATION = 60  # en secondes
+DEFAULT_DURATION = 60  # in seconds
 DEFAULT_CONCURRENT_CONNECTIONS = 5
-DEFAULT_OPERATION_DELAY = 0.1  # en secondes
+DEFAULT_OPERATION_DELAY = 0.1  # in seconds
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Générer une charge sur la base de données PostgreSQL.')
+    parser = argparse.ArgumentParser(description='Generate a load on the PostgreSQL database and test monitoring dashboards.')
     parser.add_argument('--db-url', type=str, default=os.environ.get('DB_URL', DEFAULT_DB_URL),
-                      help='URL de connexion à la base de données PostgreSQL')
+                      help='URL of the PostgreSQL database')
     parser.add_argument('--duration', type=int, default=DEFAULT_DURATION,
-                      help='Durée du test en secondes')
+                      help='Duration of the test in seconds')
     parser.add_argument('--connections', type=int, default=DEFAULT_CONCURRENT_CONNECTIONS,
-                      help='Nombre de connexions concurrentes')
+                      help='Number of concurrent connections')
     parser.add_argument('--delay', type=float, default=DEFAULT_OPERATION_DELAY,
-                      help='Délai entre les opérations en secondes')
+                      help='Delay between operations in seconds')
     return parser.parse_args()
 
 async def create_test_table(conn):
-    """Crée la table de test si elle n'existe pas."""
+    """Create the test table if it does not exist."""
     await conn.execute('''
         CREATE TABLE IF NOT EXISTS test_metrics (
             id SERIAL PRIMARY KEY,
@@ -50,30 +50,30 @@ async def create_test_table(conn):
         )
     ''')
     
-    # Créer un index pour tester l'optimisation
+    # Create an index for testing optimization
     await conn.execute('''
         CREATE INDEX IF NOT EXISTS idx_test_metrics_name ON test_metrics(name)
     ''')
     
-    logger.info("Table de test créée ou vérifiée.")
+    logger.info("Test table created or verified.")
 
 async def select_operation(conn):
-    """Exécute une opération SELECT aléatoire."""
+    """Execute a random SELECT operation."""
     operations = [
-        # SELECT simple
+        # Simple SELECT
         lambda: conn.fetch("SELECT * FROM test_metrics ORDER BY RANDOM() LIMIT 10"),
-        # SELECT avec filtre
+        # SELECT with filter
         lambda: conn.fetch("SELECT * FROM test_metrics WHERE name = 'metric_" + str(random.randint(1, 5)) + "'"),
-        # SELECT avec agrégation
+        # SELECT with aggregation
         lambda: conn.fetch("SELECT name, AVG(value) FROM test_metrics GROUP BY name"),
-        # SELECT avec jointure (self-join dans ce cas)
+        # SELECT with join (self-join in this case)
         lambda: conn.fetch("""
             SELECT a.name, a.value, b.value as related_value 
             FROM test_metrics a 
             JOIN test_metrics b ON a.name = b.name AND a.id != b.id 
             LIMIT 10
         """),
-        # SELECT complexe avec sous-requête
+        # SELECT with subquery
         lambda: conn.fetch("""
             SELECT * FROM test_metrics 
             WHERE value > (SELECT AVG(value) FROM test_metrics)
@@ -86,7 +86,7 @@ async def select_operation(conn):
     return "SELECT"
 
 async def insert_operation(conn):
-    """Exécute une opération INSERT."""
+    """Execute an INSERT operation."""
     metric_name = f"metric_{random.randint(1, 5)}"
     value = random.uniform(0, 100)
     
@@ -97,10 +97,10 @@ async def insert_operation(conn):
     return "INSERT"
 
 async def update_operation(conn):
-    """Exécute une opération UPDATE."""
+    """Execute an UPDATE operation."""
     value = random.uniform(0, 100)
     
-    # Mise à jour avec une condition aléatoire
+    # Update with a random condition
     await conn.execute(
         "UPDATE test_metrics SET value = $1 WHERE id IN (SELECT id FROM test_metrics ORDER BY RANDOM() LIMIT 1)",
         value
@@ -108,26 +108,26 @@ async def update_operation(conn):
     return "UPDATE"
 
 async def delete_operation(conn):
-    """Exécute une opération DELETE."""
-    # Suppression avec une condition aléatoire mais limitée pour éviter de tout supprimer
+    """Execute a DELETE operation."""
+    # Delete with a random condition but limited to avoid deleting everything
     await conn.execute(
         "DELETE FROM test_metrics WHERE id IN (SELECT id FROM test_metrics ORDER BY RANDOM() LIMIT 1)"
     )
     return "DELETE"
 
 async def vacuum_operation(conn):
-    """Exécute une opération VACUUM."""
+    """Execute a VACUUM operation."""
     await conn.execute("VACUUM ANALYZE test_metrics")
     return "VACUUM"
 
 async def run_operations(db_url, duration, delay):
-    """Exécute des opérations aléatoires pendant une durée déterminée."""
+    """Execute random operations for a determined duration."""
     conn = await asyncpg.connect(db_url)
     
-    # Créer la table de test si nécessaire
+    # Create the test table if it does not exist
     await create_test_table(conn)
     
-    # S'assurer qu'il y a quelques données initiales
+    # Ensure there are some initial data
     for _ in range(100):
         await insert_operation(conn)
     
@@ -144,8 +144,8 @@ async def run_operations(db_url, duration, delay):
     
     try:
         while time.time() < end_time:
-            # Choix aléatoire des opérations avec une pondération
-            # Pour favoriser les SELECTs et éviter trop de DELETEs
+            # Random selection of operations with weights
+            # To favorize SELECTs and avoid too many DELETEs
             operation_type = random.choices(
                 ["SELECT", "INSERT", "UPDATE", "DELETE", "VACUUM"],
                 weights=[60, 20, 15, 4, 1],
@@ -166,23 +166,23 @@ async def run_operations(db_url, duration, delay):
                 
                 operations[result] += 1
                 
-                # Simuler un délai entre les opérations
+                # Simulate a delay between operations
                 await asyncio.sleep(delay)
             except Exception as e:
-                logger.error(f"Erreur lors de l'opération {operation_type}: {e}")
+                logger.error(f"Error during {operation_type} operation: {e}")
     
     finally:
-        # Afficher les statistiques
-        logger.info(f"Statistiques des opérations: {operations}")
+        # Display statistics
+        logger.info(f"Operation statistics: {operations}")
         await conn.close()
 
 async def main():
     args = parse_args()
     
-    logger.info(f"Démarrage du test de charge DB avec {args.connections} connexions pendant {args.duration} secondes")
-    logger.info(f"URL de la base de données: {args.db_url}")
+    logger.info(f"Starting DB load test with {args.connections} connections for {args.duration} seconds")
+    logger.info(f"Database URL: {args.db_url}")
     
-    # Créer plusieurs connexions concurrentes
+    # Create concurrent connections
     tasks = []
     for i in range(args.connections):
         task = asyncio.create_task(
@@ -194,10 +194,10 @@ async def main():
         )
         tasks.append(task)
     
-    # Attendre que toutes les tâches soient terminées
+    # Wait for all tasks to complete
     await asyncio.gather(*tasks)
     
-    logger.info("Test de charge DB terminé")
+    logger.info("DB load test completed")
 
 if __name__ == "__main__":
     asyncio.run(main())

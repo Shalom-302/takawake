@@ -275,13 +275,13 @@ def update_role_permissions(
     for (ress, act), line_perms in grouped.items():
       resource_perm = next((lp for lp in line_perms if lp.field is None), None)
 
-      # Si la ressource est autorisée, on ignore TOUS les field-level pour cette action
+      # If the resource is allowed, ignore all field-level for this action
       if resource_perm and resource_perm.allowed:
           enforcer.add_policy(role_name, ress, act)
-          # Supprimer tous les field-level existants pour cette action
+          # Remove all existing field-level for this action
           enforcer.remove_filtered_policy(0, role_name, f"{ress}:", act)
       else:
-          # Sinon, on ajoute uniquement les field-level explicitement autorisés
+          # Otherwise, add only explicitly allowed field-level permissions
           field_perms = [lp for lp in line_perms if lp.field is not None and lp.allowed]
           for fperm in field_perms:
               obj = f"{ress}:{fperm.field}"

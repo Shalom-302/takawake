@@ -228,7 +228,7 @@ class RateLimitInfo(BaseModel):
     reset: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RateLimitResponse(BaseModel):
@@ -237,4 +237,4 @@ class RateLimitResponse(BaseModel):
     limits: List[RateLimitInfo]
     
     class Config:
-        orm_mode = True
+        from_attributes = True

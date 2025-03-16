@@ -223,7 +223,7 @@ class ApiPermission(BaseModel):
     action: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ApiKeyCreate(BaseModel):
@@ -278,7 +278,7 @@ class ApiKeyResponse(BaseModel):
     use_count: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ApiKeyWithSecret(ApiKeyResponse):
