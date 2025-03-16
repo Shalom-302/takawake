@@ -33,7 +33,7 @@ from app.plugins.workflow.main import router as workflow_router
 from app.plugins.api_gateway.main import initialize_plugin as init_api_gateway_plugin
 from app.plugins.api_gateway.main import get_router as get_api_gateway_router
 from app.plugins.websockets.main import sio
-
+from app.plugins.offline_sync.main import get_router as get_offline_sync_router
 from app.plugins.sse.stream import Stream
 from app.plugins.security.middleware import SecurityMiddlewareEnhanced
 from app.plugins.security.intrusion_detection import IntrusionDetector
@@ -133,6 +133,11 @@ def init_db():
         # Initialize payment plugin
         init_payment_plugin(app)
         print("🟢 Payment plugin initialized")
+        
+        # Initialize offline sync plugin
+        from app.plugins.offline_sync.main import initialize_plugin as init_offline_sync_plugin
+        init_offline_sync_plugin(app)
+        print("🟢 Offline Sync plugin initialized")
     finally:
         db.close()
     print("✅ Startup finished")
@@ -193,6 +198,7 @@ app.include_router(privacy_compliance_router, prefix="/plugins/privacy-complianc
 app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA Support"])
 app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])
 app.include_router(get_api_gateway_router(), prefix="/admin/api-gateway", tags=["API Gateway"])
+app.include_router(get_offline_sync_router(), prefix="/plugins/offline-sync", tags=["Offline Sync"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
