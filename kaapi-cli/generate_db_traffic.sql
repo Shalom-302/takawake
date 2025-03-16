@@ -1,5 +1,5 @@
--- Script SQL pour générer du trafic dans la base de données
--- Création d'une table de test si elle n'existe pas
+-- SQL script to generate database traffic
+-- Create a test table if none exists
 CREATE TABLE IF NOT EXISTS test_monitoring (
     id SERIAL PRIMARY KEY,
     metric_name VARCHAR(50) NOT NULL,
@@ -7,11 +7,11 @@ CREATE TABLE IF NOT EXISTS test_monitoring (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Création d'un index pour tester les performances
+-- Create indexes for performance testing
 CREATE INDEX IF NOT EXISTS idx_test_monitoring_name ON test_monitoring(metric_name);
 CREATE INDEX IF NOT EXISTS idx_test_monitoring_timestamp ON test_monitoring(timestamp);
 
--- Insertion de données de test (1000 entrées)
+-- Insert test data (1000 entries)
 DO $$
 DECLARE
     i INT;
@@ -19,7 +19,7 @@ DECLARE
     metric_value FLOAT;
 BEGIN
     FOR i IN 1..1000 LOOP
-        -- Choisir aléatoirement parmi 5 noms de métriques
+        -- Choose randomly from 5 metric names
         CASE floor(random() * 5)::INT + 1
             WHEN 1 THEN metric_name := 'cpu_usage';
             WHEN 2 THEN metric_name := 'memory_usage';
@@ -28,10 +28,10 @@ BEGIN
             ELSE metric_name := 'query_time';
         END CASE;
         
-        -- Générer une valeur aléatoire entre 0 et 100
+        -- Generate a random value between 0 and 100
         metric_value := random() * 100;
         
-        -- Insérer la donnée
+        -- Insert the data
         INSERT INTO test_monitoring (metric_name, metric_value, timestamp)
         VALUES (
             metric_name, 
@@ -41,10 +41,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- Effectuer quelques analyses lourdes pour générer de la charge
+-- Perform some heavy analyses to generate load
 ANALYZE VERBOSE test_monitoring;
 
--- Exécuter quelques requêtes complexes pour stimuler le système
+-- Execute some complex queries to stimulate the system
 SELECT 
     metric_name, 
     AVG(metric_value) as avg_value,
@@ -54,7 +54,7 @@ SELECT
 FROM test_monitoring
 GROUP BY metric_name;
 
--- Calculer les moyennes mobiles sur une fenêtre de temps
+-- Calculate moving averages over a time window
 SELECT 
     metric_name,
     timestamp,
@@ -67,7 +67,7 @@ SELECT
 FROM test_monitoring
 ORDER BY metric_name, timestamp;
 
--- Effectuer des jointures pour simuler des requêtes complexes
+-- Perform some complex joins to stimulate the system
 WITH recent_metrics AS (
     SELECT * FROM test_monitoring
     WHERE timestamp > NOW() - INTERVAL '30 minutes'
@@ -83,7 +83,7 @@ JOIN recent_metrics r ON t.metric_name = r.metric_name
 WHERE t.timestamp < r.timestamp
 LIMIT 1000;
 
--- Créer une deuxième série de données pour comparer
+-- Create a second series of data to compare
 DO $$
 DECLARE
     i INT;
@@ -91,7 +91,7 @@ DECLARE
     metric_value FLOAT;
 BEGIN
     FOR i IN 1..500 LOOP
-        -- Utiliser les mêmes noms de métriques
+        -- Use the same metric names
         CASE floor(random() * 5)::INT + 1
             WHEN 1 THEN metric_name := 'cpu_usage';
             WHEN 2 THEN metric_name := 'memory_usage';
@@ -100,10 +100,10 @@ BEGIN
             ELSE metric_name := 'query_time';
         END CASE;
         
-        -- Générer une valeur aléatoire différente
+        -- Generate a different random value
         metric_value := 50 + (random() * 50);
         
-        -- Insérer la donnée avec un timestamp plus récent
+        -- Insert the data with a more recent timestamp
         INSERT INTO test_monitoring (metric_name, metric_value, timestamp)
         VALUES (
             metric_name, 
@@ -113,10 +113,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- Exécuter une autre analyse pour mettre à jour les statistiques
+-- Execute another analysis to update statistics
 ANALYZE VERBOSE test_monitoring;
 
--- Effectuer une requête d'agrégation par intervalles de temps
+-- Perform an aggregation by time intervals
 SELECT 
     metric_name,
     date_trunc('minute', timestamp) as minute,

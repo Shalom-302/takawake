@@ -11,8 +11,8 @@ from ..models.provider import ProviderResponse
 from .base_provider import BasePaymentProvider
 from ..security import payment_security
 
-# N'importez pas les providers ici, ils seront importés dans la méthode register_all
-# pour éviter les importations circulaires
+# Do not import providers here, they will be imported in the register_all method
+# to avoid circular imports
 
 logger = logging.getLogger("kaapi.payment.factory")
 

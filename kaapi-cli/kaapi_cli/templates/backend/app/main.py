@@ -8,6 +8,7 @@ import threading
 import logging
 
 from .core.db import Base, engine, SessionLocal
+from .core.config import settings
 from app.casbin_setup import get_casbin_enforcer
 
 # Plugins imports
@@ -29,11 +30,10 @@ from app.plugins.payment.main import init_app as init_payment_plugin
 from app.plugins.privacy_compliance import router as privacy_compliance_router
 from app.plugins.pwa_support import router as pwa_support_router
 from app.plugins.workflow.main import router as workflow_router
-
-from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
-
+from app.plugins.api_gateway.main import initialize_plugin as init_api_gateway_plugin
+from app.plugins.api_gateway.main import get_router as get_api_gateway_router
 from app.plugins.websockets.main import sio
-from .core.config import settings
+
 from app.plugins.sse.stream import Stream
 from app.plugins.security.middleware import SecurityMiddlewareEnhanced
 from app.plugins.security.intrusion_detection import IntrusionDetector
@@ -41,6 +41,10 @@ from app.plugins.security.mfa_service import MFAService
 from app.plugins.security.waf import WebApplicationFirewall, ThreatIntelFeed
 from app.plugins.security.main import crypto_router
 from app.plugins.security.security_config import load_security_config
+
+
+from .routers import auth, admin, migrations, auth_provider, admin_advanced, role
+
 
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
@@ -153,6 +157,15 @@ def on_startup():
 register_with_main_app(app)
 print("🟢 API Versioning initialized")
 
+# Initialize API Gateway plugin
+init_api_gateway_plugin(
+    app, 
+    api_title=settings.PROJECT_NAME + " API",
+    api_description="Secure API Gateway for " + settings.PROJECT_NAME,
+    api_version="1.0.0"
+)
+print("🟢 API Gateway initialized")
+
 # (4) Include all your normal app routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
@@ -179,6 +192,7 @@ app.include_router(file_storage_router, prefix="/plugins/file-storage", tags=["F
 app.include_router(privacy_compliance_router, prefix="/plugins/privacy-compliance", tags=["Privacy Compliance"])
 app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA Support"])
 app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])
+app.include_router(get_api_gateway_router(), prefix="/admin/api-gateway", tags=["API Gateway"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
