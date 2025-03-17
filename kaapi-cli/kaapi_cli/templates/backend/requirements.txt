@@ -39,6 +39,7 @@ pandas>=2.0.0
 celery
 redis
 aio_pika
+pika==1.3.2
 
 # Security
 pyjwt

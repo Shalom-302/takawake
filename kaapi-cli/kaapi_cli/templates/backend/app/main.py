@@ -26,6 +26,7 @@ from app.plugins.data_exchange.main import data_exchange_router
 from app.plugins.file_storage.main import router as file_storage_router
 from app.plugins.payment.main import init_app as init_payment_plugin
 from app.plugins.privacy_compliance import router as privacy_compliance_router
+from app.plugins.push_notifications.main import router as push_notifications_router
 from app.plugins.pwa_support import router as pwa_support_router
 from app.plugins.workflow.main import router as workflow_router
 from app.plugins.api_gateway.main import initialize_plugin as init_api_gateway_plugin
@@ -196,6 +197,7 @@ app.include_router(ai_integration_router, prefix="/plugins/ai-integration", tags
 app.include_router(data_exchange_router, prefix="/plugins/data-exchange", tags=["Data Exchange"])
 app.include_router(file_storage_router, prefix="/plugins/file-storage", tags=["File Storage"])
 app.include_router(privacy_compliance_router, prefix="/plugins/privacy-compliance", tags=["Privacy Compliance"])
+app.include_router(push_notifications_router, prefix="/plugins/push-notifications", tags=["Push Notifications"])
 app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA Support"])
 app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])
 app.include_router(get_api_gateway_router(), prefix="/admin/api-gateway", tags=["API Gateway"])
