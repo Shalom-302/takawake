@@ -27,7 +27,7 @@ export interface AuthProvider {
 const authService = {
   // Email login
   async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await axiosClient.post<LoginResponse>('/api/email/login', {
+    const response = await axiosClient.post<LoginResponse>('/auth/login', {
       username,
       password,
     });
@@ -36,7 +36,7 @@ const authService = {
 
   // Email registration
   async register(username: string, password: string): Promise<LoginResponse> {
-    const response = await axiosClient.post<LoginResponse>('/api/email/register', {
+    const response = await axiosClient.post<LoginResponse>('/auth/register', {
       username,
       password,
     });
@@ -53,7 +53,7 @@ const authService = {
   // Get current user profile
   async getCurrentUser(): Promise<UserData | null> {
     try {
-      const response = await axiosClient.get<UserData>('/api/users/me');
+      const response = await axiosClient.get<UserData>('/auth/me');
       return response.data;
     } catch {
       // Handle error silently and return null
@@ -63,24 +63,27 @@ const authService = {
 
   // Get available auth providers
   async getProviders(): Promise<AuthProvider[]> {
-    const response = await axiosClient.get<AuthProvider[]>('/api/providers');
+    const response = await axiosClient.get<AuthProvider[]>('/providers');
     return response.data;
   },
 
   // Get active auth providers
   async getActiveProviders(): Promise<AuthProvider[]> {
     const providers = await this.getProviders();
-    return providers.filter(provider => provider.is_active);
+    return providers;
   },
 
   // Initiate OAuth login
   getOAuthLoginUrl(provider: string): string {
-    return `${axiosClient.defaults.baseURL}/api/${provider}/login`;
+    return `${axiosClient.defaults.baseURL}/auth/oauth/init?provider=${provider}`;
   },
 
   // Process OAuth callback
   async processOAuthCallback(provider: string, code: string): Promise<LoginResponse> {
-    const response = await axiosClient.post<LoginResponse>(`/api/callback/${provider}`, { code });
+    const response = await axiosClient.post<LoginResponse>('/auth/oauth/callback', { 
+      provider, 
+      code 
+    });
     return response.data;
   }
 };

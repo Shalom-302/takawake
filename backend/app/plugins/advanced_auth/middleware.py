@@ -181,9 +181,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             True if the path is an authentication endpoint
         """
         auth_endpoints = [
-            "/api/v1/auth/login",
-            "/api/v1/auth/register",
-            "/api/v1/auth/reset-password",
+            "/auth/login",
+            "/auth/register",
+            "/auth/reset-password",
         ]
         
         return any(path.startswith(endpoint) for endpoint in auth_endpoints)

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(
-    prefix=f"{settings.API_V1_STR}/auth",
+    prefix="/auth",
     tags=["authentication"],
     responses={
         401: {"description": "Unauthorized"},
@@ -149,7 +149,7 @@ async def change_password(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/providers")
+@router.get("/providers", response_model=List[Dict[str, Any]])
 async def get_providers(db: Session = Depends(get_db)):
     """
     Get all available authentication providers.

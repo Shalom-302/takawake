@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     
     # Basic Configuration
     PROJECT_NAME: str = "KAAPI Backend"
-    API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     
     # Security
@@ -20,7 +19,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3002"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     

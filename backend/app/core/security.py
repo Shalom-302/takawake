@@ -13,7 +13,7 @@ from app.core.db import get_db
 from app.plugins.advanced_auth.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/auth/login")
 
 
 class EncryptionHandler(Protocol):

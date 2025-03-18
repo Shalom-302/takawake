@@ -23,7 +23,6 @@ def info():
     console.print("[bold blue]Kaapi Information[/bold blue]")
     console.print(f"Project Name: {settings.PROJECT_NAME}")
     console.print(f"Environment: {settings.ENVIRONMENT}")
-    console.print(f"API Version: {settings.API_V1_STR}")
     console.print(f"Database URL: {settings.DB_URL.replace('://', '://***:***@')}")
 
 @app.callback()

@@ -117,14 +117,34 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         try:
-            # Exemptions for specific endpoints
-            if (request.url.path == "/metrics" or 
-                request.url.path == "/" or 
-                request.url.path == "/docs" or 
-                request.url.path == "/redoc" or 
-                request.url.path == "/openapi.json" or 
-                request.url.path.startswith("/plugins/advanced-logging/") or
-                request.url.path == "/plugins/advanced_audit/metrics"):
+            # Get more granular with path checks for exemptions
+            path = request.url.path
+            
+            # List of public paths and prefixes that should be exempt from security checks
+            exempt_paths = [
+                "/metrics", 
+                "/", 
+                "/docs", 
+                "/redoc", 
+                "/openapi.json",
+                "/providers",
+                "/favicon.ico",
+                "/health",
+                "/status"
+            ]
+            
+            exempt_prefixes = [
+                "/auth",
+                "/static",
+                "/assets",
+                "/plugins/advanced-logging/",
+                "/plugins/advanced_audit/metrics"
+            ]
+            
+            # Check if the path is exempt
+            if (path in exempt_paths or 
+                any(path.startswith(prefix) for prefix in exempt_prefixes)):
+                logging.debug(f"SecurityMiddleware: Exempted path: {path}")
                 return await call_next(request)
                 
             # WAF check first
@@ -171,9 +191,17 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
             logging.debug("SecurityMiddleware: Handling HTTPException")
             raise
         except Exception as e:
+            # Log more detailed error information
             logging.error(f"SecurityMiddleware: Caught exception: {str(e)}", exc_info=True)
+            logging.error(f"SecurityMiddleware: Request path: {request.url.path}")
+            logging.error(f"SecurityMiddleware: Request method: {request.method}")
+            logging.error(f"SecurityMiddleware: User in request: {getattr(request.state, 'user', None)}")
+            
+            # Also log the exception type
+            logging.error(f"SecurityMiddleware: Exception type: {type(e).__name__}")
+            
             self.detector.log_security_event("middleware_error", {"error": str(e), "path": request.url.path})
-            raise HTTPException(status_code=500, detail="Internal error")
+            raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
     async def _log_decrypt_attempt(self, user: User, request: Request, response: Response):
         audit_data = {

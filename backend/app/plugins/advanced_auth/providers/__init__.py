@@ -1,13 +1,14 @@
 """
 Authentication providers for the advanced authentication plugin.
 """
-from typing import Dict, Type, Any, Optional
+from typing import Dict, Type, Any, Optional, List
 import logging
 
 from .base import AuthProvider, AuthResult, UserInfo
 from .email import EmailAuthProvider
 from .github import GitHubAuthProvider
 from .google import GoogleAuthProvider
+from .facebook import FacebookAuthProvider
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ PROVIDERS = {
     "email": EmailAuthProvider,
     "github": GitHubAuthProvider,
     "google": GoogleAuthProvider,
+    "facebook": FacebookAuthProvider,
 }
 
 def get_provider(provider_name: str, config: Optional[Dict[str, Any]] = None) -> AuthProvider:
@@ -39,31 +41,33 @@ def get_provider(provider_name: str, config: Optional[Dict[str, Any]] = None) ->
     return provider_class(config or {})
 
 
-def list_providers() -> Dict[str, Dict[str, str]]:
+def list_providers() -> List[Dict[str, str]]:
     """
     List all available authentication providers with their metadata.
     
     Returns:
-        Dictionary of provider information
+        List of provider information dictionaries
     """
-    result = {}
+    result = []
     
     for name, provider_class in PROVIDERS.items():
         # Create a temporary instance to get metadata
         try:
             provider = provider_class({})
-            result[name] = {
+            provider_info = {
                 "name": name,
                 "friendly_name": getattr(provider, "friendly_name", name.capitalize()),
                 "icon": getattr(provider, "icon", name),
             }
+            result.append(provider_info)
         except Exception as e:
             # Skip providers that require configuration for instantiation
             logger.debug(f"Could not instantiate provider {name} without config: {str(e)}")
-            result[name] = {
+            provider_info = {
                 "name": name,
                 "friendly_name": name.capitalize(),
                 "icon": name,
             }
+            result.append(provider_info)
     
     return result

@@ -60,6 +60,9 @@ export default function SocialProviders() {
   if (!providers || providers.length === 0) {
     return null;
   }
+  
+  // Filter out the email provider as it's handled by the login form
+  const oauthProviders = providers.filter(provider => provider.name !== 'email');
 
   return (
     <div className="space-y-4">
@@ -74,16 +77,20 @@ export default function SocialProviders() {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {providers.map((provider) => (
+        {oauthProviders.map((provider) => (
           <Button
-            key={provider.provider}
+            key={provider.name}
             variant="outline"
             type="button"
             className="flex items-center justify-center gap-2"
-            onClick={() => window.location.href = getOAuthLoginUrl(provider.provider)}
+            onClick={() => {
+              const redirectUri = `${window.location.origin}/auth/callback`;
+              const url = `${getOAuthLoginUrl(provider.name)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=state`;
+              window.location.href = url;
+            }}
           >
-            {providerIcons[provider.provider] || null}
-            {providerNames[provider.provider] || provider.provider}
+            {providerIcons[provider.name] || null}
+            {providerNames[provider.name] || provider.name}
           </Button>
         ))}
       </div>

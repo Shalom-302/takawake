@@ -47,10 +47,10 @@ def init_app(app: FastAPI) -> None:
     create_tables()
     
     # Register routes
-    app.include_router(payment_router, prefix="/api/v1", tags=["payments"])
-    app.include_router(webhook_router, prefix="/api/v1", tags=["payments-webhooks"])
-    app.include_router(refund_router, prefix="/api/v1", tags=["payments"])
-    app.include_router(subscription_router, prefix="/api/v1", tags=["payments-subscriptions"])
+    app.include_router(payment_router, tags=["payments"])
+    app.include_router(webhook_router, tags=["payments-webhooks"])
+    app.include_router(refund_router, tags=["payments"])
+    app.include_router(subscription_router, tags=["payments-subscriptions"])
     
     # Register test routes if in test mode
     if settings.ENVIRONMENT.lower() in ["test", "development"]:
@@ -192,7 +192,7 @@ from .workflows.approval_workflow import payment_approval_workflow
 
 # Create router
 router = APIRouter(
-    prefix="/api/v1/payments",
+    prefix="/payments",
     tags=["payments"],
     responses={404: {"description": "Not found"}},
 )

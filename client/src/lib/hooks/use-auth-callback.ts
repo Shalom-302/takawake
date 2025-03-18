@@ -18,9 +18,10 @@ export function useAuthCallback() {
   useEffect(() => {
     async function processCallback() {
       try {
-        // Get provider from URL path
-        const path = window.location.pathname;
-        const provider = path.split('/').pop(); // Assuming path format is /auth/callback/{provider}
+        // Get provider from query params
+        const provider = searchParams.get('provider');
+        // State can be used for security validation if needed
+        searchParams.get('state');
         
         if (!provider) {
           throw new Error('Invalid callback URL');

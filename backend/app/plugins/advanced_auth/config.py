@@ -57,6 +57,10 @@ class AuthConfig(BaseSettings):
                 "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
                 "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
             },
+            "facebook": {
+                "client_id": os.getenv("FACEBOOK_CLIENT_ID", ""),
+                "client_secret": os.getenv("FACEBOOK_CLIENT_SECRET", ""),
+            },
         }
     )
     

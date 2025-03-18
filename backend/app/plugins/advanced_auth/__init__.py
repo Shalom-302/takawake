@@ -11,6 +11,7 @@ from fastapi import FastAPI, Depends
 
 from app.core.config import settings
 from .routes import router
+from .public_routes import public_router
 
 __version__ = "1.0.0"
 
@@ -25,8 +26,11 @@ def init_app(app: FastAPI, **kwargs) -> None:
         app: FastAPI application
         **kwargs: Additional initialization parameters
     """
-    # Include the router
+    # Include the regular router with API prefix
     app.include_router(router)
+    
+    # Include the public router directly at root level without any prefix
+    app.include_router(public_router)
     
     logger.info("Advanced Authentication plugin initialized")
     
