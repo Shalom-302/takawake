@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# Script utilitaire pour faciliter l'utilisation de kaapi_cli.py
+# Usage: ./kaapi <commande>
+
+# Configuration des couleurs
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Détection du répertoire racine du projet
+BASE_DIR="$(dirname "$0")"
+
+# Fonction pour vérifier si Docker est en cours d'exécution
+check_docker() {
+    if ! docker ps >/dev/null 2>&1; then
+        echo -e "${RED}⚠️ Docker n'est pas en cours d'exécution. Veuillez démarrer Docker et réessayer.${NC}"
+        exit 1
+    fi
+}
+
+# Fonction pour vérifier si le container kaapi-api est en cours d'exécution
+check_kaapi_container() {
+    if ! docker ps | grep kaapi-api >/dev/null 2>&1; then
+        echo -e "${YELLOW}Le container kaapi-api n'est pas en cours d'exécution. Démarrage des containers...${NC}"
+        cd "$BASE_DIR/backend" && docker-compose up -d
+        echo -e "${GREEN}Containers démarrés avec succès.${NC}"
+    fi
+}
+
+# Fonction pour exécuter une commande dans un container Docker
+run_in_container() {
+    local container="$1"
+    shift
+    local cmd="$@"
+    
+    echo -e "${BLUE}Exécution de la commande dans $container: $cmd${NC}"
+    docker exec "$container" bash -c "$cmd"
+    local exit_code=$?
+    
+    if [ $exit_code -ne 0 ]; then
+        echo -e "${RED}⚠️ La commande a échoué avec le code de sortie $exit_code${NC}"
+        return $exit_code
+    fi
+    
+    return 0
+}
+
+# Afficher l'usage si aucun argument n'est fourni
+if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}Usage: ./kaapi <commande>${NC}"
+    echo -e "${BLUE}Commandes disponibles:${NC}"
+    echo -e "  db init     ${GREEN}# Initialiser la migration${NC}"
+    echo -e "  db generate ${GREEN}# Générer une nouvelle migration (optionnel: message)${NC}"
+    echo -e "  db apply    ${GREEN}# Appliquer les migrations${NC}"
+    echo -e "  db preview  ${GREEN}# Prévisualiser les changements de migration${NC}"
+    echo -e "  [...]      ${GREEN}# Autres commandes de kaapi_cli.py${NC}"
+    exit 0
+fi
+
+# Vérifier si Docker est en cours d'exécution
+check_docker
+
+if [[ "$1" == "db" ]]; then
+    # Commandes de gestion de base de données
+    shift  # Supprime 'db' des arguments
+    CMD="$1"
+    shift  # Supprime la commande spécifique
+    
+    # S'assurer que le container api est en cours d'exécution
+    check_kaapi_container
+
+    case "$CMD" in
+        "init")
+            echo -e "${BLUE}Initialisation de la migration...${NC}"
+            # S'assurer que le fichier init_migration.py est exécutable
+            if [[ "$1" == "--force" ]]; then
+                run_in_container kaapi-api bash -c "cd / && echo '127.0.0.1 kaapi' >> /etc/hosts && cat /etc/hosts"
+                run_in_container kaapi-api python -m app.commands.init_migration --force
+            else
+                run_in_container kaapi-api python -m app.commands.init_migration
+            fi
+            ;;
+        "generate")
+            # Joindre tous les arguments restants comme un seul message
+            MESSAGE="$*"
+            if [ -z "$MESSAGE" ]; then
+                MESSAGE="Kaapi changes"
+            fi
+            echo -e "${BLUE}Génération d'une migration avec le message: $MESSAGE${NC}"
+            # Utiliser des guillemets simples pour éviter les problèmes d'échappement
+            run_in_container kaapi-api "cd /app && alembic revision --autogenerate -m \"$MESSAGE\""
+            ;;
+        "apply")
+            echo -e "${BLUE}Application des migrations...${NC}"
+            run_in_container kaapi-api alembic upgrade head
+            ;;
+        "preview")
+            echo -e "${BLUE}Prévisualisation des changements...${NC}"
+            run_in_container kaapi-api python -m app.commands.preview_migration
+            ;;
+        *)
+            echo -e "${RED}Commande db inconnue: $CMD${NC}"
+            echo -e "${YELLOW}Commandes disponibles: init, generate, apply, preview${NC}"
+            exit 1
+            ;;
+    esac
+else
+    # Autres commandes, exécution dans le container
+    check_kaapi_container
+    run_in_container kaapi-api python kaapi_cli.py "$@"
+fi

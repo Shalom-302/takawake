@@ -1,9 +1,0 @@
-# Custom Authentication Plugin Dependencies
-python-jose>=3.3.0  # For JWT token handling
-passlib>=1.7.4  # For password hashing
-python-multipart>=0.0.6  # For form data parsing
-bcrypt>=4.0.1  # For password hashing
-pyotp>=2.8.0  # For TOTP-based two-factor authentication
-qrcode>=7.4.2  # For generating QR codes for 2FA
-authlib>=1.2.1  # For OAuth and OIDC support
-itsdangerous>=2.1.2  # For secure token generation

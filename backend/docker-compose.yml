@@ -1,0 +1,98 @@
+services:
+  api:
+    build: .
+    container_name: kaapi-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@kaapi-db:5432/kaapi
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-token
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    tty: true
+    depends_on:
+      - kaapi-db
+      - redis
+      - vault
+    networks:
+      - kaapi-network
+
+  kaapi-db:
+    image: postgres:15-alpine
+    container_name: kaapi-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=kaapi
+    ports:
+      - "5432:5432"
+    networks:
+      - kaapi-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kaapi-db-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - kaapi-network
+
+  celery:
+    build: .
+    container_name: kaapi-db-celery
+    command: python -m celery -A app.core.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@kaapi-db:5432/kaapi
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-token
+    depends_on:
+      - kaapi-db
+      - redis
+      - vault
+    networks:
+      - kaapi-network
+
+  metrics:
+    build: .
+    container_name: kaapi-db-metrics
+    command: python app/metrics_server.py
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: always
+    networks:
+      - kaapi-network
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: kaapi-db-vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=dev-token
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - kaapi-network
+
+volumes:
+  postgres_data:
+
+networks:
+  kaapi-network:
+    driver: bridge
