@@ -5,6 +5,8 @@ from typing import Dict, Any, Optional, List, Tuple, Union
 import logging
 from datetime import datetime, timedelta
 import uuid
+import jwt
+import traceback
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -14,8 +16,7 @@ from app.core.db import get_db
 from .models import User, Role, Session as UserSession, MFAMethod, MFAMethodType, VerificationCode, Permission, Group
 from .utils import (
     verify_password, get_password_hash, is_password_secure,
-    create_access_token, create_refresh_token, decode_token, validate_token,
-    ACCESS_TOKEN, REFRESH_TOKEN
+    create_access_token, create_refresh_token, ACCESS_TOKEN, REFRESH_TOKEN
 )
 from .providers import get_provider, list_providers
 from .schemas import UserCreate, UserUpdate, PasswordUpdate, AuthResponse, Token, UserResponse
@@ -128,21 +129,33 @@ class AuthService:
         Raises:
             HTTPException: If authentication fails
         """
+        logger.info(f"Authenticating user with email: {email}")
+        
         # Find user by email
         user = self.db.query(User).filter(User.email == email).first()
         
+        # Log user lookup result
+        if user:
+            logger.info(f"User found: {user.email} (ID: {user.id})")
+        else:
+            logger.warning(f"User not found with email: {email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+        
         # Check if user exists and password is correct
-        if not user or not verify_password(password, user.hashed_password):
+        if not verify_password(password, user.hashed_password):
+            logger.warning(f"Invalid password for user: {user.email}")
             # If user exists, increment failed login attempts
-            if user:
-                user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-                
-                # Lock account after too many failed attempts
-                if user.failed_login_attempts >= 5:  # Configurable threshold
-                    user.locked_until = datetime.utcnow() + timedelta(minutes=15)  # Configurable lockout period
-                    logger.warning(f"Account locked for {email} after {user.failed_login_attempts} failed attempts")
-                
-                self.db.commit()
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            
+            # Lock account after too many failed attempts
+            if user.failed_login_attempts >= 5:  # Configurable threshold
+                user.locked_until = datetime.utcnow() + timedelta(minutes=15)  # Configurable lockout period
+                logger.warning(f"Account locked for {email} after {user.failed_login_attempts} failed attempts")
+            
+            self.db.commit()
             
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -185,81 +198,19 @@ class AuthService:
         Returns:
             Dictionary with access_token and refresh_token
         """
-        # Create tokens
-        access_token_expires = timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES * (10 if remember_me else 1)
-        )
-        refresh_token_expires = timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS * (10 if remember_me else 1)
-        )
-        
-        access_token = create_access_token(
-            user.id,
-            expires_delta=access_token_expires,
-            extra_data={
-                "username": user.username,
-                "email": user.email,
-                "role_id": str(user.role_id) if user.role_id else None
-            }
-        )
-        
-        refresh_token = create_refresh_token(
-            user.id,
-            expires_delta=refresh_token_expires
-        )
-        
-        # Store refresh token in user
-        user.refresh_token = refresh_token
-        user.refresh_token_expires_at = datetime.utcnow() + refresh_token_expires
-        self.db.commit()
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-            "expires_in": int(access_token_expires.total_seconds())
-        }
-    
-    async def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
-        """
-        Refresh an access token using a refresh token.
-        
-        Args:
-            refresh_token: Refresh token
-            
-        Returns:
-            Dictionary with new access_token
-            
-        Raises:
-            HTTPException: If refresh token is invalid
-        """
         try:
-            # Validate refresh token
-            token_data = validate_token(refresh_token, REFRESH_TOKEN)
-            user_id = token_data.get("sub")
+            logger.info(f"Creating tokens for user: {user.email} (ID: {user.id})")
             
-            # Find user by ID
-            user = self.db.query(User).filter(User.id == user_id).first()
+            # Create tokens
+            access_token_expires = timedelta(
+                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES * (10 if remember_me else 1)
+            )
+            refresh_token_expires = timedelta(
+                days=settings.REFRESH_TOKEN_EXPIRE_DAYS * (10 if remember_me else 1)
+            )
             
-            # Check if user exists and refresh token matches
-            if not user or user.refresh_token != refresh_token:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid refresh token"
-                )
+            logger.info(f"Token expiration: access={access_token_expires}, refresh={refresh_token_expires}")
             
-            # Check if refresh token is expired
-            if (
-                user.refresh_token_expires_at and 
-                user.refresh_token_expires_at < datetime.utcnow()
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Refresh token has expired"
-                )
-            
-            # Create new access token
-            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
                 user.id,
                 expires_delta=access_token_expires,
@@ -270,20 +221,95 @@ class AuthService:
                 }
             )
             
-            logger.info(f"Access token refreshed for user: {user.email} (ID: {user.id})")
+            refresh_token = create_refresh_token(
+                user.id,
+                expires_delta=refresh_token_expires
+            )
+            
+            # Update user's refresh token
+            user.refresh_token = refresh_token
+            user.refresh_token_expires_at = datetime.utcnow() + refresh_token_expires
+            user.last_login = datetime.utcnow()
+            user.failed_login_attempts = 0  # Reset failed login attempts
+            
+            self.db.commit()
+            
+            logger.info(f"Tokens created successfully for user: {user.email}")
             
             return {
                 "access_token": access_token,
-                "refresh_token": refresh_token,  # Return the same refresh token
+                "refresh_token": refresh_token,
                 "token_type": "bearer",
                 "expires_in": int(access_token_expires.total_seconds())
             }
+        except Exception as e:
+            logger.error(f"Error creating tokens for user {user.email}: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error creating tokens: {str(e)}"
+            )
+    
+    async def refresh_access_token(self, refresh_token: str) -> Tuple[User, Dict[str, Any]]:
+        """
+        Refresh access token using refresh token.
+        
+        Args:
+            refresh_token: Refresh token
+            
+        Returns:
+            Tuple of (User, new tokens dict)
+            
+        Raises:
+            HTTPException: If refresh token is invalid or expired
+        """
+        try:
+            logger.info(f"Refreshing access token, token length: {len(refresh_token)}")
+            # Decode refresh token
+            payload = jwt.decode(
+                refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
+            user_id: str = payload.get("sub")
+            token_type: str = payload.get("type")
+            
+            # Validate token type and user_id
+            if user_id is None or token_type != "refresh":
+                logger.error(f"Invalid refresh token: user_id={user_id}, token_type={token_type}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid refresh token",
+                )
+                
+            # Get user from database
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                logger.error(f"User not found for refresh token: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found",
+                )
+                
+            # Check if user is active
+            if not user.is_active:
+                logger.error(f"Inactive user tried to refresh token: {user.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Inactive user",
+                )
+                
+            # Create new tokens with the same remember_me setting
+            remember_me = payload.get("remember_me", False)
+            new_tokens = await self.create_tokens(user, remember_me)
+            
+            logger.info(f"Token refreshed for user: {user.email}")
+            return user, new_tokens
             
         except Exception as e:
-            logger.error(f"Token refresh error: {str(e)}")
+            logger.error(f"Error refreshing token: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not refresh token"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error refreshing token: {str(e)}",
             )
     
     async def logout(self, user: User, all_devices: bool = False) -> bool:

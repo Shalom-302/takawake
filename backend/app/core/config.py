@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "CHANGE_ME"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Durée de validité du refresh token en jours
     ALGORITHM: str = "HS256"
     
     # CORS

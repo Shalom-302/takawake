@@ -3,6 +3,7 @@ API routes for the advanced authentication plugin.
 """
 from typing import Dict, Any, Optional, List
 import logging
+import traceback
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
@@ -61,8 +62,17 @@ async def login(
     auth_service = AuthService(db)
     
     try:
+        logger.info(f"LOGIN ATTEMPT - Username: {form_data.username}")
+        logger.info(f"LOGIN ATTEMPT - Password length: {len(form_data.password)}")
+        logger.info(f"LOGIN ATTEMPT - Remember me: {remember_me}")
+        logger.info(f"LOGIN ATTEMPT - Form data scopes: {form_data.scopes}")
+        logger.info(f"LOGIN ATTEMPT - Form data client_id: {form_data.client_id}")
+        
         user = await auth_service.authenticate_user(form_data.username, form_data.password)
+        logger.info(f"User authenticated: {user.email}, creating tokens")
+        
         tokens = await auth_service.create_tokens(user, remember_me)
+        logger.info(f"Tokens created for user: {user.email}")
         
         return AuthResponse(
             user=user,
@@ -80,8 +90,55 @@ async def login(
         )
 
 
+@router.post("/refresh", response_model=AuthResponse)
+async def refresh_token_with_user(
+    form_data: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Refresh access token using refresh token and return user data.
+    """
+    auth_service = AuthService(db)
+    
+    try:
+        # Extract form data
+        form_data = await form_data.form()
+        refresh_token = form_data.get("refresh_token")
+        
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token is required"
+            )
+        
+        logger.info(f"Token refresh attempt with token length: {len(refresh_token)}")
+        
+        # Validate refresh token and get user
+        user, new_tokens = await auth_service.refresh_access_token(refresh_token)
+        logger.info(f"Token refreshed for user: {user.email}")
+        
+        return AuthResponse(
+            user=user,
+            token=Token(**new_tokens),
+            requires_mfa=False
+        )
+    except HTTPException as e:
+        # Re-raise HTTP exceptions
+        logger.error(f"Refresh token error: {str(e)}")
+        raise e
+    except Exception as e:
+        # Log and convert other exceptions to 500 error
+        error_msg = f"Refresh token error: {str(e)}"
+        logger.error(error_msg)
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while refreshing the token"
+        )
+
+
 @router.post("/token/refresh", response_model=Token)
-async def refresh_token(
+async def refresh_access_token(
     refresh_token: str,
     db: Session = Depends(get_db)
 ):

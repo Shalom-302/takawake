@@ -9,13 +9,36 @@ export interface UserData {
   lastName?: string;
   isActive: boolean;
   imageUrl?: string;
+  role?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface Token {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface MFAMethod {
+  method_id: string;
+  method_type: string;
+  is_primary: boolean;
+  name?: string;
+  setup_data?: Record<string, unknown>;
 }
 
 export interface LoginResponse {
-  access_token: string;
-  token_type: string;
   user: UserData;
+  token: Token;
+  requires_mfa: boolean;
+  mfa_methods?: MFAMethod[];
 }
+
+// Use the same interface for register response
+export type RegisterResponse = LoginResponse;
 
 export interface AuthProvider {
   provider: string;
@@ -27,16 +50,22 @@ export interface AuthProvider {
 const authService = {
   // Email login
   async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await axiosClient.post<LoginResponse>('/auth/login', {
-      username,
-      password,
+    // Create form data object for OAuth2 password flow
+    const formData = new URLSearchParams();
+    formData.append('username', username);
+    formData.append('password', password);
+    
+    const response = await axiosClient.post<LoginResponse>('/auth/login', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     });
     return response.data;
   },
 
   // Email registration
-  async register(username: string, password: string): Promise<LoginResponse> {
-    const response = await axiosClient.post<LoginResponse>('/auth/register', {
+  async register(username: string, password: string): Promise<RegisterResponse> {
+    const response = await axiosClient.post<RegisterResponse>('/auth/register', {
       username,
       password,
     });
@@ -47,7 +76,21 @@ const authService = {
   logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
     }
+  },
+
+  // Refresh token
+  async refreshToken(refreshToken: string): Promise<LoginResponse> {
+    const formData = new URLSearchParams();
+    formData.append('refresh_token', refreshToken);
+    
+    const response = await axiosClient.post<LoginResponse>('/auth/refresh', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    return response.data;
   },
 
   // Get current user profile

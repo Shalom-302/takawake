@@ -142,7 +142,7 @@ class UserInDB(UserBase):
     updated_at: datetime
     last_login: Optional[datetime] = None
     role_id: Optional[uuid.UUID] = None
-    primary_auth_provider: str
+    primary_auth_provider: Optional[str] = "email"
     profile_picture: Optional[str] = None
     
     class Config:
