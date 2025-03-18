@@ -1,150 +1,187 @@
-/**
- * Service for managing cookie consent
- */
+import useSWR from 'swr';
 import { CookieSettings, CookieConsentSubmission } from '../types/cookies';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+// Constants
+const CONSENT_STORAGE_KEY = 'cookie_consent';
+
+// Fetcher for SWR calls
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`Fetch error: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
 
 /**
- * Get cookie settings and categories from the backend
+ * Hook to retrieve cookie settings from the backend
  */
-export async function getCookieSettings(): Promise<CookieSettings> {
-  const defaultSettings: CookieSettings = {
-    id: 1,
-    consent_expiry_days: 180,
-    block_until_consent: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    categories: [
-      {
-        id: 1,
-        name: 'Necessary',
-        description: 'These cookies are essential for the website to function properly.',
-        is_necessary: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        name: 'Preferences',
-        description: 'These cookies allow the website to remember choices you have made in the past.',
-        is_necessary: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 3,
-        name: 'Statistics',
-        description: 'These cookies collect information about how you use the website.',
-        is_necessary: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 4,
-        name: 'Marketing',
-        description: 'These cookies are used to track visitors across websites.',
-        is_necessary: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
+export function useCookieSettings() {
+  const { data, error, isLoading, mutate } = useSWR<CookieSettings>(
+    `/api/privacy/cookie-settings`,
+    fetcher
+  );
+
+  return {
+    cookieSettings: data,
+    isLoadingSettings: isLoading,
+    isErrorSettings: error,
+    refreshSettings: mutate
   };
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/privacy/cookie-settings`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      mode: 'cors'
-    });
-
-    if (!response.ok) {
-      console.error('Failed to fetch cookie settings:', response.status);
-      return defaultSettings;
-    }
-
-    const data = await response.json();
-    return data || defaultSettings;
-  } catch (error) {
-    console.error('Error fetching cookie settings:', error);
-    // Return default settings if the API fails
-    return defaultSettings;
-  }
 }
 
 /**
- * Submit cookie consent preferences to the backend
+ * Hook to submit cookie consent
  */
-export async function submitCookieConsent(consent: CookieConsentSubmission): Promise<boolean> {
-  try {
-    const response = await fetch(`${BACKEND_URL}/privacy/cookie-consent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(consent),
-      mode: 'cors'
-    });
+export function useSubmitCookieConsent() {
+  // Reference to useCookieSettings hook to invalidate cache if necessary
+  const { refreshSettings } = useCookieSettings();
 
-    if (!response.ok) {
-      console.error('Failed to submit cookie consent:', response.status);
+  const submitConsent = async (consent: CookieConsentSubmission): Promise<boolean> => {
+    try {
+      const consentWithTimestamp = {
+        ...consent,
+        timestamp: Date.now()
+      };
+      
+      const response = await fetch(`/api/privacy/cookie-consent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(consentWithTimestamp),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit consent');
+      }
+
+      // Store consent in local storage
+      storeConsentInLocalStorage(consentWithTimestamp);
+      
+      // Invalidate cache if necessary
+      await refreshSettings();
+      
+      return true;
+    } catch (error) {
+      console.error('Error submitting cookie consent:', error);
       return false;
     }
+  };
 
-    return true;
-  } catch (error) {
-    console.error('Error submitting cookie consent:', error);
-    return false;
-  }
+  return { submitConsent };
 }
 
 /**
- * Get cookie consent from localStorage
+ * Retrieves the consent stored in local storage
  */
 export function getStoredConsent(): CookieConsentSubmission | null {
-  if (typeof window === 'undefined') return null;
-  
-  const consentString = localStorage.getItem('cookieConsent');
-  if (!consentString) return null;
-  
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   try {
-    return JSON.parse(consentString);
-  } catch {
+    const storedConsent = localStorage.getItem(CONSENT_STORAGE_KEY);
+    
+    if (!storedConsent) {
+      return null;
+    }
+    
+    return JSON.parse(storedConsent) as CookieConsentSubmission;
+  } catch (error) {
+    console.error('Error retrieving stored consent:', error);
     return null;
   }
 }
 
 /**
- * Store cookie consent in localStorage
+ * Retrieves the consent from local storage while checking for expiration
  */
-export function storeConsent(consent: CookieConsentSubmission): void {
-  if (typeof window === 'undefined') return;
+export function getConsentFromLocalStorage(expiryDays: number = 180): CookieConsentSubmission | null {
+  const storedConsent = getStoredConsent();
   
-  localStorage.setItem('cookieConsent', JSON.stringify(consent));
+  if (!storedConsent) {
+    return null;
+  }
+  
+  // Check for expiration
+  if (isConsentExpired(expiryDays)) {
+    return null;
+  }
+  
+  return storedConsent;
 }
 
 /**
- * Check if consent is expired
+ * Stores the consent in local storage
  */
-export function isConsentExpired(expiryDays: number): boolean {
-  if (typeof window === 'undefined') return true;
+export function storeConsentInLocalStorage(consent: CookieConsentSubmission): void {
+  // Check if code is running in the browser
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    // Ensure there is an expiration timestamp
+    const consentWithTimestamp = {
+      ...consent,
+      timestamp: consent.timestamp || Date.now()
+    };
+    
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consentWithTimestamp));
+  } catch (error) {
+    console.error('Error storing consent:', error);
+  }
+}
+
+/**
+ * Checks if the consent has expired
+ */
+export function isConsentExpired(expiryDays: number = 180): boolean {
+  const storedConsent = getStoredConsent();
   
-  const lastConsentDate = localStorage.getItem('cookieConsentDate');
-  if (!lastConsentDate) return true;
+  if (!storedConsent || !('timestamp' in storedConsent)) {
+    return true;
+  }
   
-  const expiryTime = new Date(lastConsentDate).getTime() + (expiryDays * 24 * 60 * 60 * 1000);
+  interface ConsentWithTimestamp extends CookieConsentSubmission {
+    timestamp: number;
+  }
+  
+  const consentWithTimestamp = storedConsent as ConsentWithTimestamp;
+  const expiryTime = consentWithTimestamp.timestamp + (expiryDays * 24 * 60 * 60 * 1000);
+  
   return Date.now() > expiryTime;
 }
 
 /**
- * Update consent date in localStorage
+ * Type for cookie status response
  */
-export function updateConsentDate(): void {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.setItem('cookieConsentDate', new Date().toISOString());
+interface CookieStatusResponse {
+  active: boolean;
+  message: string;
+  consent: (CookieConsentSubmission & {
+    consentDate: string | null;
+    acceptedCookies: string[];
+  }) | null;
+  expired: boolean;
+}
+
+/**
+ * Hook to retrieve the complete cookie status
+ */
+export function useCookieStatus() {
+  const { data, error, isLoading, mutate } = useSWR<CookieStatusResponse>(
+    `/api/privacy/cookie-status`,
+    fetcher
+  );
+
+  return {
+    status: data,
+    isLoading,
+    isError: !!error,
+    refreshStatus: mutate
+  };
 }

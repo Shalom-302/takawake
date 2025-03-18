@@ -51,6 +51,9 @@ export default function Navbar() {
             <Link href="/blog" className="text-sm font-medium hover:text-primary">
               Blog
             </Link>
+            <Link href="/cookie-status" className="text-sm font-medium hover:text-primary">
+              Cookies
+            </Link>
           </nav>
 
           {/* Authentication links */}
@@ -122,6 +125,9 @@ export default function Navbar() {
               </Link>
               <Link href="/blog" className="text-sm font-medium hover:text-primary">
                 Blog
+              </Link>
+              <Link href="/cookie-status" className="text-sm font-medium hover:text-primary">
+                Cookies
               </Link>
             </nav>
             <div className="pt-4 border-t flex flex-col space-y-3">

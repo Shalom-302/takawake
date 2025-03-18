@@ -2,12 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
-  getCookieSettings, 
-  getStoredConsent, 
-  isConsentExpired, 
-  storeConsent, 
-  updateConsentDate,
-  submitCookieConsent
+  useCookieSettings, 
+  useSubmitCookieConsent,
+  getConsentFromLocalStorage, 
+  isConsentExpired
 } from '../services/cookie-service';
 import { CookieSettings, CookieConsentSubmission } from '../types/cookies';
 
@@ -19,6 +17,7 @@ interface CookieContextType {
   acceptAll: () => Promise<void>;
   rejectNonEssential: () => Promise<void>;
   savePreferences: (preferences: CookieConsentSubmission) => Promise<void>;
+  resetConsent: () => void;
   hideBanner: () => void;
 }
 
@@ -29,129 +28,140 @@ interface CookieProviderProps {
 }
 
 export function CookieProvider({ children }: CookieProviderProps) {
-  const [cookieSettings, setCookieSettings] = useState<CookieSettings | null>(null);
+  // Use our SWR hook for cookie settings
+  const { cookieSettings, isLoadingSettings } = useCookieSettings();
+  const { submitConsent } = useSubmitCookieConsent();
+  
   const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
   const [consentGiven, setConsentGiven] = useState<boolean>(false);
   const [consent, setConsent] = useState<CookieConsentSubmission | null>(null);
-  const [initialized, setInitialized] = useState<boolean>(false);
 
   // Initialize cookie settings and consent state
   useEffect(() => {
     async function initialize() {
       try {
-        // Fetch cookie settings from API
-        const settings = await getCookieSettings();
-        setCookieSettings(settings);
+        // Check that consent exists and has not expired
+        const storedConsent = getConsentFromLocalStorage();
         
-        // Check if consent exists and is not expired
-        const storedConsent = getStoredConsent();
+        // Handle the case where the parameters are null (API failure)
+        // Use a default expiration period of 180 days if the parameters are null
+        const expiryDays = cookieSettings?.consent_expiry_days || 180;
         
-        // Handle the case where settings is null (API failure)
-        // Use a default expiry period of 180 days if settings is null
-        const expiryDays = settings?.consent_expiry_days || 180;
-        const expired = isConsentExpired(expiryDays);
-        
-        if (storedConsent && !expired) {
+        if (storedConsent && !isConsentExpired(expiryDays)) {
           setConsent(storedConsent);
           setConsentGiven(true);
+          // Do not show banner if consent is already given
           setShowCookieBanner(false);
         } else {
-          // Default consent (only necessary cookies)
-          setConsent({
-            necessary: true,
-            preferences: false,
-            statistics: false,
-            marketing: false,
-            accept_all: false,
-            reject_all: true
-          });
+          // Reset consent if expired
+          setConsent(null);
           setConsentGiven(false);
+          // Show banner if no consent or expired
           setShowCookieBanner(true);
         }
-        
-        setInitialized(true);
       } catch (error) {
-        console.error('Error initializing cookie context:', error);
-        // En cas d'erreur, on initialise quand même le contexte avec des valeurs par défaut
-        setCookieSettings(null);
-        setConsent({
-          necessary: true,
-          preferences: false,
-          statistics: false,
-          marketing: false,
-          accept_all: false,
-          reject_all: true
-        });
-        setConsentGiven(false);
-        setShowCookieBanner(true);
-        setInitialized(true);
+        console.error('Error initializing cookie consent:', error);
       }
     }
     
-    initialize();
-  }, []);
+    if (!isLoadingSettings && cookieSettings) {
+      initialize();
+    }
+  }, [cookieSettings, isLoadingSettings]);
 
-  const savePreferences = async (preferences: CookieConsentSubmission) => {
+  // Accept all cookies
+  const acceptAll = async (): Promise<void> => {
     try {
-      await submitCookieConsent(preferences);
-      storeConsent(preferences);
-      updateConsentDate();
-      setConsent(preferences);
-      setConsentGiven(true);
-      setShowCookieBanner(false);
+      const newConsent: CookieConsentSubmission = {
+        necessary: true,
+        preferences: true,
+        statistics: true,
+        marketing: true,
+        accept_all: true,
+        reject_all: false
+      };
+      
+      const success = await submitConsent(newConsent);
+      if (success) {
+        setConsent(newConsent);
+        setConsentGiven(true);
+        setShowCookieBanner(false);
+      }
+    } catch (error) {
+      console.error('Error accepting all cookies:', error);
+    }
+  };
+
+  // Reject non-essential cookies
+  const rejectNonEssential = async (): Promise<void> => {
+    try {
+      const newConsent: CookieConsentSubmission = {
+        necessary: true,
+        preferences: false,
+        statistics: false,
+        marketing: false,
+        accept_all: false,
+        reject_all: true
+      };
+      
+      const success = await submitConsent(newConsent);
+      if (success) {
+        setConsent(newConsent);
+        setConsentGiven(true);
+        setShowCookieBanner(false);
+      }
+    } catch (error) {
+      console.error('Error rejecting non-essential cookies:', error);
+    }
+  };
+
+  // Save custom preferences
+  const savePreferences = async (preferences: CookieConsentSubmission): Promise<void> => {
+    try {
+      // Ensure that necessary cookies are always included
+      const updatedPreferences = {
+        ...preferences,
+        necessary: true
+      };
+      
+      const success = await submitConsent(updatedPreferences);
+      if (success) {
+        setConsent(updatedPreferences);
+        setConsentGiven(true);
+        setShowCookieBanner(false);
+      }
     } catch (error) {
       console.error('Error saving cookie preferences:', error);
     }
   };
 
-  const acceptAll = async () => {
-    const allAccepted = {
-      necessary: true,
-      preferences: true,
-      statistics: true,
-      marketing: true,
-      accept_all: true,
-      reject_all: false
-    };
-    
-    await savePreferences(allAccepted);
+  // Reset consent
+  const resetConsent = (): void => {
+    setConsent(null);
+    setConsentGiven(false);
+    setShowCookieBanner(true);
   };
 
-  const rejectNonEssential = async () => {
-    const onlyNecessary = {
-      necessary: true,
-      preferences: false,
-      statistics: false,
-      marketing: false,
-      accept_all: false,
-      reject_all: true
-    };
-    
-    await savePreferences(onlyNecessary);
-  };
-
-  const hideBanner = () => {
+  // Hide banner without changing consent
+  const hideBanner = (): void => {
     setShowCookieBanner(false);
   };
 
-  // Only render children when initialization is complete
-  if (!initialized) {
-    return null; // Or a loading state
-  }
+  // Context value
+  const value: CookieContextType = {
+    cookieSettings: cookieSettings || null,
+    showCookieBanner,
+    consentGiven,
+    consent,
+    acceptAll,
+    rejectNonEssential,
+    savePreferences,
+    resetConsent,
+    hideBanner
+  };
 
   return (
-    <CookieContext.Provider
-      value={{
-        cookieSettings,
-        showCookieBanner,
-        consentGiven,
-        consent,
-        acceptAll,
-        rejectNonEssential,
-        savePreferences,
-        hideBanner
-      }}
-    >
+    <CookieContext.Provider value={value}>
       {children}
     </CookieContext.Provider>
   );

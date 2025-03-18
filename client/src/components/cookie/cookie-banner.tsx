@@ -1,237 +1,284 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useCookieConsent } from "@/lib/context/cookie-context";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Switch } from "@/components/ui/switch";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '../ui/dialog';
+import { Checkbox } from '../ui/checkbox';
+import { useCookieConsent } from '../../lib/context/cookie-context';
+import { CookieConsentSubmission } from '../../lib/types/cookies';
 
-export interface CookieBannerProps {
+interface CookieBannerProps {
   showAsModal?: boolean;
   onClose?: () => void;
 }
 
-export default function CookieBanner({ showAsModal = false, onClose }: CookieBannerProps) {
-  const {
-    cookieSettings,
-    showCookieBanner,
+export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps = {}) {
+  const { 
+    showCookieBanner, 
     consent,
     acceptAll,
     rejectNonEssential,
-    savePreferences,
+    savePreferences
   } = useCookieConsent();
 
-  const [preferences, setPreferences] = useState({
-    necessary: true, // Always true
-    preferences: false,
-    statistics: false,
-    marketing: false,
+  const [preferences, setPreferences] = useState<CookieConsentSubmission>({
+    necessary: true, // Always required
+    preferences: consent?.preferences || false,
+    statistics: consent?.statistics || false,
+    marketing: consent?.marketing || false,
+    accept_all: false,
+    reject_all: false
   });
 
-  // Initialize preferences from current consent state
-  useEffect(() => {
-    if (consent) {
-      setPreferences({
-        necessary: true, // Always true
-        preferences: !!consent.preferences,
-        statistics: !!consent.statistics,
-        marketing: !!consent.marketing,
-      });
-    }
-  }, [consent]);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
 
-  // If consent already given and not showing as modal, don't show banner
-  if (consent && !showAsModal && !showCookieBanner) return null;
-
-  // Create a default settings if not available
-  const settings = cookieSettings || {
-    consent_expiry_days: 180,
-    block_until_consent: false,
-    categories: []
+  const handleOpenModal = () => {
+    setShowPreferencesModal(true);
   };
 
-  const handleAcceptAll = () => {
-    acceptAll();
-    onClose?.();
+  const handleCloseModal = () => {
+    setShowPreferencesModal(false);
   };
 
-  const handleAcceptSelected = () => {
-    savePreferences({
-      ...preferences,
-      necessary: true, // Always include necessary
-      accept_all: false,
-      reject_all: false
-    });
-    onClose?.();
+  const handlePreferenceChange = (category: keyof CookieConsentSubmission) => {
+    if (category === 'necessary') return; // Cannot change necessary cookies
+    
+    setPreferences(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
   };
 
-  const handleRejectAll = () => {
-    rejectNonEssential();
-    onClose?.();
+  const handleSavePreferences = async () => {
+    await savePreferences(preferences);
+    handleCloseModal();
+    if (onClose) onClose();
   };
 
-  if (!showCookieBanner) return null;
+  // Handle the accept all action
+  const handleAcceptAll = async () => {
+    await acceptAll();
+    if (onClose) onClose();
+  };
 
-  return (
-    <motion.div
-      className={`bg-white rounded-lg shadow-lg ${
-        showAsModal ? "" : "fixed bottom-0 left-0 right-0 z-50"
-      }`}
-      initial={{ y: showAsModal ? 0 : 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: showAsModal ? 0 : 100, opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="p-4 md:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Cookie Preferences</h2>
-          {showAsModal && (
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-              aria-label="Close"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          )}
-        </div>
-        
-        <p className="text-gray-600 mb-4">
-          We use cookies to enhance your browsing experience, personalize content and ads, analyze our traffic, and provide social media features. You can choose to accept all cookies or customize your preferences.
-        </p>
+  // Handle the reject non-essential action
+  const handleRejectNonEssential = async () => {
+    await rejectNonEssential();
+    if (onClose) onClose();
+  };
 
-        <Accordion type="single" collapsible className="mb-4">
-          <AccordionItem value="cookie-settings">
-            <AccordionTrigger className="text-sm font-medium">
-              Customize Cookie Preferences
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4 pt-2">
-                {settings.categories && settings.categories.length > 0 ? (
-                  settings.categories.map((category) => (
-                    <div key={category.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{category.name}</p>
-                        <p className="text-sm text-gray-500">{category.description}</p>
-                      </div>
-                      <Switch 
-                        checked={category.name.toLowerCase() === 'necessary' ? true : preferences[category.name.toLowerCase() as keyof typeof preferences]} 
-                        disabled={category.name.toLowerCase() === 'necessary'}
-                        onCheckedChange={(checked) => {
-                          if (category.name.toLowerCase() === 'necessary') return;
-                          setPreferences({
-                            ...preferences,
-                            [category.name.toLowerCase()]: checked
-                          });
-                        }}
-                        aria-label={`Toggle ${category.name} cookies`}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Necessary</p>
-                        <p className="text-sm text-gray-500">These cookies are essential for the website to function properly.</p>
-                      </div>
-                      <Switch checked={true} disabled={true} aria-label="Toggle Necessary cookies" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Preferences</p>
-                        <p className="text-sm text-gray-500">These cookies allow the website to remember choices you make.</p>
-                      </div>
-                      <Switch 
-                        checked={preferences.preferences} 
-                        onCheckedChange={(checked) => {
-                          setPreferences({
-                            ...preferences,
-                            preferences: checked
-                          });
-                        }}
-                        aria-label="Toggle Preferences cookies"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Statistics</p>
-                        <p className="text-sm text-gray-500">These cookies help us understand how visitors interact with the website.</p>
-                      </div>
-                      <Switch 
-                        checked={preferences.statistics} 
-                        onCheckedChange={(checked) => {
-                          setPreferences({
-                            ...preferences,
-                            statistics: checked
-                          });
-                        }}
-                        aria-label="Toggle Statistics cookies"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Marketing</p>
-                        <p className="text-sm text-gray-500">These cookies are used to track visitors across websites to display relevant advertisements.</p>
-                      </div>
-                      <Switch 
-                        checked={preferences.marketing} 
-                        onCheckedChange={(checked) => {
-                          setPreferences({
-                            ...preferences,
-                            marketing: checked
-                          });
-                        }}
-                        aria-label="Toggle Marketing cookies"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+  // Don't render anything if the banner shouldn't be shown and it's not forced via showAsModal
+  if (!showCookieBanner && !showAsModal) {
+    return null;
+  }
 
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button 
-            variant="outline" 
-            onClick={handleRejectAll}
-          >
-            Reject non-essential
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleAcceptSelected}
-          >
-            Accept selected
-          </Button>
-          <Button 
-            onClick={handleAcceptAll}
-          >
-            Accept all
-          </Button>
-        </div>
-        
-        <div className="mt-4 text-sm text-gray-500 text-center">
-          <Link href="/privacy-policy" className="underline hover:text-primary">
-            Privacy Policy
-          </Link>
-          {" • "}
-          <Link href="/cookie-policy" className="underline hover:text-primary">
-            Cookie Policy
-          </Link>
+  // If showing as a modal/dialog, render only the preferences UI
+  if (showAsModal) {
+    return (
+      <div className="bg-white border rounded-lg shadow-lg w-full">
+        <div className="flex flex-col gap-4 p-4">
+          <div>
+            <h3 className="text-lg font-semibold">Cookie preferences</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Select which cookies you want to accept. Necessary cookies cannot be disabled.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-4">
+            {/* Necessary cookies - always enabled */}
+            <div className="flex items-center space-x-2">
+              <Checkbox id="necessary-modal" checked={true} disabled />
+              <label
+                htmlFor="necessary-modal"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Necessary (required)
+              </label>
+            </div>
+            
+            {/* Preferences cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="preferences-modal" 
+                checked={preferences.preferences}
+                onCheckedChange={() => handlePreferenceChange('preferences')}
+              />
+              <label
+                htmlFor="preferences-modal"
+                className="text-sm font-medium leading-none"
+              >
+                Preferences
+              </label>
+            </div>
+            
+            {/* Statistics cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="statistics-modal" 
+                checked={preferences.statistics}
+                onCheckedChange={() => handlePreferenceChange('statistics')}
+              />
+              <label
+                htmlFor="statistics-modal"
+                className="text-sm font-medium leading-none"
+              >
+                Statistics
+              </label>
+            </div>
+            
+            {/* Marketing cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="marketing-modal" 
+                checked={preferences.marketing}
+                onCheckedChange={() => handlePreferenceChange('marketing')}
+              />
+              <label
+                htmlFor="marketing-modal"
+                className="text-sm font-medium leading-none"
+              >
+                Marketing
+              </label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePreferences}>
+              Save preferences
+            </Button>
+          </div>
         </div>
       </div>
-    </motion.div>
+    );
+  }
+
+  return (
+    <>
+      {/* Banner */}
+      <div className="fixed bottom-0 left-0 z-50 w-full md:w-96 bg-white border rounded-t-lg shadow-lg p-4 m-4">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Cookie preferences</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.
+            </p>
+          </div>
+          
+          <div className="flex flex-col space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full border-neutral-200"
+              onClick={handleAcceptAll}
+            >
+              Accept all cookies
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full border-neutral-200"
+              onClick={handleRejectNonEssential}
+            >
+              Accept necessary only
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full border-neutral-200"
+              onClick={handleOpenModal}
+            >
+              Customize preferences
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Preferences Modal */}
+      <Dialog open={showPreferencesModal} onOpenChange={setShowPreferencesModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cookie preferences</DialogTitle>
+            <DialogDescription>
+              Select which cookies you want to accept. Necessary cookies cannot be disabled.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-4 py-4">
+            {/* Necessary cookies - always enabled */}
+            <div className="flex items-center space-x-2">
+              <Checkbox id="necessary" checked={true} disabled />
+              <label
+                htmlFor="necessary"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Necessary (required)
+              </label>
+            </div>
+            
+            {/* Preferences cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="preferences" 
+                checked={preferences.preferences}
+                onCheckedChange={() => handlePreferenceChange('preferences')}
+              />
+              <label
+                htmlFor="preferences"
+                className="text-sm font-medium leading-none"
+              >
+                Preferences
+              </label>
+            </div>
+            
+            {/* Statistics cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="statistics" 
+                checked={preferences.statistics}
+                onCheckedChange={() => handlePreferenceChange('statistics')}
+              />
+              <label
+                htmlFor="statistics"
+                className="text-sm font-medium leading-none"
+              >
+                Statistics
+              </label>
+            </div>
+            
+            {/* Marketing cookies */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="marketing" 
+                checked={preferences.marketing}
+                onCheckedChange={() => handlePreferenceChange('marketing')}
+              />
+              <label
+                htmlFor="marketing"
+                className="text-sm font-medium leading-none"
+              >
+                Marketing
+              </label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePreferences}>
+              Save preferences
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

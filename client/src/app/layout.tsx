@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/context/auth-context";
 import { CookieProvider } from '@/lib/context/cookie-context';
+import CookieManager from '@/components/cookie/cookie-manager';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <Toaster position="top-right" richColors />
           <CookieProvider>
+            <CookieManager />
             {children}
           </CookieProvider>
         </AuthProvider>

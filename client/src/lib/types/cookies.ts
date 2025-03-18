@@ -32,4 +32,5 @@ export interface CookieConsentSubmission extends CookieConsent {
   reject_all: boolean;
   user_ip?: string;
   user_agent?: string;
+  timestamp?: number; // Horodatage du consentement
 }

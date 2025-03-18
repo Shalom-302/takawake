@@ -124,14 +124,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated || !tokenExpiryTime) return;
 
-    const refreshTimeBeforeExpiry = 30 * 1000; // 30 secondes avant l'expiration (pour les tests)
+    const refreshTimeBeforeExpiry = 30 * 1000; // 30 seconds before expiry (for testing)
     const currentTime = Date.now();
     const timeUntilRefresh = Math.max(0, tokenExpiryTime - currentTime - refreshTimeBeforeExpiry);
 
-    console.log(`Token expirera dans ${Math.floor((tokenExpiryTime - currentTime) / 1000)} secondes. Rafraîchissement prévu dans ${Math.floor(timeUntilRefresh / 1000)} secondes.`);
+    console.log(`Token expires in ${Math.floor((tokenExpiryTime - currentTime) / 1000)} seconds. Refresh scheduled in ${Math.floor(timeUntilRefresh / 1000)} seconds.`);
 
     const refreshInterval = setInterval(() => {
-      console.log('Rafraîchissement du token...');
+      console.log('Refreshing token...');
       refreshToken();
     }, timeUntilRefresh);
 
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     toast.success('Logged out successfully');
     
-    // Utiliser window.location.href pour la redirection
+    // Use window.location.href for redirection
     setTimeout(() => {
       window.location.href = '/';
     }, 500);
