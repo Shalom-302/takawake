@@ -579,11 +579,28 @@ class AuthService:
             # Get user info from provider
             user_info = await provider.get_user_info(token_data["access_token"])
             
-            # Check if user exists
-            user = self.db.query(User).filter(
-                (User.email == user_info.email) | 
-                (User.auth_provider_data.contains({provider_name: {"id": user_info.id}}))
-            ).first()
+            # Check if user exists using email only (évite l'erreur avec l'opérateur JSON)
+            user = self.db.query(User).filter(User.email == user_info.email).first()
+            
+            # Si l'utilisateur n'est pas trouvé par email, essayons de chercher par provider_id
+            # en utilisant des requêtes JSON spécifiques à PostgreSQL
+            if not user and user_info.id:
+                # Créer un chemin JSON pour vérifier si le provider_id existe pour ce provider
+                json_path = f"$.{provider_name}.id"
+                try:
+                    # Utiliser une requête SQL brute pour éviter les problèmes d'opérateurs
+                    # Remarque : ceci est spécifique à PostgreSQL
+                    from sqlalchemy import text
+                    query = text(f"""
+                        SELECT * FROM "user" 
+                        WHERE auth_provider_data->'{provider_name}'->>'id' = :provider_id
+                    """)
+                    result = self.db.execute(query, {"provider_id": user_info.id})
+                    user_record = result.fetchone()
+                    if user_record:
+                        user = self.db.query(User).filter(User.id == user_record[0]).first()
+                except Exception as e:
+                    logger.error(f"Error querying by provider ID: {str(e)}")
             
             if user:
                 # Update user data
@@ -636,29 +653,38 @@ class AuthService:
                     self.db.refresh(default_role)
                 
                 # Create new user
-                new_user = User(
-                    email=user_info.email,
-                    username=username,
-                    first_name=user_info.first_name,
-                    last_name=user_info.last_name,
-                    is_active=True,
-                    is_verified=user_info.email_verified,
-                    role_id=default_role.id,
-                    primary_auth_provider=provider_name,
-                    auth_provider_data={
-                        provider_name: {
-                            "id": user_info.id,
-                            "updated_at": datetime.utcnow().isoformat()
-                        }
-                    },
-                    profile_picture=user_info.picture
-                )
-                
-                self.db.add(new_user)
-                self.db.commit()
-                self.db.refresh(new_user)
-                
-                user = new_user
+                try:
+                    new_user = User(
+                        email=user_info.email,
+                        username=username,
+                        first_name=user_info.first_name or "",
+                        last_name=user_info.last_name or "",
+                        is_active=True,
+                        is_verified=user_info.email_verified if hasattr(user_info, 'email_verified') else True,
+                        role_id=default_role.id,
+                        primary_auth_provider=provider_name,
+                        auth_provider_data={
+                            provider_name: {
+                                "id": user_info.id,
+                                "updated_at": datetime.utcnow().isoformat()
+                            }
+                        },
+                        profile_picture=user_info.picture if hasattr(user_info, 'picture') else None
+                    )
+                    
+                    self.db.add(new_user)
+                    self.db.commit()
+                    self.db.refresh(new_user)
+                    
+                    user = new_user
+                    logger.info(f"Created new user via OAuth: {user.email} using {provider_name}")
+                except Exception as e:
+                    logger.error(f"Error creating user: {str(e)}")
+                    self.db.rollback()
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to create user account: {str(e)}"
+                    )
             
             # Generate tokens
             tokens = await self.create_tokens(user)

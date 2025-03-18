@@ -2,6 +2,10 @@ import os
 from functools import lru_cache
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 class Settings(BaseSettings):
     """Application settings."""
@@ -26,8 +30,8 @@ class Settings(BaseSettings):
             "client_secret": os.getenv("GITHUB_CLIENT_SECRET", ""),
         },
         "google": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID", "test-client-id"),
-            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "test-client-secret"),
+            "client_id": os.getenv("GOOGLE_CLIENT_ID", "xxxxxxx"),
+            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "xxxxxx"),
         },
         "facebook": {
             "client_id": os.getenv("FACEBOOK_CLIENT_ID", ""),

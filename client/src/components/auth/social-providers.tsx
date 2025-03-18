@@ -42,15 +42,19 @@ const providerIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-// Friendly display names
-const providerNames: Record<string, string> = {
-  google: 'Google',
-  facebook: 'Facebook',
-  github: 'GitHub',
-  gitlab: 'GitLab',
-  linkedin: 'LinkedIn',
-  microsoft: 'Microsoft',
-  apple: 'Apple',
+// Obtenir le nom affiché d'un provider
+const getDisplayName = (providerKey: string): string => {
+  const displayNames: Record<string, string> = {
+    google: 'Google',
+    facebook: 'Facebook',
+    github: 'GitHub',
+    gitlab: 'GitLab',
+    linkedin: 'LinkedIn',
+    microsoft: 'Microsoft',
+    apple: 'Apple',
+  };
+  
+  return displayNames[providerKey] || providerKey;
 };
 
 export default function SocialProviders() {
@@ -85,9 +89,13 @@ export default function SocialProviders() {
             className="flex items-center justify-center gap-2"
             onClick={async () => {
               try {
-                const redirectUri = `${window.location.origin}/auth/callback`;
-                // S'assurer que provider.name existe, sinon utiliser provider.provider
+                // Stocker le provider dans localStorage pour le retrouver lors du callback
                 const providerName = provider.name || provider.provider;
+                localStorage.setItem('oauth_provider', providerName);
+                
+                // Utiliser l'URI de redirection configuré ou l'URI par défaut
+                const redirectUri = `${window.location.origin}/oauth/callback`;
+                
                 const authUrl = await getOAuthLoginUrl(providerName, redirectUri, 'state');
                 window.location.href = authUrl;
               } catch (error) {
@@ -96,8 +104,10 @@ export default function SocialProviders() {
               }
             }}
           >
-            {providerIcons[provider.name] || null}
-            {providerNames[provider.name] || provider.name}
+            <div className="flex items-center gap-2">
+              {(provider.name && providerIcons[provider.name]) && providerIcons[provider.name]}
+              <span className="ml-2">{getDisplayName(provider.name || provider.provider)}</span>
+            </div>
           </Button>
         ))}
       </div>

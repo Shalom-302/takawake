@@ -134,10 +134,12 @@ const authService = {
   },
 
   // Process OAuth callback
-  async processOAuthCallback(provider: string, code: string): Promise<LoginResponse> {
+  async processOAuthCallback(provider: string, code: string, redirectUri: string, state: string = 'state'): Promise<LoginResponse> {
     const response = await axiosClient.post<LoginResponse>('/auth/oauth/callback', { 
       provider, 
-      code 
+      code,
+      redirect_uri: redirectUri,
+      state
     });
     return response.data;
   }
