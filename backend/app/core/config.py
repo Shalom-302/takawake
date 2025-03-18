@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     }
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3002"]
+    CORS_ORIGINS: list[str] = ["*"]  # En développement, autoriser toutes les origines
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     

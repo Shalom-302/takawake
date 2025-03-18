@@ -134,13 +134,13 @@ class UserConsentRead(UserConsentBase):
 
 
 class CookieConsentSubmit(BaseModel):
-    """Schema for submitting cookie preferences"""
-    necessary: bool = Field(True, description="Consent for necessary cookies (always true)")
-    preferences: bool = Field(False, description="Consent for preference cookies")
-    statistics: bool = Field(False, description="Consent for statistics cookies")
-    marketing: bool = Field(False, description="Consent for marketing cookies")
-    accept_all: bool = Field(False, description="Accept all cookies")
-    reject_all: bool = Field(False, description="Reject all cookies (except necessary)")
+    """Schema for submitting cookie consent"""
+    necessary: bool = True
+    preferences: bool = False
+    statistics: bool = False
+    marketing: bool = False
+    accept_all: bool = False
+    reject_all: bool = False
 
 
 class DataRequestBase(BaseModel):

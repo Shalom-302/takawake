@@ -5,7 +5,7 @@ Main module for the GDPR compliance plugin
 import json
 import secrets
 import logging
-import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any, Union
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
@@ -80,6 +80,11 @@ def get_router():
         db.commit()
         db.refresh(settings)
         return settings
+    
+    @router.options("/cookie-settings")
+    async def options_cookie_settings():
+        """Handle preflight OPTIONS request for cookie-settings endpoint"""
+        return {"detail": "OK"}
     
     # Cookie category management
     @router.get("/cookie-categories", response_model=List[CookieCategoryRead])
@@ -290,67 +295,68 @@ def get_router():
             "version": "1.0"
         }
     
-    # User consent
-    @router.post("/cookie-consent/record", status_code=201)
+    # User consent management
+    @router.post("/cookie-consent", response_model=UserConsentRead)
     async def submit_cookie_consent(
         consent: CookieConsentSubmit,
         request: Request,
         db: Session = Depends(get_db)
     ):
-        """Save user cookie consent preferences"""
-        # Try to get user ID if logged in
-        user_id = None
+        """Submit cookie consent preferences"""
         try:
-            auth_header = request.headers.get("Authorization")
-            if auth_header and auth_header.startswith("Bearer "):
-                token = auth_header.replace("Bearer ", "")
-                user = get_current_user(token=token, db=db)
-                if user:
-                    user_id = user.id
-        except:
-            # Ignore errors, just proceed without user ID
-            pass
+            # Get IP and User Agent
+            client_ip = request.client.host if request.client else "unknown"
+            user_agent = request.headers.get("user-agent", "unknown")
             
-        # Get or create user consent
-        existing_consent = None
-        if user_id:
-            existing_consent = db.query(UserConsent).filter(
-                UserConsent.user_id == user_id,
-                UserConsent.consent_type == "cookie"
-            ).first()
-        
-        client_ip = request.client.host if request.client else None
-        user_agent = request.headers.get("User-Agent")
-        
-        # Prepare consent details
-        consent_details = {
-            "necessary": consent.necessary,
-            "preferences": consent.preferences,
-            "statistics": consent.statistics,
-            "marketing": consent.marketing,
-            "accept_all": consent.accept_all,
-            "reject_all": consent.reject_all
-        }
-        
-        if existing_consent:
-            # Update existing consent
-            existing_consent.consent_details = consent_details
-            existing_consent.updated_at = datetime.datetime.utcnow()
-            existing_consent.ip_address = client_ip or existing_consent.ip_address
-            existing_consent.user_agent = user_agent or existing_consent.user_agent
-        else:
-            # Create new consent
-            new_consent = UserConsent(
-                user_id=user_id,
+            # Convert to dict for JSON storage
+            if hasattr(consent, "model_dump"):
+                # Pydantic v2
+                consent_details = consent.model_dump()
+            else:
+                # Pydantic v1
+                consent_details = consent.dict()
+            
+            # Convert dict to JSON string for database storage
+            consent_details_json = json.dumps(consent_details)
+            
+            # Create user consent record
+            user_consent = UserConsent(
                 consent_type="cookie",
-                consent_details=consent_details,
+                consent_details=consent_details_json,
                 ip_address=client_ip,
-                user_agent=user_agent,
+                user_agent=user_agent
             )
-            db.add(new_consent)
-        
-        db.commit()
-        return {"status": "success"}
+            
+            # Get cookie settings for expiry calculation
+            settings = db.query(CookieSettings).first()
+            if settings and settings.consent_expiry_days > 0:
+                # Calculate expiry date
+                user_consent.expires_at = datetime.utcnow() + timedelta(days=settings.consent_expiry_days)
+            
+            db.add(user_consent)
+            db.commit()
+            db.refresh(user_consent)
+            
+            logger.info(f"Cookie consent submitted from {client_ip}: necessary={consent.necessary}, "
+                        f"preferences={consent.preferences}, statistics={consent.statistics}, "
+                        f"marketing={consent.marketing}")
+            
+            # Parse JSON back to dict for response
+            if user_consent.consent_details:
+                try:
+                    user_consent.consent_details = json.loads(user_consent.consent_details)
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse consent details for user consent ID {user_consent.id}")
+            
+            return user_consent
+        except Exception as e:
+            logger.error(f"Error in submit_cookie_consent: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error processing cookie consent: {str(e)}")
+    
+    @router.options("/cookie-consent")
+    async def options_cookie_consent():
+        """Handle preflight OPTIONS request for cookie-consent endpoint"""
+        return {"detail": "OK"}
     
     # Get user consent
     @router.get("/my-cookie-consent", response_model=UserConsentRead)
@@ -366,7 +372,20 @@ def get_router():
         ).first()
         if not consent:
             raise HTTPException(status_code=404, detail="No consent record found")
+        
+        # Parse JSON consent details if they exist
+        if consent.consent_details:
+            try:
+                consent.consent_details = json.loads(consent.consent_details)
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse consent details for user {current_user.id}")
+        
         return consent
+    
+    @router.options("/my-cookie-consent")
+    async def options_my_cookie_consent():
+        """Handle preflight OPTIONS request for my-cookie-consent endpoint"""
+        return {"detail": "OK"}
     
     # GDPR Data Requests
     @router.post("/data-requests", response_model=DataRequestRead, status_code=201)
@@ -379,7 +398,7 @@ def get_router():
         """Create a new GDPR data request (access or deletion)"""
         # Generate verification token
         verification_token = secrets.token_urlsafe(32)
-        verification_expires = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        verification_expires = datetime.utcnow() + timedelta(hours=24)
         
         # Create the request
         data_request = DataRequest(
@@ -466,7 +485,7 @@ def get_router():
         db: Session = Depends(get_db)
     ):
         """Verify a data request with a token"""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         
         request = db.query(DataRequest).filter(
             DataRequest.verification_token == token,
@@ -598,7 +617,7 @@ def get_router():
         
         # Activate this policy
         policy.is_active = True
-        policy.activated_at = datetime.datetime.utcnow()
+        policy.activated_at = datetime.utcnow()
         
         db.commit()
         db.refresh(policy)

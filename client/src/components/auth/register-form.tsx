@@ -61,11 +61,11 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Create Account</CardTitle>
+        <CardTitle>Sign up</CardTitle>
         <CardDescription>
-          Sign up for a new account
+        Enter your details to create your Kaapi account
         </CardDescription>
       </CardHeader>
       <CardContent>

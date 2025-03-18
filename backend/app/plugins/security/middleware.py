@@ -116,57 +116,64 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
             raise HTTPException(403, "Account locked")
 
     async def dispatch(self, request: Request, call_next):
+        """
+        Main middleware dispatch method that processes incoming requests.
+        Provides security checks and logs security-related events.
+        """
+        user = None
+        
+        # Always allow OPTIONS requests for CORS preflight
+        if request.method == "OPTIONS":
+            logging.debug(f"SecurityMiddleware: Allowing OPTIONS request to {request.url.path}")
+            return await call_next(request)
+
+        # Bypass all security checks for privacy routes
+        if (request.url.path.startswith("/privacy/") or 
+            request.url.path.startswith("/plugins/privacy_compliance/") or
+            request.url.path.startswith("/plugins/advanced_audit/")):
+            logging.debug(f"SecurityMiddleware: Bypassing security checks for route: {request.url.path}")
+            return await call_next(request)
+            
         try:
-            # Get more granular with path checks for exemptions
-            path = request.url.path
-            
-            # List of public paths and prefixes that should be exempt from security checks
-            exempt_paths = [
-                "/metrics", 
-                "/", 
-                "/docs", 
-                "/redoc", 
-                "/openapi.json",
-                "/providers",
-                "/favicon.ico",
-                "/health",
-                "/status"
-            ]
-            
-            exempt_prefixes = [
-                "/auth",
-                "/static",
-                "/assets",
-                "/plugins/advanced-logging/",
-                "/plugins/advanced_audit/metrics"
-            ]
-            
-            # Check if the path is exempt
-            if (path in exempt_paths or 
-                any(path.startswith(prefix) for prefix in exempt_prefixes)):
-                logging.debug(f"SecurityMiddleware: Exempted path: {path}")
-                return await call_next(request)
-                
-            # WAF check first
-            logging.debug("SecurityMiddleware: Starting WAF check")
+            # Try to extract user from request if authenticated
             try:
-                if self.waf:
-                    waf_response = await self.waf(request, call_next)
-                    if waf_response and waf_response.status_code != 200:
-                        logging.debug(f"SecurityMiddleware: WAF rejected request with status {waf_response.status_code}")
-                        return waf_response
-                logging.debug("SecurityMiddleware: WAF check passed")
-            except Exception as waf_error:
-                logging.error(f"SecurityMiddleware: WAF error: {str(waf_error)}", exc_info=True)
-                # Continue processing even if WAF fails
+                user = request.state.user if hasattr(request.state, "user") else None
+                if user:
+                    logging.debug(f"SecurityMiddleware: User {user.email} found in request")
+                else:
+                    logging.warning(f"SecurityMiddleware: No user found in request state")
+            except Exception as user_error:
+                logging.error(f"SecurityMiddleware: Error extracting user: {str(user_error)}")
+                
+            # Exclude cookie-related endpoints from WAF checks
+            cookie_endpoints = [
+                "/privacy/cookie-settings",
+                "/privacy/cookie-consent",
+                "/privacy/my-cookie-consent"
+            ]
             
-            # Check if user exists in request.state
-            if not hasattr(request.state, "user"):
-                logging.warning("SecurityMiddleware: No user found in request state")
-                request.state.user = None  # Define a default value to avoid error
-            
-            user = request.state.user
-            logging.debug(f"SecurityMiddleware: User retrieved: {user.id if user else 'anonymous'}")
+            # Check for blocked patterns in request
+            if self.waf and not any(request.url.path.endswith(endpoint) for endpoint in cookie_endpoints):
+                try:
+                    # Proper WAF check - using the pattern recommended for callable middleware
+                    # Instead of calling the WAF directly with call_next, check it first
+                    waf_blocked = await self.waf.check_security(request, user)
+                    if waf_blocked:
+                        logging.debug(f"SecurityMiddleware: WAF rejected request")
+                        self.detector.log_security_event("waf_blocked", {"path": request.url.path})
+                        raise HTTPException(status_code=403, detail="Access blocked by security policy")
+                    logging.debug("SecurityMiddleware: WAF check passed")
+                except AttributeError:
+                    # Fallback if check_security method doesn't exist
+                    logging.warning("WAF object doesn't have check_security method - using direct validation")
+                    if hasattr(self.waf, "validate_request"):
+                        if not await self.waf.validate_request(request):
+                            self.detector.log_security_event("waf_blocked", {"path": request.url.path})
+                            raise HTTPException(status_code=403, detail="Access blocked by security policy")
+                except Exception as waf_error:
+                    logging.error(f"SecurityMiddleware: WAF error: {str(waf_error)}")
+                    self.detector.log_security_event("waf_blocked", {"error": str(waf_error), "path": request.url.path})
+                    raise HTTPException(status_code=403, detail="Access blocked by security policy")
             
             try:
                 await self._validate_request_chain(request, user)

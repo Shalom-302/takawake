@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import authService, { UserData, AuthProvider as AuthProviderType } from '../api/auth-service';
 import { toast } from 'sonner';
 
@@ -40,13 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [providers, setProviders] = useState<AuthProviderType[]>([]);
   const [tokenExpiryTime, setTokenExpiryTime] = useState<number | null>(null);
-  const router = useRouter();
 
   // Function to parse JWT token
   const parseJwt = (token: string) => {
     try {
       return JSON.parse(atob(token.split('.')[1]));
-    } catch (error) {
+    } catch (e) {
+      console.error('Failed to parse JWT token:', e);
       return null;
     }
   };
@@ -99,8 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (tokenData && tokenData.exp) {
               setTokenExpiryTime(tokenData.exp * 1000); // Convert to milliseconds
             }
-          } catch (_) {
-            console.error('Invalid token, clearing auth state');
+          } catch (err) {
+            console.error('Invalid token, clearing auth state:', err);
             localStorage.removeItem('auth_token');
             localStorage.removeItem('refresh_token');
             setIsAuthenticated(false);
@@ -110,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get available auth providers
         const authProviders = await authService.getActiveProviders();
         setProviders(authProviders);
-      } catch (_) {
-        console.error('Auth initialization error');
+      } catch (err) {
+        console.error('Auth initialization error:', err);
       } finally {
         setLoading(false);
         setIsLoading(false);
@@ -154,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(true);
       toast.success('Logged in successfully');
       return true;
-    } catch (err: unknown) {
+    } catch (err) {
       let errorMessage = 'Failed to login';
       if (err instanceof Error) {
         errorMessage = err.message;
@@ -182,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(true);
       toast.success('Registration successful');
       return true;
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Registration error:', error);
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -201,8 +200,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
-    router.push('/');
+    localStorage.removeItem('user');
+    
     toast.success('Logged out successfully');
+    
+    // Utiliser window.location.href pour la redirection
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 500);
   };
 
   // Get OAuth login URL

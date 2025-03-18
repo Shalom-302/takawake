@@ -222,7 +222,7 @@ app.include_router(get_advanced_scheduler_router(), prefix="/plugins/advanced-sc
 app.include_router(ai_integration_router, prefix="/plugins/ai-integration", tags=["AI Integration"])
 app.include_router(data_exchange_router, prefix="/plugins/data-exchange", tags=["Data Exchange"])
 app.include_router(file_storage_router, prefix="/plugins/file-storage", tags=["File Storage"])
-app.include_router(privacy_compliance_router, prefix="/plugins/privacy-compliance", tags=["Privacy Compliance"])
+app.include_router(privacy_compliance_router, tags=["Privacy Compliance"])
 app.include_router(push_notifications_router, prefix="/plugins/push-notifications", tags=["Push Notifications"])
 app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA Support"])
 app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])

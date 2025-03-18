@@ -62,7 +62,12 @@ export default function OAuthCallbackPage() {
           // Clear oauth_provider from localStorage
           localStorage.removeItem('oauth_provider');
           
-          router.push('/dashboard');
+          // Added a delay before redirection to ensure that the toast is displayed
+          // and use of window.location.href for more reliable redirection
+          setTimeout(() => {
+            console.log("Redirecting to dashboard now...");
+            window.location.href = '/dashboard';
+          }, 500); // delay of 1 second
         } else {
           console.error("Invalid response format:", response);
           throw new Error('No token received from server');

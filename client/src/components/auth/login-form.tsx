@@ -56,7 +56,7 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>

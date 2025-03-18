@@ -69,18 +69,18 @@ export default function SocialProviders() {
   const oauthProviders = providers.filter(provider => provider.name !== 'email');
 
   return (
-    <div className="space-y-4">
+    <div className="mt-4 space-y-4">
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-neutral-500 dark:bg-neutral-950">
+          <span className="bg-white px-2 text-neutral-500 dark:bg-neutral-950 dark:text-neutral-400">
             Or continue with
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {oauthProviders.map((provider) => (
           <Button
             key={provider.name}
