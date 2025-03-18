@@ -172,6 +172,26 @@ The plugin automatically initializes the database with the following:
 3. A default admin user (if none exists)
 4. MFA method types
 
+### Initializing Authentication Components
+
+Kaapi provides CLI commands to initialize authentication components:
+
+```bash
+# Standard initialization (initializes auth providers, creates test user, and sets up admin role)
+./kaapi auth init
+
+# Simplified initialization (more robust version that handles database constraints directly)
+./kaapi auth init-simple
+```
+
+After running these commands, you'll have:
+
+- A test user with email `test@example.com` and password `Passw0rd!`
+- OAuth providers configured with placeholder values (replace with real values for production)
+- An admin role assigned to the test user
+
+> **Note:** For production use, you should change the default password and update OAuth provider credentials.
+
 ## Documentation
 
 Comprehensive documentation is available in the `docs` directory:

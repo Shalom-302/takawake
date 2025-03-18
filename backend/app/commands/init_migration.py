@@ -1,13 +1,13 @@
 """
-Script pour initialiser correctement les migrations Alembic en tenant compte
-de tous les plugins et modèles disponibles dans l'application.
+Script to correctly initialize Alembic migrations, taking into account
+all plugins and templates available in the application.
 
 Usage:
     python -m app.commands.init_migration
 
-Ce script va:
-1. Créer une migration initial_schema qui capture tous les modèles
-2. Appliquer cette migration à la base de données
+This script will:
+1. Create an initial_schema migration that captures all models
+2. Apply this migration to the database
 """
 import os
 import sys
@@ -24,33 +24,33 @@ from app.core.db import Base, engine
 
 
 def get_backend_dir() -> Path:
-    """Retourne le chemin vers le répertoire backend."""
+    """Return the path to the backend directory."""
     return Path(__file__).resolve().parent.parent.parent
 
 
 def run_alembic_command(command: List[str], env_vars=None) -> Tuple[str, str, int]:
     """
-    Exécute une commande alembic avec les bons paramètres d'environnement.
+    Execute an alembic command with the correct environment variables.
     
     Args:
-        command: La commande alembic à exécuter
-        env_vars: Variables d'environnement supplémentaires
+        command: The alembic command to execute
+        env_vars: Additional environment variables
         
     Returns:
-        Tuple de (stdout, stderr, return_code)
+        Tuple of (stdout, stderr, return_code)
     """
-    # Vérifier si nous sommes déjà dans un conteneur Docker
+    # Check if we are already inside a Docker container
     in_docker = os.path.exists('/.dockerenv')
     backend_dir = get_backend_dir()
     
-    # Configuration de l'environnement
+    # Configure the environment
     env = os.environ.copy()
     if env_vars:
         env.update(env_vars)
         
     env["PYTHONPATH"] = str(backend_dir)
     
-    # Utiliser 'kaapi' comme nom de container pour la base de données
+    # Use 'kaapi' as the container name for the database
     db_url = settings.DB_URL
     if "@db:" in db_url:
         db_url = db_url.replace("@db:", "@kaapi:")
@@ -58,8 +58,8 @@ def run_alembic_command(command: List[str], env_vars=None) -> Tuple[str, str, in
         db_url = db_url.replace("@kaapi-db:", "@kaapi:")
     env["DB_URL"] = db_url
     
-    # Exécution de la commande
-    print(f"Exécution de: {' '.join(command)}")
+    # Execute the command
+    print(f"Executing: {' '.join(command)}")
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -74,83 +74,82 @@ def run_alembic_command(command: List[str], env_vars=None) -> Tuple[str, str, in
 
 
 def get_latest_migration_file():
-    """Récupère le chemin vers le fichier de migration le plus récent."""
+    """Get the path to the latest migration file."""
     migrations_dir = get_backend_dir() / "migrations" / "versions"
     migration_files = list(migrations_dir.glob("*.py"))
     
     if not migration_files:
         return None
     
-    # Trier par date de modification pour obtenir le plus récent
+    # Sort by modification date to get the most recent
     latest_file = max(migration_files, key=lambda f: f.stat().st_mtime)
     return latest_file
 
 
 def direct_fix_file(file_path):
-    """Corrige directement le formatage du fichier en utilisant une expression régulière."""
+    """Corrige directly the formatting of the file using a regular expression."""
     import re
     
-    # Lire le fichier complet
+    # Read the file completely
     with open(file_path, 'r') as f:
         content = f.read()
     
-    # Utiliser une expression régulière pour localiser et corriger précisément le problème
-    pattern = r'(# ### end Alembic commands ###)(def downgrade)'  # Groupe 1: marqueur, Groupe 2: début fonction
+    # Use a regular expression to locate and correct the problem precisely
+    pattern = r'(# ### end Alembic commands ###)(def downgrade)'  # Group 1: marker, Group 2: function start
     
     if re.search(pattern, content):
-        # Remplacer par le marqueur, suivi de 3 sauts de ligne, puis le début de la fonction
+        # Replace with the marker, followed by 3 line breaks, then the function start
         corrected_content = re.sub(pattern, r'\1\n\n\n\2', content)
         
-        # Sauvegarde du contenu corrigé
+        # Save the corrected content
         with open(file_path, 'w') as f:
             f.write(corrected_content)
         
-        print(f"Formatage corrigé avec regex dans le fichier {file_path}")
+        print(f"Formatting corrected with regex in file {file_path}")
         return True
     
-    # Vérifier d'autres variantes possibles du problème
-    alt_pattern = r'(# ### end Alembic commands ###)([^\n])'  # Marqueur suivi directement par un caractère (sans saut de ligne)
+    # Check for other possible variants of the problem
+    alt_pattern = r'(# ### end Alembic commands ###)([^\n])'  # Marker followed directly by a character (no line break)
     
     if re.search(alt_pattern, content):
-        # Ajouter des sauts de ligne après le marqueur, puis le contenu trouvé
+        # Add line breaks after the marker, then the content found
         corrected_content = re.sub(alt_pattern, r'\1\n\n\n\2', content)
         
-        # Sauvegarde du contenu corrigé
+        # Save the corrected content
         with open(file_path, 'w') as f:
             f.write(corrected_content)
         
-        print(f"Formatage corrigé (variante) avec regex dans le fichier {file_path}")
+        print(f"Formatting corrected (variant) with regex in file {file_path}")
         return True
     
     return False
 
 
 def fix_migration_file(migration_file):
-    """Corrige le fichier de migration pour échanger les fonctions upgrade et downgrade
-    et corriger les problèmes de formatage potentiels. Ce correctif est spécifiquement conçu
-    pour résoudre le problème où Alembic peut générer un fichier où les opérations de
-    suppression sont dans la fonction upgrade et celles de création dans downgrade."""
+    """Corrige the migration file to exchange the upgrade and downgrade functions
+    and correct potential formatting issues. This correction is specifically designed
+    to resolve the issue where Alembic may generate a file where drop operations are
+    in the upgrade function and create operations are in the downgrade function."""
     import re
     
-    print("Début de la correction du fichier de migration...")
+    print("Starting migration file correction...")
     
-    # Correction directe des problèmes de formatage
+    # Direct formatting correction
     direct_fix_file(migration_file)
     
-    # Lire le fichier entier comme une seule chaîne maintenant qu'il est corrigé
+    # Read the entire file as a single string now that it is corrected
     with open(migration_file, 'r') as f:
         content = f.read()
     
-    # Vérifier si le fichier contient des opérations drop_table dans upgrade()
-    # et des opérations create_table dans downgrade()
+    # Check if the file contains drop_table operations in upgrade() and create_table operations in downgrade()
     has_drop_in_upgrade = 'op.drop_table' in content and content.find('op.drop_table') < content.find('def downgrade')
     
-    # Si nous détectons ce problème, alors nous devons échanger les contenus
+    # If we detect this problem, then we need to exchange the contents
     if has_drop_in_upgrade:
-        print("Erreur détectée: La fonction upgrade() supprime des tables au lieu de les créer.")
-        print("Inversion des fonctions upgrade() et downgrade()...")
+        print("Error detected: The upgrade() function deletes tables instead of creating them.")
+        print("Inverting the upgrade() and downgrade() functions...")
         
-        # Recherche des fonctions avec un pattern plus robuste
+        # Search for functions with a more robust pattern
         upgrade_match = re.search(r'def upgrade\(\)[^\n]*:[\s\S]*?(?=\n\s*def downgrade\(\)|$)', content)
         downgrade_match = re.search(r'def downgrade\(\)[^\n]*:[\s\S]*?$', content)
         
@@ -158,29 +157,29 @@ def fix_migration_file(migration_file):
             upgrade_content = upgrade_match.group(0)
             downgrade_content = downgrade_match.group(0)
             
-            # Extraire le corps de chaque fonction (tout après la déclaration et le :)
+            # Extract the body of each function (everything after the declaration and the :)
             upgrade_body = re.sub(r'^def upgrade\(\)[^:]*:', '', upgrade_content).strip()
             downgrade_body = re.sub(r'^def downgrade\(\)[^:]*:', '', downgrade_content).strip()
             
-            # Échanger explicitement les corps des fonctions
+            # Explicitly exchange the function bodies
             new_content = content.replace(upgrade_match.group(0), f"def upgrade() -> None:\n{downgrade_body}")
             new_content = new_content.replace(downgrade_match.group(0), f"def downgrade() -> None:\n{upgrade_body}")
             
-            # Écrire le nouveau contenu corrigé dans le fichier
+            # Write the corrected content to the file
             with open(migration_file, 'w') as f:
                 f.write(new_content)
                 
-            print("Correction appliquée: Les fonctions upgrade() et downgrade() ont été inversées.")
+            print("Correction applied: The upgrade() and downgrade() functions have been inverted.")
             return True
         else:
-            print("Impossible de trouver correctement les fonctions upgrade() et downgrade().")
+            print("Unable to correctly find the upgrade() and downgrade() functions.")
     else:
-        print("Le fichier de migration semble correct (pas d'opérations drop_table détectées dans upgrade()).")
+        print("The migration file seems correct (no drop_table operations detected in upgrade()).")
     
-    # Si nous arrivons ici, soit il n'y avait pas de problème, soit nous n'avons pas pu le corriger
-    # On essaie alors la méthode précédente pour assurer un formatage correct
+    # If we get here, either there was no problem, or we couldn't correct it
+    # We then try the previous method to ensure correct formatting
     
-    # Maintenant trouver les fonctions upgrade et downgrade
+    # Now find the upgrade and downgrade functions
     upgrade_pattern = re.compile(r'def upgrade\(\).*?(?=def downgrade\(\)|$)', re.DOTALL)
     downgrade_pattern = re.compile(r'def downgrade\(\).*', re.DOTALL)
     
@@ -188,156 +187,156 @@ def fix_migration_file(migration_file):
     downgrade_match = downgrade_pattern.search(content)
     
     if not upgrade_match:
-        print("\nAvertissement: Fonction upgrade() non trouvée. Impossible de continuer.")
+        print("\nWarning: Upgrade function not found. Unable to continue.")
         return False
     
     if not downgrade_match:
-        print("\nAvertissement: Fonction downgrade() non trouvée. Tentative d'ajout...")
-        # Ajouter une fonction downgrade basique si elle n'existe pas
+        print("\nWarning: Downgrade function not found. Attempting to add...")
+        # Add a basic downgrade function if it doesn't exist
         if upgrade_match:
             content += "\n\n\ndef downgrade() -> None:\n    # ### commands auto generated by Alembic - please adjust! ###\n    pass\n    # ### end Alembic commands ###"
             with open(migration_file, 'w') as f:
                 f.write(content)
-            print("Fonction downgrade() ajoutée au fichier de migration.")
+            print("Downgrade function added to the migration file.")
             return True
         return False
     
-    # Si nous avons les deux fonctions mais qu'elles ont besoin de formatage
+    # If we have both functions but they need formatting
     upgrade_content = upgrade_match.group(0)
     downgrade_content = downgrade_match.group(0)
     
-    # Extraire le corps de chaque fonction
+    # Extract the body of each function
     upgrade_body = re.sub(r'def upgrade\(\)[^:]*:', '', upgrade_content).strip()
     downgrade_body = re.sub(r'def downgrade\(\)[^:]*:', '', downgrade_content).strip()
     
-    # Formater correctement les fonctions
+    # Format the functions correctly
     new_upgrade = "def upgrade() -> None:\n" + upgrade_body
     new_downgrade = "def downgrade() -> None:\n" + downgrade_body
     
-    # Créer le nouveau contenu du fichier
+    # Create the new content of the file
     new_content = re.sub(upgrade_pattern, new_upgrade, content)
     new_content = re.sub(downgrade_pattern, new_downgrade, new_content)
     
-    # Écrire le nouveau contenu dans le fichier
+    # Write the new content to the file
     with open(migration_file, 'w') as f:
         f.write(new_content)
         
-    print("Format des fonctions upgrade() et downgrade() corrigé.")
+    print("Format of upgrade() and downgrade() functions corrected.")
     return True
 
 
 def auto_fix_migration_format(content):
-    """Tente de corriger les problèmes de formatage fréquents dans les fichiers de migration."""
+    """Tries to correct common formatting issues in migration files."""
     import re
     
-    # Détection plus robuste du problème de formatage courant
+    # More robust detection of the common formatting issue
     pattern_downgrade_issue = r'(# ### end Alembic commands ###)def downgrade\(\)'
     if re.search(pattern_downgrade_issue, content):
-        print("Problème détecté: 'def downgrade()' est accolé aux commentaires Alembic.")
-        # Correction directe avec espace ample pour éviter des problèmes
+        print("Problem detected: 'def downgrade()' is attached to Alembic comments.")
+        # Direct correction with ample space to avoid problems
         content = content.replace(
             '# ### end Alembic commands ###def downgrade()',
             '# ### end Alembic commands ###\n\n\ndef downgrade()'
         )
-        print("Correction appliquée pour le formatage de 'def downgrade()'")
+        print("Correction applied for the format of 'def downgrade()'")
     
-    # Cas 1: Les autres variantes où un 'def' est accolé à la fin des commentaires
+    # Case 1: Other variants where a 'def' is attached to the end of comments
     content = re.sub(r'(# ### end .*?commands ###)def', r'\1\n\n\ndef', content)
     
-    # Cas 2: Espaces ou tabs manquants pour l'indentation
+    # Case 2: Missing spaces or tabs for indentation
     lines = content.split('\n')
     for i in range(len(lines)):
         if lines[i].lstrip().startswith('op.') and not lines[i].startswith('    '):
             lines[i] = '    ' + lines[i].lstrip()
     content = '\n'.join(lines)
     
-    # Cas 3: Détecter si le fichier contient upgrade et downgrade mais sans formatage correct
+    # Case 3: Detect if the file contains upgrade and downgrade but without correct formatting
     if 'def upgrade()' in content and 'def downgrade()' in content:
         upgrade_index = content.find('def upgrade()')
         downgrade_index = content.find('def downgrade()')
         
         if upgrade_index > 0 and downgrade_index > upgrade_index:
-            # Le fichier contient les deux fonctions dans le bon ordre, mais peut-être mal formaté
+            # The file contains the two functions in the correct order, but may be poorly formatted
             header = content[:upgrade_index].strip()
             between_funcs = content[upgrade_index:downgrade_index].strip()
             remainder = content[downgrade_index:].strip()
             
-            # Reconstruire avec un formatage correct
+            # Reconstruct with correct formatting
             content = f"{header}\n\ndef upgrade() -> None:\n{between_funcs[len('def upgrade() -> None:'):].strip()}\n\n\ndef downgrade() -> None:\n{remainder[len('def downgrade() -> None:'):].strip()}"
     
     return content
 
 
 def generate_models_script(migration_file):
-    """Modifie le fichier de migration pour inclure le schéma complet des tables existantes."""
+    """Modifies the migration file to include the complete schema of existing tables."""
     from sqlalchemy import MetaData, Table
     from sqlalchemy.schema import CreateTable
     
-    # Inspecter la base de données pour obtenir le schéma complet
+    # Inspect the database to get the complete schema
     metadata = MetaData()
     metadata.reflect(bind=engine)
     
-    # Générer les déclarations CreateTable pour chaque table
+    # Generate CreateTable declarations for each table
     create_statements = []
     for table_name in sorted(metadata.tables):
         table = metadata.tables[table_name]
         create_statement = str(CreateTable(table).compile(engine))
-        # Formater pour Python
+        # Format for Python
         create_statement = create_statement.replace('\n', ' ').replace("'", "\\'").replace('"', '\\"')
         create_statements.append(f"    op.execute(\"\"\"CREATE TABLE IF NOT EXISTS {table_name} ({create_statement[len(f'CREATE TABLE {table_name} ('):]}\"\"\")")  
     
-    # Lire le contenu du fichier existant
+    # Read the existing file content
     with open(migration_file, 'r') as f:
         content = f.read()
     
-    # Remplacer la fonction upgrade() par une nouvelle version avec nos instructions
+    # Replace the existing upgrade() function with our instructions
     upgrade_content = "def upgrade() -> None:\n    # ### commands auto generated by init_migration ###\n"
     upgrade_content += "\n".join(create_statements)
     upgrade_content += "\n    # ### end of commands ###\n"
     
-    # Rechercher et remplacer la fonction upgrade() existante
+    # Search and replace the existing upgrade() function
     import re
     pattern = r"def upgrade\(\).*?def downgrade\(\)"
     replacement = upgrade_content + "\n\ndef downgrade()"
     new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
     
-    # Écrire le contenu modifié dans le fichier
+    # Write the modified content to the file
     with open(migration_file, 'w') as f:
         f.write(new_content)
 
 
-# Import global des modèles pour s'assurer qu'ils sont tous chargés
+# Import global models to ensure they are all loaded
 from app.models import *
 
 def import_all_models():
     """
-    S'assure que tous les modèles définis dans l'application sont chargés,
-    y compris ceux définis dans les plugins.
+    Ensures that all models defined in the application are loaded,
+    including those defined in plugins.
     """
     
-    # Créer une application fictive pour le chargement des plugins
+    # Create a dummy FastAPI app for plugin loading
     from fastapi import FastAPI
     dummy_app = FastAPI()
-    # Chargement explicite des plugins pour s'assurer que leurs modèles sont importés
+    # Explicitly load plugins to ensure their models are imported
     load_plugins_into_app(dummy_app)
     
-    # Vérification des modèles chargés
-    print(f"Modèles SQLAlchemy chargés: {len(Base.metadata.tables)}")
-    print("Tables détectées:")
+    # Verify loaded models
+    print(f"SQLAlchemy models loaded: {len(Base.metadata.tables)}")
+    print("Tables detected:")
     for table_name in sorted(Base.metadata.tables.keys()):
         print(f"  - {table_name}")
 
 
 def update_db_references_in_docker():
     """
-    Met à jour les références à 'db' pour utiliser 'kaapi' dans le container Docker.
+    Updates references to 'db' to use 'kaapi' in the Docker container.
     """
-    # Vérifier si nous sommes dans Docker
+    # Check if we are in Docker
     in_docker = os.path.exists('/.dockerenv')
     if not in_docker:
         return
         
-    # Mettre à jour /etc/hosts pour pointer db vers kaapi (localhost)
+    # Update /etc/hosts to point db to kaapi (localhost)
     try:
         with open('/etc/hosts', 'r') as f:
             hosts_content = f.read()
@@ -345,44 +344,44 @@ def update_db_references_in_docker():
         if 'db' not in hosts_content:
             with open('/etc/hosts', 'a') as f:
                 f.write('\n127.0.0.1 db\n')
-            print("✅ Ajout de 'db' dans /etc/hosts pour pointer vers localhost")
+            print("✅ Added 'db' in /etc/hosts to point to localhost")
     except Exception as e:
-        print(f"⚠️ Impossible de mettre à jour /etc/hosts: {str(e)}")
+        print(f"⚠️ Failed to update /etc/hosts: {str(e)}")
 
 
 def init_migration():
     """
-    Initialise la migration Alembic en recréant entièrement la base de données.
+    Initializes the Alembic migration by recreating the entire database.
     
     Returns:
-        bool: True si l'initialisation a réussi, False sinon
+        bool: True if initialization is successful, False otherwise
     """
-    # Mettre à jour les références à la base de données
+    # Update database references in Docker
     update_db_references_in_docker()
     
-    # S'assurer que tous les modèles sont importés
+    # Ensure all models are imported
     import_all_models()
     
-    # Étape 1: Supprimer toutes les anciennes révisions pour un départ propre
+    # Step 1: Delete all old revisions for a clean start
     versions_dir = get_backend_dir() / "migrations" / "versions"
     for file in versions_dir.glob("*.py"):
         if file.name != "__init__.py":
-            print(f"Suppression de l'ancienne révision: {file.name}")
+            print(f"Deletion of old revision: {file.name}")
             file.unlink()
     
-    # Approche simplifiée: vider la base, créer les tables, puis générer une migration initiale
+    # Simple approach: empty the database, create tables, then generate an initial migration
     from sqlalchemy import text
     
     try:
-        # Utiliser la connexion à la base de données
-        print("\n1. Vidage complet de la base de données...")
+        # Use the database connection
+        print("\n1. Emptying the database...")
         conn = engine.connect()
         conn = conn.execution_options(isolation_level="AUTOCOMMIT")
         
-        # 1. Désactiver les contraintes de clés étrangères pendant les opérations
+        # Disable foreign key constraints during operations
         conn.execute(text("SET session_replication_role = 'replica';"))
         
-        # 2. Supprimer toutes les tables existantes avec CASCADE
+        # Delete all existing tables with CASCADE
         conn.execute(text("""
         DO $$
         DECLARE
@@ -394,7 +393,7 @@ def init_migration():
         END $$;
         """))
         
-        # 3. Supprimer également les séquences existantes
+        # Delete also existing sequences
         conn.execute(text("""
         DO $$
         DECLARE
@@ -406,75 +405,75 @@ def init_migration():
         END $$;
         """))
         
-        # 4. Réactiver les contraintes de clés étrangères
+        # Re-enable foreign key constraints
         conn.execute(text("SET session_replication_role = 'origin';"))
         
         conn.close()
-        print("Base de données complètement vidée.")
+        print("Database completely emptied.")
         
-        # 5. Créer les tables directement avec SQLAlchemy
-        print("\n2. Création des tables via SQLAlchemy...")
+        # 5. Create tables directly with SQLAlchemy
+        print("\n2. Creating tables via SQLAlchemy...")
         Base.metadata.create_all(bind=engine)
-        print("Tables créées avec succès.")
+        print("Tables created successfully.")
         
-        # 6. Initialiser Alembic pour qu'il reconnaisse l'état actuel comme base
-        print("\n3. Initialisation d'Alembic avec la version actuelle...")
+        # 6. Initialize Alembic to recognize the current state as base
+        print("\n3. Initializing Alembic with the current state...")
         
-        # 6.1 - Créer un fichier de révision initial
+        # 6.1 - Create an initial revision
         stdout, stderr, return_code = run_alembic_command(["alembic", "revision", "--autogenerate", "-m", "initial schema"])
         if return_code != 0:
-            print(f"Erreur lors de la génération de la révision: {stderr}")
+            print(f"Error during revision generation: {stderr}")
             sys.exit(1)
-        print("Génération de la migration initiale réussie.")
+        print("Initial migration generation successful.")
         
-        # 6.2 - Corriger le contenu de la migration directement avec Python
+        # 6.2 - Correct the migration content directly with Python
         migration_file = get_latest_migration_file()
         if migration_file:
-            print(f"Fichier de migration trouvé: {migration_file}")
+            print(f"Migration file found: {migration_file}")
             
-            # Créons un fichier de migration complètement nouveau
-            print("Création d'un fichier de migration personnalisé avec un format correct...")
+            # Create a new migration file
+            print("Creating a custom migration file with correct format...")
             
-            # Attendre que le fichier soit complètement écrit
+            # Wait for the file to be completely written
             import time
             time.sleep(1)
             
             try:
-                # Extraire les informations importantes
-                # Convertir l'objet PosixPath en chaîne
+                # Extract important information
+                # Convert PosixPath object to string
                 migration_file_str = str(migration_file)
                 revision_id = migration_file_str.split("/")[-1].split("_")[0]
                 migration_name = "initial_schema"
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                 
-                # Lire le contenu actuel pour extraire les parties importantes (tables créées et supprimées)
-                # Nous pouvons utiliser l'objet Path directement avec open()
+                # Read the current content to extract important parts (tables created and deleted)
+                # We can use the Path object directly with open()
                 with open(migration_file, 'r', encoding='utf-8') as f:
                     original_content = f.read()
                 
-                # Utiliser une approche plus sécurisée pour extraire les blocs upgrade/downgrade
+                # Use a more secure approach to extract upgrade/downgrade blocks
                 import re
                 
-                # Chercher le contenu entre def upgrade() et # ### end Alembic commands ###
+                # Search for content between def upgrade() and # ### end Alembic commands ###
                 upgrade_match = re.search(r'def upgrade\(\)[^#]*?(# ### commands auto generated by Alembic.*?# ### end Alembic commands ###)', original_content, re.DOTALL)
                 upgrade_body = ""
                 if upgrade_match:
                     upgrade_body = upgrade_match.group(1)
                 
-                # Chercher le contenu entre def downgrade() et # ### end Alembic commands ###
+                # Search for content between def downgrade() and # ### end Alembic commands ###
                 downgrade_match = re.search(r'def downgrade\(\)[^#]*?(# ### commands auto generated by Alembic.*?# ### end Alembic commands ###)', original_content, re.DOTALL)
                 downgrade_body = ""
                 if downgrade_match:
                     downgrade_body = downgrade_match.group(1)
                 
-                # Si nous n'avons pas trouvé les corps, utiliser des valeurs par défaut
+                # If we haven't found the bodies, use default values
                 if not upgrade_body:
                     upgrade_body = "    # ### commands auto generated by Alembic - please adjust! ###\n    pass\n    # ### end Alembic commands ###"
                 
                 if not downgrade_body:
                     downgrade_body = "    # ### commands auto generated by Alembic - please adjust! ###\n    pass\n    # ### end Alembic commands ###"
                 
-                # Créer un nouveau contenu de fichier en évitant les f-strings multilignes
+                # Create a new file content avoiding multiline f-strings
                 new_content = (
                     f'"""{migration_name}\n\n'
                     f'Revision ID: {revision_id}\n'
@@ -494,38 +493,37 @@ def init_migration():
                     f'{downgrade_body}'
                 )
                 
-                # Écrire le nouveau contenu dans le fichier
-                # L'objet PosixPath fonctionne directement avec open()
+                # Write the new content to the file
+                # The PosixPath object works directly with open()
                 with open(migration_file, 'w', encoding='utf-8') as f:
                     f.write(new_content)
                 
-                # Appliquer notre fonction fix_migration_file pour s'assurer que le format est correct
-                # Cette fonction s'assure que upgrade crée les tables et downgrade les supprime
+                # Apply our fix_migration_file function to ensure the format is correct
                 fix_migration_file(migration_file)
                 
-                print("Migration réécrite avec le bon format pour les fonctions upgrade et downgrade.")
+                print("Migration rewritten with the correct format for upgrade and downgrade functions.")
                 
             except Exception as e:
-                print(f"Erreur lors de la correction du fichier de migration: {str(e)}")
+                print(f"Error during migration file correction: {str(e)}")
                 return False
         else:
-            print("Aucun fichier de migration trouvé.")
+            print("No migration file found.")
             return False
         
-        # 6.3 - Marquer la base comme étant à jour sans tenter de créer les tables (puisqu'elles existent déjà)
+        # 6.3 - Mark the database as being up-to-date without trying to create tables (since they already exist)
         stdout, stderr, return_code = run_alembic_command(["alembic", "stamp", "head"])
         if return_code != 0:
-            print(f"Erreur lors du marquage de la base comme étant à jour: {stderr}")
+            print(f"Error during database marking as up-to-date: {stderr}")
             return False
             
-        print("Base de données marquée comme étant à jour avec les migrations Alembic.")
+        print("Database marked as up-to-date with Alembic migrations.")
             
     except Exception as e:
-        print(f"Erreur lors de l'initialisation de la base de données: {str(e)}")
+        print(f"Error during database initialization: {str(e)}")
         return False
     
-    print("\n✅ Initialisation des migrations terminée")
-    print("La base de données est maintenant synchronisée avec les modèles")
+    print("\n✅ Migration initialization completed")
+    print("The database is now synchronized with the models")
     return True
 
 

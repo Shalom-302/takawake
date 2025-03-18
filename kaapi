@@ -56,6 +56,8 @@ if [ $# -eq 0 ]; then
     echo -e "  db generate ${GREEN}# Générer une nouvelle migration (optionnel: message)${NC}"
     echo -e "  db apply    ${GREEN}# Appliquer les migrations${NC}"
     echo -e "  db preview  ${GREEN}# Prévisualiser les changements de migration${NC}"
+    echo -e "  auth init   ${GREEN}# Initialiser l'authentification (créer un user test, configurer les providers)${NC}"
+    echo -e "  auth init-simple ${GREEN}# Version simplifiée de l'initialisation d'authentification${NC}"
     echo -e "  [...]      ${GREEN}# Autres commandes de kaapi_cli.py${NC}"
     exit 0
 fi
@@ -104,6 +106,38 @@ if [[ "$1" == "db" ]]; then
         *)
             echo -e "${RED}Commande db inconnue: $CMD${NC}"
             echo -e "${YELLOW}Commandes disponibles: init, generate, apply, preview${NC}"
+            exit 1
+            ;;
+    esac
+elif [[ "$1" == "auth" ]]; then
+    # Commandes de gestion de l'authentification
+    shift  # Supprime 'auth' des arguments
+    CMD="$1"
+    shift  # Supprime la commande spécifique
+    
+    # S'assurer que le container api est en cours d'exécution
+    check_kaapi_container
+
+    case "$CMD" in
+        "init")
+            echo -e "${BLUE}Initialisation de l'authentification...${NC}"
+            if [[ "$1" == "--force" ]]; then
+                run_in_container kaapi-api python -m app.commands.init_auth --force
+            else
+                run_in_container kaapi-api python -m app.commands.init_auth
+            fi
+            ;;
+        "init-simple")
+            echo -e "${BLUE}Initialisation simplifiée de l'authentification...${NC}"
+            if [[ "$1" == "--force" ]]; then
+                run_in_container kaapi-api python -m app.commands.init_auth_simple --force
+            else
+                run_in_container kaapi-api python -m app.commands.init_auth_simple
+            fi
+            ;;
+        *)
+            echo -e "${RED}Commande auth inconnue: $CMD${NC}"
+            echo -e "${YELLOW}Commandes disponibles: init, init-simple${NC}"
             exit 1
             ;;
     esac
