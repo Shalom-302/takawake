@@ -117,8 +117,20 @@ const authService = {
   },
 
   // Initiate OAuth login
-  getOAuthLoginUrl(provider: string): string {
-    return `${axiosClient.defaults.baseURL}/auth/oauth/init?provider=${provider}`;
+  async getOAuthLoginUrl(provider: string, redirectUri: string, state: string): Promise<string> {
+    try {
+      const response = await axiosClient.get(`/auth/oauth/init`, {
+        params: {
+          provider,
+          redirect_uri: redirectUri,
+          state
+        }
+      });
+      return response.data.authorization_url;
+    } catch (error) {
+      console.error('Failed to get OAuth URL:', error);
+      throw error;
+    }
   },
 
   // Process OAuth callback

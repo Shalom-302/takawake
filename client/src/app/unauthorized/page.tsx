@@ -11,19 +11,19 @@ export default function UnauthorizedPage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Accès non autorisé</CardTitle>
+          <CardTitle className="text-2xl font-bold">Unauthorized access</CardTitle>
           <CardDescription>
-            Vous n&apos;avez pas les permissions nécessaires pour accéder à cette page.
+            You do not have the necessary permissions to access this page.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground">
-            Veuillez contacter l&apos;administrateur si vous pensez qu&apos;il s&apos;agit d&apos;une erreur.
+            Please contact the administrator if you believe this is an error.
           </p>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button variant="default" onClick={() => router.push('/dashboard')}>
-            Retour au tableau de bord
+            Back to dashboard
           </Button>
         </CardFooter>
       </Card>

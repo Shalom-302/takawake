@@ -15,7 +15,7 @@ interface AuthContextType {
   register: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   refreshToken: () => Promise<boolean>;
-  getOAuthLoginUrl: (provider: string) => string;
+  getOAuthLoginUrl: (provider: string, redirectUri: string, state: string) => Promise<string>;
 }
 
 // Create context with default values
@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => false,
   logout: () => {},
   refreshToken: async () => false,
-  getOAuthLoginUrl: () => '',
+  getOAuthLoginUrl: async () => '',
 });
 
 // Provider component
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (tokenData && tokenData.exp) {
               setTokenExpiryTime(tokenData.exp * 1000); // Convert to milliseconds
             }
-          } catch (err) {
+          } catch (_) {
             console.error('Invalid token, clearing auth state');
             localStorage.removeItem('auth_token');
             localStorage.removeItem('refresh_token');
@@ -110,8 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get available auth providers
         const authProviders = await authService.getActiveProviders();
         setProviders(authProviders);
-      } catch (err) {
-        console.error('Auth initialization error:', err);
+      } catch (_) {
+        console.error('Auth initialization error');
       } finally {
         setLoading(false);
         setIsLoading(false);
@@ -125,11 +125,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated || !tokenExpiryTime) return;
 
-    const refreshTimeBeforeExpiry = 5 * 60 * 1000; // 5 minutes before expiry
+    const refreshTimeBeforeExpiry = 30 * 1000; // 30 secondes avant l'expiration (pour les tests)
     const currentTime = Date.now();
     const timeUntilRefresh = Math.max(0, tokenExpiryTime - currentTime - refreshTimeBeforeExpiry);
 
+    console.log(`Token expirera dans ${Math.floor((tokenExpiryTime - currentTime) / 1000)} secondes. Rafraîchissement prévu dans ${Math.floor(timeUntilRefresh / 1000)} secondes.`);
+
     const refreshInterval = setInterval(() => {
+      console.log('Rafraîchissement du token...');
       refreshToken();
     }, timeUntilRefresh);
 
@@ -203,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Get OAuth login URL
-  const getOAuthLoginUrl = (provider: string): string => {
-    return authService.getOAuthLoginUrl(provider);
+  const getOAuthLoginUrl = async (provider: string, redirectUri: string, state: string): Promise<string> => {
+    return authService.getOAuthLoginUrl(provider, redirectUri, state);
   };
 
   // Context values

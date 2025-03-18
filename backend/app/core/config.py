@@ -15,9 +15,25 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = "CHANGE_ME"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Durée de validité du refresh token en jours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2  # Pour les tests, seulement 2 minutes
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 1  # Pour les tests, seulement 1 jour
     ALGORITHM: str = "HS256"
+    
+    # OAuth Providers
+    OAUTH_PROVIDERS: dict = {
+        "github": {
+            "client_id": os.getenv("GITHUB_CLIENT_ID", ""),
+            "client_secret": os.getenv("GITHUB_CLIENT_SECRET", ""),
+        },
+        "google": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID", "test-client-id"),
+            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "test-client-secret"),
+        },
+        "facebook": {
+            "client_id": os.getenv("FACEBOOK_CLIENT_ID", ""),
+            "client_secret": os.getenv("FACEBOOK_CLIENT_SECRET", ""),
+        },
+    }
     
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3002"]

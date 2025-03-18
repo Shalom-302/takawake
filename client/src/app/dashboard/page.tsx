@@ -9,20 +9,47 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [timeStamp, setTimeStamp] = useState<string>('');
+  const [lastRefresh, setLastRefresh] = useState<string>('');
+  const [tokenStatus, setTokenStatus] = useState<'valid' | 'refreshing'>('valid');
 
   useEffect(() => {
-    // Update timestamp every second to show that the component is active
+    // Écouter les logs de console pour capturer les événements de rafraîchissement
+    const originalConsoleLog = console.log;
+    console.log = function(...args) {
+      if (args[0] === 'Rafraîchissement du token...') {
+        setTokenStatus('refreshing');
+        setLastRefresh(new Date().toLocaleTimeString());
+        
+        // Remettre le statut à "valid" après 2 secondes
+        setTimeout(() => {
+          setTokenStatus('valid');
+        }, 2000);
+      }
+      originalConsoleLog.apply(console, args);
+    };
+
+    // Mettre à jour le timestamp toutes les secondes pour montrer que le composant est actif
     const interval = setInterval(() => {
       setTimeStamp(new Date().toLocaleTimeString());
     }, 1000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      console.log = originalConsoleLog;
+    };
   }, []);
 
   return (
     <ProtectedRoute>
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+        
+        {tokenStatus === 'refreshing' && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+            <p className="font-bold">Refreshing the current token...</p>
+            <p>Last attempt: {lastRefresh}</p>
+          </div>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card>

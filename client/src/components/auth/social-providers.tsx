@@ -83,10 +83,17 @@ export default function SocialProviders() {
             variant="outline"
             type="button"
             className="flex items-center justify-center gap-2"
-            onClick={() => {
-              const redirectUri = `${window.location.origin}/auth/callback`;
-              const url = `${getOAuthLoginUrl(provider.name)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=state`;
-              window.location.href = url;
+            onClick={async () => {
+              try {
+                const redirectUri = `${window.location.origin}/auth/callback`;
+                // S'assurer que provider.name existe, sinon utiliser provider.provider
+                const providerName = provider.name || provider.provider;
+                const authUrl = await getOAuthLoginUrl(providerName, redirectUri, 'state');
+                window.location.href = authUrl;
+              } catch (error) {
+                console.error('Failed to get OAuth URL:', error);
+                // Vous pourriez ajouter une notification d'erreur ici
+              }
             }}
           >
             {providerIcons[provider.name] || null}

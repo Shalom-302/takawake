@@ -217,36 +217,70 @@ async def get_providers(db: Session = Depends(get_db)):
 
 
 @router.post("/oauth/init")
+@router.get("/oauth/init")
 async def init_oauth(
-    data: OAuthInitRequest,
+    provider: Optional[str] = None,
+    redirect_uri: Optional[str] = None,
+    state: Optional[str] = None,
+    data: Optional[OAuthInitRequest] = None,
     db: Session = Depends(get_db)
 ):
     """
     Initialize OAuth flow for a provider.
     """
     auth_service = AuthService(db)
+    
+    # Use either query parameters (GET) or request body (POST)
+    provider_name = provider or (data.provider if data else None)
+    callback_uri = redirect_uri or (data.redirect_uri if data else None)
+    state_param = state or (data.state if data else "")
+    
+    if not provider_name or not callback_uri:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required parameters: provider and redirect_uri"
+        )
+    
     auth_url = await auth_service.init_oauth_flow(
-        data.provider,
-        data.redirect_uri,
-        data.state
+        provider_name,
+        callback_uri,
+        state_param
     )
     return {"authorization_url": auth_url}
 
 
 @router.post("/oauth/callback", response_model=AuthResponse)
+@router.get("/oauth/callback", response_model=AuthResponse)
 async def oauth_callback(
-    data: OAuthCallbackRequest,
+    provider: Optional[str] = None,
+    code: Optional[str] = None,
+    redirect_uri: Optional[str] = None,
+    state: Optional[str] = None,
+    data: Optional[OAuthCallbackRequest] = None,
     db: Session = Depends(get_db)
 ):
     """
     Handle OAuth callback.
     """
     auth_service = AuthService(db)
+    
+    # Use either query parameters (GET) or request body (POST)
+    provider_name = provider or (data.provider if data else None)
+    code_param = code or (data.code if data else None)
+    callback_uri = redirect_uri or (data.redirect_uri if data else None)
+    state_param = state or (data.state if data else "")
+    
+    if not provider_name or not code_param or not callback_uri:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required parameters: provider, code, and redirect_uri"
+        )
+    
     user, tokens = await auth_service.handle_oauth_callback(
-        data.provider,
-        data.code,
-        data.redirect_uri,
-        data.state
+        provider_name,
+        code_param,
+        callback_uri,
+        state_param
     )
     
     return AuthResponse(
