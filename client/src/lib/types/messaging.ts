@@ -57,7 +57,7 @@ export interface Message {
   senderId: string;
   messageType: MessageType;
   content?: string;
-  messageMetadata?: any;
+  messageMetadata?: Record<string, unknown>;
   isEncrypted: boolean;
   isEdited: boolean;
   isDeleted: boolean;
@@ -87,7 +87,7 @@ export interface Conversation {
   avatarUrl?: string;
   createdBy: string;
   isEncrypted: boolean;
-  conversationMetadata?: any;
+  conversationMetadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   lastMessageAt?: string;
@@ -110,6 +110,15 @@ export interface UserConversationSettings {
   role: string;
 }
 
+export interface ChatUser {
+  id: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: string;
+  lastSeen?: string;
+}
+
 // Types pour les requêtes WebSocket
 export enum WebSocketMessageType {
   MESSAGE = 'message',
@@ -120,7 +129,7 @@ export enum WebSocketMessageType {
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 // Types pour la création et mise à jour de messages
@@ -128,13 +137,13 @@ export interface MessageCreate {
   conversationId: string;
   messageType: MessageType;
   content?: string;
-  messageMetadata?: any;
+  messageMetadata?: Record<string, unknown>;
 }
 
 export interface MessageUpdate {
   content?: string;
   isDeleted?: boolean;
-  messageMetadata?: any;
+  messageMetadata?: Record<string, unknown>;
 }
 
 // Types pour la recherche

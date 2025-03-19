@@ -18,8 +18,12 @@ from ..models.conversation import (
 from ..models.message import MessageDB
 from ..schemas.conversation import (
     DirectConversationCreate, GroupConversationCreate,
-    ConversationUpdate, GroupConversationUpdate, ConversationMemberAction
+    ConversationUpdate, GroupConversationUpdate, ConversationMemberAction,
+    ChatUserResponse
 )
+
+# Import User model from auth plugin
+from app.plugins.advanced_auth.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -514,6 +518,122 @@ class ConversationService:
             "page": offset // limit + 1 if limit else 1,
             "size": limit
         }
+    
+    async def get_blocked_users(self, db: Session, user_id: str) -> List[UserBlockDB]:
+        """
+        Get all users blocked by the specified user.
+        
+        Args:
+            db: Database session
+            user_id: ID of the user
+            
+        Returns:
+            List of blocked user records
+        """
+        try:
+            return db.query(UserBlockDB).filter(UserBlockDB.blocker_id == user_id).all()
+        except Exception as e:
+            # La table n'existe pas encore dans la base de données
+            logger.warning(f"Error accessing blocked users table: {str(e)}. This is expected if the table hasn't been created yet.")
+            # Important: annuler la transaction pour permettre aux requêtes suivantes de fonctionner
+            db.rollback()
+            return []
+    
+    async def search_users_for_chat(self, db: Session, current_user_id: str, search_query: str, limit: int = 20) -> List[ChatUserResponse]:
+        """
+        Search for users to start a chat with.
+        
+        Args:
+            db: Database session
+            current_user_id: ID of the current user
+            search_query: Search string to match against username, first or last name
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of users matching the search criteria
+            
+        Security:
+            - Excludes the current user
+            - Excludes blocked users
+            - Only returns non-sensitive user data
+            - Limited number of results
+        """
+        logger.info(f"Starting user search with query: '{search_query}', current_user_id: {current_user_id}")
+        
+        # Get blocked users
+        blocked_users = await self.get_blocked_users(db, current_user_id)
+        blocked_ids = [block.blocked_id for block in blocked_users]
+        logger.info(f"Found {len(blocked_ids)} blocked users for current user")
+        
+        # Build query with search conditions
+        search_filter = or_(
+            User.username.ilike(f"%{search_query}%"),
+            User.first_name.ilike(f"%{search_query}%"),
+            User.last_name.ilike(f"%{search_query}%"),
+            User.email.ilike(f"%{search_query}%") # Optionally include email
+        )
+        logger.info(f"Created search filter for query: '{search_query}'")
+        
+        # Query users
+        query = db.query(
+            User.id,
+            User.username,
+            User.first_name, 
+            User.last_name,
+            User.profile_picture,
+            User.last_login.label("last_seen")
+        ).filter(
+            and_(
+                User.id != current_user_id,  # Exclude current user
+                User.is_active == True       # Only active users
+            )
+        )
+        
+        # Add blocked users filter only if there are blocked users
+        if blocked_ids:
+            query = query.filter(~User.id.in_(blocked_ids))
+            
+        logger.info("Created base query excluding current user and blocked users")
+        
+        # Add search filter if query provided
+        if search_query:
+            query = query.filter(search_filter)
+            logger.info("Applied search filter to query")
+        
+        # Get results with limit
+        logger.info(f"Executing query with limit: {limit}")
+        try:
+            # Print SQL query for debugging
+            sql_query = str(query.statement.compile(compile_kwargs={"literal_binds": True}))
+            logger.info(f"SQL Query: {sql_query}")
+            
+            results = query.limit(limit).all()
+            logger.info(f"Query returned {len(results)} results")
+            
+            # Debug result details
+            for i, user in enumerate(results):
+                logger.info(f"Result {i+1}: id={user.id}, username={user.username}, first_name={user.first_name}, last_name={user.last_name}")
+        except Exception as e:
+            logger.error(f"Error executing query: {str(e)}")
+            db.rollback()  # Rollback transaction to allow future queries to work
+            raise
+        
+        # Convert to response schema
+        chat_users = []
+        for user in results:
+            chat_users.append(
+                ChatUserResponse(
+                    id=str(user.id),
+                    username=user.username,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    profile_picture=user.profile_picture,
+                    last_seen=user.last_seen
+                )
+            )
+        
+        logger.info(f"Returning {len(chat_users)} users in response")
+        return chat_users
     
     def _find_direct_conversation(self, db: Session, user_id: str, other_user_id: str) -> Optional[ConversationDB]:
         """

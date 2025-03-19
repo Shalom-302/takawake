@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { ConversationType, Conversation } from '@/lib/types/messaging';
+import { Button } from '../ui/button';
 
 // Function to format date
 const formatDate = (dateString: string) => {
@@ -168,8 +169,8 @@ export default function ConversationList() {
       </div>
       
       <div className="p-3 border-t">
-        <button
-          className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center"
+        <Button
+          className="w-full"
           onClick={() => router.push('/messages/new')}
         >
           <svg
@@ -187,7 +188,7 @@ export default function ConversationList() {
             />
           </svg>
           New conversation
-        </button>
+        </Button>
       </div>
     </div>
   );

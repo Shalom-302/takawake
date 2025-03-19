@@ -1,12 +1,13 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import axiosClient from './axios-client';
-import {
-  Conversation,
-  Message,
-  MessageCreate,
-  MessageStatusType,
+import { 
+  Message, 
+  MessageStatusType, 
+  MessageCreate, 
   MessageUpdate,
-  MessageSearchRequest
+  MessageSearchRequest,
+  Conversation,
+  ChatUser
 } from '../types/messaging';
 
 // Points d'accès de l'API
@@ -27,40 +28,59 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
   const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
   const url = baseURL + endpoint;
   
+  // Créer un objet Headers standard
+  const headers = new Headers(options.headers);
+  headers.set('Content-Type', 'application/json');
+  
+  // Ajouter le token d'authentification s'il est disponible
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+  }
+  
   const defaultOptions: RequestInit = {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    ...options
+    headers,
+    ...options,
   };
   
   try {
     // En mode développement, peut simuler des données
     if (process.env.NODE_ENV === 'development') {
-      // Simule un délai pour l'API
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Retourne des données fictives selon l'endpoint
-      if (endpoint.includes('/conversations') && !endpoint.includes('/messages')) {
-        return [] as unknown as T;
+      // Désactiver les simulations pour les routes de recherche d'utilisateurs
+      if (endpoint.includes('/users/search')) {
+        console.log('User search API call in development mode - using real API');
+      } else {
+        // Simule un délai pour l'API
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Retourne des données fictives selon l'endpoint
+        if (endpoint.includes('/conversations') && !endpoint.includes('/messages')) {
+          return [] as unknown as T;
+        }
+        
+        if (endpoint.includes('/messages')) {
+          return [] as unknown as T;
+        }
+        
+        return {} as T;
       }
-      
-      if (endpoint.includes('/messages')) {
-        return [] as unknown as T;
-      }
-      
-      return {} as T;
     }
     
+    console.log(`Making API request to ${endpoint} with auth:`, headers.has('Authorization'));
     const response = await fetch(url, defaultOptions);
+    console.log(`API response status for ${endpoint}:`, response.status);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `API error: ${response.status}`);
     }
     
-    return await response.json() as T;
+    const responseData = await response.json();
+    console.log(`API response data for ${endpoint}:`, responseData);
+    return responseData as T;
   } catch (error) {
     console.error('API request failed:', error);
     throw error;
@@ -221,4 +241,29 @@ export async function uploadAttachment(
   });
   
   return response;
+}
+
+/**
+ * Rechercher des utilisateurs pour le chat
+ */
+export async function searchUsers(query: string): Promise<ChatUser[]> {
+  try {
+    const endpoint = `/messaging/users/search?query=${encodeURIComponent(query)}`;
+    console.log('Searching users with endpoint:', endpoint);
+    
+    // Appel à l'API
+    const response = await fetchAPI<ChatUser[]>(endpoint);
+    console.log('Search API response:', response);
+    
+    // S'assurer que la réponse est un tableau
+    if (!Array.isArray(response)) {
+      console.warn('API response is not an array:', response);
+      return [];
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error searching users:', error);
+    throw error;
+  }
 }

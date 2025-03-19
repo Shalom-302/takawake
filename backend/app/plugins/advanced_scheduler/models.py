@@ -4,7 +4,7 @@ from datetime import datetime
 from app.core.db import Base  # <--- import the central Base
 
 class ScheduledJob(Base):
-    __tablename__ = "kaapi_scheduled_jobs"
+    __tablename__ = "scheduled_jobs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)

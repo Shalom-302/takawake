@@ -8,13 +8,15 @@ import logging
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
+from fastapi import status
 
 from ..services.conversation_service import ConversationService
 from ..schemas.conversation import (
     DirectConversationCreate, GroupConversationCreate,
     ConversationUpdate, GroupConversationUpdate, ConversationMemberAction,
     ConversationResponse, GroupConversationResponse, ConversationListResponse,
-    UserConversationSettingsUpdate, UserBlockBase, UserBlockResponse
+    UserConversationSettingsUpdate, UserBlockBase, UserBlockResponse,
+    ChatUserResponse
 )
 from ..main import messaging_service, get_current_user, get_db
 
@@ -28,7 +30,7 @@ conversation_service = ConversationService()
 async def create_direct_conversation(
     conversation_data: DirectConversationCreate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Create a new direct (one-to-one) conversation.
@@ -40,7 +42,7 @@ async def create_direct_conversation(
     - Secure conversation key generation if encrypted
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely create the conversation using the standardized approach
@@ -66,7 +68,7 @@ async def create_direct_conversation(
 async def create_group_conversation(
     conversation_data: GroupConversationCreate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Create a new group conversation.
@@ -79,7 +81,7 @@ async def create_group_conversation(
     - Validation of group settings
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely create the group conversation using the standardized approach
@@ -112,7 +114,7 @@ async def get_conversations(
     archived: bool = Query(False),
     conversation_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Get all conversations for the current user.
@@ -123,7 +125,7 @@ async def get_conversations(
     - Secure decryption of sensitive data
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely retrieve conversations using the standardized approach
@@ -149,7 +151,7 @@ async def get_conversations(
 async def get_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Get a single conversation by ID.
@@ -160,7 +162,7 @@ async def get_conversation(
     - Secure decryption of sensitive data
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely retrieve the conversation using the standardized approach
@@ -187,7 +189,7 @@ async def update_conversation(
     conversation_id: str,
     update_data: ConversationUpdate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Update a conversation's basic details.
@@ -198,7 +200,7 @@ async def update_conversation(
     - Secure encryption of sensitive metadata
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing an update method in the conversation service
     # For now, we'll raise a not implemented error
@@ -221,7 +223,7 @@ async def update_group_conversation(
     conversation_id: str,
     update_data: GroupConversationUpdate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Update a group conversation's settings.
@@ -233,7 +235,7 @@ async def update_group_conversation(
     - Secure encryption of sensitive metadata
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a group update method in the conversation service
     # For now, we'll raise a not implemented error
@@ -256,7 +258,7 @@ async def update_conversation_settings(
     conversation_id: str,
     settings_update: UserConversationSettingsUpdate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Update user-specific settings for a conversation.
@@ -267,7 +269,7 @@ async def update_conversation_settings(
     - Validation of setting values
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a settings update method in the conversation service
     # For now, we'll raise a not implemented error
@@ -290,7 +292,7 @@ async def add_conversation_member(
     conversation_id: str,
     member_data: ConversationMemberAction,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Add a new member to a group conversation.
@@ -302,7 +304,7 @@ async def add_conversation_member(
     - Validation of member role
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a member add method in the conversation service
     # For now, we'll raise a not implemented error
@@ -326,7 +328,7 @@ async def remove_conversation_member(
     conversation_id: str,
     member_id: str,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Remove a member from a group conversation.
@@ -337,7 +339,7 @@ async def remove_conversation_member(
     - Validation of target member
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a member remove method in the conversation service
     # For now, we'll raise a not implemented error
@@ -360,7 +362,7 @@ async def remove_conversation_member(
 async def leave_or_delete_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Leave a group conversation or delete a direct conversation.
@@ -371,7 +373,7 @@ async def leave_or_delete_conversation(
     - Secure cleanup of conversation data
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a leave/delete method in the conversation service
     # For now, we'll raise a not implemented error
@@ -393,7 +395,7 @@ async def leave_or_delete_conversation(
 async def block_user(
     block_data: UserBlockBase,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Block a user from messaging.
@@ -404,7 +406,7 @@ async def block_user(
     - Secure logging of block action
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a block user method in the conversation service
     # For now, we'll raise a not implemented error
@@ -425,7 +427,7 @@ async def block_user(
 @router.get("/blocks", response_model=List[UserBlockResponse])
 async def get_blocked_users(
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Get all users blocked by the current user.
@@ -435,7 +437,7 @@ async def get_blocked_users(
     - Secure retrieval of block data
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a get blocked users method in the conversation service
     # For now, we'll raise a not implemented error
@@ -454,7 +456,7 @@ async def get_blocked_users(
 async def unblock_user(
     blocked_id: str,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Unblock a previously blocked user.
@@ -465,7 +467,7 @@ async def unblock_user(
     - Secure logging of unblock action
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing an unblock user method in the conversation service
     # For now, we'll raise a not implemented error
@@ -481,6 +483,46 @@ async def unblock_user(
         )
     
     raise HTTPException(status_code=501, detail="Unblock user not implemented yet")
+
+
+@router.get("/users/search", response_model=List[ChatUserResponse])
+async def search_chat_users(
+    query: str = Query(None, min_length=1, max_length=50, description="Search term for username, first name, or last name"),
+    limit: int = Query(20, gt=0, le=50, description="Maximum number of results to return"),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Search for users to chat with based on username or name.
+    
+    Security:
+    - Authentication required
+    - Input validation
+    - Rate limiting
+    - Does not expose sensitive user information
+    """
+    # Get user ID
+    user_id = current_user.id
+    
+    logger.info(f"Searching users with query: '{query}', limit: {limit}, current user ID: {user_id}")
+    
+    try:
+        users = await conversation_service.search_users_for_chat(
+            db, user_id, query, limit
+        )
+        logger.info(f"Found {len(users)} users matching query '{query}'")
+        return users
+    except HTTPException as e:
+        logger.error(f"Error searching users: {str(e)}")
+        db.rollback()  # Rollback transaction to allow future queries to work
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in search_chat_users: {str(e)}")
+        db.rollback()  # Rollback transaction to allow future queries to work
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while searching for users"
+        )
 
 
 def init_routes(service: ConversationService):

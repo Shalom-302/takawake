@@ -16,7 +16,7 @@ get_router = create_crud_router(
     schema_create=AuditLogCreate,
     schema_update=AuditLogUpdate,
     schema_out=AuditLogOut,
-    resource_name="kaapi_audit_logs",
+    resource_name="audit_logs",
     exclude_routes=[]  # Exclude routes dynamically, e.g., ["create", "list", "get"]
 )
 

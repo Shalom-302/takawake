@@ -5,7 +5,7 @@ from datetime import datetime
 from app.core.db import Base  # import the shared Base from your main DB setup
 
 class WebhookSubscription(Base):
-    __tablename__ = "kaapi_webhooks"
+    __tablename__ = "webhooks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)         # descriptive name

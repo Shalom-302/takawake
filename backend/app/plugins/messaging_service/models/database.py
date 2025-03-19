@@ -12,8 +12,6 @@ import uuid
 from typing import List, Optional
 
 from app.core.db import Base
-from ..models.message import MessageDB, MessageAttachmentDB, MessageReceiptDB, MessageReactionDB
-from ..models.conversation import ConversationDB, UserConversationSettingsDB, GroupChatDB, UserBlockDB, conversation_participants
 
 
 # Define the MessageDeliveryStatusDB here since it's not defined in message.py or conversation.py

@@ -6,10 +6,12 @@ import {
   Message,
   MessageCreate,
   MessageUpdate,
-  MessageStatusType,
   WebSocketMessage,
   WebSocketMessageType,
-  ConversationType
+  ConversationType,
+  ChatUser,
+  MessageStatusType,
+  MessageType
 } from '../types/messaging';
 import * as API from '../api/messaging-service';
 
@@ -23,9 +25,11 @@ const KEYS = {
 /**
  * Common fetcher for SWR requests
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const fetcher = async (url: string) => {
   try {
-    return await API.fetchAPI(url);
+    const response = await API.fetchAPI(url);
+    return response;
   } catch (error) {
     console.error('Fetcher error:', error);
     throw error;
@@ -484,13 +488,14 @@ export function useWebSocketConnection(conversationId: string) {
         switch (message.type) {
           case WebSocketMessageType.MESSAGE:
             // Received new message
-            addMessage(message.data);
+            addMessage(message.data as unknown as Message);
             refreshConversations();
             break;
             
           case WebSocketMessageType.TYPING:
             // Update typing indicators
-            const { userId, isTyping } = message.data;
+            const typingData = message.data as { userId: string; isTyping: boolean };
+            const { userId, isTyping } = typingData;
             setTypingUsers(prev => {
               if (isTyping && !prev.includes(userId)) {
                 return [...prev, userId];
@@ -503,12 +508,21 @@ export function useWebSocketConnection(conversationId: string) {
             
           case WebSocketMessageType.READ_RECEIPT:
             // Received a read receipt
-            const { messageId, status } = message.data;
-            // Update message status
+            const receiptData = message.data as { id: string; status: MessageStatusType };
+            // Update message status - nous devons créer un objet Message complet car c'est ce que updateMessage attend
             updateMessage({
-              ...message.data,
-              status
-            });
+              id: receiptData.id,
+              status: receiptData.status,
+              conversationId: conversationId,
+              senderId: '',  // valeurs obligatoires pour satisfaire le type Message
+              messageType: MessageType.TEXT,
+              isEncrypted: false,
+              isEdited: false,
+              isDeleted: false,
+              isForwarded: false,
+              createdAt: '',
+              updatedAt: ''
+            } as unknown as Message);
             break;
             
           case WebSocketMessageType.USER_PRESENCE:
@@ -529,7 +543,7 @@ export function useWebSocketConnection(conversationId: string) {
   }, [conversationId, addMessage, refreshConversations, updateMessage]);
   
   // Function to send messages via WebSocket
-  const sendWSMessage = useCallback((type: WebSocketMessageType, data: any) => {
+  const sendWSMessage = useCallback((type: WebSocketMessageType, data: Record<string, unknown>) => {
     if (!socket.current || socket.current.readyState !== WebSocket.OPEN) {
       console.error('WebSocket not connected');
       return false;
@@ -562,6 +576,87 @@ export function useWebSocketConnection(conversationId: string) {
     typingUsers,
     sendWSMessage
   };
+}
+
+/**
+ * Hook to search for users to chat with
+ */
+export function useSearchChatUsers(initialQuery: string = '') {
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  
+  // Debounce query to avoid excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [query]);
+  
+  // Only fetch if we have a query
+  const shouldFetch = debouncedQuery.length >= 1;
+  
+  const { data, error, isLoading } = useSWR<ChatUser[]>(
+    shouldFetch ? ['searchUsers', debouncedQuery] : null,
+    async () => {
+      console.log('Fetching users with query:', debouncedQuery);
+      try {
+        const result = await API.searchUsers(debouncedQuery) as ChatUser[];
+        console.log('Search users result:', result);
+        return result;
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        throw err;
+      }
+    },
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000, // 5 seconds
+    }
+  );
+  
+  useEffect(() => {
+    if (error) {
+      console.error('Error in useSearchChatUsers:', error);
+    }
+  }, [error]);
+  
+  // Assurez-vous que users est toujours un tableau, même si data est null ou undefined
+  const users = Array.isArray(data) ? data : [];
+  console.log('useSearchChatUsers returning users:', users);
+  
+  return {
+    users,
+    isLoading,
+    error,
+    setQuery,
+    query
+  };
+}
+
+/**
+ * Hook pour supprimer un message
+ */
+export function useDeleteMessage() {
+  const deleteMessage = useCallback(async (messageId: string) => {
+    try {
+      // Le messageId est utilisé dans l'appel à API.deleteMessage ci-dessous
+      await API.deleteMessage(messageId);
+      
+      // Mise à jour du cache SWR pour refléter la suppression
+      mutate(
+        (key) => Array.isArray(key) && key[0] === `/api/messaging/conversations/${messageId}/messages`
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      return false;
+    }
+  }, []);
+  
+  return { deleteMessage };
 }
 
 /**

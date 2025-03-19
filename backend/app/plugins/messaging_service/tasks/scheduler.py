@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 
 from app.core.db import get_db
-from ..models.database import (
+from ..models import (
     MessageDB, ConversationDB, MessageAttachmentDB,
     MessageDeliveryStatusDB, UserConversationSettingsDB
 )

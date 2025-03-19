@@ -4,6 +4,7 @@ import { useMessaging } from '@/lib/contexts/messaging-context';
 import ConversationHeader from './conversation-header';
 import MessageList from './message-list';
 import MessageInput from './message-input';
+import { Button } from '../ui/button';
 
 interface ConversationViewProps {
   currentUserId: string;
@@ -63,12 +64,11 @@ export default function ConversationView({ currentUserId }: ConversationViewProp
           <p className="text-gray-500 mb-6">
             Choose an existing conversation or start a new one
           </p>
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
+          <Button
             onClick={() => router.push('/messages/new')}
           >
             Start a new conversation
-          </button>
+          </Button>
         </div>
       </div>
     );

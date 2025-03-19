@@ -7,7 +7,7 @@ from celery import Celery
 from . import celeryconfig
 
 # Create a Celery app instance for webhooks
-celery_app = Celery("kaapi_webhooks")
+celery_app = Celery("webhooks")
 celery_app.config_from_object(celeryconfig)
 
 

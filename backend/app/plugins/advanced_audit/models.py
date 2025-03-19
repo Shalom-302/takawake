@@ -5,7 +5,7 @@ from datetime import datetime
 from app.core.db import Base  # Use the central Base
 
 class AuditLog(Base):
-    __tablename__ = "kaapi_audit_logs"
+    __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, nullable=True)  # Optional, if you want to record which user performed the action

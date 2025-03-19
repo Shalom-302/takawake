@@ -153,7 +153,21 @@ class UserBlockResponse(UserBlockBase):
     """Schema for blocked user response."""
     id: str
     blocker_id: str
+    blocked_id: str
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+
+class ChatUserResponse(BaseModel):
+    """Schema for user information in chat context."""
+    id: str
+    username: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    profile_picture: Optional[str] = None
+    last_seen: Optional[datetime] = None
+    
     class Config:
         from_attributes = True
