@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { CookieSettings, CookieConsentSubmission } from '../types/cookies';
 
 // Constants
