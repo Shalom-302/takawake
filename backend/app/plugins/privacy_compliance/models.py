@@ -64,7 +64,7 @@ class CookieCategory(Base):
 
 
 class Cookie(Base):
-    """Informations détaillées sur chaque cookie utilisé par l'application"""
+    """Detailed information on each cookie used by the application"""
     __tablename__ = "privacy_cookies"
     
     id = Column(Integer, primary_key=True, index=True)

@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from '../ui/button';
 import { 
   Dialog, 
-  DialogContent, 
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
+  DialogContent,
+  DialogTitle
 } from '../ui/dialog';
-import { Checkbox } from '../ui/checkbox';
+import { Switch } from '../ui/switch';
 import { useCookieConsent } from '../../lib/context/cookie-context';
 import { CookieConsentSubmission } from '../../lib/types/cookies';
+import { Button } from '../ui/button';
 
 interface CookieBannerProps {
   showAsModal?: boolean;
@@ -81,79 +79,94 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
   // If showing as a modal/dialog, render only the preferences UI
   if (showAsModal) {
     return (
-      <div className="bg-white border rounded-lg shadow-lg w-full">
-        <div className="flex flex-col gap-4 p-4">
-          <div>
-            <h3 className="text-lg font-semibold">Cookie preferences</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Select which cookies you want to accept. Necessary cookies cannot be disabled.
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div className="p-5">
+          <div className="mb-6">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-medium mb-2">Here are our cookies 🍪</h3>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm text-gray-600">
+              On this site, we use cookies to measure our audience, to maintain your session with us and to occasionally send you content that might interest you.
             </p>
           </div>
           
-          <div className="flex flex-col gap-4">
+          {/* Divider */}
+          <div className="space-y-5">
             {/* Necessary cookies - always enabled */}
-            <div className="flex items-center space-x-2">
-              <Checkbox id="necessary-modal" checked={true} disabled />
-              <label
-                htmlFor="necessary-modal"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Necessary (required)
-              </label>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-base font-medium">Essential Cookies</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  These cookies are necessary for the proper functioning of the site.
+                </p>
+              </div>
+              <Switch checked={true} disabled className="data-[state=checked]:bg-gray-400" />
             </div>
             
             {/* Preferences cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="preferences-modal" 
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-base font-medium">Personalization Cookies</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  They adapt the site to your tastes so that it resembles you.
+                </p>
+              </div>
+              <Switch 
                 checked={preferences.preferences}
                 onCheckedChange={() => handlePreferenceChange('preferences')}
+                className="data-[state=checked]:bg-gray-400"
               />
-              <label
-                htmlFor="preferences-modal"
-                className="text-sm font-medium leading-none"
-              >
-                Preferences
-              </label>
             </div>
             
             {/* Statistics cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="statistics-modal" 
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-base font-medium">Analytics and Statistics Cookies</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  They help us make the site even more relevant for you.
+                </p>
+              </div>
+              <Switch 
                 checked={preferences.statistics}
                 onCheckedChange={() => handlePreferenceChange('statistics')}
+                className="data-[state=checked]:bg-gray-400"
               />
-              <label
-                htmlFor="statistics-modal"
-                className="text-sm font-medium leading-none"
-              >
-                Statistics
-              </label>
             </div>
             
             {/* Marketing cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="marketing-modal" 
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-base font-medium">Performance Cookies</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  They allow us to analyze your experience by comparing your preferences.
+                </p>
+              </div>
+              <Switch 
                 checked={preferences.marketing}
                 onCheckedChange={() => handlePreferenceChange('marketing')}
+                className="data-[state=checked]:bg-gray-400"
               />
-              <label
-                htmlFor="marketing-modal"
-                className="text-sm font-medium leading-none"
-              >
-                Marketing
-              </label>
             </div>
           </div>
           
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
+          {/* Divider + Buttons */}
+          <div className="flex items-center justify-between pt-6 mt-6 border-t">
+            <Button 
+              onClick={handleCloseModal} 
+              variant="outline"
+            >
+              Back
             </Button>
-            <Button onClick={handleSavePreferences}>
-              Save preferences
+            <Button 
+              onClick={handleSavePreferences} 
+            >
+              Done
             </Button>
           </div>
         </div>
@@ -163,119 +176,124 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
 
   return (
     <>
-      {/* Banner */}
-      <div className="fixed bottom-0 left-0 z-50 w-full md:w-96 bg-white border rounded-t-lg shadow-lg p-4 m-4">
-        <div className="flex flex-col gap-4">
+      {/* Banner - small floating cookie notice at bottom */}
+      <div className="fixed bottom-10 left-4 z-50 max-w-xs bg-white rounded-lg shadow-lg p-4">
+        <div className="flex items-start">
           <div>
-            <h3 className="text-lg font-semibold">Cookie preferences</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.
+            <div className="flex">
+              <div className="p-2 rounded-full bg-neutral-50 w-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+                <path d="M8.5 8.5a10 10 0 0 0 11 11" />
+              </svg>
+            </div>
+            </div>
+            
+            <h3 className="text-base font-medium mb-1">We use cookies to improve your experience 🍪</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              For easier site navigation, the website can store your usage data and send you occasional relevant content.
             </p>
-          </div>
-          
-          <div className="flex flex-col space-y-2">
-            <Button 
-              variant="outline" 
-              className="w-full border-neutral-200"
-              onClick={handleAcceptAll}
-            >
-              Accept all cookies
-            </Button>
             
-            <Button 
-              variant="outline" 
-              className="w-full border-neutral-200"
-              onClick={handleRejectNonEssential}
-            >
-              Accept necessary only
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full border-neutral-200"
-              onClick={handleOpenModal}
-            >
-              Customize preferences
-            </Button>
+            <div className="flex flex-col flex-wrap gap-2">
+              <Button  onClick={handleRejectNonEssential} size="lg" variant="outline" className="w-full sm:w-auto">
+                No thanks
+              </Button>
+              
+              <Button  onClick={handleOpenModal} size="lg" variant="outline" className="w-full sm:w-auto">
+              I choose
+                </Button>
+              
+              
+              <Button onClick={handleAcceptAll} size="lg" className="w-full sm:w-auto">
+                  Accept all
+                </Button>
+
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Preferences Modal */}
+      {/* Preferences Modal - Centered with X */}
       <Dialog open={showPreferencesModal} onOpenChange={setShowPreferencesModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cookie preferences</DialogTitle>
-            <DialogDescription>
-              Select which cookies you want to accept. Necessary cookies cannot be disabled.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col gap-4 py-4">
-            {/* Necessary cookies - always enabled */}
-            <div className="flex items-center space-x-2">
-              <Checkbox id="necessary" checked={true} disabled />
-              <label
-                htmlFor="necessary"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Necessary (required)
-              </label>
+        <DialogContent className="max-w-md p-0 bg-white rounded-lg shadow-lg overflow-hidden border-none">
+          <div className="p-5">
+            <DialogTitle className="text-lg font-medium">Here are our cookies 🍪</DialogTitle>
+            <p className="text-sm text-gray-600 mb-6">
+              On this site, we use cookies to measure our audience, to maintain your session with us and to occasionally send you content that might interest you.
+            </p>
+            
+            <div className="space-y-5">
+              {/* Necessary cookies - always enabled */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-medium">Essential Cookies</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    These cookies are necessary for the proper functioning of the site.
+                  </p>
+                </div>
+                <Switch checked={true} disabled className="data-[state=checked]:bg-gray-400" />
+              </div>
+              
+              {/* Preferences cookies */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-medium">Personalization Cookies</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    They adapt the site to your tastes so that it resembles you.
+                  </p>
+                </div>
+                <Switch 
+                  checked={preferences.preferences}
+                  onCheckedChange={() => handlePreferenceChange('preferences')}
+                  className="data-[state=checked]:bg-gray-400"
+                />
+              </div>
+              
+              {/* Statistics cookies */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-medium">Analytics and Statistics Cookies</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    They help us make the site even more relevant for you.
+                  </p>
+                </div>
+                <Switch 
+                  checked={preferences.statistics}
+                  onCheckedChange={() => handlePreferenceChange('statistics')}
+                  className="data-[state=checked]:bg-gray-400"
+                />
+              </div>
+              
+              {/* Marketing cookies */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-medium">Performance Cookies</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    They allow us to analyze your experience by comparing your preferences.
+                  </p>
+                </div>
+                <Switch 
+                  checked={preferences.marketing}
+                  onCheckedChange={() => handlePreferenceChange('marketing')}
+                  className="data-[state=checked]:bg-gray-400"
+                />
+              </div>
             </div>
             
-            {/* Preferences cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="preferences" 
-                checked={preferences.preferences}
-                onCheckedChange={() => handlePreferenceChange('preferences')}
-              />
-              <label
-                htmlFor="preferences"
-                className="text-sm font-medium leading-none"
+            {/* Divider + Buttons */}
+            <div className="flex items-center justify-between pt-6 mt-6 border-t">
+              <Button 
+                onClick={handleCloseModal} 
+                variant="outline"
               >
-                Preferences
-              </label>
-            </div>
-            
-            {/* Statistics cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="statistics" 
-                checked={preferences.statistics}
-                onCheckedChange={() => handlePreferenceChange('statistics')}
-              />
-              <label
-                htmlFor="statistics"
-                className="text-sm font-medium leading-none"
+                Back
+              </Button>
+              <Button 
+                onClick={handleSavePreferences} 
               >
-                Statistics
-              </label>
+                Done
+              </Button>
             </div>
-            
-            {/* Marketing cookies */}
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="marketing" 
-                checked={preferences.marketing}
-                onCheckedChange={() => handlePreferenceChange('marketing')}
-              />
-              <label
-                htmlFor="marketing"
-                className="text-sm font-medium leading-none"
-              >
-                Marketing
-              </label>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCloseModal}>
-              Cancel
-            </Button>
-            <Button onClick={handleSavePreferences}>
-              Save preferences
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

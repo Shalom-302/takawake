@@ -5,6 +5,7 @@ from sqlalchemy import inspect
 import time
 import threading
 import logging
+import os
 
 from .core.db import Base, engine, SessionLocal
 from .core.config import settings
@@ -239,6 +240,29 @@ app.include_router(social_subscriptions_plugin.router, prefix="/plugins/social-s
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
 app.include_router(plugin_manager_router)
+
+@app.get("/debug/env", tags=["debug"])
+async def debug_env():
+    """DEBUG ONLY: Affiche des informations sur les variables d'environnement"""
+    facebook_id = os.getenv("FACEBOOK_CLIENT_ID")
+    facebook_secret = os.getenv("FACEBOOK_CLIENT_SECRET")
+    redirect_uri = os.getenv("FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI")
+    
+    # Ne pas exposer les valeurs complètes, seulement leur présence
+    return {
+        "FACEBOOK_CLIENT_ID": bool(facebook_id),
+        "FACEBOOK_CLIENT_ID_LENGTH": len(facebook_id) if facebook_id else 0,
+        "FACEBOOK_CLIENT_SECRET": bool(facebook_secret),
+        "FACEBOOK_CLIENT_SECRET_LENGTH": len(facebook_secret) if facebook_secret else 0,
+        "FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI": redirect_uri if redirect_uri else None,
+        "OAUTH_PROVIDERS": {
+            provider: {
+                "client_id_set": bool(config.get("client_id")),
+                "client_secret_set": bool(config.get("client_secret")),
+            }
+            for provider, config in settings.OAUTH_PROVIDERS.items()
+        }
+    }
 
 def update_system_metrics():
     """Update system metrics for monitoring"""

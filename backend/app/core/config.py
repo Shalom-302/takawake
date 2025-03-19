@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement depuis le fichier .env
+# Load environment variables from the .env file
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 class Settings(BaseSettings):
@@ -19,28 +19,28 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = "CHANGE_ME"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2  # Pour les tests, seulement 2 minutes
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 1  # Pour les tests, seulement 1 jour
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2  # For tests, only 2 minutes
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 1  # For tests, only 1 day
     ALGORITHM: str = "HS256"
     
     # OAuth Providers
     OAUTH_PROVIDERS: dict = {
         "github": {
-            "client_id": os.getenv("GITHUB_CLIENT_ID", ""),
-            "client_secret": os.getenv("GITHUB_CLIENT_SECRET", ""),
+            "client_id": os.getenv("GITHUB_CLIENT_ID", "default_github_client_id"),
+            "client_secret": os.getenv("GITHUB_CLIENT_SECRET", "default_github_client_secret"),
         },
         "google": {
             "client_id": os.getenv("GOOGLE_CLIENT_ID", "xxxxxxx"),
             "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "xxxxxx"),
         },
         "facebook": {
-            "client_id": os.getenv("FACEBOOK_CLIENT_ID", ""),
-            "client_secret": os.getenv("FACEBOOK_CLIENT_SECRET", ""),
+            "client_id": os.getenv("FACEBOOK_CLIENT_ID", "default_facebook_client_id"),
+            "client_secret": os.getenv("FACEBOOK_CLIENT_SECRET", "default_facebook_client_secret"),
         },
     }
     
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]  # En développement, autoriser toutes les origines
+    CORS_ORIGINS: list[str] = ["*"]  # In development, allowing all origins
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     
@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     def ASYNC_DB_URL(self) -> str:
         return f"postgresql+asyncpg://postgres:postgres@{self.POSTGRES_HOST}:5432/kaapi"
     
-    # Configuration pour l'analyse des variables d'environnement
+    # Configuration for environment variable analysis
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
 

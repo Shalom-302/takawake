@@ -98,6 +98,19 @@ class FacebookAuthProvider(AuthProvider):
             logger.error(f"Error exchanging code for token: {str(e)}")
             raise
     
+    async def exchange_code_for_token(self, code: str, redirect_uri: str) -> Dict[str, Any]:
+        """
+        Implémentation de la méthode abstraite requise par la classe AuthProvider.
+        
+        Args:
+            code: Authorization code received from Facebook
+            redirect_uri: Redirect URI used in the authorization request
+            
+        Returns:
+            Token response with access_token, refresh_token, etc.
+        """
+        return await self.get_access_token(code, redirect_uri)
+    
     async def get_user_info(self, access_token: str) -> UserInfo:
         """
         Get user information from Facebook.
