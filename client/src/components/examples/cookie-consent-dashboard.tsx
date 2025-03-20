@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 import CookieStatus from "../cookie/cookie-status";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

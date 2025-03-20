@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ScriptProvider from "@/components/cookie/script-provider";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 
 /**
  * Example component showing how to implement analytics with cookie consent

@@ -36,30 +36,31 @@ async def websocket_endpoint(
     - Rate limiting for message sending
     """
     user_id = None
+    connection_accepted = False
     
-    # Verify token and get user information
     try:
-        # Use the application's authentication helper
+        # Verify token and get user information
         user = await get_current_user_from_token(token)
         if not user:
+            logger.warning(f"Invalid token provided for WebSocket connection to conversation {conversation_id}")
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
             
         user_id = user.get("id")
+        logger.info(f"User {user_id} attempting WebSocket connection to conversation {conversation_id}")
         
-        # Securely log connection attempt
-        if messaging_service.security_handler:
-            messaging_service.security_handler.secure_log(
-                "WebSocket connection attempt",
-                {"user_id": user_id, "conversation_id": conversation_id}
-            )
     except Exception as e:
         logger.error(f"Authentication error in WebSocket: {str(e)}")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
     
-    # Check if user has access to the conversation
     try:
+        # Accept the connection before checking access
+        # This prevents client-side errors during the handshake process
+        await websocket.accept()
+        connection_accepted = True
+        
+        # Check if user has access to the conversation
         # This would require database access
         db = next(get_db())
         
@@ -67,110 +68,126 @@ async def websocket_endpoint(
         # In a real implementation, this would use the conversation service
         has_access = await verify_conversation_access(db, user_id, conversation_id)
         if not has_access:
-            # Securely log unauthorized access attempt
-            if messaging_service.security_handler:
-                messaging_service.security_handler.secure_log(
-                    "Unauthorized WebSocket connection attempt",
-                    {"user_id": user_id, "conversation_id": conversation_id},
-                    "warning"
-                )
+            # Send error message to the client
+            await websocket.send_json({
+                "type": "error",
+                "data": {
+                    "code": "access_denied",
+                    "message": "You do not have access to this conversation"
+                }
+            })
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
-    except Exception as e:
-        logger.error(f"Authorization error in WebSocket: {str(e)}")
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
         
-    # Accept the connection
-    await websocket.accept()
+        # Register connection with the WebSocket manager
+        await messaging_service.websocket_manager.connect(conversation_id, user_id, websocket)
+        
+        logger.info(f"WebSocket connection established for user {user_id} in conversation {conversation_id}")
+        
+        # Send a welcome message to confirm connection
+        await websocket.send_json({
+            "type": "system",
+            "data": {
+                "event": "connected",
+                "conversation_id": conversation_id
+            }
+        })
     
-    # Register connection with the WebSocket manager
-    await messaging_service.websocket_manager.connect(conversation_id, user_id, websocket)
-    
-    # Securely log successful connection
-    if messaging_service.security_handler:
-        messaging_service.security_handler.secure_log(
-            "WebSocket connection established",
-            {"user_id": user_id, "conversation_id": conversation_id}
-        )
-    
-    try:
-        # Main message handling loop
-        while True:
-            # Receive and process message
-            data = await websocket.receive_text()
+        try:
+            # Main message handling loop
+            while True:
+                # Receive and process message
+                data = await websocket.receive_text()
+                
+                try:
+                    # Parse message data
+                    message_data = json.loads(data)
+                    
+                    # Validate message content for security
+                    validate_message_content(message_data)
+                    
+                    # Process different message types
+                    message_type = message_data.get("type", "message")
+                    
+                    if message_type == "message":
+                        # Process regular message
+                        await process_message(user_id, conversation_id, message_data)
+                    elif message_type == "typing":
+                        # Process typing indicator
+                        await process_typing_indicator(user_id, conversation_id, message_data)
+                    elif message_type == "read":
+                        # Process read receipt
+                        await process_read_receipt(user_id, conversation_id, message_data)
+                    elif message_type == "ping":
+                        # Process ping (keep-alive)
+                        await websocket.send_json({
+                            "type": "pong",
+                            "data": message_data.get("data", {})
+                        })
+                    else:
+                        # Ignore unknown message types
+                        logger.warning(f"Unknown WebSocket message type: {message_type}")
+                
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid WebSocket message format from user {user_id}")
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": {
+                            "code": "invalid_format",
+                            "message": "Invalid message format"
+                        }
+                    })
+                    continue
+                    
+                except Exception as e:
+                    logger.error(f"Error processing WebSocket message: {str(e)}")
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": {
+                            "code": "processing_error",
+                            "message": "Error processing message"
+                        }
+                    })
+                    continue
+                    
+        except WebSocketDisconnect:
+            # Handle disconnection
+            logger.info(f"WebSocket disconnected for user {user_id} in conversation {conversation_id}")
+        
+        except Exception as e:
+            # Handle unexpected errors
+            logger.error(f"Unexpected WebSocket error: {str(e)}")
             
+    except Exception as e:
+        logger.error(f"Error during WebSocket connection setup: {str(e)}")
+        if not connection_accepted:
+            await websocket.accept()
+        
+        # Send error message to client
+        await websocket.send_json({
+            "type": "error",
+            "data": {
+                "code": "connection_error",
+                "message": "Error establishing WebSocket connection"
+            }
+        })
+    
+    finally:
+        # Clean up
+        if connection_accepted:
+            # Disconnect from manager if we were connected
+            if user_id:
+                try:
+                    await messaging_service.websocket_manager.disconnect(conversation_id, user_id)
+                    logger.info(f"WebSocket manager cleanup for user {user_id} in conversation {conversation_id}")
+                except Exception as e:
+                    logger.error(f"Error during WebSocket cleanup: {str(e)}")
+        else:
+            # Just in case, attempt to close if not already closed
             try:
-                # Parse message data
-                message_data = json.loads(data)
-                
-                # Apply rate limiting (simplified)
-                # In a real implementation, this would track message frequency
-                
-                # Validate message content for security
-                validate_message_content(message_data)
-                
-                # Process different message types
-                message_type = message_data.get("type", "message")
-                
-                if message_type == "message":
-                    # Process regular message
-                    await process_message(user_id, conversation_id, message_data)
-                elif message_type == "typing":
-                    # Process typing indicator
-                    await process_typing_indicator(user_id, conversation_id, message_data)
-                elif message_type == "read":
-                    # Process read receipt
-                    await process_read_receipt(user_id, conversation_id, message_data)
-                else:
-                    # Ignore unknown message types
-                    logger.warning(f"Unknown WebSocket message type: {message_type}")
-            
-            except json.JSONDecodeError:
-                # Securely log invalid message format
-                if messaging_service.security_handler:
-                    messaging_service.security_handler.secure_log(
-                        "Invalid WebSocket message format",
-                        {"user_id": user_id, "conversation_id": conversation_id},
-                        "warning"
-                    )
-                continue
-                
-            except Exception as e:
-                # Securely log message processing error
-                if messaging_service.security_handler:
-                    messaging_service.security_handler.secure_log(
-                        "Error processing WebSocket message",
-                        {"user_id": user_id, "conversation_id": conversation_id, "error": str(e)},
-                        "error"
-                    )
-                continue
-                
-    except WebSocketDisconnect:
-        # Handle disconnection
-        await messaging_service.websocket_manager.disconnect(conversation_id, user_id)
-        
-        # Securely log disconnection
-        if messaging_service.security_handler:
-            messaging_service.security_handler.secure_log(
-                "WebSocket connection closed",
-                {"user_id": user_id, "conversation_id": conversation_id}
-            )
-    
-    except Exception as e:
-        # Handle unexpected errors
-        logger.error(f"Unexpected WebSocket error: {str(e)}")
-        
-        # Try to disconnect properly
-        await messaging_service.websocket_manager.disconnect(conversation_id, user_id)
-        
-        # Securely log error
-        if messaging_service.security_handler:
-            messaging_service.security_handler.secure_log(
-                "WebSocket unexpected error",
-                {"user_id": user_id, "conversation_id": conversation_id, "error": str(e)},
-                "error"
-            )
+                await websocket.close()
+            except:
+                pass
 
 
 async def get_current_user_from_token(token: str) -> Optional[Dict[str, Any]]:

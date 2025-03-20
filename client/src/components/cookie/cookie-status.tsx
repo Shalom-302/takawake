@@ -1,6 +1,6 @@
 "use client";
 
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 
 interface CookieStatusProps {
   className?: string;

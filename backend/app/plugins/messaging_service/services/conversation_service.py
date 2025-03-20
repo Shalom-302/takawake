@@ -54,115 +54,97 @@ class ConversationService:
         self.websocket_manager = websocket_manager
         logger.info("Conversation service initialized with security, notification, and websocket handlers")
     
-    async def create_direct_conversation(self, db: Session, conversation_data: DirectConversationCreate, 
-                                       user_id: str) -> Dict[str, Any]:
-        """
-        Create a new direct (one-to-one) conversation.
-        
-        Args:
-            db: Database session
-            conversation_data: Conversation data
-            user_id: ID of the creating user
-            
-        Returns:
-            Created conversation
-            
-        Raises:
-            HTTPException: If conversation creation fails
-        """
-        recipient_id = conversation_data.recipient_id
-        
-        # Check if users are blocking each other
-        block_exists = db.query(UserBlockDB).filter(
-            or_(
-                and_(UserBlockDB.blocker_id == user_id, UserBlockDB.blocked_id == recipient_id),
-                and_(UserBlockDB.blocker_id == recipient_id, UserBlockDB.blocked_id == user_id)
-            )
-        ).first()
-        
-        if block_exists:
-            if self.security_handler:
-                self.security_handler.secure_log(
-                    "Blocked conversation creation attempt",
-                    {"user_id": user_id, "recipient_id": recipient_id},
-                    "warning"
+    async def create_direct_conversation(self, db: Session, conversation_data: DirectConversationCreate, user_id: str) -> Dict[str, Any]:
+        """Create a direct conversation between two users"""
+        try:
+            # Ensure we have participant IDs (should be at least one other user)
+            if not conversation_data.participant_ids or len(conversation_data.participant_ids) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="At least one participant must be specified"
                 )
-            raise HTTPException(status_code=403, detail="Cannot create conversation with blocked user")
-        
-        # Check if direct conversation already exists between these users
-        existing_conversation = self._find_direct_conversation(db, user_id, recipient_id)
-        
-        if existing_conversation:
-            return self._conversation_to_dict(existing_conversation, user_id)
-        
-        # Create a new conversation
-        conversation_id = str(uuid.uuid4())
-        
-        # Generate encryption key for the conversation if needed
-        encryption_key = None
-        if conversation_data.is_encrypted and self.security_handler:
-            encryption_key = self.security_handler.generate_conversation_key(conversation_id)
-            self.security_handler.store_conversation_key(conversation_id, encryption_key)
-        
-        new_conversation = ConversationDB(
-            id=conversation_id,
-            conversation_type="direct",
-            created_by=user_id,
-            is_encrypted=conversation_data.is_encrypted
-        )
-        
-        db.add(new_conversation)
-        db.flush()  # Flush to get the conversation ID
-        
-        # Add both users to the conversation
-        for participant_id in [user_id, recipient_id]:
-            settings = UserConversationSettingsDB(
-                user_id=participant_id,
-                conversation_id=conversation_id,
-                role="member"
+            
+            # For a direct conversation, we should have exactly one other participant
+            if len(conversation_data.participant_ids) > 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail="A direct conversation should have exactly one other participant"
+                )
+            
+            participant_id = conversation_data.participant_ids[0]
+            
+            # Check for user blocks (in both directions)
+            block_exists = (
+                db.query(UserBlockDB)
+                .filter(
+                    or_(
+                        and_(UserBlockDB.blocker_id == user_id, UserBlockDB.blocked_id == participant_id),
+                        and_(UserBlockDB.blocker_id == participant_id, UserBlockDB.blocked_id == user_id)
+                    )
+                )
+                .first()
+            ) is not None
+            
+            if block_exists:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Cannot create conversation with blocked user"
+                )
+            
+            # Check if conversation already exists between these users
+            existing_conversation = self._find_direct_conversation(db, user_id, participant_id)
+            
+            if existing_conversation:
+                logger.info(f"Returning existing conversation between {user_id} and {participant_id}")
+                return existing_conversation
+            
+            # Generate a unique conversation ID
+            conversation_id = str(uuid.uuid4())
+            logger.info(f"Creating new conversation with ID: {conversation_id}")
+            
+            # Create the new conversation
+            new_conversation = ConversationDB(
+                id=conversation_id,
+                title=None,  # Direct conversations typically don't have titles
+                conversation_type="direct",
+                created_by=user_id,
+                is_encrypted=conversation_data.is_encrypted,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
-            db.add(settings)
+            
+            db.add(new_conversation)
+            
+            # Add both participants
+            all_participants = [user_id, participant_id]
+            
+            for participant_user_id in all_participants:
+                settings = UserConversationSettingsDB(
+                    user_id=participant_user_id,
+                    conversation_id=conversation_id,
+                    role="member"
+                )
+                db.add(settings)
+            
+            # Commit to database
+            db.commit()
+            logger.info(f"Successfully created conversation {conversation_id} with participants {all_participants}")
+            
+            # Return the created conversation
+            return await self.get_conversation(db, conversation_id, user_id)
         
-        # Commit the transaction
-        db.commit()
-        db.refresh(new_conversation)
-        
-        # Register the conversation with the WebSocket manager
-        if self.websocket_manager:
-            self.websocket_manager.register_conversation(conversation_id, [user_id, recipient_id])
-        
-        # Log the conversation creation using standardized security approach
-        if self.security_handler:
-            self.security_handler.secure_log(
-                "Direct conversation created",
-                {
-                    "user_id": user_id,
-                    "recipient_id": recipient_id,
-                    "conversation_id": conversation_id,
-                    "is_encrypted": conversation_data.is_encrypted
-                }
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error creating direct conversation: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error creating conversation: {str(e)}"
             )
-        
-        conversation_dict = self._conversation_to_dict(new_conversation, user_id)
-        
-        # Send a welcome message if provided
-        if conversation_data.initial_message:
-            # TODO: Create initial message using message service
-            pass
-        
-        # Notify recipient about new conversation
-        if self.notification_handler:
-            await self.notification_handler.notify_conversation_update(
-                conversation_id,
-                "conversation_created",
-                conversation_dict,
-                [recipient_id]
-            )
-        
-        return conversation_dict
     
-    async def create_group_conversation(self, db: Session, conversation_data: GroupConversationCreate, 
-                                      user_id: str) -> Dict[str, Any]:
+    async def create_group_conversation(self, db: Session, conversation_data: GroupConversationCreate, user_id: str) -> Dict[str, Any]:
         """
         Create a new group conversation.
         

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

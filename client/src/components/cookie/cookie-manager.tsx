@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 import CookieBanner from "./cookie-banner";
 import FloatingConsentButton from "./floating-consent-button";
 

@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 // Form validation schema
 const registerSchema = z.object({

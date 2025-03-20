@@ -7,7 +7,7 @@ import {
   DialogTitle
 } from '../ui/dialog';
 import { Switch } from '../ui/switch';
-import { useCookieConsent } from '../../lib/context/cookie-context';
+import { useCookieConsent } from '../../lib/contexts/cookie-context';
 import { CookieConsentSubmission } from '../../lib/types/cookies';
 import { Button } from '../ui/button';
 

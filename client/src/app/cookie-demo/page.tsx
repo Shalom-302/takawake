@@ -3,7 +3,7 @@
 import AnalyticsExample from "@/components/examples/analytics-example";
 import FloatingConsentButton from "@/components/cookie/floating-consent-button";
 import CookieConsentDashboard from "@/components/examples/cookie-consent-dashboard";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 
 export default function CookieDemoPage() {
   const { showCookieBanner } = useCookieConsent();

@@ -67,6 +67,7 @@ export interface Message {
   attachments?: MessageAttachment[];
   receipts?: MessageReceipt[];
   reactions?: MessageReaction[];
+  status?: MessageStatusType;
 }
 
 export interface ConversationParticipant {
@@ -116,6 +117,7 @@ export interface ChatUser {
   firstName?: string;
   lastName?: string;
   profilePicture?: string;
+  isOnline?: boolean;
   lastSeen?: string;
 }
 
@@ -124,7 +126,10 @@ export enum WebSocketMessageType {
   MESSAGE = 'message',
   TYPING = 'typing',
   READ_RECEIPT = 'read_receipt',
-  USER_PRESENCE = 'user_presence'
+  USER_PRESENCE = 'user_presence',
+  PING = 'ping',
+  PONG = 'pong',
+  ERROR = 'error'
 }
 
 export interface WebSocketMessage {

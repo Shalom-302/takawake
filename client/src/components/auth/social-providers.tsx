@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 
 // Icons for different providers

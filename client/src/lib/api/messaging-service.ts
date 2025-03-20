@@ -10,13 +10,15 @@ import {
   ChatUser
 } from '../types/messaging';
 
-// Points d'accès de l'API
+// API endpoints
 export const API_ROUTES = {
-  CONVERSATIONS: '/messaging/conversations',
-  CONVERSATION: (id: string) => `/messaging/conversations/${id}`,
-  MESSAGES: (conversationId: string) => `/messaging/conversations/${conversationId}/messages`,
+  CONVERSATIONS: 'messaging/conversations',
+  CONVERSATION: (id: string) => `messaging/conversations/${id}`,
+  DIRECT_CONVERSATION: 'messaging/conversations/direct',
+  GROUP_CONVERSATION: 'messaging/conversations/group',
+  MESSAGES: (conversationId: string) => `messaging/conversations/${conversationId}/messages`,
   MESSAGE: (conversationId: string, messageId: string) => 
-    `/messaging/conversations/${conversationId}/messages/${messageId}`,
+    `messaging/conversations/${conversationId}/messages/${messageId}`,
   WEBSOCKET: (conversationId: string) => 
     `${process.env.NEXT_PUBLIC_WS_URL || (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host}/messaging/ws/${conversationId}`
 };
@@ -28,11 +30,11 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
   const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
   const url = baseURL + endpoint;
   
-  // Créer un objet Headers standard
+  // Create a standard headers object
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   
-  // Ajouter le token d'authentification s'il est disponible
+  // Add authentication token if available
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -47,16 +49,16 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
   };
   
   try {
-    // En mode développement, peut simuler des données
+    // In development mode, can simulate data
     if (process.env.NODE_ENV === 'development') {
-      // Désactiver les simulations pour les routes de recherche d'utilisateurs
+      // Disable simulations for user search routes
       if (endpoint.includes('/users/search')) {
         console.log('User search API call in development mode - using real API');
       } else {
-        // Simule un délai pour l'API
+        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Retourne des données fictives selon l'endpoint
+        // Return fake data according to the endpoint
         if (endpoint.includes('/conversations') && !endpoint.includes('/messages')) {
           return [] as unknown as T;
         }
@@ -111,11 +113,38 @@ export async function createConversation(data: {
   title?: string;
   isGroup?: boolean;
 }): Promise<Conversation> {
-  const response = await fetchAPI<Conversation>(API_ROUTES.CONVERSATIONS, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-  return response;
+  if (data.isGroup) {
+    // Format for group conversation
+    const groupData = {
+      participant_ids: data.participantIds,
+      title: data.title || '',
+      description: ''
+    };
+    
+    const response = await fetchAPI<Conversation>(API_ROUTES.GROUP_CONVERSATION, {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    });
+    console.log('hehehe Group conversation created:', response);
+    return response;
+  } else {
+    // Format for direct conversation
+    if (data.participantIds.length !== 1) {
+      throw new Error('A direct conversation must have exactly one recipient');
+    }
+    
+    const directData = {
+      recipient_id: data.participantIds[0],
+      initial_message: data.title // Optional, used as first message if specified
+    };
+    
+    const response = await fetchAPI<Conversation>(API_ROUTES.DIRECT_CONVERSATION, {
+      method: 'POST',
+      body: JSON.stringify(directData),
+    });
+    console.log('hehehe Direct conversation created:', response);
+    return response;
+  }
 }
 
 /**

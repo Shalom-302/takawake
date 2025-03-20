@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 
 interface ScriptProviderProps {
   category: "necessary" | "preferences" | "statistics" | "marketing";

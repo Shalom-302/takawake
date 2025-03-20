@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
-import { AuthProvider } from "@/lib/context/auth-context";
-import { CookieProvider } from '@/lib/context/cookie-context';
+import { AuthProvider } from "@/lib/contexts/auth-context";
+import { MessagingProvider } from "@/lib/contexts/messaging-context";
+import { CookieProvider } from '@/lib/contexts/cookie-context';
 import CookieManager from '@/components/cookie/cookie-manager';
 import "./globals.css";
 
@@ -33,10 +34,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Toaster position="top-right" richColors />
-          <CookieProvider>
-            <CookieManager />
-            {children}
-          </CookieProvider>
+          <MessagingProvider>
+            <CookieProvider>
+              <CookieManager />
+              {children}
+            </CookieProvider>
+          </MessagingProvider>
         </AuthProvider>
       </body>
     </html>

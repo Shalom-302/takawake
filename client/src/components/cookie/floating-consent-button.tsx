@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCookieConsent } from "@/lib/context/cookie-context";
+import { useCookieConsent } from "@/lib/contexts/cookie-context";
 import { motion } from "framer-motion";
 import CookieBanner from "./cookie-banner";
 import Image from "next/image";

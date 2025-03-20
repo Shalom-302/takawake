@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/lib/contexts/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
