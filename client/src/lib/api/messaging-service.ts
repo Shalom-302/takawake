@@ -12,13 +12,13 @@ import {
 
 // API endpoints
 export const API_ROUTES = {
-  CONVERSATIONS: 'messaging/conversations',
-  CONVERSATION: (id: string) => `messaging/conversations/${id}`,
-  DIRECT_CONVERSATION: 'messaging/conversations/direct',
-  GROUP_CONVERSATION: 'messaging/conversations/group',
-  MESSAGES: (conversationId: string) => `messaging/conversations/${conversationId}/messages`,
+  CONVERSATIONS: '/messaging/conversations',
+  CONVERSATION: (id: string) => `/messaging/conversations/${id}`,
+  DIRECT_CONVERSATION: '/messaging/conversations/direct',
+  GROUP_CONVERSATION: '/messaging/conversations/group',
+  MESSAGES: (conversationId: string) => `/messaging/conversations/${conversationId}/messages`,
   MESSAGE: (conversationId: string, messageId: string) => 
-    `messaging/conversations/${conversationId}/messages/${messageId}`,
+    `/messaging/conversations/${conversationId}/messages/${messageId}`,
   WEBSOCKET: (conversationId: string) => 
     `${process.env.NEXT_PUBLIC_WS_URL || (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host}/messaging/ws/${conversationId}`
 };
@@ -37,8 +37,11 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
   // Add authentication token if available
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth_token');
+    console.log(`API request to ${endpoint} - Auth token:`, token ? 'Token present' : 'No token found');
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      console.warn(`No authentication token found for request to ${endpoint}`);
     }
   }
   
@@ -49,42 +52,29 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
   };
   
   try {
-    // In development mode, can simulate data
-    if (process.env.NODE_ENV === 'development') {
-      // Disable simulations for user search routes
-      if (endpoint.includes('/users/search')) {
-        console.log('User search API call in development mode - using real API');
-      } else {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Return fake data according to the endpoint
-        if (endpoint.includes('/conversations') && !endpoint.includes('/messages')) {
-          return [] as unknown as T;
-        }
-        
-        if (endpoint.includes('/messages')) {
-          return [] as unknown as T;
-        }
-        
-        return {} as T;
-      }
-    }
     
-    console.log(`Making API request to ${endpoint} with auth:`, headers.has('Authorization'));
+    console.log(`Making real API request to ${url}`, defaultOptions);
     const response = await fetch(url, defaultOptions);
     console.log(`API response status for ${endpoint}:`, response.status);
     
+    // Handle non-2xx responses
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`API Error for ${endpoint}:`, response.status, errorText);
+      throw new Error(`API error ${response.status}: ${errorText}`);
     }
     
-    const responseData = await response.json();
-    console.log(`API response data for ${endpoint}:`, responseData);
-    return responseData as T;
+    // For empty responses, return empty object
+    if (response.status === 204) {
+      return {} as T;
+    }
+    
+    // Parse JSON response
+    const data = await response.json();
+    console.log(`API response data for ${endpoint}:`, data);
+    return data as T;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.error(`API request failed for ${endpoint}:`, error);
     throw error;
   }
 }
@@ -94,6 +84,7 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
  */
 export async function getConversations(): Promise<Conversation[]> {
   const response = await fetchAPI<Conversation[]>(API_ROUTES.CONVERSATIONS);
+  console.log('===Conversations:', response);
   return response;
 }
 
@@ -113,37 +104,51 @@ export async function createConversation(data: {
   title?: string;
   isGroup?: boolean;
 }): Promise<Conversation> {
-  if (data.isGroup) {
-    // Format for group conversation
-    const groupData = {
-      participant_ids: data.participantIds,
-      title: data.title || '',
-      description: ''
-    };
-    
-    const response = await fetchAPI<Conversation>(API_ROUTES.GROUP_CONVERSATION, {
-      method: 'POST',
-      body: JSON.stringify(groupData),
-    });
-    console.log('hehehe Group conversation created:', response);
-    return response;
-  } else {
-    // Format for direct conversation
-    if (data.participantIds.length !== 1) {
-      throw new Error('A direct conversation must have exactly one recipient');
+  // Debug: Check authentication token
+  const token = localStorage.getItem('auth_token');
+  console.log('Current auth token:', token);
+  console.log('Create conversation data:', data);
+  
+  try {
+    if (data.isGroup) {
+      // Format for group conversation
+      const groupData = {
+        participant_ids: data.participantIds,
+        title: data.title || '',
+        description: ''
+      };
+      
+      console.log('Sending group conversation data:', groupData);
+      const response = await fetchAPI<Conversation>(API_ROUTES.GROUP_CONVERSATION, {
+        method: 'POST',
+        body: JSON.stringify(groupData),
+      });
+      console.log('Group conversation created:', response);
+      return response;
+    } else {
+      // Format for direct conversation
+      if (data.participantIds.length !== 1) {
+        throw new Error('A direct conversation must have exactly one recipient');
+      }
+      
+      // Utiliser la structure correcte attendue par le backend (recipient_id au lieu de participant_ids)
+      const directData = {
+        recipient_id: data.participantIds[0],
+        initial_message: data.title // Optional, used as first message if specified
+      };
+      
+      console.log('Sending direct conversation data:', directData);
+      console.log('Sending to endpoint:', API_ROUTES.DIRECT_CONVERSATION);
+      const response = await fetchAPI<Conversation>(API_ROUTES.DIRECT_CONVERSATION, {
+        method: 'POST',
+        body: JSON.stringify(directData),
+      });
+      console.log('Direct conversation created:', response);
+      return response;
     }
-    
-    const directData = {
-      recipient_id: data.participantIds[0],
-      initial_message: data.title // Optional, used as first message if specified
-    };
-    
-    const response = await fetchAPI<Conversation>(API_ROUTES.DIRECT_CONVERSATION, {
-      method: 'POST',
-      body: JSON.stringify(directData),
-    });
-    console.log('hehehe Direct conversation created:', response);
-    return response;
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    throw error;
   }
 }
 

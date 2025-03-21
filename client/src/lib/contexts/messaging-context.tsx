@@ -40,7 +40,7 @@ const MessagingContext = createContext<MessagingContextType | undefined>(undefin
 
 // Provider de messagerie
 function MessagingProvider({ children }: { children: ReactNode }) {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]); // Confirmation que l'état conversations est bien initialisé comme un tableau vide
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -61,6 +61,11 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   // Trouver la conversation active
   const activeConversation = useMemo(() => {
     if (!activeConversationId) return null;
+    // Vérifier que conversations est un tableau avant d'utiliser find
+    if (!Array.isArray(conversations)) {
+      console.warn('Conversations is not an array:', conversations);
+      return null;
+    }
     return conversations.find(conv => conv.id === activeConversationId) || null;
   }, [activeConversationId, conversations]);
 
@@ -84,11 +89,25 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     try {
       setLoadingConversations(true);
       const data = await messagingAPI.getConversations();
+      console.log('Received conversations data:', data);
+      
+      // Vérifier que data est bien un tableau
       if (data) {
-        setConversations(data);
+        if (Array.isArray(data)) {
+          setConversations(data);
+        } else {
+          console.error('API returned non-array conversations data:', data);
+          // Initialiser avec un tableau vide en cas d'erreur
+          setConversations([]);
+        }
+      } else {
+        // Initialiser avec un tableau vide si pas de données
+        setConversations([]);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des conversations:', error);
+      // Initialiser avec un tableau vide en cas d'erreur
+      setConversations([]);
     } finally {
       setLoadingConversations(false);
     }

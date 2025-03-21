@@ -42,13 +42,16 @@ async def create_direct_conversation(
     - Secure conversation key generation if encrypted
     """
     # Get user ID
+    print("===Current user:", conversation_data)
     user_id = current_user.id
     
     try:
+
         # Securely create the conversation using the standardized approach
         conversation = await conversation_service.create_direct_conversation(
             db, conversation_data, user_id
         )
+        print("===Conversation created:", conversation)
         return conversation
     except HTTPException as e:
         # Rethrow HTTP exceptions
@@ -502,6 +505,7 @@ async def search_chat_users(
     - Does not expose sensitive user information
     """
     # Get user ID
+    print("===Current-- user:", current_user)
     user_id = current_user.id
     
     logger.info(f"Searching users with query: '{query}', limit: {limit}, current user ID: {user_id}")

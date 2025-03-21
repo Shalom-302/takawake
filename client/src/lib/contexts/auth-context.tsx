@@ -143,10 +143,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       const response = await authService.login(username, password);
+      console.log('Login successful, token received:', !!response.token?.access_token);
       // Store the token
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', response.token.access_token);
         localStorage.setItem('refresh_token', response.token.refresh_token);
+        // Verify token was properly set
+        const storedToken = localStorage.getItem('auth_token');
+        console.log('Token stored in localStorage:', !!storedToken);
       }
       
       setUser(response.user);
@@ -158,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (err instanceof Error) {
         errorMessage = err.message;
       }
+      console.error('Login error:', err);
       toast.error(errorMessage);
       return false;
     } finally {

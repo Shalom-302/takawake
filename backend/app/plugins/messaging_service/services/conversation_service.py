@@ -15,10 +15,9 @@ from sqlalchemy import or_, and_
 from ..models.conversation import (
     ConversationDB, UserConversationSettingsDB, GroupChatDB, UserBlockDB
 )
-from ..models.message import MessageDB
+from ..models.message import MessageDB, MessageReceiptDB
 from ..schemas.conversation import (
     DirectConversationCreate, GroupConversationCreate,
-    ConversationUpdate, GroupConversationUpdate, ConversationMemberAction,
     ChatUserResponse
 )
 
@@ -55,83 +54,98 @@ class ConversationService:
         logger.info("Conversation service initialized with security, notification, and websocket handlers")
     
     async def create_direct_conversation(self, db: Session, conversation_data: DirectConversationCreate, user_id: str) -> Dict[str, Any]:
-        """Create a direct conversation between two users"""
+        """
+        Create a new direct conversation between two users.
+        
+        Args:
+            db: Database session
+            conversation_data: Conversation data
+            user_id: ID of the creating user
+            
+        Returns:
+            Newly created conversation data
+            
+        Raises:
+            HTTPException: If conversation creation fails
+        """
         try:
-            # Ensure we have participant IDs (should be at least one other user)
-            if not conversation_data.participant_ids or len(conversation_data.participant_ids) == 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="At least one participant must be specified"
-                )
+            # Verify recipient exists
+            recipient_id = conversation_data.recipient_id
+            # Ensure we're not blocking each other
+            await self._check_blocks(db, user_id, recipient_id)
             
-            # For a direct conversation, we should have exactly one other participant
-            if len(conversation_data.participant_ids) > 1:
-                raise HTTPException(
-                    status_code=400,
-                    detail="A direct conversation should have exactly one other participant"
-                )
-            
-            participant_id = conversation_data.participant_ids[0]
-            
-            # Check for user blocks (in both directions)
-            block_exists = (
-                db.query(UserBlockDB)
-                .filter(
-                    or_(
-                        and_(UserBlockDB.blocker_id == user_id, UserBlockDB.blocked_id == participant_id),
-                        and_(UserBlockDB.blocker_id == participant_id, UserBlockDB.blocked_id == user_id)
-                    )
-                )
-                .first()
-            ) is not None
-            
-            if block_exists:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Cannot create conversation with blocked user"
-                )
-            
-            # Check if conversation already exists between these users
-            existing_conversation = self._find_direct_conversation(db, user_id, participant_id)
-            
+            # Check if direct conversation already exists
+            existing_conversation = await self._find_direct_conversation(db, user_id, recipient_id)
             if existing_conversation:
-                logger.info(f"Returning existing conversation between {user_id} and {participant_id}")
-                return existing_conversation
+                print(f"Direct conversation already exists between {user_id} and {recipient_id}")
+                # Return existing conversation
+                return await self.get_conversation(db, existing_conversation.id, user_id)
             
-            # Generate a unique conversation ID
+            # All participants for a direct conversation
+            all_participants = [user_id, recipient_id]
+    
+            
+            # Create conversation
             conversation_id = str(uuid.uuid4())
-            logger.info(f"Creating new conversation with ID: {conversation_id}")
-            
-            # Create the new conversation
-            new_conversation = ConversationDB(
+            conversation = ConversationDB(
                 id=conversation_id,
-                title=None,  # Direct conversations typically don't have titles
                 conversation_type="direct",
-                created_by=user_id,
+                title=None,  # Direct conversations don't need titles
                 is_encrypted=conversation_data.is_encrypted,
-                created_at=datetime.now(),
-                updated_at=datetime.now()
+                created_by=user_id
             )
             
-            db.add(new_conversation)
+            db.add(conversation)
+
+          
             
-            # Add both participants
-            all_participants = [user_id, participant_id]
-            
-            for participant_user_id in all_participants:
-                settings = UserConversationSettingsDB(
-                    user_id=participant_user_id,
+            # Add all participants to the conversation with appropriate roles
+            for participant_id in all_participants:
+                is_creator = participant_id == user_id
+                user_settings = UserConversationSettingsDB(
+                    id=uuid.uuid4(),
+                    user_id=participant_id,
                     conversation_id=conversation_id,
-                    role="member"
+                    is_muted=False,
+                    is_pinned=False,
+                    is_archived=False,
+                    notification_level="all" if is_creator else "mentions",
+                    role="admin" if is_creator else "member"
                 )
-                db.add(settings)
+                db.add(user_settings)
             
-            # Commit to database
+            # If there's an initial message, add it
+            if conversation_data.initial_message:
+                message_id = str(uuid.uuid4())
+                message = MessageDB(
+                    id=message_id,
+                    conversation_id=conversation_id,
+                    sender_id=user_id,
+                    content=conversation_data.initial_message,
+                    message_type="text"
+                )
+                db.add(message)
+                
+                # Update conversation's last message timestamp
+                conversation.last_message_at = message.created_at
+            
             db.commit()
-            logger.info(f"Successfully created conversation {conversation_id} with participants {all_participants}")
+            
+            # Log the creation using standardized security approach
+            if self.security_handler:
+                self.security_handler.secure_log(
+                    "Direct conversation created",
+                    {
+                        "conversation_id": conversation_id,
+                        "participant_ids": all_participants,
+                        "is_encrypted": conversation_data.is_encrypted
+                    }
+                )
             
             # Return the created conversation
-            return await self.get_conversation(db, conversation_id, user_id)
+            conversation_result = await self.get_conversation(db, conversation_id, user_id)
+            print("===Conversation created:", conversation_result)
+            return conversation_result
         
         except HTTPException:
             db.rollback()
@@ -271,7 +285,7 @@ class ConversationService:
                 }
             )
         
-        conversation_dict = self._conversation_to_dict(new_conversation, user_id, include_group_settings=True)
+        conversation_dict = self._conversation_to_dict(new_conversation, user_id, include_group_settings=True, db=db)
         
         # Notify other participants about new conversation
         if self.notification_handler:
@@ -289,7 +303,7 @@ class ConversationService:
     
     async def get_conversation(self, db: Session, conversation_id: str, user_id: str) -> Dict[str, Any]:
         """
-        Retrieve a single conversation by ID.
+        Get a single conversation by ID.
         
         Args:
             db: Database session
@@ -302,11 +316,15 @@ class ConversationService:
         Raises:
             HTTPException: If conversation retrieval fails
         """
+        # Conversion de user_id en UUID pour les comparaisons avec les colonnes UUID
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        
         # Check if user has access to the conversation
         user_settings = db.query(UserConversationSettingsDB).filter(
             UserConversationSettingsDB.conversation_id == conversation_id,
-            UserConversationSettingsDB.user_id == user_id
+            UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
+        
         
         if not user_settings:
             if self.security_handler:
@@ -329,19 +347,20 @@ class ConversationService:
         last_message = db.query(MessageDB).filter(
             MessageDB.conversation_id == conversation_id
         ).order_by(MessageDB.created_at.desc()).first()
-        
+
         # Get count of unread messages
         unread_count = db.query(MessageDB).join(
             MessageReceiptDB, 
             and_(
-                MessageReceiptDB.message_id == MessageDB.id,
-                MessageReceiptDB.user_id == user_id,
+                str(MessageReceiptDB.message_id) == str(MessageDB.id),
+                str(MessageReceiptDB.user_id) == str(user_id_uuid),
                 MessageReceiptDB.status.in_(["sent", "delivered"])
             )
         ).filter(
-            MessageDB.conversation_id == conversation_id,
-            MessageDB.sender_id != user_id
+            str(MessageDB.conversation_id) == str(conversation_id),
+            str(MessageDB.sender_id) != str(user_id_uuid)
         ).count()
+        print("===Unread count:", unread_count)
         
         # Convert to dict and include additional data
         include_group_settings = conversation.conversation_type == "group"
@@ -350,33 +369,67 @@ class ConversationService:
             user_id, 
             include_group_settings=include_group_settings,
             last_message=last_message,
-            unread_count=unread_count
+            unread_count=unread_count,
+            user_settings=user_settings,
+            db=db
         )
+        
+        # Récupération manuelle des participants pour garantir le format correct
+        participants = []
+        participant_settings = db.query(UserConversationSettingsDB).filter(
+            UserConversationSettingsDB.conversation_id == conversation_id
+        ).all()
+        
+        for setting in participant_settings:
+            participant = {
+                "id": str(setting.id),
+                "user_id": str(setting.user_id),
+                "conversation_id": str(setting.conversation_id),
+                "is_muted": setting.is_muted,
+                "is_pinned": setting.is_pinned,
+                "is_archived": setting.is_archived,
+                "custom_name": setting.custom_name,
+                "theme_color": setting.theme_color,
+                "notification_level": setting.notification_level,
+                "role": setting.role,
+                "last_read_message_id": str(setting.last_read_message_id) if setting.last_read_message_id else None,
+                "created_at": setting.created_at,
+                "updated_at": setting.updated_at
+            }
+            participants.append(participant)
+        
+        conversation_dict["participants"] = participants
         
         return conversation_dict
         
     async def get_conversations(self, db: Session, user_id: str,
-                               limit: int = 50, offset: int = 0,
+                               filter_type: str = "all",
                                filter_archived: bool = False,
-                               filter_type: Optional[str] = None) -> Dict[str, Any]:
+                               search_query: Optional[str] = None,
+                               limit: Optional[int] = 20,
+                               offset: Optional[int] = 0) -> Dict[str, Any]:
         """
-        Retrieve all conversations for a user.
+        Get all conversations for a user, with filtering and pagination.
         
         Args:
             db: Database session
             user_id: ID of the requesting user
-            limit: Maximum number of conversations to retrieve
+            filter_type: Type of conversations to filter by (direct, group, all)
+            filter_archived: Whether to include archived conversations
+            search_query: Optional search term to filter conversations by title
+            limit: Maximum number of conversations to return
             offset: Offset for pagination
-            filter_archived: If True, only include archived conversations
-            filter_type: Optional type to filter by ('direct' or 'group')
             
         Returns:
-            Dictionary with conversations and pagination info
+            List of conversations
         """
-        # Get all conversation IDs for this user
-        query = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.user_id == user_id
-        )
+        # Conversion de user_id en UUID pour les comparaisons avec les colonnes UUID
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        
+        # Build the base query to get conversations the user is in
+        query = db.query(ConversationDB) \
+            .join(UserConversationSettingsDB) \
+            .filter(UserConversationSettingsDB.user_id == user_id_uuid)
         
         # Apply archive filter if needed
         if filter_archived:
@@ -386,26 +439,13 @@ class ConversationService:
         total_count = query.count()
         
         # Apply pagination
-        user_settings = query.order_by(
+        conversations = query.order_by(
             UserConversationSettingsDB.is_pinned.desc(),
             UserConversationSettingsDB.updated_at.desc()
         ).offset(offset).limit(limit).all()
         
         # Get all conversation IDs
-        conversation_ids = [settings.conversation_id for settings in user_settings]
-        
-        # Get all conversations
-        conversations_query = db.query(ConversationDB).filter(
-            ConversationDB.id.in_(conversation_ids)
-        )
-        
-        # Apply type filter if needed
-        if filter_type:
-            conversations_query = conversations_query.filter(
-                ConversationDB.conversation_type == filter_type
-            )
-            
-        conversations = conversations_query.all()
+        conversation_ids = [c.id for c in conversations]
         
         # Get all group chat settings for group conversations
         group_chat_ids = [c.id for c in conversations if c.conversation_type == "group"]
@@ -433,16 +473,19 @@ class ConversationService:
         unread_counts_map = {}
         
         for conversation_id in conversation_ids:
+            # Conversion de user_id en UUID pour la comparaison avec la colonne sender_id
+            user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            
             unread_count = db.query(MessageDB).join(
                 MessageReceiptDB, 
                 and_(
                     MessageReceiptDB.message_id == MessageDB.id,
-                    MessageReceiptDB.user_id == user_id,
+                    MessageReceiptDB.user_id == user_id_uuid,
                     MessageReceiptDB.status.in_(["sent", "delivered"])
                 )
             ).filter(
                 MessageDB.conversation_id == conversation_id,
-                MessageDB.sender_id != user_id
+                MessageDB.sender_id != user_id_uuid
             ).count()
             
             unread_counts_map[conversation_id] = unread_count
@@ -454,7 +497,10 @@ class ConversationService:
             conversation_id = conversation.id
             
             # Get user settings for this conversation
-            user_setting = next((s for s in user_settings if s.conversation_id == conversation_id), None)
+            user_setting = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation_id,
+                UserConversationSettingsDB.user_id == user_id_uuid
+            ).first()
             
             include_group_settings = conversation.conversation_type == "group"
             last_message = last_messages_map.get(conversation_id)
@@ -467,7 +513,8 @@ class ConversationService:
                 user_settings=user_setting,
                 last_message=last_message,
                 unread_count=unread_count,
-                group_settings=group_settings_map.get(conversation_id)
+                group_settings=group_settings_map.get(conversation_id),
+                db=db
             )
             
             conversation_dicts.append(conversation_dict)
@@ -617,7 +664,7 @@ class ConversationService:
         logger.info(f"Returning {len(chat_users)} users in response")
         return chat_users
     
-    def _find_direct_conversation(self, db: Session, user_id: str, other_user_id: str) -> Optional[ConversationDB]:
+    async def _find_direct_conversation(self, db: Session, user_id: str, other_user_id: str) -> Optional[ConversationDB]:
         """
         Find a direct conversation between two users if it exists.
         
@@ -629,9 +676,13 @@ class ConversationService:
         Returns:
             Conversation if found, None otherwise
         """
+        # Conversion des user_id en UUID pour les comparaisons avec les colonnes UUID
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        other_user_id_uuid = uuid.UUID(other_user_id) if isinstance(other_user_id, str) else other_user_id
+        
         # Get all conversation IDs that user_id participates in
         user_conversation_ids = db.query(UserConversationSettingsDB.conversation_id).filter(
-            UserConversationSettingsDB.user_id == user_id
+            UserConversationSettingsDB.user_id == user_id_uuid
         ).all()
         
         user_conversation_ids = [c[0] for c in user_conversation_ids]
@@ -641,7 +692,7 @@ class ConversationService:
         
         # Find conversations that both users participate in
         other_user_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.user_id == other_user_id,
+            UserConversationSettingsDB.user_id == other_user_id_uuid,
             UserConversationSettingsDB.conversation_id.in_(user_conversation_ids)
         ).all()
         
@@ -658,12 +709,59 @@ class ConversationService:
         
         return conversation
     
+    async def _check_blocks(self, db: Session, user_id: str, recipient_id: str) -> None:
+        """
+        Check if there are any blocks between the two users.
+        
+        Args:
+            db: Database session
+            user_id: First user ID
+            recipient_id: Second user ID
+            
+        Raises:
+            HTTPException: If users are blocking each other
+        """
+        if not recipient_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Un destinataire doit être spécifié"
+            )
+        
+        # Conversion des user_id en UUID pour les comparaisons avec les colonnes UUID
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        recipient_id_uuid = uuid.UUID(recipient_id) if isinstance(recipient_id, str) else recipient_id
+            
+        # Check for user blocks (in both directions)
+        block_exists = (
+            db.query(UserBlockDB)
+            .filter(
+                or_(
+                    and_(UserBlockDB.blocker_id == user_id_uuid, UserBlockDB.blocked_id == recipient_id_uuid),
+                    and_(UserBlockDB.blocker_id == recipient_id_uuid, UserBlockDB.blocked_id == user_id_uuid)
+                )
+            )
+            .first()
+        ) is not None
+        
+        if block_exists:
+            if self.security_handler:
+                self.security_handler.secure_log(
+                    "Conversation creation blocked due to user block",
+                    {"user_id": user_id, "recipient_id": recipient_id},
+                    "warning"
+                )
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot create conversation with blocked user"
+            )
+    
     def _conversation_to_dict(self, conversation: ConversationDB, user_id: str,
                              include_group_settings: bool = False,
                              user_settings: Optional[UserConversationSettingsDB] = None,
                              last_message: Optional[MessageDB] = None,
                              unread_count: int = 0,
-                             group_settings: Optional[GroupChatDB] = None) -> Dict[str, Any]:
+                             group_settings: Optional[GroupChatDB] = None,
+                             db: Optional[Session] = None) -> Dict[str, Any]:
         """
         Convert a conversation model to a dictionary with additional data.
         
@@ -675,18 +773,25 @@ class ConversationService:
             last_message: Optional last message in the conversation
             unread_count: Number of unread messages
             group_settings: Optional group chat settings
+            db: Optional database session for fetching participants
             
         Returns:
             Dictionary representation of the conversation
         """
+        # Helper function to convert UUID to string safely
+        def _safe_str(value):
+            if hasattr(value, 'hex'):  # UUID object has hex attribute
+                return str(value)
+            return value
+            
         # Get basic conversation data
         result = {
-            "id": conversation.id,
+            "id": _safe_str(conversation.id),
             "conversation_type": conversation.conversation_type,
             "title": conversation.title,
             "avatar_url": conversation.avatar_url,
             "is_encrypted": conversation.is_encrypted,
-            "created_by": conversation.created_by,
+            "created_by": _safe_str(conversation.created_by),
             "created_at": conversation.created_at,
             "updated_at": conversation.updated_at,
             "last_message_at": conversation.last_message_at,
@@ -713,7 +818,7 @@ class ConversationService:
                 "theme_color": user_settings.theme_color,
                 "notification_level": user_settings.notification_level,
                 "role": user_settings.role,
-                "last_read_message_id": user_settings.last_read_message_id
+                "last_read_message_id": _safe_str(user_settings.last_read_message_id)
             })
         
         # Add group settings if this is a group and we should include them
@@ -757,5 +862,32 @@ class ConversationService:
                 "is_deleted": last_message.is_deleted,
                 "created_at": last_message.created_at
             }
+        
+        # Récupérer et ajouter les participants
+        if db:
+            participant_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation.id
+            ).all()
+            
+            participants = []
+            for setting in participant_settings:
+                participant = {
+                    "id": _safe_str(setting.id),
+                    "user_id": _safe_str(setting.user_id),
+                    "conversation_id": _safe_str(setting.conversation_id),
+                    "is_muted": setting.is_muted,
+                    "is_pinned": setting.is_pinned,
+                    "is_archived": setting.is_archived,
+                    "custom_name": setting.custom_name,
+                    "theme_color": setting.theme_color,
+                    "notification_level": setting.notification_level,
+                    "role": setting.role,
+                    "last_read_message_id": _safe_str(setting.last_read_message_id),
+                    "created_at": setting.created_at,
+                    "updated_at": setting.updated_at
+                }
+                participants.append(participant)
+            
+            result["participants"] = participants
         
         return result

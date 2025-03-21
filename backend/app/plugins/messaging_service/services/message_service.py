@@ -7,6 +7,7 @@ including message creation, retrieval, update, and deletion.
 import logging
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+import uuid
 from sqlalchemy.orm import Session
 from fastapi import UploadFile, HTTPException
 
@@ -82,9 +83,10 @@ class MessageService:
             raise HTTPException(status_code=404, detail="Conversation not found")
         
         # Check if user is a member of the conversation
+        user_id_uuid = uuid.UUID(sender_id) if isinstance(sender_id, str) else sender_id
         user_settings = db.query(UserConversationSettingsDB).filter(
             UserConversationSettingsDB.conversation_id == conversation_id,
-            UserConversationSettingsDB.user_id == sender_id
+            UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
         
         if not user_settings:
@@ -232,9 +234,10 @@ class MessageService:
             raise HTTPException(status_code=404, detail="Message not found")
         
         # Check if user has access to the conversation
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         user_settings = db.query(UserConversationSettingsDB).filter(
             UserConversationSettingsDB.conversation_id == message.conversation_id,
-            UserConversationSettingsDB.user_id == user_id
+            UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
         
         if not user_settings:
@@ -289,9 +292,10 @@ class MessageService:
             HTTPException: If message retrieval fails
         """
         # Check if user has access to the conversation
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         user_settings = db.query(UserConversationSettingsDB).filter(
             UserConversationSettingsDB.conversation_id == conversation_id,
-            UserConversationSettingsDB.user_id == user_id
+            UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
         
         if not user_settings:
