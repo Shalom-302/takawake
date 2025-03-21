@@ -3,12 +3,13 @@ import axiosClient from './axios-client';
 import { 
   Message, 
   MessageStatusType, 
-  MessageCreate, 
+  // MessageCreate supprimé car non utilisé
   MessageUpdate,
   MessageSearchRequest,
   Conversation,
   ChatUser
 } from '../types/messaging';
+
 
 // API endpoints
 export const API_ROUTES = {
@@ -16,7 +17,8 @@ export const API_ROUTES = {
   CONVERSATION: (id: string) => `/messaging/conversations/${id}`,
   DIRECT_CONVERSATION: '/messaging/conversations/direct',
   GROUP_CONVERSATION: '/messaging/conversations/group',
-  MESSAGES: (conversationId: string) => `/messaging/conversations/${conversationId}/messages`,
+  MESSAGES: '/messaging/messages',
+  MESSAGES_BULK: '/messaging/messages/bulk',
   MESSAGE: (conversationId: string, messageId: string) => 
     `/messaging/conversations/${conversationId}/messages/${messageId}`,
   WEBSOCKET: (conversationId: string) => 
@@ -159,30 +161,36 @@ export async function getMessages(
   conversationId: string,
   params?: { limit?: number; before?: string }
 ): Promise<Message[]> {
-  const endpoint = `${API_ROUTES.CONVERSATIONS}/${conversationId}/messages`;
-  const queryParams = new URLSearchParams();
+  // Use the correct endpoint format for the backend
+  const requestBody = {
+    conversation_id: conversationId,
+    limit: params?.limit || 50,
+    before_message_id: params?.before || null
+  };
   
-  if (params?.limit) {
-    queryParams.append('limit', params.limit.toString());
-  }
+  console.log('Fetching messages with request:', requestBody);
   
-  if (params?.before) {
-    queryParams.append('before', params.before);
-  }
+  const response = await fetchAPI<Message[]>(API_ROUTES.MESSAGES_BULK, {
+    method: 'POST',
+    body: JSON.stringify(requestBody)
+  });
   
-  const queryString = queryParams.toString();
-  const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-  
-  const response = await fetchAPI<Message[]>(url);
   return response;
 }
 
 /**
  * Sends a new message
  */
-export async function sendMessage(messageData: MessageCreate): Promise<Message> {
-  const endpoint = `/messaging/conversations/${messageData.conversationId}/messages`;
-  const response = await fetchAPI<Message>(endpoint, {
+export async function sendMessage(conversationId: string, content: string): Promise<Message> {
+  const messageData = {
+    conversation_id: conversationId,
+    content: content,
+    message_type: "text"
+  };
+  
+  console.log('Sending message with data:', messageData);
+  
+  const response = await fetchAPI<Message>(API_ROUTES.MESSAGES, {
     method: 'POST',
     body: JSON.stringify(messageData),
   });

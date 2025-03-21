@@ -28,7 +28,7 @@ async def create_message(
     message_data: MessageCreate = Body(...),
     attachments: List[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Create a new message in a conversation.
@@ -39,7 +39,7 @@ async def create_message(
     - Message encryption if conversation is encrypted
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely create the message using the standardized approach
@@ -65,7 +65,7 @@ async def create_message(
 async def get_message(
     message_id: str,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Get a single message by ID.
@@ -76,7 +76,7 @@ async def get_message(
     - Secure decryption of message content
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely retrieve the message using the standardized approach
@@ -100,7 +100,7 @@ async def get_message(
 async def get_messages(
     request: BulkMessagesRequest,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Get multiple messages from a conversation.
@@ -112,7 +112,7 @@ async def get_messages(
     - Rate limiting and pagination to prevent abuse
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely retrieve messages using the standardized approach
@@ -147,7 +147,7 @@ async def update_message(
     message_id: str,
     update_data: MessageUpdate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Update a message (edit content or delete).
@@ -159,7 +159,7 @@ async def update_message(
     - Secure encryption of updated content
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # Securely update the message using the standardized approach
@@ -185,7 +185,7 @@ async def update_message(
 async def search_messages(
     search_request: MessageSearchRequest,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Search for messages with specific criteria.
@@ -197,7 +197,7 @@ async def search_messages(
     - Secure decryption of message content
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a search method in the message service
     # For now, we'll raise a not implemented error
@@ -220,7 +220,7 @@ async def search_messages(
 async def forward_message(
     forward_request: ForwardMessageRequest,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Forward a message to other conversations.
@@ -231,7 +231,7 @@ async def forward_message(
     - Secure handling of message content
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a forward method in the message service
     # For now, we'll raise a not implemented error
@@ -254,7 +254,7 @@ async def forward_message(
 async def update_message_status(
     status_request: MessageStatusUpdateRequest,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Update message delivery/read status.
@@ -265,7 +265,7 @@ async def update_message_status(
     - Validation of status values
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a status update method in the message service
     # For now, we'll raise a not implemented error
@@ -288,7 +288,7 @@ async def update_message_status(
 async def delete_messages_bulk(
     delete_request: BulkDeleteMessagesRequest,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Delete multiple messages at once.
@@ -299,7 +299,7 @@ async def delete_messages_bulk(
     - Rate limiting to prevent abuse
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     # This would require implementing a bulk delete method in the message service
     # For now, we'll raise a not implemented error
@@ -323,7 +323,7 @@ async def send_typing_notification(
     conversation_id: str,
     is_typing: bool = Query(...),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Send typing status notification to conversation participants.
@@ -334,7 +334,7 @@ async def send_typing_notification(
     - Rate limiting to prevent abuse
     """
     # Get user ID
-    user_id = current_user.get("id")
+    user_id = current_user.id
     
     try:
         # This requires integration with the notification handler

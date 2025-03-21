@@ -93,10 +93,10 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       
       // Vérifier que data est bien un tableau
       if (data) {
-        if (Array.isArray(data)) {
-          setConversations(data);
+        if (Array.isArray(data?.conversations)) {
+          setConversations(data?.conversations);
         } else {
-          console.error('API returned non-array conversations data:', data);
+          console.error('API returned non-array conversations data:', data?.conversations);
           // Initialiser avec un tableau vide en cas d'erreur
           setConversations([]);
         }
@@ -128,7 +128,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       setLoadingMessages(true);
       const data = await messagingAPI.getMessages(conversationId);
       if (data) {
-        setMessages(data);
+        setMessages(data?.messages || []);
         setHasMoreMessages(data.length >= 20); // Supposer qu'il y a plus si on a reçu le maximum
       }
     } catch (error) {

@@ -444,8 +444,10 @@ class ConversationService:
             UserConversationSettingsDB.updated_at.desc()
         ).offset(offset).limit(limit).all()
         
+        print("===Conversations:", conversations)
         # Get all conversation IDs
         conversation_ids = [c.id for c in conversations]
+        print("===Conversation IDs:", conversation_ids)
         
         # Get all group chat settings for group conversations
         group_chat_ids = [c.id for c in conversations if c.conversation_type == "group"]
@@ -458,6 +460,7 @@ class ConversationService:
             
             group_settings_map = {gs.conversation_id: gs for gs in group_settings}
         
+        print("===Group settings:", group_settings_map)
         # Get last messages for conversations
         last_messages_map = {}
         
@@ -468,7 +471,8 @@ class ConversationService:
             
             if last_message:
                 last_messages_map[conversation_id] = last_message
-                
+                print("===Last message:", last_message)
+        print("===Last messages map:", last_messages_map)
         # Get unread counts for conversations
         unread_counts_map = {}
         
@@ -479,13 +483,13 @@ class ConversationService:
             unread_count = db.query(MessageDB).join(
                 MessageReceiptDB, 
                 and_(
-                    MessageReceiptDB.message_id == MessageDB.id,
-                    MessageReceiptDB.user_id == user_id_uuid,
+                    str(MessageReceiptDB.message_id) == str(MessageDB.id),
+                    str(MessageReceiptDB.user_id) == str(user_id_uuid),
                     MessageReceiptDB.status.in_(["sent", "delivered"])
                 )
             ).filter(
-                MessageDB.conversation_id == conversation_id,
-                MessageDB.sender_id != user_id_uuid
+                str(MessageDB.conversation_id) == str(conversation_id),
+                str(MessageDB.sender_id) != str(user_id_uuid)
             ).count()
             
             unread_counts_map[conversation_id] = unread_count
@@ -498,8 +502,8 @@ class ConversationService:
             
             # Get user settings for this conversation
             user_setting = db.query(UserConversationSettingsDB).filter(
-                UserConversationSettingsDB.conversation_id == conversation_id,
-                UserConversationSettingsDB.user_id == user_id_uuid
+                str(UserConversationSettingsDB.conversation_id) == str(conversation_id),
+                str(UserConversationSettingsDB.user_id) == str(user_id_uuid)
             ).first()
             
             include_group_settings = conversation.conversation_type == "group"
@@ -541,11 +545,15 @@ class ConversationService:
                 }
             )
         
+        # S'assurer que size est toujours un entier, même si limit est None
+        # Utiliser une valeur par défaut de 20 si limit est None
+        page_size = limit if limit is not None else 20
+        
         return {
             "conversations": conversation_dicts,
             "total": total_count,
-            "page": offset // limit + 1 if limit else 1,
-            "size": limit
+            "page": offset // page_size + 1 if page_size else 1,
+            "size": page_size
         }
     
     async def get_blocked_users(self, db: Session, user_id: str) -> List[UserBlockDB]:
