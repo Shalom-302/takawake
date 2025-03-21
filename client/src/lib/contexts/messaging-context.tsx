@@ -121,18 +121,27 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, refreshConversations]);
 
   // Méthode pour charger les messages d'une conversation
-  const loadMessages = useCallback(async (conversationId: string) => {
-    if (!isAuthenticated || !conversationId) return;
+  const loadMessages = useCallback(async (conversationId: string): Promise<void> => {
+    if (!isAuthenticated) return;
     
     try {
       setLoadingMessages(true);
       const data = await messagingAPI.getMessages(conversationId);
       if (data) {
-        setMessages(data?.messages || []);
+        // Trier les messages par date
+        const sortedMessages = [...data].sort((a, b) => {
+          if (!a.createdAt) return 1; // Messages sans date à la fin
+          if (!b.createdAt) return -1;
+          
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
+        setMessages(sortedMessages || []);
         setHasMoreMessages(data.length >= 20); // Supposer qu'il y a plus si on a reçu le maximum
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des messages:', error);
+      console.error('Error loading messages:', error);
+      setError('Failed to load messages');
     } finally {
       setLoadingMessages(false);
     }
@@ -256,14 +265,14 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Envoyer via l'API REST
-      await messagingAPI.sendMessage(activeConversationId, content);
+      // Générer un ID temporaire pour le message
+      const tempId = `temp-${Date.now()}`;
       
       // Créer un objet message local qui correspond à l'interface Message
       const newMessage: Message = {
-        id: `temp-${Date.now()}`,
+        id: tempId,
         conversationId: activeConversationId,
-        senderId: 'current-user',
+        senderId: user?.id || '',
         messageType: MessageType.TEXT,
         content,
         isEncrypted: false,
@@ -275,21 +284,26 @@ function MessagingProvider({ children }: { children: ReactNode }) {
         status: MessageStatusType.SENT
       };
       
-      // Ajouter à l'état local
-      setMessages(prev => [...prev, newMessage]);
+      // Ajouter à l'état local - en préservant l'ordre chronologique
+      setMessages(prev => {
+        const updatedMessages = [...prev, newMessage];
+        return updatedMessages.sort((a, b) => {
+          if (!a.createdAt) return 1; 
+          if (!b.createdAt) return -1;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+      });
       
-      // Envoyer aussi via WebSocket pour une mise à jour en temps réel
-      if (wsClientRef.current?.isConnected()) {
-        wsClientRef.current.sendTextMessage(content);
-      }
+      // Envoyer via l'API REST
+      await messagingAPI.sendMessage(activeConversationId, content);
     } catch (error) {
-      console.error('Erreur lors de l\'envoi du message:', error);
+      console.error('Error sending message:', error);
       
-      // Créer un message d'erreur local
+      // Ajouter un message d'erreur
       const errorMessage: Message = {
         id: `temp-${Date.now()}`,
         conversationId: activeConversationId,
-        senderId: 'current-user',
+        senderId: user?.id || '',
         messageType: MessageType.TEXT,
         content,
         isEncrypted: false,
@@ -301,10 +315,17 @@ function MessagingProvider({ children }: { children: ReactNode }) {
         status: MessageStatusType.FAILED
       };
       
-      // Ajouter à l'état local
-      setMessages(prev => [...prev, errorMessage]);
+      // Ajouter à l'état local - en préservant l'ordre chronologique
+      setMessages(prev => {
+        const updatedMessages = [...prev, errorMessage];
+        return updatedMessages.sort((a, b) => {
+          if (!a.createdAt) return 1;
+          if (!b.createdAt) return -1;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+      });
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, user]);
 
   // Méthode pour charger plus de messages (pagination)
   const loadMoreMessages = useCallback(async (): Promise<void> => {
@@ -325,7 +346,14 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       if (olderMessages.length === 0) {
         setHasMoreMessages(false);
       } else {
-        setMessages(prev => [...prev, ...olderMessages]);
+        // Trier les messages par date
+        const sortedMessages = [...messages, ...olderMessages].sort((a, b) => {
+          if (!a.createdAt) return 1; 
+          if (!b.createdAt) return -1;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
+        setMessages(sortedMessages);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des messages:', error);

@@ -465,8 +465,11 @@ class ConversationService:
         last_messages_map = {}
         
         for conversation_id in conversation_ids:
+            # Conversion explicite en chaîne pour assurer la compatibilité
+            conversation_id_str = str(conversation_id)
+            
             last_message = db.query(MessageDB).filter(
-                MessageDB.conversation_id == conversation_id
+                MessageDB.conversation_id == conversation_id_str
             ).order_by(MessageDB.created_at.desc()).first()
             
             if last_message:
@@ -520,6 +523,20 @@ class ConversationService:
                 group_settings=group_settings_map.get(conversation_id),
                 db=db
             )
+            
+            # S'assurer que le last_message contient tous les champs requis par MessageResponse
+            if conversation_dict.get('last_message'):
+                last_msg = conversation_dict['last_message']
+                if 'updated_at' not in last_msg:
+                    last_msg['updated_at'] = last_msg.get('created_at')
+                if 'is_edited' not in last_msg:
+                    last_msg['is_edited'] = False
+                if 'is_forwarded' not in last_msg:
+                    last_msg['is_forwarded'] = False
+                if 'is_encrypted' not in last_msg:
+                    last_msg['is_encrypted'] = False
+                if 'conversation_id' not in last_msg:
+                    last_msg['conversation_id'] = str(conversation_id)
             
             conversation_dicts.append(conversation_dict)
         

@@ -29,7 +29,11 @@ export const API_ROUTES = {
  * Fonction générique pour interagir avec l'API
  */
 export async function fetchAPI<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
+  // Utiliser une URL par défaut appropriée si NEXT_PUBLIC_API_URL n'est pas défini
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || 
+                 (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:8000');
+  
+  console.log('Using API base URL:', baseURL);
   const url = baseURL + endpoint;
   
   // Create a standard headers object
@@ -182,6 +186,7 @@ export async function getMessages(
  * Sends a new message
  */
 export async function sendMessage(conversationId: string, content: string): Promise<Message> {
+  // Créer l'objet message
   const messageData = {
     conversation_id: conversationId,
     content: content,
@@ -190,6 +195,7 @@ export async function sendMessage(conversationId: string, content: string): Prom
   
   console.log('Sending message with data:', messageData);
   
+  // Utiliser fetchAPI avec JSON standard, adapté au nouveau format du backend
   const response = await fetchAPI<Message>(API_ROUTES.MESSAGES, {
     method: 'POST',
     body: JSON.stringify(messageData),

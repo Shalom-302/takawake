@@ -25,8 +25,7 @@ message_service = MessageService()
 
 @router.post("/messages", response_model=MessageResponse)
 async def create_message(
-    message_data: MessageCreate = Body(...),
-    attachments: List[UploadFile] = File(None),
+    message_data: Dict[str, Any] = Body(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -40,12 +39,72 @@ async def create_message(
     """
     # Get user ID
     user_id = current_user.id
+    logger.info(f"Creating message with user_id: {user_id}")
+    logger.info(f"Message data received: {message_data}")
+    
+    try:
+        # Convertir en objet MessageCreate
+        message_create = MessageCreate(**message_data)
+        
+        # Securely create the message using the standardized approach
+        message = await message_service.create_message(
+            db, message_create, user_id, None
+        )
+        logger.info(f"Message created successfully with ID: {message.get('id', 'unknown')}")
+        
+        # S'assurer que tous les champs requis par MessageResponse sont présents
+        if 'updated_at' not in message:
+            message['updated_at'] = message.get('created_at')
+        if 'is_edited' not in message:
+            message['is_edited'] = False
+        if 'is_forwarded' not in message:
+            message['is_forwarded'] = False
+        if 'is_encrypted' not in message:
+            message['is_encrypted'] = False
+        if 'conversation_id' not in message:
+            message['conversation_id'] = message_create.conversation_id
+            
+        return message
+    except HTTPException as e:
+        # Rethrow HTTP exceptions
+        raise e
+    except Exception as e:
+        # Securely log the error
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Error creating message",
+                {"user_id": user_id, "error": str(e)},
+                "error"
+            )
+        raise HTTPException(status_code=500, detail="Failed to create message")
+
+
+@router.post("/messages/with-attachment", response_model=MessageResponse)
+async def create_message_with_attachment(
+    message_data: MessageCreate = Body(...),
+    attachments: Optional[List[UploadFile]] = File(None),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Create a new message in a conversation with attachments.
+    
+    Security: 
+    - Authentication required
+    - Content validation for XSS and other attacks
+    - Message encryption if conversation is encrypted
+    """
+    # Get user ID
+    user_id = current_user.id
+    logger.info(f"Creating message with user_id: {user_id}")
+    logger.info(f"Message data received: {message_data.dict()}")
     
     try:
         # Securely create the message using the standardized approach
         message = await message_service.create_message(
             db, message_data, user_id, attachments
         )
+        logger.info(f"Message created successfully with ID: {message.get('id', 'unknown')}")
         return message
     except HTTPException as e:
         # Rethrow HTTP exceptions

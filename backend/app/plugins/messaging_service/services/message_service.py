@@ -45,7 +45,7 @@ class MessageService:
         logger.info("Message service initialized with security, file, and notification handlers")
     
     async def create_message(self, db: Session, message_data: MessageCreate, 
-                           sender_id: str, attachments: List[UploadFile] = None) -> Dict[str, Any]:
+                           sender_id: str, attachments: Optional[List[UploadFile]] = None) -> Dict[str, Any]:
         """
         Create a new message in a conversation.
         
@@ -75,8 +75,9 @@ class MessageService:
         
         # Verify the conversation exists and user has access
         conversation_id = message_data.conversation_id
+        conversation_id_str = str(conversation_id)  
         conversation = db.query(ConversationDB).filter(
-            ConversationDB.id == conversation_id
+            ConversationDB.id == conversation_id_str
         ).first()
         
         if not conversation:
@@ -85,7 +86,7 @@ class MessageService:
         # Check if user is a member of the conversation
         user_id_uuid = uuid.UUID(sender_id) if isinstance(sender_id, str) else sender_id
         user_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id,
+            UserConversationSettingsDB.conversation_id == conversation_id_str,
             UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
         
@@ -93,7 +94,7 @@ class MessageService:
             if self.security_handler:
                 self.security_handler.secure_log(
                     "Unauthorized message attempt",
-                    {"sender_id": sender_id, "conversation_id": conversation_id},
+                    {"sender_id": sender_id, "conversation_id": conversation_id_str},
                     "warning"
                 )
             raise HTTPException(status_code=403, detail="Not a member of this conversation")
@@ -104,7 +105,7 @@ class MessageService:
         
         # Encrypt content if needed using standardized security approach
         if is_encrypted and content and self.security_handler:
-            encrypted_content = self.security_handler.encrypt_message(content, conversation_id)
+            encrypted_content = self.security_handler.encrypt_message(content, conversation_id_str)
             content = encrypted_content
         
         # Process metadata using standardized security approach
@@ -116,7 +117,7 @@ class MessageService:
         
         # Create the message
         new_message = MessageDB(
-            conversation_id=conversation_id,
+            conversation_id=conversation_id_str,
             sender_id=sender_id,
             message_type=message_data.message_type,
             content=content,
@@ -134,7 +135,7 @@ class MessageService:
             for attachment in attachments:
                 try:
                     attachment_info = await self.file_handler.save_attachment(
-                        attachment, sender_id, conversation_id
+                        attachment, sender_id, conversation_id_str
                     )
                     
                     # Create attachment record
@@ -163,7 +164,7 @@ class MessageService:
         
         # Create delivery receipts for all participants
         participant_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id
+            UserConversationSettingsDB.conversation_id == conversation_id_str
         ).all()
         
         recipient_ids = []
@@ -203,7 +204,7 @@ class MessageService:
                 "Message created",
                 {
                     "sender_id": sender_id,
-                    "conversation_id": conversation_id,
+                    "conversation_id": conversation_id_str,
                     "message_id": new_message.id,
                     "message_type": message_data.message_type,
                     "has_attachments": len(message_attachments) > 0
@@ -251,17 +252,18 @@ class MessageService:
         
         # Decrypt the message content if needed using standardized security approach
         message_dict = self._message_to_dict(message, user_id=user_id, include_attachments=True)
-        
+        print("==message_dict==1", message_dict)
+       
         # Update message receipt status if necessary
         receipt = db.query(MessageReceiptDB).filter(
             MessageReceiptDB.message_id == message_id,
             MessageReceiptDB.user_id == user_id
         ).first()
-        
+        print("==receipt==", receipt)
         # If message was delivered but not read, mark as read
         if receipt and receipt.status in ["sent", "delivered"]:
             receipt.status = "read"
-            receipt.updated_at = datetime.utcnow()
+            receipt.updated_at = datetime.now(datetime.timezone.utc)
             db.commit()
             
             # Notify sender about read status using standardized security approach
@@ -269,7 +271,7 @@ class MessageService:
                 await self.notification_handler.notify_message_status(
                     message_id, message.conversation_id, user_id, "read"
                 )
-        
+        print("==message_dict==", message_dict)
         return message_dict
     
     async def get_conversation_messages(self, db: Session, conversation_id: str, 
@@ -293,8 +295,13 @@ class MessageService:
         """
         # Check if user has access to the conversation
         user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+      
+        
+        # Convertir conversation_id en chaîne si ce n'est pas déjà le cas
+        conversation_id_str = str(conversation_id)
+        
         user_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id,
+            UserConversationSettingsDB.conversation_id == conversation_id_str,
             UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
         
@@ -308,7 +315,7 @@ class MessageService:
             raise HTTPException(status_code=403, detail="Not authorized to view this conversation")
         
         # Build the query
-        query = db.query(MessageDB).filter(MessageDB.conversation_id == conversation_id)
+        query = db.query(MessageDB).filter(MessageDB.conversation_id == conversation_id_str)
         
         # Apply pagination if before_message_id is specified
         if before_message_id:
@@ -320,31 +327,116 @@ class MessageService:
         # Order by created_at (newest first) and limit
         messages = query.order_by(MessageDB.created_at.desc()).limit(limit).all()
         
+        print("==messages", messages)
         # Convert to dict and decrypt if needed
         message_dicts = []
         for message in messages:
+            print("==message", message.id)
             message_dict = self._message_to_dict(message, user_id=user_id, include_attachments=True)
             message_dicts.append(message_dict)
             
+            message_id_str = str(message.id)
+            
             # Update message receipt status if necessary
             receipt = db.query(MessageReceiptDB).filter(
-                MessageReceiptDB.message_id == message.id,
+                MessageReceiptDB.message_id == message_id_str,
                 MessageReceiptDB.user_id == user_id
             ).first()
             
             # If message was delivered but not read, mark as read
             if receipt and receipt.status in ["sent", "delivered"]:
                 receipt.status = "read"
-                receipt.updated_at = datetime.utcnow()
+                receipt.updated_at = datetime.now(datetime.timezone.utc)
+        
         
         # Commit receipt updates if any
         db.commit()
         
         # If any messages were marked as read, send a batch notification
         # In a real app, this would be optimized to send a single notification for all messages
-        
+        print("==message_dicts", message_dicts)
         return message_dicts
     
+    def _message_to_dict(self, message, user_id=None, include_attachments=False):
+        """
+        Convertit un objet message de la base de données en dictionnaire.
+        
+        Args:
+            message: Objet MessageDB à convertir
+            user_id: ID de l'utilisateur demandant le message (pour le décryptage si nécessaire)
+            include_attachments: Si True, inclut les pièces jointes dans la réponse
+            
+        Returns:
+            Dict contenant les données du message
+        """
+        if not message:
+            return None
+            
+        # Convertir l'objet en dictionnaire
+        message_dict = {
+            "id": str(message.id),
+            "sender_id": str(message.sender_id),
+            "conversation_id": str(message.conversation_id),
+            "message_type": message.message_type,
+            "content": message.content,
+            "is_deleted": message.is_deleted,
+            "is_edited": message.is_edited if hasattr(message, 'is_edited') else False,
+            "is_forwarded": message.is_forwarded if hasattr(message, 'is_forwarded') else False,
+            "is_encrypted": message.is_encrypted if hasattr(message, 'is_encrypted') else False,
+            "created_at": message.created_at,
+            "updated_at": message.updated_at if hasattr(message, 'updated_at') else message.created_at,
+            "reply_to_message_id": message.reply_to_message_id
+        }
+        
+        # Si le message est chiffré et qu'un ID utilisateur est fourni, tenter de déchiffrer
+        if message.is_encrypted and message.content and user_id and self.security_handler:
+            try:
+                print(f"==Attempting to decrypt message {message.id}==")
+                print(f"==Content type: {type(message.content)}, length: {len(message.content) if message.content else 0}")
+                print(f"==Conversation ID: {str(message.conversation_id)}")
+                print(f"==User ID: {str(user_id)}")
+                
+                # Utiliser directement le contenu pour le développement si le déchiffrement échoue
+                # Dans un environnement de production, vous devriez retirer cette ligne
+                message_dict["content"] = message.content
+                
+                # Tentative de déchiffrement
+                decrypted_content = self.security_handler.decrypt_message(
+                    message.content, 
+                    str(message.conversation_id), 
+                    str(user_id)
+                )
+                message_dict["content"] = decrypted_content
+                print(f"==Successfully decrypted message: {decrypted_content[:30]}...")
+            except Exception as e:
+                print(f"==Decryption error: {str(e)}")
+                logger.error(f"Failed to decrypt message {message.id}: {str(e)}")
+                # Pour le développement, retourner le contenu brut si le déchiffrement échoue
+                if not message_dict.get("content"):
+                    message_dict["content"] = f"[Contenu chiffré non déchiffrable]"
+        
+        # Inclure les pièces jointes si demandé
+        if include_attachments and hasattr(message, 'attachments'):
+            attachments = []
+            for attachment in message.attachments:
+                attachment_dict = {
+                    "id": str(attachment.id),
+                    "file_name": attachment.file_name,
+                    "file_type": attachment.file_type,
+                    "file_size": attachment.file_size,
+                    "file_path": attachment.file_path,
+                    "is_image": attachment.is_image,
+                }
+                
+                if attachment.thumbnail_path:
+                    attachment_dict["thumbnail_path"] = attachment.thumbnail_path
+                    
+                attachments.append(attachment_dict)
+                
+            message_dict["attachments"] = attachments
+        
+        return message_dict
+        
     async def update_message(self, db: Session, message_id: str, user_id: str, 
                            update_data: MessageUpdate) -> Dict[str, Any]:
         """
