@@ -225,6 +225,7 @@ class ConversationService:
             encryption_key = self.security_handler.generate_conversation_key(conversation_id)
             self.security_handler.store_conversation_key(conversation_id, encryption_key)
         
+        print("===Conversation data:", conversation_data)
         # Create conversation record
         new_conversation = ConversationDB(
             id=conversation_id,
@@ -233,7 +234,7 @@ class ConversationService:
             avatar_url=conversation_data.avatar_url,
             created_by=user_id,
             is_encrypted=conversation_data.is_encrypted,
-            conversation_metadata=conversation_data.metadata
+            conversation_metadata=conversation_data.conversation_metadata or {}
         )
         
         db.add(new_conversation)
@@ -269,6 +270,11 @@ class ConversationService:
         db.commit()
         db.refresh(new_conversation)
         
+        # Retrieve the group settings for the response
+        group_settings = db.query(GroupChatDB).filter(
+            GroupChatDB.conversation_id == conversation_id
+        ).first()
+        
         # Register the conversation with the WebSocket manager
         if self.websocket_manager:
             self.websocket_manager.register_conversation(conversation_id, participant_ids)
@@ -285,7 +291,13 @@ class ConversationService:
                 }
             )
         
-        conversation_dict = self._conversation_to_dict(new_conversation, user_id, include_group_settings=True, db=db)
+        conversation_dict = self._conversation_to_dict(
+            new_conversation, 
+            user_id, 
+            include_group_settings=True, 
+            group_settings=group_settings, 
+            db=db
+        )
         
         # Notify other participants about new conversation
         if self.notification_handler:

@@ -4,6 +4,19 @@ import Image from 'next/image';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { useSearchChatUsers } from '@/lib/services/messaging-service';
 import { Button } from '../ui/button';
+import { ConversationType } from '@/lib/types/messaging';
+
+// Interface pour les erreurs API
+interface ApiError {
+  response?: {
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+    status?: number;
+  };
+  message?: string;
+}
 
 // Local interface to represent users
 interface User {
@@ -16,7 +29,7 @@ interface User {
 
 export default function NewConversation() {
   const router = useRouter();
-  const { createConversation } = useMessaging();
+  const { createConversation, conversations } = useMessaging();
   const [searchQuery, setSearchQuery] = useState('');
   const { users, isLoading: loadingUsers, error: searchError, setQuery } = useSearchChatUsers();
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
@@ -41,6 +54,27 @@ export default function NewConversation() {
 
   // Map ChatUser users to User
   console.log("users", users);
+
+  // Fonction pour valider le nom du groupe
+  const validateGroupName = (name: string): boolean => {
+    // Supprimer les espaces en début et fin
+    const trimmedName = name.trim();
+    
+    // Vérifier la longueur
+    if (trimmedName.length < 3 || trimmedName.length > 50) {
+      setError('Group name must be between 3 and 50 characters');
+      return false;
+    }
+    
+    // Vérifier les caractères spéciaux non autorisés
+    const forbiddenChars = /[<>%$]/;
+    if (forbiddenChars.test(trimmedName)) {
+      setError('Group name cannot contain special characters: < > % $');
+      return false;
+    }
+    
+    return true;
+  };
 
   // Handle search query changes
   const handleSearchChange = (query: string) => {
@@ -76,6 +110,37 @@ export default function NewConversation() {
       return;
     }
     
+    // Vérifications supplémentaires pour les conversations de groupe
+    if (isCreatingGroup) {
+      // Valider le nom du groupe
+      if (!validateGroupName(groupName)) {
+        return;
+      }
+      
+      // Vérifier le nombre minimum de participants pour un groupe (au moins 2)
+      if (selectedUsers.length < 2) {
+        setError('A group chat requires at least 2 participants');
+        return;
+      }
+    }
+    
+    // Si c'est une conversation directe (non groupe), vérifier si elle existe déjà
+    if (!isCreatingGroup && selectedUsers.length === 1) {
+      const selectedUserId = selectedUsers[0].id;
+      
+      // Rechercher parmi les conversations existantes
+      const existingConversation = conversations.find(conv => 
+        conv.conversation_type === ConversationType.DIRECT && 
+        conv.participants.some(p => p.user_id === selectedUserId)
+      );
+      
+      if (existingConversation) {
+        // Rediriger vers la conversation existante
+        router.push(`/messages/${existingConversation.id}`);
+        return;
+      }
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -86,11 +151,41 @@ export default function NewConversation() {
         isGroup: isCreatingGroup
       });
       
+      // Vérifier si la conversation a été créée avec succès
+      if (!newConversation || !newConversation.id) {
+        throw new Error('Failed to create conversation: Invalid response from server');
+      }
+      
       // Navigate to the new conversation
       router.push(`/messages/${newConversation.id}`);
-    } catch (err) {
-      setError('Failed to create conversation. Please try again.');
-      console.error('Error creating conversation:', err);
+    } catch (err: unknown) {
+      // Gestion détaillée des erreurs selon leur type
+      let errorMessage = 'Failed to create conversation. Please try again.';
+      
+      const error = err as ApiError;
+      
+      if (typeof error === 'object' && error !== null) {
+        // Extraire le message d'erreur du serveur si disponible
+        if (error.response?.data?.detail) {
+          errorMessage = `Server error: ${error.response.data.detail}`;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        // Erreurs spécifiques pour les conversations de groupe
+        if (isCreatingGroup) {
+          if (errorMessage.includes('already exists')) {
+            errorMessage = 'A group with this name already exists';
+          } else if (errorMessage.includes('limit exceeded')) {
+            errorMessage = 'You have reached the maximum number of groups';
+          } else if (errorMessage.includes('permission')) {
+            errorMessage = 'You do not have permission to add one or more participants';
+          }
+        }
+      }
+      
+      setError(errorMessage);
+      console.error('Error creating conversation:', error);
     } finally {
       setIsLoading(false);
     }
@@ -119,13 +214,13 @@ export default function NewConversation() {
             />
           </svg>
         </button>
-        <h2 className="text-xl font-semibold">New Conversation</h2>
+        <h2 className="text-xl font-semibold">New conversation</h2>
       </div>
       
       <div className="p-4">
-        <div className="flex items-center mb-4">
+        <div className="flex items-center mb-4 text-[14px]">
           <button
-            className={`px-4 py-2 rounded-l-lg ${
+            className={`px-4 py-2 rounded-l-lg hover:cursor-pointer ${
               !isCreatingGroup
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700'
@@ -135,7 +230,7 @@ export default function NewConversation() {
             Direct Message
           </button>
           <button
-            className={`px-4 py-2 rounded-r-lg ${
+            className={`px-4 py-2 rounded-r-lg hover:cursor-pointer ${
               isCreatingGroup
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700'
@@ -220,7 +315,7 @@ export default function NewConversation() {
           {loadingUsers ? (
             <div className="py-6 flex justify-center items-center">
               <svg
-                className="animate-spin h-6 w-6 text-blue-500"
+                className="animate-spin h-6 w-6 text-gray-500"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -254,7 +349,7 @@ export default function NewConversation() {
                 <li key={user.id}>
                   <button
                     className={`w-full p-3 flex items-center hover:bg-gray-50 ${
-                      selectedUsers.some(u => u.id === user.id) ? 'bg-blue-50' : ''
+                      selectedUsers.some(u => u.id === user.id) ? 'bg-gray-100' : ''
                     }`}
                     onClick={() => toggleUserSelection(user)}
                   >
@@ -285,7 +380,7 @@ export default function NewConversation() {
                         type="checkbox"
                         checked={selectedUsers.some(u => u.id === user.id)}
                         onChange={() => {}}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                       />
                     </div>
                   </button>
@@ -296,12 +391,29 @@ export default function NewConversation() {
         </div>
         
         {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-800 rounded-lg">
-            {error}
+          <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-lg flex items-start">
+            <svg className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 100-2 1 1 0 000 2zm0 0v-5" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h3 className="font-medium">Error</h3>
+              <p>{error}</p>
+              {isCreatingGroup && error.includes('failed') && (
+                <div className="mt-2 text-sm">
+                  <p>Suggestions:</p>
+                  <ul className="list-disc list-inside ml-2 mt-1">
+                    <li>Ensure all selected users exist and are active</li>
+                    <li>Check if you have permissions to add these users</li>
+                    <li>Try with a different group name</li>
+                    <li>Refresh the page and try again</li>
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         )}
         
-        <div className="mt-auto p-4 border-t">
+        <div className="mt-auto p-4 ">
           <Button
             className={`w-full py-2 rounded-lg ${
               selectedUsers.length > 0 && (!isCreatingGroup || (isCreatingGroup && groupName.trim()))
@@ -324,6 +436,16 @@ export default function NewConversation() {
               `Create ${isCreatingGroup ? 'Group' : 'Conversation'}`
             )}
           </Button>
+          
+          {error && (
+            <Button
+              variant="outline"
+              className="w-full mt-2 border-gray-300"
+              onClick={() => setError(null)}
+            >
+              Clear Error & Try Again
+            </Button>
+          )}
         </div>
       </div>
     </div>

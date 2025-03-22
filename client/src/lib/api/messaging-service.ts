@@ -121,7 +121,8 @@ export async function createConversation(data: {
       const groupData = {
         participant_ids: data.participantIds,
         title: data.title || '',
-        description: ''
+        description: '',
+        conversation_type: 'group'
       };
       
       console.log('Sending group conversation data:', groupData);
@@ -140,7 +141,8 @@ export async function createConversation(data: {
       // Utiliser la structure correcte attendue par le backend (recipient_id au lieu de participant_ids)
       const directData = {
         recipient_id: data.participantIds[0],
-        initial_message: data.title // Optional, used as first message if specified
+        initial_message: data.title, // Optional, used as first message if specified
+        conversation_type: 'direct'
       };
       
       console.log('Sending direct conversation data:', directData);
