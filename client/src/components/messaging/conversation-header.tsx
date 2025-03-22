@@ -4,7 +4,8 @@ import Image from 'next/image';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { ConversationType, ChatUser } from '@/lib/types/messaging';
 import { ConversationAvatar } from './conversation-avatar';
-import { deleteConversation, searchUsers, addConversationMember, removeConversationMember } from '@/lib/api/messaging-service';
+import { deleteConversation, addConversationMember, removeConversationMember } from '@/lib/api/messaging-service';
+import { useSearchChatUsers } from '@/lib/services/messaging-service';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,8 +34,11 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const { users: allUsers, isLoading: isSearching, setQuery } = useSearchChatUsers();
+  // Filtrer les utilisateurs qui sont déjà membres du groupe
+  const filteredUsers = activeConversation 
+    ? allUsers.filter(user => !activeConversation.participants.some(p => p.user_id === user.id))
+    : [];
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
   const [isAddingMember, setIsAddingMember] = useState(false);
   // État pour le dialogue de confirmation de quitter le groupe
@@ -96,32 +100,10 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     if (!searchQuery.trim()) return;
     
     try {
-      setIsSearching(true);
-      setSearchResults([]); // Réinitialiser les résultats précédents
-      console.log('Searching for users with query:', searchQuery); 
-      const results = await searchUsers(searchQuery);
-      console.log('Search results:', results);
-      
-      // Filter out users who are already members
-      const existingMemberIds = activeConversation?.participants.map(p => p.user_id) || [];
-      console.log('Existing member IDs:', existingMemberIds); 
-      const filteredResults = results.filter(user => !existingMemberIds.includes(user.id));
-      console.log('Filtered results:', filteredResults);
-      
-      setSearchResults(filteredResults);
-      
-      if (filteredResults.length === 0) {
-        if (results.length > 0) {
-          toast.info('All matching users are already in the group');
-        } else {
-          toast.info('No users found with this search term');
-        }
-      }
+      setQuery(searchQuery);
     } catch (error) {
       console.error('Error searching users:', error);
       toast.error('Error searching users');
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -145,7 +127,6 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
       setIsAddingMember(false);
       setSelectedUser(null);
       setSearchQuery('');
-      setSearchResults([]);
     }
   };
 
@@ -153,7 +134,6 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     setShowAddMember(false);
     setSelectedUser(null);
     setSearchQuery('');
-    setSearchResults([]);
   };
 
   const handleLeaveGroup = () => {
@@ -185,6 +165,28 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     } catch (error) {
       console.error('Error removing member:', error);
       toast.error('Failed to remove member from group');
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!activeConversation) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteConversation(activeConversation.id);
+      toast.success('Conversation deleted successfully');
+      setIsDeleteDialogOpen(false);
+      refreshConversations();
+      router.push('/messages');
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast.error('Failed to delete conversation');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -320,10 +322,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
               <button
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 role="menuitem"
-                onClick={() => {
-                  setShowMenu(false);
-                  setIsDeleteDialogOpen(true);
-                }}
+                onClick={handleDeleteClick}
               >
                 Delete conversation
               </button>
@@ -350,7 +349,6 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={isDeleting}
             >
               Cancel
             </Button>
@@ -359,7 +357,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
               onClick={handleDeleteConversation}
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -504,9 +502,9 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
           
           {isSearching ? (
             <div className="text-center py-4">Searching...</div>
-          ) : searchResults.length > 0 ? (
+          ) : filteredUsers.length > 0 ? (
             <ScrollArea className="h-[200px] border rounded-md p-2">
-              {searchResults.map((user) => (
+              {filteredUsers.map((user) => (
                 <div 
                   key={user.id}
                   className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${selectedUser?.id === user.id ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
@@ -563,56 +561,5 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     );
 
     return currentUserSettings?.role === 'admin';
-  }
-
-  // Handler function for deleting conversation
-  async function handleDeleteConversation() {
-    if (!activeConversation) return;
-
-    try {
-      setIsDeleting(true);
-
-      const result = await deleteConversation(activeConversation.id);
-
-      // Notification de succès (nous n'utilisons pas toast car il n'est pas disponible)
-      console.log("Success:", result.message);
-      
-      // Afficher un message temporaire (alternative à toast)
-      const notification = document.createElement('div');
-      notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-      notification.textContent = result.message;
-      document.body.appendChild(notification);
-      
-      // Le faire disparaître après 3 secondes
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
-
-      // Close dialog and redirect to messages
-      setIsDeleteDialogOpen(false);
-
-      // Refresh conversation list
-      if (refreshConversations) {
-        refreshConversations();
-      }
-
-      // Redirect to messages page
-      router.push('/messages');
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
-      
-      // Notification d'erreur (alternative à toast)
-      const notification = document.createElement('div');
-      notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-      notification.textContent = "Failed to delete conversation. Please try again.";
-      document.body.appendChild(notification);
-      
-      // Le faire disparaître après 3 secondes
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
-    } finally {
-      setIsDeleting(false);
-    }
   }
 }

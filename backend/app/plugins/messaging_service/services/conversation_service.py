@@ -609,7 +609,7 @@ class ConversationService:
         Returns:
             List of blocked user records
         """
-        blocks = db.query(UserBlockDB).filter(UserBlockDB.user_id == user_id).all()
+        blocks = db.query(UserBlockDB).filter(UserBlockDB.blocker_id == user_id).all()
         
         result = []
         for block in blocks:
@@ -617,11 +617,11 @@ class ConversationService:
             if blocked_user:
                 result.append({
                     "id": str(block.id),
-                    "user_id": str(block.user_id),
+                    "user_id": str(block.blocker_id),
                     "blocked_id": str(block.blocked_id),
                     "reason": block.reason,
                     "created_at": block.created_at,
-                    "updated_at": block.updated_at,
+                    "updated_at": block.updated_at if hasattr(block, 'updated_at') else None,
                     "blocked_user": {
                         "id": str(blocked_user.id),
                         "username": blocked_user.username,
