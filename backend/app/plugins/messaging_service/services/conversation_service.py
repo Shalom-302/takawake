@@ -724,16 +724,19 @@ class ConversationService:
         user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         conversation_id_uuid = uuid.UUID(conversation_id) if isinstance(conversation_id, str) else conversation_id
         
+        print("===Deleting conversation:", conversation_id_uuid)
         # Check if conversation exists and if user is a participant
-        conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id_uuid).first()
+        conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id).first()
+        print("===Conversation found:", conversation)
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
         
         # Check if user is a participant
         user_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+            UserConversationSettingsDB.conversation_id == conversation_id,
             UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
+        print("===User settings found:", user_settings)
         
         if not user_settings:
             raise HTTPException(status_code=403, detail="You are not a participant in this conversation")
@@ -746,16 +749,18 @@ class ConversationService:
             # Mark as deleted for this user
             user_settings.is_deleted = True
             db.add(user_settings)
-            
+            print("===User settings marked as deleted")
             # Check if both users have deleted the conversation
             other_user_settings = db.query(UserConversationSettingsDB).filter(
-                UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+                UserConversationSettingsDB.conversation_id == conversation_id,
                 UserConversationSettingsDB.user_id != user_id_uuid
             ).first()
-            
+            print("===Other user settings found:", other_user_settings.is_deleted)
             if other_user_settings and other_user_settings.is_deleted:
+                print("===Both users have deleted the conversation")
                 # Both users have deleted it, so remove conversation and all related data
                 await self._hard_delete_conversation(db, conversation_id)
+                print("===Conversation permanently deleted")
                 message = "Conversation permanently deleted"
             else:
                 # Only this user deleted it
@@ -768,9 +773,12 @@ class ConversationService:
             
             if is_admin:
                 # Admin can delete the entire conversation
+                print("===Deleting group conversation for all participants")
                 await self._hard_delete_conversation(db, conversation_id)
+                print("===Conversation deleted for all participants")
                 message = "Group conversation deleted for all participants"
             else:
+                print("===Non-admin just leaves the conversation")
                 # Non-admin just leaves the conversation
                 db.delete(user_settings)
                 db.commit()
@@ -780,11 +788,12 @@ class ConversationService:
             if self.notification_handler:
                 # Get remaining participants
                 participants = db.query(UserConversationSettingsDB).filter(
-                    UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+                    UserConversationSettingsDB.conversation_id == conversation_id,
                     UserConversationSettingsDB.user_id != user_id_uuid
                 ).all()
                 
                 recipient_ids = [str(p.user_id) for p in participants]
+                print("===Recipient IDs:", recipient_ids)
                 
                 if recipient_ids:
                     event_type = "conversation_deleted" if is_admin else "member_left"
@@ -821,18 +830,19 @@ class ConversationService:
         conversation_id_uuid = uuid.UUID(conversation_id) if isinstance(conversation_id, str) else conversation_id
         
         # Delete all messages first (cascade delete for message reactions, etc.)
-        db.query(MessageDB).filter(MessageDB.conversation_id == conversation_id_uuid).delete()
-        
+        db.query(MessageDB).filter(MessageDB.conversation_id == conversation_id).delete()
+        print("===Messages deleted")
         # Delete user conversation settings
         db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id_uuid
+            UserConversationSettingsDB.conversation_id == conversation_id
         ).delete()
-        
+        print("===User conversation settings deleted")
         # Delete group settings if it's a group conversation
-        db.query(GroupChatDB).filter(GroupChatDB.conversation_id == conversation_id_uuid).delete()
-        
+        db.query(GroupChatDB).filter(GroupChatDB.conversation_id == conversation_id).delete()
+        print("===Group settings deleted")
         # Finally, delete the conversation itself
-        db.query(ConversationDB).filter(ConversationDB.id == conversation_id_uuid).delete()
+        db.query(ConversationDB).filter(ConversationDB.id == conversation_id).delete()
+        print("===Conversation deleted")
         
         # Commit the changes
         db.commit()
