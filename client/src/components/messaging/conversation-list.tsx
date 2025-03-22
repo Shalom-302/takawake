@@ -7,29 +7,39 @@ import { useMessaging } from '@/lib/contexts/messaging-context';
 import { ConversationType, Conversation } from '@/lib/types/messaging';
 import { Button } from '../ui/button';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { ConversationAvatar } from './conversation-avatar';
 
 // Function to format date
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return '';
+  
   const date = new Date(dateString);
   const now = new Date();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   
+  // Si c'est aujourd'hui, afficher l'heure seulement
   if (date.toDateString() === now.toDateString()) {
     return format(date, 'HH:mm', { locale: fr });
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return 'Hier';
-  } else if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
-    return format(date, 'EEEE', { locale: fr });
-  } else {
-    return format(date, 'dd/MM/yyyy', { locale: fr });
   }
+  
+  // Si c'est hier, afficher "Hier"
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'Hier';
+  }
+  
+  // Si c'est cette année, afficher le jour et le mois
+  if (date.getFullYear() === now.getFullYear()) {
+    return format(date, 'd MMM', { locale: fr });
+  }
+  
+  // Sinon, afficher la date complète
+  return format(date, 'd MMM yyyy', { locale: fr });
 };
 
 // Function to generate conversation title
 const getConversationTitle = (conversation: Conversation, currentUserId: string) => {
   if (conversation.title) return conversation.title;
-  console.log("conversation==", conversation);
   if (conversation.conversation_type === ConversationType.DIRECT) {
     // For direct conversations, display the other user's name
     const otherParticipant = conversation.participants.find(p => p.user_id !== currentUserId);
@@ -41,18 +51,6 @@ const getConversationTitle = (conversation: Conversation, currentUserId: string)
   }
   
   return 'Untitled conversation';
-};
-
-// Function to generate avatar URL
-const getAvatarUrl = (conversation: Conversation, currentUserId: string) => {
-  if (conversation.avatar_url) return conversation.avatar_url;
-  
-  if (conversation.conversation_type === ConversationType.DIRECT) {
-    const otherParticipant = conversation.participants.find(p => p.user_id !== currentUserId);
-    return otherParticipant?.profile_picture || '/images/default-avatar.png';
-  }
-  
-  return '/images/default-group.png';
 };
 
 export default function ConversationList() {
@@ -67,7 +65,7 @@ export default function ConversationList() {
   // Filter conversations based on search query
   console.log("conversations", conversations);
   const filteredConversations = conversations.filter(conversation => {
-    const title = getConversationTitle(conversation, currentUserId).toLowerCase();
+    const title = getConversationTitle(conversation, currentUserId!).toLowerCase();
     return title.includes(searchQuery.toLowerCase());
   });
   
@@ -85,8 +83,8 @@ export default function ConversationList() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Rechercher une conversation..."
-            className="w-full p-2 pl-8 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search for a conversation..."
+            className="w-full p-2 pl-8 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -120,7 +118,7 @@ export default function ConversationList() {
           <ul>
             {sortedConversations.map((conversation) => {
               const isActive = activeConversation?.id === conversation.id;
-              const hasUnread = (conversation.unreadCount || 0) > 0;
+              const hasUnread = (conversation.unread_count || 0) > 0;
               
               return (
                 <li key={conversation.id}>
@@ -128,13 +126,12 @@ export default function ConversationList() {
                     href={`/messages/${conversation.id}`}
                     className={`flex items-center p-3 hover:bg-gray-100 ${isActive ? 'bg-blue-50' : ''}`}
                   >
-                    <div className="relative">
-                      <img 
-                        src={getAvatarUrl(conversation, currentUserId)}
-                        alt="Avatar" 
-                        className="w-12 h-12 rounded-full object-cover"
+                    <div className="relative w-12 h-12 flex-shrink-0">
+                      <ConversationAvatar
+                        conversation={conversation}
+                        currentUserId={currentUserId}
                       />
-                      {conversation.conversationType === ConversationType.GROUP && (
+                      {conversation.conversation_type === ConversationType.GROUP && (
                         <div className="absolute bottom-0 right-0 bg-green-500 w-3 h-3 rounded-full border-2 border-white"></div>
                       )}
                     </div>
@@ -142,23 +139,23 @@ export default function ConversationList() {
                     <div className="ml-3 flex-1 overflow-hidden">
                       <div className="flex justify-between items-center">
                         <h3 className={`font-medium truncate ${hasUnread ? 'font-bold' : ''}`}>
-                          {getConversationTitle(conversation, currentUserId)}
+                          {getConversationTitle(conversation, currentUserId!)}
                         </h3>
-                        {conversation.lastMessageAt && (
+                        {conversation.last_message_at && (
                           <span className="text-xs text-gray-500">
-                            {formatDate(conversation.lastMessageAt)}
+                            {formatDate(conversation.last_message_at)}
                           </span>
                         )}
                       </div>
                       
                       <div className="flex justify-between items-center mt-1">
                         <p className={`text-sm text-gray-600 truncate ${hasUnread ? 'font-semibold text-gray-800' : ''}`}>
-                          {conversation.lastMessage?.content || "Pas de messages"}
+                          {conversation.last_message?.content || "Pas de messages"}
                         </p>
                         
                         {hasUnread && (
                           <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                            {conversation.unreadCount}
+                            {conversation.unread_count}
                           </span>
                         )}
                       </div>

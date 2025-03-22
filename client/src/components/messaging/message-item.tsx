@@ -10,9 +10,9 @@ interface MessageItemProps {
   showSenderAvatar: boolean;
   showReceiverAvatar: boolean;
   senderInfo?: {
-    profilePicture?: string;
-    firstName?: string;
-    lastName?: string;
+    profile_picture?: string;
+    first_name?: string;
+    last_name?: string;
   };
   onEdit?: (messageId: string, content: string) => void;
   onDelete?: (messageId: string) => void;
@@ -184,10 +184,10 @@ export default function MessageItem({
       {!isCurrentUser && showReceiverAvatar && (
         <div className="flex-shrink-0 mr-2">
           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-            {senderInfo?.profilePicture ? (
+            {senderInfo?.profile_picture ? (
               <div className="relative w-full h-full">
                 <Image 
-                  src={senderInfo.profilePicture} 
+                  src={senderInfo.profile_picture} 
                   alt="Avatar" 
                   fill
                   sizes="32px"
@@ -196,8 +196,8 @@ export default function MessageItem({
               </div>
             ) : (
               <div className="bg-gray-100 text-gray-500 w-full h-full flex items-center justify-center">
-                {senderInfo?.firstName ? (
-                  senderInfo.firstName.charAt(0).toUpperCase()
+                {senderInfo?.first_name ? (
+                  senderInfo.first_name.charAt(0).toUpperCase()
                 ) : (
                   <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
@@ -214,7 +214,7 @@ export default function MessageItem({
         {/* Sender name if not current user and showReceiverAvatar is true */}
         {!isCurrentUser && showReceiverAvatar && senderInfo && (
           <div className="text-xs text-gray-500 ml-1 mb-1">
-            {`${senderInfo.firstName || ''} ${senderInfo.lastName || ''}`}
+            {`${senderInfo.first_name || ''} ${senderInfo.last_name || ''}`}
           </div>
         )}
         

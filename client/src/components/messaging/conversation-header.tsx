@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { ConversationType } from '@/lib/types/messaging';
+import { ConversationAvatar } from './conversation-avatar';
 
 interface ConversationHeaderProps {
   currentUserId: string;
@@ -25,14 +26,14 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
   const getTitle = () => {
     if (activeConversation.title) return activeConversation.title;
     
-    if (activeConversation.conversationType === ConversationType.DIRECT) {
+    if (activeConversation.conversation_type === ConversationType.DIRECT) {
       const otherParticipant = activeConversation.participants.find(
-        p => p.userId !== currentUserId
+        p => p.user_id !== currentUserId
       );
       
       if (otherParticipant) {
-        return otherParticipant.firstName
-          ? `${otherParticipant.firstName} ${otherParticipant.lastName || ''}`
+        return otherParticipant.first_name
+          ? `${otherParticipant.first_name} ${otherParticipant.last_name || ''}`
           : otherParticipant.username || 'User';
       }
     }
@@ -40,24 +41,10 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     return 'Conversation';
   };
   
-  // Get avatar for conversation (for direct chats, show the other participant's avatar)
-  const getAvatar = () => {
-    if (activeConversation.avatarUrl) return activeConversation.avatarUrl;
-    
-    if (activeConversation.conversationType === ConversationType.DIRECT) {
-      const otherParticipant = activeConversation.participants.find(
-        p => p.userId !== currentUserId
-      );
-      
-      return otherParticipant?.profilePicture || '/images/default-avatar.png';
-    }
-    
-    return '/images/default-group.png';
-  };
-  
+
   // Get online status for direct chats
   const getOnlineStatus = () => {
-    if (activeConversation.conversationType !== ConversationType.DIRECT) {
+    if (activeConversation.conversation_type !== ConversationType.DIRECT) {
       return null;
     }
     
@@ -68,7 +55,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
   
   // Get participants count for group chats
   const getParticipantsInfo = () => {
-    if (activeConversation.conversationType === ConversationType.DIRECT) {
+    if (activeConversation.conversation_type === ConversationType.DIRECT) {
       return null;
     }
     
@@ -100,18 +87,16 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
           </svg>
         </button>
         
-        <div className="relative">
-          <Image
-            src={getAvatar()}
-            alt="Avatar"
-            width={40}
-            height={40}
-            className="rounded-full object-cover"
+        <div className="relative w-12 h-12 flex-shrink-0">
+          <ConversationAvatar
+            conversation={activeConversation}
+            currentUserId={currentUserId}
           />
           {getOnlineStatus() && (
             <div className="absolute bottom-0 right-0 bg-green-500 w-3 h-3 rounded-full border-2 border-white"></div>
           )}
-        </div>
+          </div>
+      
         
         <div className="ml-3">
           <h2 className="font-semibold">{getTitle()}</h2>
@@ -167,7 +152,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
                 Search in conversation
               </button>
               
-              {activeConversation.conversationType === ConversationType.GROUP && (
+              {activeConversation.conversation_type === ConversationType.GROUP && (
                 <button
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   role="menuitem"

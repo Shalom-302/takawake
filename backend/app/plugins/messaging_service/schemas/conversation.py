@@ -34,6 +34,16 @@ class UserConversationSettingsBase(BaseModel):
     custom_name: Optional[str] = None
     theme_color: Optional[str] = None
     notification_level: Optional[str] = "all"
+    last_read_message_id: Optional[str] = None
+    last_read_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+    profile_picture: Optional[str] = None
 
 
 class UserConversationSettingsUpdate(UserConversationSettingsBase):

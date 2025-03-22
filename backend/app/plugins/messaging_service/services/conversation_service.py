@@ -22,7 +22,7 @@ from ..schemas.conversation import (
 )
 
 # Import User model from auth plugin
-from app.plugins.advanced_auth.models.user import User
+from app.plugins.advanced_auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -444,10 +444,8 @@ class ConversationService:
             UserConversationSettingsDB.updated_at.desc()
         ).offset(offset).limit(limit).all()
         
-        print("===Conversations:", conversations)
         # Get all conversation IDs
         conversation_ids = [c.id for c in conversations]
-        print("===Conversation IDs:", conversation_ids)
         
         # Get all group chat settings for group conversations
         group_chat_ids = [c.id for c in conversations if c.conversation_type == "group"]
@@ -460,7 +458,6 @@ class ConversationService:
             
             group_settings_map = {gs.conversation_id: gs for gs in group_settings}
         
-        print("===Group settings:", group_settings_map)
         # Get last messages for conversations
         last_messages_map = {}
         
@@ -474,8 +471,7 @@ class ConversationService:
             
             if last_message:
                 last_messages_map[conversation_id] = last_message
-                print("===Last message:", last_message)
-        print("===Last messages map:", last_messages_map)
+        
         # Get unread counts for conversations
         unread_counts_map = {}
         
@@ -896,6 +892,9 @@ class ConversationService:
             
             participants = []
             for setting in participant_settings:
+                # Récupérer les informations de l'utilisateur
+                user = db.query(User).filter(User.id == setting.user_id).first()
+                
                 participant = {
                     "id": _safe_str(setting.id),
                     "user_id": _safe_str(setting.user_id),
@@ -909,10 +908,22 @@ class ConversationService:
                     "role": setting.role,
                     "last_read_message_id": _safe_str(setting.last_read_message_id),
                     "created_at": setting.created_at,
-                    "updated_at": setting.updated_at
+                    "updated_at": setting.updated_at,
                 }
+                
+                # Ajouter les informations utilisateur si disponibles
+                if user:
+                    participant.update({
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "username": user.username,
+                        "email": user.email,
+                        "profile_picture": user.profile_picture
+                    })
+                
                 participants.append(participant)
             
             result["participants"] = participants
+            print("=====result", result)
         
         return result

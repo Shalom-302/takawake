@@ -192,7 +192,6 @@ export default function NewConversation() {
               Selected {isCreatingGroup ? 'participants' : 'user'}:
             </h3>
             <div className="flex flex-wrap gap-2">
-              {console.log("huhuhu", selectedUsers)}
               {selectedUsers.map(user => (
                 <div 
                   key={user.id}
@@ -260,10 +259,10 @@ export default function NewConversation() {
                     onClick={() => toggleUserSelection(user)}
                   >
                     <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                      {user.profilePicture ? (
+                      {user.profile_picture ? (
                         <Image
-                          src={user.profilePicture}
-                          alt={user.firstName || user.username || ''}
+                          src={user.profile_picture}
+                          alt={user.first_name || user.username || ''}
                           width={40}
                           height={40}
                         />

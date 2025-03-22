@@ -61,7 +61,7 @@ export default function MessageList({ currentUserId }: MessageListProps) {
   // Get sender info from participant data
   const getSenderInfo = (senderId: string, message: Message) => {
     if (!activeConversation) return undefined;
-    console.log("==getSenderInfo==", activeConversation);
+    
     const participant = activeConversation.participants.find(p => p.user_id === senderId);
     if (!participant) return undefined;
     
@@ -69,10 +69,10 @@ export default function MessageList({ currentUserId }: MessageListProps) {
     const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     return {
-      profilePicture: participant.profile_picture,
-      firstName: participant.first_name,
-      lastName: participant.last_name,
-      messageTime: time
+      profile_picture: participant.profile_picture,
+      first_name: participant.first_name,
+      last_name: participant.last_name,
+      message_time: time
     };
   };
   
@@ -112,7 +112,6 @@ export default function MessageList({ currentUserId }: MessageListProps) {
   
   // Check if a message is from the current user
   const isCurrentUserMessage = (message: Message) => {
-    console.log("==isCurrentUserMessage==", message);
     return message.sender_id === currentUserId;
   };
   
@@ -150,7 +149,6 @@ export default function MessageList({ currentUserId }: MessageListProps) {
   // Render typing indicators
   const renderTypingIndicators = () => {
     if (!typingUsers.length || !activeConversation) return null;
-    console.log("==renderTypingIndicators==", typingUsers);
     // Get participant names
     const typingNames = typingUsers.map(userId => {
       const participant = activeConversation.participants.find(p => p.user_id === userId);
