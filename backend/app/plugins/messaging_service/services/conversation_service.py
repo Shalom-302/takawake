@@ -697,6 +697,150 @@ class ConversationService:
         logger.info(f"Returning {len(chat_users)} users in response")
         return chat_users
     
+    async def delete_conversation(self, db: Session, conversation_id: str, user_id: str) -> Dict[str, Any]:
+        """
+        Delete a conversation or leave a group conversation.
+        
+        For direct conversations:
+         - The conversation is deleted from the user's view
+         - If both participants delete it, it's removed from the database
+        
+        For group conversations:
+         - If the user is an admin, the entire conversation is deleted for all users
+         - If the user is a regular member, they just leave the conversation
+        
+        Args:
+            db: Database session
+            conversation_id: ID of the conversation to delete
+            user_id: ID of the user performing the action
+            
+        Returns:
+            Status message
+            
+        Raises:
+            HTTPException: If conversation deletion fails
+        """
+        # Conversion de user_id en UUID pour les comparaisons avec les colonnes UUID
+        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        conversation_id_uuid = uuid.UUID(conversation_id) if isinstance(conversation_id, str) else conversation_id
+        
+        # Check if conversation exists and if user is a participant
+        conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id_uuid).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Check if user is a participant
+        user_settings = db.query(UserConversationSettingsDB).filter(
+            UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+            UserConversationSettingsDB.user_id == user_id_uuid
+        ).first()
+        
+        if not user_settings:
+            raise HTTPException(status_code=403, detail="You are not a participant in this conversation")
+            
+        # Different behavior based on conversation type
+        if conversation.conversation_type == "direct":
+            # For direct conversations, we mark the conversation as deleted for this user
+            # If both users have deleted it, we remove it entirely
+            
+            # Mark as deleted for this user
+            user_settings.is_deleted = True
+            db.add(user_settings)
+            
+            # Check if both users have deleted the conversation
+            other_user_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+                UserConversationSettingsDB.user_id != user_id_uuid
+            ).first()
+            
+            if other_user_settings and other_user_settings.is_deleted:
+                # Both users have deleted it, so remove conversation and all related data
+                await self._hard_delete_conversation(db, conversation_id)
+                message = "Conversation permanently deleted"
+            else:
+                # Only this user deleted it
+                db.commit()
+                message = "Conversation deleted from your view"
+                
+        else:  # Group conversation
+            # Check if user is an admin
+            is_admin = user_settings.role == "admin"
+            
+            if is_admin:
+                # Admin can delete the entire conversation
+                await self._hard_delete_conversation(db, conversation_id)
+                message = "Group conversation deleted for all participants"
+            else:
+                # Non-admin just leaves the conversation
+                db.delete(user_settings)
+                db.commit()
+                message = "You left the group conversation"
+                
+            # Notify participants about the change
+            if self.notification_handler:
+                # Get remaining participants
+                participants = db.query(UserConversationSettingsDB).filter(
+                    UserConversationSettingsDB.conversation_id == conversation_id_uuid,
+                    UserConversationSettingsDB.user_id != user_id_uuid
+                ).all()
+                
+                recipient_ids = [str(p.user_id) for p in participants]
+                
+                if recipient_ids:
+                    event_type = "conversation_deleted" if is_admin else "member_left"
+                    
+                    await self.notification_handler.notify_conversation_update(
+                        conversation_id,
+                        event_type,
+                        {"user_id": user_id, "conversation_id": conversation_id},
+                        recipient_ids
+                    )
+        
+        # Log the action
+        if self.security_handler:
+            action = "Deleted conversation" if conversation.conversation_type == "direct" or is_admin else "Left group conversation"
+            self.security_handler.secure_log(
+                action,
+                {
+                    "user_id": user_id,
+                    "conversation_id": conversation_id,
+                    "conversation_type": conversation.conversation_type
+                }
+            )
+            
+        return {"message": message, "status": "success"}
+    
+    async def _hard_delete_conversation(self, db: Session, conversation_id: str) -> None:
+        """
+        Completely remove a conversation and all related data from the database.
+        
+        Args:
+            db: Database session
+            conversation_id: ID of the conversation to delete
+        """
+        conversation_id_uuid = uuid.UUID(conversation_id) if isinstance(conversation_id, str) else conversation_id
+        
+        # Delete all messages first (cascade delete for message reactions, etc.)
+        db.query(MessageDB).filter(MessageDB.conversation_id == conversation_id_uuid).delete()
+        
+        # Delete user conversation settings
+        db.query(UserConversationSettingsDB).filter(
+            UserConversationSettingsDB.conversation_id == conversation_id_uuid
+        ).delete()
+        
+        # Delete group settings if it's a group conversation
+        db.query(GroupChatDB).filter(GroupChatDB.conversation_id == conversation_id_uuid).delete()
+        
+        # Finally, delete the conversation itself
+        db.query(ConversationDB).filter(ConversationDB.id == conversation_id_uuid).delete()
+        
+        # Commit the changes
+        db.commit()
+        
+        # Unregister from WebSocket manager
+        if self.websocket_manager:
+            self.websocket_manager.unregister_conversation(conversation_id)
+    
     async def _find_direct_conversation(self, db: Session, user_id: str, other_user_id: str) -> Optional[ConversationDB]:
         """
         Find a direct conversation between two users if it exists.

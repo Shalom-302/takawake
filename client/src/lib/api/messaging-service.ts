@@ -298,22 +298,33 @@ export async function uploadAttachment(
  */
 export async function searchUsers(query: string): Promise<ChatUser[]> {
   try {
-    const endpoint = `/messaging/users/search?query=${encodeURIComponent(query)}`;
-    console.log('Searching users with endpoint:', endpoint);
+    // Log the search request
+    console.log('Searching users with query:', query);
     
-    // Appel à l'API
-    const response = await fetchAPI<ChatUser[]>(endpoint);
-    console.log('Search API response:', response);
-    
-    // S'assurer que la réponse est un tableau
-    if (!Array.isArray(response)) {
-      console.warn('API response is not an array:', response);
-      return [];
-    }
-    
-    return response;
+    // Make the API call
+    return fetchAPI<ChatUser[]>(`${API_ROUTES.CONVERSATIONS}/users/search?query=${encodeURIComponent(query)}`);
   } catch (error) {
     console.error('Error searching users:', error);
+    throw error;
+  }
+}
+
+/**
+ * Supprimer une conversation
+ */
+export async function deleteConversation(conversationId: string): Promise<{ message: string; status: string }> {
+  try {
+    console.log('Deleting conversation:', conversationId);
+    
+    // Make the API call to delete the conversation
+    return fetchAPI<{ message: string; status: string }>(
+      API_ROUTES.CONVERSATION(conversationId),
+      {
+        method: 'DELETE',
+      }
+    );
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
     throw error;
   }
 }

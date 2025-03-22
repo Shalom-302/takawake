@@ -378,20 +378,38 @@ async def leave_or_delete_conversation(
     # Get user ID
     user_id = current_user.id
     
-    # This would require implementing a leave/delete method in the conversation service
-    # For now, we'll raise a not implemented error
-    
-    # Securely log the request using standardized approach
-    if messaging_service.security_handler:
-        messaging_service.security_handler.secure_log(
-            "Leave/delete conversation requested",
-            {
-                "user_id": user_id, 
-                "conversation_id": conversation_id
-            }
-        )
-    
-    raise HTTPException(status_code=501, detail="Leave/delete conversation not implemented yet")
+    try:
+        # Call the service method to handle the deletion logic
+        result = await conversation_service.delete_conversation(db, conversation_id, user_id)
+        
+        # Securely log the action using standardized approach
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Conversation deleted or left",
+                {
+                    "user_id": user_id, 
+                    "conversation_id": conversation_id,
+                    "result": result["message"]
+                }
+            )
+        
+        return result
+    except HTTPException as e:
+        # Rethrow HTTP exceptions
+        raise e
+    except Exception as e:
+        # Log the error
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Error deleting/leaving conversation",
+                {
+                    "user_id": user_id, 
+                    "conversation_id": conversation_id,
+                    "error": str(e)
+                },
+                "error"
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
 
 
 @router.post("/blocks", response_model=UserBlockResponse)
