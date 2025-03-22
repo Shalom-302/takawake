@@ -183,7 +183,7 @@ export default function MessageList({ currentUserId }: MessageListProps) {
       {/* Loading and messages area */}
       <div 
         ref={messageListRef}
-        className="flex-1 overflow-y-auto px-4 py-2"
+        className="flex-1 px-4 py-2"
         onScroll={handleScroll}
       >
         {/* Loading indicator for loading more messages */}

@@ -77,18 +77,30 @@ export default function ConversationView() {
   
   return (
     <div className="flex-1 flex flex-col h-full">
-      <ConversationHeader currentUserId={user?.id || ''} />
-      
-      {!activeConversation ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="flex flex-col h-full">
+        {/* Fixed header */}
+        <div className="flex-shrink-0">
+          <ConversationHeader currentUserId={user?.id || ''} />
         </div>
-      ) : (
-        <>
-          <MessageList currentUserId={user?.id || ''} />
-          <MessageInput />
-        </>
-      )}
+        
+        {!activeConversation ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <>
+            {/* Scrollable message list */}
+            <div className="flex-1 overflow-y-auto">
+              <MessageList currentUserId={user?.id || ''} />
+            </div>
+            
+            {/* Fixed input at bottom */}
+            <div className="flex-shrink-0 mt-auto">
+              <MessageInput />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
