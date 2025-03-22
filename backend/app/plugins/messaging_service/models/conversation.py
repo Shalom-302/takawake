@@ -68,6 +68,7 @@ class UserConversationSettingsDB(Base):
     is_muted = Column(Boolean, default=False)
     is_pinned = Column(Boolean, default=False)
     is_archived = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)  # Flag pour le soft delete
     custom_name = Column(String(255), nullable=True)  # For user to rename conversations
     theme_color = Column(String(20), nullable=True)  # For chat theme
     notification_level = Column(String(20), default="all")  # 'all', 'mentions', 'none'

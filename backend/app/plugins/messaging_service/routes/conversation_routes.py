@@ -309,9 +309,6 @@ async def add_conversation_member(
     # Get user ID
     user_id = current_user.id
     
-    # This would require implementing a member add method in the conversation service
-    # For now, we'll raise a not implemented error
-    
     # Securely log the request using standardized approach
     if messaging_service.security_handler:
         messaging_service.security_handler.secure_log(
@@ -323,7 +320,10 @@ async def add_conversation_member(
             }
         )
     
-    raise HTTPException(status_code=501, detail="Add conversation member not implemented yet")
+    # Call the service method to add the member
+    return await messaging_service.conversation_service.add_conversation_member(
+        db, conversation_id, user_id, member_data.user_id
+    )
 
 
 @router.delete("/conversations/{conversation_id}/members/{member_id}", response_model=ConversationResponse)

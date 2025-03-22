@@ -328,92 +328,108 @@ class ConversationService:
         Raises:
             HTTPException: If conversation retrieval fails
         """
-        # Conversion de user_id en UUID pour les comparaisons avec les colonnes UUID
-        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-        
-        # Check if user has access to the conversation
-        user_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id,
-            UserConversationSettingsDB.user_id == user_id_uuid
-        ).first()
-        
-        
-        if not user_settings:
-            if self.security_handler:
-                self.security_handler.secure_log(
-                    "Unauthorized conversation access attempt",
-                    {"user_id": user_id, "conversation_id": conversation_id},
-                    "warning"
-                )
-            raise HTTPException(status_code=403, detail="Not authorized to view this conversation")
-        
-        # Fetch the conversation
-        conversation = db.query(ConversationDB).filter(
-            ConversationDB.id == conversation_id
-        ).first()
-        
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-        
-        # Get the last message for this conversation
-        last_message = db.query(MessageDB).filter(
-            MessageDB.conversation_id == conversation_id
-        ).order_by(MessageDB.created_at.desc()).first()
+        try:
+            user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            
+            # Vérifier si la conversation existe
+            conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id).first()
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            
+            # Vérifier si l'utilisateur est participant
+            user_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation_id,
+                UserConversationSettingsDB.user_id == user_id_uuid
+            ).first()
+            
+            if not user_settings:
+                raise HTTPException(status_code=403, detail="You are not a participant in this conversation")
+            
+            # Si la conversation est une conversation directe et a été supprimée par l'utilisateur
+            # mais qu'il essaie d'y accéder à nouveau, on réactive l'accès à la conversation
+            if conversation.conversation_type == "direct" and user_settings.is_deleted:
+                user_settings.is_deleted = False
+                db.add(user_settings)
+                db.commit()
+            
+            # Fetch the conversation
+            conversation = db.query(ConversationDB).filter(
+                ConversationDB.id == conversation_id
+            ).first()
+            
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            
+            # Get the last message for this conversation
+            last_message = db.query(MessageDB).filter(
+                MessageDB.conversation_id == conversation_id
+            ).order_by(MessageDB.created_at.desc()).first()
 
-        # Get count of unread messages
-        unread_count = db.query(MessageDB).join(
-            MessageReceiptDB, 
-            and_(
-                str(MessageReceiptDB.message_id) == str(MessageDB.id),
-                str(MessageReceiptDB.user_id) == str(user_id_uuid),
-                MessageReceiptDB.status.in_(["sent", "delivered"])
+            # Get count of unread messages
+            unread_count = db.query(MessageDB).join(
+                MessageReceiptDB, 
+                and_(
+                    str(MessageReceiptDB.message_id) == str(MessageDB.id),
+                    str(MessageReceiptDB.user_id) == str(user_id_uuid),
+                    MessageReceiptDB.status.in_(["sent", "delivered"])
+                )
+            ).filter(
+                str(MessageDB.conversation_id) == str(conversation_id),
+                str(MessageDB.sender_id) != str(user_id_uuid)
+            ).count()
+            print("===Unread count:", unread_count)
+            
+            # Convert to dict and include additional data
+            include_group_settings = conversation.conversation_type == "group"
+            conversation_dict = self._conversation_to_dict(
+                conversation, 
+                user_id, 
+                include_group_settings=include_group_settings,
+                last_message=last_message,
+                unread_count=unread_count,
+                user_settings=user_settings,
+                db=db
             )
-        ).filter(
-            str(MessageDB.conversation_id) == str(conversation_id),
-            str(MessageDB.sender_id) != str(user_id_uuid)
-        ).count()
-        print("===Unread count:", unread_count)
+            
+            # Récupération manuelle des participants pour garantir le format correct
+            participants = []
+            participant_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation_id
+            ).all()
+            
+            for setting in participant_settings:
+                participant = {
+                    "id": str(setting.id),
+                    "user_id": str(setting.user_id),
+                    "conversation_id": str(setting.conversation_id),
+                    "is_muted": setting.is_muted,
+                    "is_pinned": setting.is_pinned,
+                    "is_archived": setting.is_archived,
+                    "custom_name": setting.custom_name,
+                    "theme_color": setting.theme_color,
+                    "notification_level": setting.notification_level,
+                    "role": setting.role,
+                    "last_read_message_id": str(setting.last_read_message_id) if setting.last_read_message_id else None,
+                    "created_at": setting.created_at,
+                    "updated_at": setting.updated_at
+                }
+                participants.append(participant)
+            
+            conversation_dict["participants"] = participants
+            
+            return conversation_dict
         
-        # Convert to dict and include additional data
-        include_group_settings = conversation.conversation_type == "group"
-        conversation_dict = self._conversation_to_dict(
-            conversation, 
-            user_id, 
-            include_group_settings=include_group_settings,
-            last_message=last_message,
-            unread_count=unread_count,
-            user_settings=user_settings,
-            db=db
-        )
-        
-        # Récupération manuelle des participants pour garantir le format correct
-        participants = []
-        participant_settings = db.query(UserConversationSettingsDB).filter(
-            UserConversationSettingsDB.conversation_id == conversation_id
-        ).all()
-        
-        for setting in participant_settings:
-            participant = {
-                "id": str(setting.id),
-                "user_id": str(setting.user_id),
-                "conversation_id": str(setting.conversation_id),
-                "is_muted": setting.is_muted,
-                "is_pinned": setting.is_pinned,
-                "is_archived": setting.is_archived,
-                "custom_name": setting.custom_name,
-                "theme_color": setting.theme_color,
-                "notification_level": setting.notification_level,
-                "role": setting.role,
-                "last_read_message_id": str(setting.last_read_message_id) if setting.last_read_message_id else None,
-                "created_at": setting.created_at,
-                "updated_at": setting.updated_at
-            }
-            participants.append(participant)
-        
-        conversation_dict["participants"] = participants
-        
-        return conversation_dict
-        
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error getting conversation: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error getting conversation: {str(e)}"
+            )
+    
     async def get_conversations(self, db: Session, user_id: str,
                                filter_type: str = "all",
                                filter_archived: bool = False,
@@ -441,7 +457,8 @@ class ConversationService:
         # Build the base query to get conversations the user is in
         query = db.query(ConversationDB) \
             .join(UserConversationSettingsDB) \
-            .filter(UserConversationSettingsDB.user_id == user_id_uuid)
+            .filter(UserConversationSettingsDB.user_id == user_id_uuid,
+                    UserConversationSettingsDB.is_deleted == False)
         
         # Apply archive filter if needed
         if filter_archived:
@@ -581,7 +598,7 @@ class ConversationService:
             "size": page_size
         }
     
-    async def get_blocked_users(self, db: Session, user_id: str) -> List[UserBlockDB]:
+    async def get_blocked_users(self, db: Session, user_id: str) -> List[Dict[str, Any]]:
         """
         Get all users blocked by the specified user.
         
@@ -592,15 +609,139 @@ class ConversationService:
         Returns:
             List of blocked user records
         """
-        try:
-            return db.query(UserBlockDB).filter(UserBlockDB.blocker_id == user_id).all()
-        except Exception as e:
-            # La table n'existe pas encore dans la base de données
-            logger.warning(f"Error accessing blocked users table: {str(e)}. This is expected if the table hasn't been created yet.")
-            # Important: annuler la transaction pour permettre aux requêtes suivantes de fonctionner
-            db.rollback()
-            return []
+        blocks = db.query(UserBlockDB).filter(UserBlockDB.user_id == user_id).all()
+        
+        result = []
+        for block in blocks:
+            blocked_user = db.query(User).filter(User.id == block.blocked_id).first()
+            if blocked_user:
+                result.append({
+                    "id": str(block.id),
+                    "user_id": str(block.user_id),
+                    "blocked_id": str(block.blocked_id),
+                    "reason": block.reason,
+                    "created_at": block.created_at,
+                    "updated_at": block.updated_at,
+                    "blocked_user": {
+                        "id": str(blocked_user.id),
+                        "username": blocked_user.username,
+                        "first_name": blocked_user.first_name,
+                        "last_name": blocked_user.last_name,
+                        "profile_picture": blocked_user.profile_picture
+                    }
+                })
+        
+        return result
     
+    async def add_conversation_member(self, db: Session, conversation_id: str, user_id: str, new_member_id: str) -> Dict[str, Any]:
+        """
+        Add a new member to a group conversation.
+        
+        Args:
+            db: Database session
+            conversation_id: ID of the conversation
+            user_id: ID of the user adding the member
+            new_member_id: ID of the user to add
+            
+        Returns:
+            Updated conversation data
+            
+        Raises:
+            HTTPException: If member addition fails
+        """
+        # Verify the conversation exists and is a group conversation
+        conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+            
+        if conversation.conversation_type != "group":
+            raise HTTPException(status_code=400, detail="Cannot add members to a direct conversation")
+        
+        # Check user permission (must be a member with appropriate role)
+        user_settings = db.query(UserConversationSettingsDB).filter(
+            UserConversationSettingsDB.conversation_id == conversation_id,
+            UserConversationSettingsDB.user_id == user_id
+        ).first()
+        
+        if not user_settings:
+            raise HTTPException(status_code=403, detail="Not authorized to add members to this conversation")
+            
+        # Only admins or members with appropriate permissions can add members
+        if user_settings.role != "admin" and user_settings.role != "moderator":
+            raise HTTPException(status_code=403, detail="Not authorized to add members to this conversation")
+        
+        # Check if the new member exists
+        new_member = db.query(User).filter(User.id == new_member_id).first()
+        if not new_member:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        # Check if the new member is already in the conversation
+        existing_member = db.query(UserConversationSettingsDB).filter(
+            UserConversationSettingsDB.conversation_id == conversation_id,
+            UserConversationSettingsDB.user_id == new_member_id
+        ).first()
+        
+        if existing_member:
+            if existing_member.is_deleted:
+                # If the user previously left or was removed, re-activate their membership
+                existing_member.is_deleted = False
+                existing_member.updated_at = datetime.utcnow()
+                db.commit()
+                
+                # Create a system message about rejoining
+                system_message = MessageDB(
+                    conversation_id=conversation_id,
+                    sender_id=user_id,
+                    message_type="system",
+                    content=f"User {new_member.username} has been re-added to the conversation",
+                    message_metadata={"action": "member_readded", "member_id": str(new_member_id), "added_by": str(user_id)}
+                )
+                db.add(system_message)
+                db.commit()
+            else:
+                raise HTTPException(status_code=400, detail="User is already a member of this conversation")
+        else:
+            # Add the new member to the conversation
+            new_member_settings = UserConversationSettingsDB(
+                conversation_id=conversation_id,
+                user_id=new_member_id,
+                role="member",
+                is_muted=False,
+                is_archived=False,
+                is_pinned=False,
+                notification_level="all",
+                is_deleted=False
+            )
+            db.add(new_member_settings)
+            
+            # Create a system message about the new member
+            system_message = MessageDB(
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                message_type="system",
+                content=f"User {new_member.username} has been added to the conversation",
+                message_metadata={"action": "member_added", "member_id": str(new_member_id), "added_by": str(user_id)}
+            )
+            db.add(system_message)
+            db.commit()
+            
+        # Notify all participants about the new member
+        if self.websocket_manager:
+            await self.websocket_manager.broadcast_to_conversation(
+                conversation_id,
+                {
+                    "type": "member_added",
+                    "data": {
+                        "conversation_id": str(conversation_id),
+                        "member_id": str(new_member_id),
+                        "added_by": str(user_id)
+                    }
+                }
+            )
+            
+        # Return the updated conversation
+        return await self.get_conversation(db, conversation_id, user_id)
+
     async def search_users_for_chat(self, db: Session, current_user_id: str, search_query: str, limit: int = 20) -> List[ChatUserResponse]:
         """
         Search for users to start a chat with.
@@ -743,27 +884,28 @@ class ConversationService:
             
         # Different behavior based on conversation type
         if conversation.conversation_type == "direct":
-            # For direct conversations, we mark the conversation as deleted for this user
-            # If both users have deleted it, we remove it entirely
+            # Pour les conversations directes, on marque la conversation comme supprimée pour cet utilisateur
+            # Au lieu de vraiment supprimer l'entrée, ce qui permettra de conserver les informations
             
-            # Mark as deleted for this user
             user_settings.is_deleted = True
             db.add(user_settings)
-            print("===User settings marked as deleted")
-            # Check if both users have deleted the conversation
+            print("===User settings marked as deleted rather than removed")
+            
+            # Vérifier si l'autre utilisateur a aussi supprimé la conversation
             other_user_settings = db.query(UserConversationSettingsDB).filter(
                 UserConversationSettingsDB.conversation_id == conversation_id,
                 UserConversationSettingsDB.user_id != user_id_uuid
             ).first()
-            print("===Other user settings found:", other_user_settings.is_deleted)
-            if other_user_settings and other_user_settings.is_deleted:
-                print("===Both users have deleted the conversation")
-                # Both users have deleted it, so remove conversation and all related data
+            print("===Other user settings found:", other_user_settings)
+            
+            if not other_user_settings or other_user_settings.is_deleted:
+                print("===Both users have deleted the conversation or no other user exists")
+                # Les deux utilisateurs ont supprimé la conversation ou il n'y a pas d'autre utilisateur
                 await self._hard_delete_conversation(db, conversation_id)
                 print("===Conversation permanently deleted")
                 message = "Conversation permanently deleted"
             else:
-                # Only this user deleted it
+                # L'autre utilisateur a encore accès à la conversation
                 db.commit()
                 message = "Conversation deleted from your view"
                 

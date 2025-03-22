@@ -1,6 +1,6 @@
 """
-Script pour prévisualiser les changements de migration sans les appliquer.
-Ce script crée une migration temporaire et affiche les modifications qui seraient appliquées.
+Script to preview migration changes without applying them.
+This script creates a temporary migration and displays the changes that would be applied.
 
 Usage:
     python -m app.commands.preview_migration
@@ -18,19 +18,19 @@ from app.commands.init_migration import get_backend_dir, run_alembic_command
 
 def preview_migration():
     """
-    Génère une migration temporaire pour prévisualiser les changements.
+    Generates a temporary migration to preview changes.
     """
-    # Générer un ID temporaire pour la migration
+    # Generate a temporary migration ID
     temp_id = str(uuid.uuid4())[:8]
     temp_message = f"temp_preview_{temp_id}"
     
     try:
-        # Générer une migration temporaire
-        print("Génération d'une migration temporaire pour prévisualiser les changements...")
+        # Generate a temporary migration
+        print("Generating a temporary migration to preview changes...")
         stdout, stderr, return_code = run_alembic_command(["alembic", "revision", "--autogenerate", "-m", temp_message])
         
         if return_code != 0:
-            print(f"Erreur lors de la génération de la migration: {stderr}")
+            print(f"Error generating migration: {stderr}")
             return False
         
         # Trouver le fichier de migration temporaire
@@ -43,51 +43,51 @@ def preview_migration():
                 break
         
         if not temp_file:
-            print("Aucun fichier de migration temporaire n'a été trouvé.")
+            print("No temporary migration file found.")
             return False
         
-        # Lire et afficher le contenu du fichier de migration
+        # Read and display the content of the migration file
         print("\n" + "=" * 80)
-        print(f"APERÇU DES CHANGEMENTS DE MIGRATION:")
+        print(f"CHANGES TO BE APPLIED:")
         print("=" * 80)
         
         with open(temp_file, 'r', encoding='utf-8') as f:
             content = f.read()
             
-            # Extraire les fonctions upgrade() et downgrade()
+            # Extract upgrade() and downgrade() functions
             upgrade_match = re.search(r'def upgrade\(\).*?:(.+?)(?=def downgrade|\Z)', content, re.DOTALL)
             downgrade_match = re.search(r'def downgrade\(\).*?:(.+?)(?=\Z)', content, re.DOTALL)
             
             if upgrade_match:
-                print("\nOPÉRATIONS DE MISE À JOUR (upgrade):")
+                print("\nUPGRADE OPERATIONS:")
                 print("-" * 80)
                 upgrade_content = upgrade_match.group(1).strip()
                 if upgrade_content:
                     print(upgrade_content)
                 else:
-                    print("Aucune opération de mise à jour.")
+                    print("No upgrade operations.")
             
             if downgrade_match:
-                print("\nOPÉRATIONS DE RETOUR EN ARRIÈRE (downgrade):")
+                print("\nDOWNGRADE OPERATIONS:")
                 print("-" * 80)
                 downgrade_content = downgrade_match.group(1).strip()
                 if downgrade_content:
                     print(downgrade_content)
                 else:
-                    print("Aucune opération de retour en arrière.")
+                    print("No downgrade operations.")
         
         print("\n" + "=" * 80)
-        print("FIN DE L'APERÇU")
+        print("END OF PREVIEW")
         print("=" * 80)
         
-        # Supprimer le fichier de migration temporaire
-        print(f"\nSuppression du fichier de migration temporaire: {temp_file.name}")
+        # Delete the temporary migration file
+        print(f"\nDeleting temporary migration file: {temp_file.name}")
         temp_file.unlink()
         
         return True
     
     except Exception as e:
-        print(f"Erreur lors de la prévisualisation de la migration: {str(e)}")
+        print(f"Error during migration preview: {str(e)}")
         return False
 
 

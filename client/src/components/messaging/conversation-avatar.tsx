@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { ConversationType, Conversation } from '@/lib/types/messaging';
+import { Conversation, ConversationType, OtherParticipantInfo } from '@/lib/types/messaging';
 
 interface Participant {
   user_id: string;
@@ -11,17 +11,26 @@ interface Participant {
 interface ConversationAvatarProps {
   conversation: Conversation;
   currentUserId: string | undefined;
+  size?: number;
 }
 
 export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
   conversation,
-  currentUserId
+  currentUserId,
+  size = 48
 }) => {
+  const avatarStyle = {
+    width: `${size}px`,
+    height: `${size}px`,
+  };
 
   // No current user => return just an empty block
   if (!currentUserId) {
     return (
-      <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-500 bg-gray-200">
+      <div 
+        className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"
+        style={avatarStyle}
+      >
         {/* nothing or optionally a question mark */}
         ?
       </div>
@@ -34,8 +43,9 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
       <Image
         src={conversation.avatar_url}
         alt="Conversation Avatar"
-        fill
-        className="w-12 h-12 rounded-full object-cover"
+        width={size}
+        height={size}
+        className="rounded-full object-cover"
       />
     );
   }
@@ -45,24 +55,63 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
     const otherParticipant = conversation.participants.find(
       (p) => p.user_id !== currentUserId
     );
-    console.log("otherParticipant", otherParticipant.profile_picture);
+    
     if (!otherParticipant) {
-      // For safety, if not found, we display a fallback
+      // Pour les conversations directes, nous devrions toujours avoir au moins un autre participant
+      // Si nous n'en trouvons pas, c'est probablement parce que l'autre utilisateur a supprimé 
+      // la conversation, mais nous avons gardé sa trace grâce au "soft delete"
+      
+      // Vérifier si nous avons des métadonnées sur l'autre utilisateur dans conversation_metadata
+      const otherInfo = conversation.conversation_metadata?.otherParticipantInfo as OtherParticipantInfo | undefined;
+      
+      if (otherInfo) {
+        // Si nous avons une URL d'image enregistrée dans les métadonnées
+        if (otherInfo.profile_picture) {
+          return (
+            <Image
+              src={otherInfo.profile_picture}
+              alt={otherInfo.name || "Former participant"}
+              width={size}
+              height={size}
+              className="rounded-full object-cover"
+            />
+          );
+        }
+        
+        // Si nous avons au moins un nom dans les métadonnées
+        if (otherInfo.name) {
+          return (
+            <div 
+              className="rounded-full flex items-center justify-center text-white bg-primary"
+              style={avatarStyle}
+            >
+              {otherInfo.name.charAt(0).toUpperCase()}
+            </div>
+          );
+        }
+      }
+      
+      // Fallback si aucune métadonnée n'est disponible
       return (
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-500 bg-gray-200">
+        <div 
+          className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"
+          style={avatarStyle}
+        >
           ?
         </div>
       );
     }
-
-    // If they have a profile picture
+    
+    // Seulement accéder à profile_picture si otherParticipant existe
+    console.log("otherParticipant", otherParticipant.profile_picture);
     if (otherParticipant.profile_picture) {
       return (
         <Image
           src={otherParticipant.profile_picture}
           alt="User Avatar"
-          fill
-          className="w-12 h-12 rounded-full object-cover"
+          width={size}
+          height={size}
+          className="rounded-full object-cover"
         />
       );
     } else {
@@ -72,7 +121,10 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
         otherParticipant.username?.[0] ||
         '';
       return (
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-500 bg-gray-200">
+        <div 
+          className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"
+          style={avatarStyle}
+        >
           {initial.toUpperCase()}
         </div>
       );
@@ -83,7 +135,10 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
   if (conversation.conversation_type === ConversationType.GROUP) {
     const initial = conversation.name?.[0] || '';
     return (
-      <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-500 bg-gray-200">
+      <div 
+        className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"
+        style={avatarStyle}
+      >
         {initial.toUpperCase()}
       </div>
     );
@@ -91,7 +146,10 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
 
   // Fallback if a new conversation type appears
   return (
-    <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-500 bg-gray-200">
+    <div 
+      className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"
+      style={avatarStyle}
+    >
       ?
     </div>
   );

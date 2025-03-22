@@ -51,6 +51,14 @@ export interface MessageReceipt {
   created_at: string;
 }
 
+// Interface pour les métadonnées d'un participant supprimé
+export interface OtherParticipantInfo {
+  user_id: string;
+  name?: string;
+  profile_picture?: string;
+  last_seen?: string;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -88,7 +96,10 @@ export interface Conversation {
   avatar_url?: string;
   created_by: string;
   is_encrypted: boolean;
-  conversation_metadata?: Record<string, unknown>;
+  conversation_metadata?: {
+    otherParticipantInfo?: OtherParticipantInfo;
+    [key: string]: unknown;
+  };
   created_at: string;
   updated_at: string;
   last_message_at?: string;

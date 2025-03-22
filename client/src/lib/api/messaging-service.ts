@@ -21,6 +21,7 @@ export const API_ROUTES = {
   MESSAGES_BULK: '/messaging/messages/bulk',
   MESSAGE: (conversationId: string, messageId: string) => 
     `/messaging/conversations/${conversationId}/messages/${messageId}`,
+  MESSAGING: '/messaging',
   WEBSOCKET: (conversationId: string) => 
     `${process.env.NEXT_PUBLIC_WS_URL || (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host}/messaging/ws/${conversationId}`
 };
@@ -301,10 +302,59 @@ export async function searchUsers(query: string): Promise<ChatUser[]> {
     // Log the search request
     console.log('Searching users with query:', query);
     
-    // Make the API call
-    return fetchAPI<ChatUser[]>(`${API_ROUTES.CONVERSATIONS}/users/search?query=${encodeURIComponent(query)}`);
+    // Make the API call - Fix the correct endpoint path
+    return fetchAPI<ChatUser[]>(`/messaging/users/search?query=${encodeURIComponent(query)}`);
   } catch (error) {
     console.error('Error searching users:', error);
+    throw error;
+  }
+}
+
+/**
+ * Ajouter un membre à une conversation de groupe
+ */
+export async function addConversationMember(conversationId: string, userId: string): Promise<Conversation> {
+  try {
+    // Log the add member request
+    console.log('Adding member to conversation:', { conversationId, userId });
+    
+    // Make the API call
+    return fetchAPI<Conversation>(
+      `${API_ROUTES.MESSAGING}/conversations/${conversationId}/members`, 
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId }),
+      }
+    );
+  } catch (error) {
+    console.error('Error adding member to conversation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Supprimer un membre d'une conversation de groupe
+ */
+export async function removeConversationMember(conversationId: string, userId: string): Promise<Conversation> {
+  try {
+    // Log the remove member request
+    console.log('Removing member from conversation:', { conversationId, userId });
+    
+    // Make the API call
+    return fetchAPI<Conversation>(
+      `/messaging/conversations/${conversationId}/members/${userId}`, 
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error removing member:', error);
     throw error;
   }
 }

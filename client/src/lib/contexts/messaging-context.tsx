@@ -144,7 +144,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
 
   // Charger les messages quand la conversation active change
   useEffect(() => {
-    if (activeConversationId) {
+    if (activeConversationId && activeConversationId !== 'new') {
       loadMessages(activeConversationId);
     } else {
       setMessages([]);

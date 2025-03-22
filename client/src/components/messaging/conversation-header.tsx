@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useMessaging } from '@/lib/contexts/messaging-context';
-import { ConversationType } from '@/lib/types/messaging';
+import { ConversationType, ChatUser } from '@/lib/types/messaging';
 import { ConversationAvatar } from './conversation-avatar';
-import { deleteConversation } from '@/lib/api/messaging-service';
+import { deleteConversation, searchUsers, addConversationMember, removeConversationMember } from '@/lib/api/messaging-service';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ArrowLeft, ChevronRight, UserPlus, Search } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface ConversationHeaderProps {
   currentUserId: string;
@@ -25,6 +30,15 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  // État pour le dialogue de confirmation de quitter le groupe
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
 
   if (!activeConversation) {
     return (
@@ -74,6 +88,106 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     return `${count} ${count === 1 ? 'member' : 'members'}`;
   };
 
+  const handleAddMember = () => {
+    setShowAddMember(true);
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    try {
+      setIsSearching(true);
+      setSearchResults([]); // Réinitialiser les résultats précédents
+      console.log('Searching for users with query:', searchQuery); 
+      const results = await searchUsers(searchQuery);
+      console.log('Search results:', results);
+      
+      // Filter out users who are already members
+      const existingMemberIds = activeConversation?.participants.map(p => p.user_id) || [];
+      console.log('Existing member IDs:', existingMemberIds); 
+      const filteredResults = results.filter(user => !existingMemberIds.includes(user.id));
+      console.log('Filtered results:', filteredResults);
+      
+      setSearchResults(filteredResults);
+      
+      if (filteredResults.length === 0) {
+        if (results.length > 0) {
+          toast.info('All matching users are already in the group');
+        } else {
+          toast.info('No users found with this search term');
+        }
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast.error('Error searching users');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleUserSelect = (user: ChatUser) => {
+    setSelectedUser(user);
+  };
+
+  const handleConfirmAddMember = async () => {
+    if (!selectedUser || !activeConversation) return;
+    
+    try {
+      setIsAddingMember(true);
+      await addConversationMember(activeConversation.id, selectedUser.id);
+      toast.success(`${selectedUser.first_name || selectedUser.username} added to the group`);
+      setShowAddMember(false);
+      refreshConversations();
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast.error('Failed to add member to group');
+    } finally {
+      setIsAddingMember(false);
+      setSelectedUser(null);
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  };
+
+  const handleAddMemberDialogClose = () => {
+    setShowAddMember(false);
+    setSelectedUser(null);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleLeaveGroup = () => {
+    setIsLeaveDialogOpen(true);
+  };
+
+  const handleConfirmLeaveGroup = async () => {
+    if (!activeConversation) return;
+    
+    try {
+      await deleteConversation(activeConversation.id);
+      toast.success('You have left the group');
+      setIsLeaveDialogOpen(false);
+      refreshConversations();
+      router.push('/messages');
+    } catch (error) {
+      console.error('Error leaving group:', error);
+      toast.error('Failed to leave the group');
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!activeConversation) return;
+
+    try {
+      await removeConversationMember(activeConversation.id, memberId);
+      toast.success('Member removed from the group');
+      refreshConversations();
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member from group');
+    }
+  };
+
   return (
     <div className="p-3 border-b flex items-center justify-between">
       <div className="flex items-center">
@@ -96,6 +210,13 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
               d="M15 19l-7-7 7-7"
             />
           </svg>
+        </button>
+        <button
+          className="mr-2 text-gray-500 hover:bg-gray-100 rounded-full p-1"
+          onClick={() => router.push('/messages')}
+          aria-label="Back to conversations list"
+        >
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="relative w-12 h-12 flex-shrink-0">
@@ -168,10 +289,20 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
                   role="menuitem"
                   onClick={() => {
                     setShowMenu(false);
-                    // Implementation for group info
+                    setShowGroupInfo(true);
                   }}
                 >
                   Group info
+                </button>
+              )}
+
+              {activeConversation.conversation_type === ConversationType.GROUP && (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  role="menuitem"
+                  onClick={handleLeaveGroup}
+                >
+                  Leave group
                 </button>
               )}
 
@@ -229,6 +360,193 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
               disabled={isDeleting}
             >
               {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leave Group Confirmation Dialog */}
+      <Dialog open={isLeaveDialogOpen} onOpenChange={setIsLeaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Leave Group</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to leave this group? You will no longer receive messages or updates from this group.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end mt-5">
+            <Button
+              variant="outline"
+              onClick={() => setIsLeaveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmLeaveGroup}
+            >
+              Leave Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour les infos du groupe */}
+      {activeConversation.conversation_type === ConversationType.GROUP && (
+        <Dialog open={showGroupInfo} onOpenChange={setShowGroupInfo}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Group Info</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center p-4">
+              <div className="w-16 h-16 relative mb-3">
+                <ConversationAvatar 
+                  conversation={activeConversation} 
+                  size={64} 
+                  currentUserId={currentUserId}
+                />
+              </div>
+              <h3 className="text-xl font-semibold">{activeConversation.title}</h3>
+              <span className="text-sm text-gray-500">
+                {activeConversation.participants.length} members
+              </span>
+            </div>
+            
+            {/* Liste des membres */}
+            <div className="border-t border-b py-2 mb-4">
+              <h4 className="font-medium mb-2">Members</h4>
+              <ScrollArea className="h-64">
+                <div className="space-y-2">
+                  {activeConversation.participants.map((participant) => (
+                    <div key={participant.user_id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                      <div className="flex items-center">
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarImage src={participant.profile_picture} />
+                          <AvatarFallback>
+                            {participant.first_name ? participant.first_name.charAt(0).toUpperCase() : '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {participant.first_name 
+                              ? `${participant.first_name} ${participant.last_name || ''}`
+                              : participant.username || 'Unknown user'}
+                            {participant.user_id === currentUserId && ' (You)'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {participant.user_id === activeConversation.created_by 
+                              ? 'Admin' 
+                              : 'Member'}
+                          </p>
+                        </div>
+                      </div>
+                      {currentUserId === activeConversation.created_by && 
+                       participant.user_id !== currentUserId && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => handleRemoveMember(participant.user_id)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            
+            <div className="mb-4">
+              <Button 
+                variant="outline" 
+                className="w-full flex justify-between items-center"
+                onClick={handleAddMember}
+              >
+                <div className="flex items-center">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  <span>Add new member</span>
+                </div>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMember} onOpenChange={handleAddMemberDialogClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Member to Group</DialogTitle>
+            <DialogDescription>
+              Search for users to add to this group conversation
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center gap-2 mb-4">
+            <Input
+              placeholder="Search by name or username"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleSearch} 
+              disabled={isSearching || !searchQuery.trim()}
+              size="icon"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {isSearching ? (
+            <div className="text-center py-4">Searching...</div>
+          ) : searchResults.length > 0 ? (
+            <ScrollArea className="h-[200px] border rounded-md p-2">
+              {searchResults.map((user) => (
+                <div 
+                  key={user.id}
+                  className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${selectedUser?.id === user.id ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                  onClick={() => handleUserSelect(user)}
+                >
+                  <Avatar>
+                    <AvatarImage 
+                      src={user.profile_picture || ''}
+                      alt={user.username || ''}
+                    />
+                    <AvatarFallback>
+                      {user.first_name ? user.first_name[0] : user.username ? user.username[0] : '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">
+                      {user.first_name && user.last_name 
+                        ? `${user.first_name} ${user.last_name}`
+                        : user.username || 'Unknown user'}
+                    </p>
+                    {user.username && <p className="text-sm text-gray-500">@{user.username}</p>}
+                  </div>
+                </div>
+              ))}
+            </ScrollArea>
+          ) : searchQuery && !isSearching ? (
+            <div className="text-center py-4 text-gray-500">
+              No users found. Try a different search term.
+            </div>
+          ) : null}
+          
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={handleAddMemberDialogClose}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAddMember} 
+              disabled={isAddingMember || !selectedUser}
+            >
+              {isAddingMember ? 'Adding...' : 'Add Member'}
             </Button>
           </DialogFooter>
         </DialogContent>
