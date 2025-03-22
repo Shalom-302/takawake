@@ -596,7 +596,6 @@ export function useSearchChatUsers(initialQuery: string = '') {
   
   // Only fetch if we have a query
   const shouldFetch = debouncedQuery.length >= 1;
-  
   const { data, error, isLoading } = useSWR<ChatUser[]>(
     shouldFetch ? ['searchUsers', debouncedQuery] : null,
     async () => {
@@ -624,7 +623,6 @@ export function useSearchChatUsers(initialQuery: string = '') {
   
   // Assurez-vous que users est toujours un tableau, même si data est null ou undefined
   const users = Array.isArray(data) ? data : [];
-  console.log('useSearchChatUsers returning users:', users);
   
   return {
     users,

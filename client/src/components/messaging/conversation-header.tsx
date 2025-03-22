@@ -96,9 +96,15 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     setShowAddMember(true);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim().length >= 1) {
+      setQuery(value);
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
     try {
       setQuery(searchQuery);
     } catch (error) {
@@ -487,7 +493,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
             <Input
               placeholder="Search by name or username"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="flex-1"
             />
