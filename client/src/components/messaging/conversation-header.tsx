@@ -123,16 +123,26 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
     try {
       setIsAddingMember(true);
       await addConversationMember(activeConversation.id, selectedUser.id);
-      toast.success(`${selectedUser.first_name || selectedUser.username} added to the group`);
-      setShowAddMember(false);
+      
+      // Refresh conversation data
       refreshConversations();
+      
+      // Reset UI state
+      setSelectedUser(null);
+      setShowAddMember(false);
+      setSearchQuery('');
+      setQuery('');
+      toast.success(`${selectedUser.first_name || selectedUser.username} added to the group`);
     } catch (error) {
-      console.error('Error adding member:', error);
-      toast.error('Failed to add member to group');
+      console.error('Failed to add member:', error);
+      // Check if the error is because user is already a member
+      if (error instanceof Error && error.message.includes('already a member')) {
+        toast.error(`${selectedUser.first_name || selectedUser.username} est déjà membre de cette conversation`);
+      } else {
+        toast.error("Échec de l'ajout du membre");
+      }
     } finally {
       setIsAddingMember(false);
-      setSelectedUser(null);
-      setSearchQuery('');
     }
   };
 

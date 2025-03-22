@@ -321,7 +321,7 @@ async def add_conversation_member(
         )
     
     # Call the service method to add the member
-    return await messaging_service.conversation_service.add_conversation_member(
+    return await conversation_service.add_conversation_member(
         db, conversation_id, user_id, member_data.user_id
     )
 

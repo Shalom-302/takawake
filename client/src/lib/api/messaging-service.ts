@@ -64,11 +64,12 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
     const response = await fetch(url, defaultOptions);
     console.log(`API response status for ${endpoint}:`, response.status);
     
-    // Handle non-2xx responses
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error for ${endpoint}:`, response.status, errorText);
-      throw new Error(`API error ${response.status}: ${errorText}`);
+      // Amélioré pour extraire le message d'erreur du backend
+      const errorData = await response.json().catch(() => ({ detail: 'Erreur inconnue' }));
+      const errorMessage = errorData.detail || `Erreur ${response.status}: ${response.statusText}`;
+      console.error(`API error for ${endpoint}:`, errorMessage);
+      throw new Error(errorMessage);
     }
     
     // For empty responses, return empty object
@@ -318,13 +319,21 @@ export async function addConversationMember(conversationId: string, userId: stri
     // Log the add member request
     console.log('Adding member to conversation:', { conversationId, userId });
     
-    // Make the API call
+    // Get token manually to verify it exists
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('No authentication token found. User might not be logged in.');
+      throw new Error('Authentication required');
+    }
+    
+    // Make the API call with explicit authentication header
     return fetchAPI<Conversation>(
       `${API_ROUTES.MESSAGING}/conversations/${conversationId}/members`, 
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ user_id: userId }),
       }

@@ -694,7 +694,11 @@ class ConversationService:
                     sender_id=user_id,
                     message_type="system",
                     content=f"User {new_member.username} has been re-added to the conversation",
-                    message_metadata={"action": "member_readded", "member_id": str(new_member_id), "added_by": str(user_id)}
+                    message_metadata={"action": "member_readded", "member_id": str(new_member_id), "added_by": str(user_id)},
+                    is_encrypted=False,
+                    is_edited=False,
+                    is_forwarded=False,
+                    updated_at=datetime.utcnow()
                 )
                 db.add(system_message)
                 db.commit()
@@ -720,7 +724,11 @@ class ConversationService:
                 sender_id=user_id,
                 message_type="system",
                 content=f"User {new_member.username} has been added to the conversation",
-                message_metadata={"action": "member_added", "member_id": str(new_member_id), "added_by": str(user_id)}
+                message_metadata={"action": "member_added", "member_id": str(new_member_id), "added_by": str(user_id)},
+                is_encrypted=False,
+                is_edited=False,
+                is_forwarded=False,
+                updated_at=datetime.utcnow()
             )
             db.add(system_message)
             db.commit()
