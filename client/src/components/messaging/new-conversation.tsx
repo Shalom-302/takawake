@@ -3,14 +3,15 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { useSearchChatUsers } from '@/lib/services/messaging-service';
+import { Button } from '../ui/button';
 
-// Interface locale pour représenter les utilisateurs
+// Local interface to represent users
 interface User {
   id: string;
-  firstName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
   username?: string;
-  profilePicture?: string;
+  profile_picture?: string;
 }
 
 export default function NewConversation() {
@@ -25,38 +26,32 @@ export default function NewConversation() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Ajouter un effet pour gérer les erreurs de recherche
+    // Handle search errors
     if (searchError) {
       console.error('Error in search users:', searchError);
-      setError(`Erreur lors de la recherche d'utilisateurs: ${searchError.message || 'Erreur inconnue'}`);
+      setError(`Error during user search: ${searchError.message || 'Unknown error'}`);
     } else {
       setError(null);
     }
   }, [searchError]);
 
   useEffect(() => {
-    // Ajouter un effet ici si nécessaire
-  }, []); // Ajouter un tableau de dépendances vide pour éviter l'avertissement de lint
+    // Add an effect here if needed
+  }, []); // Add an empty dependency array to avoid lint warning
 
-  // Mapper les utilisateurs de ChatUser à User
-  const usersList: User[] = users.map(user => ({
-    id: user.id,
-    firstName: user.firstName || '',
-    lastName: user.lastName || '',
-    username: user.username,
-    profilePicture: user.profilePicture || ''
-  }));
-  
-  // Mettre à jour la requête de recherche
+  // Map ChatUser users to User
+  console.log("users", users);
+
+  // Handle search query changes
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
     setQuery(query);
     console.log('Search query changed to:', query);
   };
   
-  // Filtrer les utilisateurs si nécessaire
-  const filteredUsers = usersList.filter(user => {
-    const fullName = `${user.firstName || ''} ${user.lastName || ''} ${user.username || ''}`.toLowerCase();
+  // Filter users if necessary
+  const filteredUsers = users.filter(user => {
+    const fullName = `${user.first_name || ''} ${user.last_name || ''} ${user.username || ''}`.toLowerCase();
     return fullName.includes(searchQuery.toLowerCase());
   });
   
@@ -132,7 +127,7 @@ export default function NewConversation() {
           <button
             className={`px-4 py-2 rounded-l-lg ${
               !isCreatingGroup
-                ? 'bg-blue-500 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
             onClick={() => setIsCreatingGroup(false)}
@@ -142,7 +137,7 @@ export default function NewConversation() {
           <button
             className={`px-4 py-2 rounded-r-lg ${
               isCreatingGroup
-                ? 'bg-blue-500 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
             onClick={() => setIsCreatingGroup(true)}
@@ -159,7 +154,7 @@ export default function NewConversation() {
             <input
               type="text"
               id="group-name"
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
               placeholder="Enter group name..."
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
@@ -170,7 +165,7 @@ export default function NewConversation() {
         <div className="relative mb-4">
           <input
             type="text"
-            className="w-full p-2 pl-8 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 pl-8 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
             placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -197,15 +192,16 @@ export default function NewConversation() {
               Selected {isCreatingGroup ? 'participants' : 'user'}:
             </h3>
             <div className="flex flex-wrap gap-2">
+              {console.log("huhuhu", selectedUsers)}
               {selectedUsers.map(user => (
                 <div 
                   key={user.id}
-                  className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+                  className="inline-flex items-center bg-gray-100 text-gray-800 px-3 py-1 rounded-full"
                 >
-                  <span>{user.firstName || user.username}</span>
+                  <span>{user.first_name || user.username}</span>
                   <button
                     onClick={() => toggleUserSelection(user)}
-                    className="ml-2 text-blue-500 hover:text-blue-700"
+                    className="ml-2 text-gray-500 hover:text-gray-700"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path
@@ -273,13 +269,13 @@ export default function NewConversation() {
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-gray-500">
-                          {(user.firstName?.[0] || user.username?.[0] || '').toUpperCase()}
+                          {(user.first_name?.[0] || user.username?.[0] || '').toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="ml-3 text-left">
                       <p className="text-sm font-medium">
-                        {user.firstName} {user.lastName}
+                        {user.first_name} {user.last_name}
                       </p>
                       {user.username && (
                         <p className="text-xs text-gray-500">@{user.username}</p>
@@ -307,10 +303,10 @@ export default function NewConversation() {
         )}
         
         <div className="mt-auto p-4 border-t">
-          <button
+          <Button
             className={`w-full py-2 rounded-lg ${
               selectedUsers.length > 0 && (!isCreatingGroup || (isCreatingGroup && groupName.trim()))
-                ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                ? ''
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
             onClick={handleCreateConversation}
@@ -328,7 +324,7 @@ export default function NewConversation() {
             ) : (
               `Create ${isCreatingGroup ? 'Group' : 'Conversation'}`
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

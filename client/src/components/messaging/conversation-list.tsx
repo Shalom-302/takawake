@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { useMessaging } from '@/lib/contexts/messaging-context';
 import { ConversationType, Conversation } from '@/lib/types/messaging';
 import { Button } from '../ui/button';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 // Function to format date
 const formatDate = (dateString: string) => {
@@ -28,27 +29,27 @@ const formatDate = (dateString: string) => {
 // Function to generate conversation title
 const getConversationTitle = (conversation: Conversation, currentUserId: string) => {
   if (conversation.title) return conversation.title;
-  
-  if (conversation.conversationType === ConversationType.DIRECT) {
+  console.log("conversation==", conversation);
+  if (conversation.conversation_type === ConversationType.DIRECT) {
     // For direct conversations, display the other user's name
-    const otherParticipant = conversation.participants.find(p => p.userId !== currentUserId);
+    const otherParticipant = conversation.participants.find(p => p.user_id !== currentUserId);
     if (otherParticipant) {
-      return otherParticipant.firstName 
-        ? `${otherParticipant.firstName} ${otherParticipant.lastName || ''}`
-        : otherParticipant.username || 'Utilisateur';
+      return otherParticipant.first_name 
+        ? `${otherParticipant.first_name} ${otherParticipant.last_name || ''}`
+        : otherParticipant.username || 'User';
     }
   }
   
-  return 'Conversation sans titre';
+  return 'Untitled conversation';
 };
 
 // Function to generate avatar URL
 const getAvatarUrl = (conversation: Conversation, currentUserId: string) => {
-  if (conversation.avatarUrl) return conversation.avatarUrl;
+  if (conversation.avatar_url) return conversation.avatar_url;
   
-  if (conversation.conversationType === ConversationType.DIRECT) {
-    const otherParticipant = conversation.participants.find(p => p.userId !== currentUserId);
-    return otherParticipant?.profilePicture || '/images/default-avatar.png';
+  if (conversation.conversation_type === ConversationType.DIRECT) {
+    const otherParticipant = conversation.participants.find(p => p.user_id !== currentUserId);
+    return otherParticipant?.profile_picture || '/images/default-avatar.png';
   }
   
   return '/images/default-group.png';
@@ -56,13 +57,15 @@ const getAvatarUrl = (conversation: Conversation, currentUserId: string) => {
 
 export default function ConversationList() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const { conversations, loadingConversations, activeConversation } = useMessaging();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Simulate current user ID - replace with real value from your authentication system
-  const currentUserId = 'current-user-id';
+  const currentUserId = user?.id;
   
   // Filter conversations based on search query
+  console.log("conversations", conversations);
   const filteredConversations = conversations.filter(conversation => {
     const title = getConversationTitle(conversation, currentUserId).toLowerCase();
     return title.includes(searchQuery.toLowerCase());
@@ -70,8 +73,8 @@ export default function ConversationList() {
   
   // Sort conversations by last message date
   const sortedConversations = [...filteredConversations].sort((a, b) => {
-    const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-    const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
     return dateB - dateA;
   });
   

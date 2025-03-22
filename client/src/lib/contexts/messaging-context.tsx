@@ -24,7 +24,7 @@ interface MessagingContextType {
   loadingMessages: boolean;
   hasMoreMessages: boolean;
   setActiveConversationId: (id: string | null) => void;
-  loadMoreMessages: () => Promise<void>;
+  loadMoreMessages: ({limit, before}?: {limit?: number, before?: string}) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   sendTypingIndicator: (isTyping: boolean) => void;
   markAsRead: (conversationId: string) => Promise<void>;
@@ -50,6 +50,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [websocketStatus, setWebsocketStatus] = useState('disconnected');
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Référence pour la connexion WebSocket
   const wsClientRef = useRef<WebSocketClient | null>(null);
@@ -129,14 +130,8 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       const data = await messagingAPI.getMessages(conversationId);
       if (data) {
         // Trier les messages par date
-        const sortedMessages = [...data].sort((a, b) => {
-          if (!a.createdAt) return 1; // Messages sans date à la fin
-          if (!b.createdAt) return -1;
-          
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-        
-        setMessages(sortedMessages || []);
+        const sortedMessages = sortMessages(data);
+        setMessages(sortedMessages);
         setHasMoreMessages(data.length >= 20); // Supposer qu'il y a plus si on a reçu le maximum
       }
     } catch (error) {
@@ -271,27 +266,23 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       // Créer un objet message local qui correspond à l'interface Message
       const newMessage: Message = {
         id: tempId,
-        conversationId: activeConversationId,
-        senderId: user?.id || '',
-        messageType: MessageType.TEXT,
+        conversation_id: activeConversationId,
+        sender_id: user?.id || '',
+        message_type: MessageType.TEXT,
         content,
-        isEncrypted: false,
-        isEdited: false,
-        isDeleted: false,
-        isForwarded: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        is_encrypted: false,
+        is_edited: false,
+        is_deleted: false,
+        is_forwarded: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         status: MessageStatusType.SENT
       };
       
       // Ajouter à l'état local - en préservant l'ordre chronologique
       setMessages(prev => {
         const updatedMessages = [...prev, newMessage];
-        return updatedMessages.sort((a, b) => {
-          if (!a.createdAt) return 1; 
-          if (!b.createdAt) return -1;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
+        return sortMessages(updatedMessages);
       });
       
       // Envoyer via l'API REST
@@ -302,66 +293,65 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       // Ajouter un message d'erreur
       const errorMessage: Message = {
         id: `temp-${Date.now()}`,
-        conversationId: activeConversationId,
-        senderId: user?.id || '',
-        messageType: MessageType.TEXT,
+        conversation_id: activeConversationId,
+        sender_id: user?.id || '',
+        message_type: MessageType.TEXT,
         content,
-        isEncrypted: false,
-        isEdited: false,
-        isDeleted: false,
-        isForwarded: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        is_encrypted: false,
+        is_edited: false,
+        is_deleted: false,
+        is_forwarded: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         status: MessageStatusType.FAILED
       };
       
       // Ajouter à l'état local - en préservant l'ordre chronologique
       setMessages(prev => {
         const updatedMessages = [...prev, errorMessage];
-        return updatedMessages.sort((a, b) => {
-          if (!a.createdAt) return 1;
-          if (!b.createdAt) return -1;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
+        return sortMessages(updatedMessages);
       });
     }
   }, [activeConversationId, user]);
 
-  // Méthode pour charger plus de messages (pagination)
-  const loadMoreMessages = useCallback(async (): Promise<void> => {
-    if (!activeConversationId || loadingMessages || !hasMoreMessages) {
-      return;
-    }
+  // Load more messages (for infinite scrolling)
+  const loadMoreMessages = useCallback(async ({limit = 20, before}: {limit?: number, before?: string} = {}) => {
+    if (!activeConversationId || !hasMoreMessages || isLoadingMore) return;
     
     try {
-      setLoadingMessages(true);
+      setIsLoadingMore(true);
       
-      // Nous utilisons un offset numérique pour la pagination
-      const offset = messages.length;
-      const olderMessages = await messagingAPI.getMessages(
-        activeConversationId, 
-        offset
-      );
+      // Trouver le message le plus ancien pour la pagination
+      const oldestMessage = messages.reduce((oldest, current) => {
+        if (!oldest.created_at) return current;
+        if (!current.created_at) return oldest;
+        return new Date(oldest.created_at) < new Date(current.created_at) ? oldest : current;
+      }, messages[0]);
       
-      if (olderMessages.length === 0) {
+      const oldestId = before || oldestMessage?.id;
+      if (!oldestId) {
+        setHasMoreMessages(false);
+        return;
+      }
+      
+      const olderMessages = await messagingAPI.getMessages(activeConversationId, {
+        limit,
+        before: oldestId
+      });
+      
+      if (!olderMessages || olderMessages.length === 0) {
         setHasMoreMessages(false);
       } else {
         // Trier les messages par date
-        const sortedMessages = [...messages, ...olderMessages].sort((a, b) => {
-          if (!a.createdAt) return 1; 
-          if (!b.createdAt) return -1;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-        
+        const sortedMessages = sortMessages([...messages, ...olderMessages]);
         setMessages(sortedMessages);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des messages:', error);
-      setError(`Erreur lors du chargement des messages: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('Error loading more messages:', error);
     } finally {
-      setLoadingMessages(false);
+      setIsLoadingMore(false);
     }
-  }, [activeConversationId, loadingMessages, hasMoreMessages, messages]);
+  }, [activeConversationId, messages, hasMoreMessages, isLoadingMore]);
 
   // Méthode pour créer une nouvelle conversation
   const createConversation = useCallback(async (data: { participantIds: string[]; title?: string; isGroup: boolean }): Promise<Conversation> => {
@@ -394,7 +384,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       // Mettre à jour les conversations pour réinitialiser le compteur de non lus
       setConversations(prev => prev.map(conv => 
         conv.id === conversationId 
-          ? { ...conv, unreadCount: 0 } 
+          ? { ...conv, unread_count: 0 } 
           : conv
       ));
     } catch (error) {
@@ -408,6 +398,29 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     
     wsClientRef.current.sendTypingIndicator(isTyping);
   }, [activeConversationId]);
+
+  // Fonction pour trier les messages par date
+  const sortMessages = (messages: Message[]): Message[] => {
+    return [...messages].sort((a, b) => {
+      // If one of the messages doesn't have a date, put it at the end
+      if (!a.created_at && b.created_at) return 1;
+      if (a.created_at && !b.created_at) return -1;
+      
+      // Handle temp messages (added by the user)
+      if (a.id.startsWith('temp-') && !b.id.startsWith('temp-')) return 1;
+      if (!a.id.startsWith('temp-') && b.id.startsWith('temp-')) return -1;
+      
+      // If both are temp messages, sort by the temp ID (which contains a timestamp)
+      if (a.id.startsWith('temp-') && b.id.startsWith('temp-')) {
+        const aTimestamp = parseInt(a.id.split('-')[1]) || 0;
+        const bTimestamp = parseInt(b.id.split('-')[1]) || 0;
+        return aTimestamp - bTimestamp;
+      }
+      
+      // Otherwise, sort by created_at date
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+  };
 
   // Valeur du contexte
   const contextValue: MessagingContextType = {

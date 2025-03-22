@@ -28,42 +28,42 @@ export enum ConversationType {
 
 export interface MessageAttachment {
   id: string;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  filePath: string;
-  isImage: boolean;
-  thumbnailPath?: string;
-  createdAt: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  file_path: string;
+  is_image: boolean;
+  thumbnail_path?: string;
+  created_at: string;
 }
 
 export interface MessageReaction {
   id: string;
-  userId: string;
+  user_id: string;
   reaction: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface MessageReceipt {
   id: string;
-  userId: string;
+  user_id: string;
   status: MessageStatusType;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Message {
   id: string;
-  conversationId: string;
-  senderId: string;
-  messageType: MessageType;
+  conversation_id: string;
+  sender_id: string;
+  message_type: MessageType;
   content?: string;
-  messageMetadata?: Record<string, unknown>;
-  isEncrypted: boolean;
-  isEdited: boolean;
-  isDeleted: boolean;
-  isForwarded: boolean;
-  createdAt: string;
-  updatedAt: string;
+  message_metadata?: Record<string, unknown>;
+  is_encrypted: boolean;
+  is_edited: boolean;
+  is_deleted: boolean;
+  is_forwarded: boolean;
+  created_at: string;
+  updated_at: string;
   attachments?: MessageAttachment[];
   receipts?: MessageReceipt[];
   reactions?: MessageReaction[];
@@ -71,54 +71,54 @@ export interface Message {
 }
 
 export interface ConversationParticipant {
-  userId: string;
+  user_id: string;
   role: string;
-  joinedAt: string;
-  isActive: boolean;
-  firstName?: string;
-  lastName?: string;
+  joined_at: string;
+  is_active: boolean;
+  first_name?: string;
+  last_name?: string;
   username?: string;
-  profilePicture?: string;
+  profile_picture?: string;
 }
 
 export interface Conversation {
   id: string;
-  conversationType: ConversationType;
+  conversation_type: ConversationType;
   title?: string;
-  avatarUrl?: string;
-  createdBy: string;
-  isEncrypted: boolean;
-  conversationMetadata?: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  lastMessageAt?: string;
-  lastMessage?: Message;
+  avatar_url?: string;
+  created_by: string;
+  is_encrypted: boolean;
+  conversation_metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  last_message_at?: string;
+  last_message?: Message;
   participants: ConversationParticipant[];
-  unreadCount?: number;
+  unread_count?: number;
 }
 
 export interface UserConversationSettings {
   id: string;
-  userId: string;
-  conversationId: string;
-  isMuted: boolean;
-  isPinned: boolean;
-  isArchived: boolean;
-  customName?: string;
-  themeColor?: string;
-  notificationLevel: string;
-  lastReadMessageId?: string;
+  user_id: string;
+  conversation_id: string;
+  is_muted: boolean;
+  is_pinned: boolean;
+  is_archived: boolean;
+  custom_name?: string;
+  theme_color?: string;
+  notification_level: string;
+  last_read_message_id?: string;
   role: string;
 }
 
 export interface ChatUser {
   id: string;
   username: string;
-  firstName?: string;
-  lastName?: string;
-  profilePicture?: string;
-  isOnline?: boolean;
-  lastSeen?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_picture?: string;
+  is_online?: boolean;
+  last_seen?: string;
 }
 
 // Types pour les requêtes WebSocket
@@ -139,26 +139,26 @@ export interface WebSocketMessage {
 
 // Types pour la création et mise à jour de messages
 export interface MessageCreate {
-  conversationId: string;
-  messageType: MessageType;
+  conversation_id: string;
+  message_type: MessageType;
   content?: string;
-  messageMetadata?: Record<string, unknown>;
+  message_metadata?: Record<string, unknown>;
 }
 
 export interface MessageUpdate {
   content?: string;
-  isDeleted?: boolean;
-  messageMetadata?: Record<string, unknown>;
+  is_deleted?: boolean;
+  message_metadata?: Record<string, unknown>;
 }
 
 // Types pour la recherche
 export interface MessageSearchRequest {
-  conversationId: string;
+  conversation_id: string;
   query?: string;
-  messageTypes?: MessageType[];
-  startDate?: string;
-  endDate?: string;
-  senderId?: string;
+  message_types?: MessageType[];
+  start_date?: string;
+  end_date?: string;
+  sender_id?: string;
   limit?: number;
   offset?: number;
 }

@@ -299,11 +299,12 @@ class MessageService:
         
         # Convertir conversation_id en chaîne si ce n'est pas déjà le cas
         conversation_id_str = str(conversation_id)
-        
+
         user_settings = db.query(UserConversationSettingsDB).filter(
             UserConversationSettingsDB.conversation_id == conversation_id_str,
             UserConversationSettingsDB.user_id == user_id_uuid
         ).first()
+        print("==user_settings==", user_settings)
         
         if not user_settings:
             if self.security_handler:
@@ -327,34 +328,33 @@ class MessageService:
         # Order by created_at (newest first) and limit
         messages = query.order_by(MessageDB.created_at.desc()).limit(limit).all()
         
-        print("==messages", messages)
+        print("==messages==", messages)
         # Convert to dict and decrypt if needed
         message_dicts = []
         for message in messages:
-            print("==message", message.id)
             message_dict = self._message_to_dict(message, user_id=user_id, include_attachments=True)
             message_dicts.append(message_dict)
-            
+            print("==message_dictsa==", message_dicts)
             message_id_str = str(message.id)
-            
+            print("==message_id_stra==", message_id_str)
             # Update message receipt status if necessary
             receipt = db.query(MessageReceiptDB).filter(
                 MessageReceiptDB.message_id == message_id_str,
-                MessageReceiptDB.user_id == user_id
+                MessageReceiptDB.user_id == user_id_uuid
             ).first()
-            
-            # If message was delivered but not read, mark as read
-            if receipt and receipt.status in ["sent", "delivered"]:
-                receipt.status = "read"
-                receipt.updated_at = datetime.now(datetime.timezone.utc)
+            print("==receipt==", receipt)
+            # # If message was delivered but not read, mark as read
+            # if receipt and receipt.status in ["sent", "delivered"]:
+            #     receipt.status = "read"
+            #     receipt.updated_at = datetime.now(datetime.timezone.utc)
         
-        
+        print("==message_dictsaaaaa==", message_dicts)
         # Commit receipt updates if any
         db.commit()
         
         # If any messages were marked as read, send a batch notification
         # In a real app, this would be optimized to send a single notification for all messages
-        print("==message_dicts", message_dicts)
+        
         return message_dicts
     
     def _message_to_dict(self, message, user_id=None, include_attachments=False):

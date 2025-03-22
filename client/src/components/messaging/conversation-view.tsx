@@ -5,14 +5,15 @@ import ConversationHeader from './conversation-header';
 import MessageList from './message-list';
 import MessageInput from './message-input';
 import { Button } from '../ui/button';
+import { useAuth } from '@/lib/contexts/auth-context';
 
-interface ConversationViewProps {
-  currentUserId: string;
-}
 
-export default function ConversationView({ currentUserId }: ConversationViewProps) {
+
+export default function ConversationView() {
   const params = useParams();
   const router = useRouter();
+  const { user, logout } = useAuth();
+
   const conversationId = params?.conversationId as string || null;
   
   const { 
@@ -76,7 +77,7 @@ export default function ConversationView({ currentUserId }: ConversationViewProp
   
   return (
     <div className="flex-1 flex flex-col h-full">
-      <ConversationHeader currentUserId={currentUserId} />
+      <ConversationHeader currentUserId={user?.id || ''} />
       
       {!activeConversation ? (
         <div className="flex-1 flex items-center justify-center">
@@ -84,7 +85,7 @@ export default function ConversationView({ currentUserId }: ConversationViewProp
         </div>
       ) : (
         <>
-          <MessageList currentUserId={currentUserId} />
+          <MessageList currentUserId={user?.id || ''} />
           <MessageInput />
         </>
       )}

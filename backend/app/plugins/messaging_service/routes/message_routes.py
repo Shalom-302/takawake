@@ -172,7 +172,6 @@ async def get_messages(
     """
     # Get user ID
     user_id = current_user.id
-    
     try:
         # Securely retrieve messages using the standardized approach
         messages = await message_service.get_conversation_messages(
@@ -182,6 +181,7 @@ async def get_messages(
             request.limit, 
             request.before_message_id
         )
+      
         return messages
     except HTTPException as e:
         # Rethrow HTTP exceptions
