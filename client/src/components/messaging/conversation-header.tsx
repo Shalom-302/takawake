@@ -124,14 +124,14 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
       setIsAddingMember(true);
       await addConversationMember(activeConversation.id, selectedUser.id);
       
-      // Réinitialiser l'interface utilisateur si aucune erreur
+      // Reset user interface if no error
       setSelectedUser(null);
       setShowAddMember(false);
       setSearchQuery('');
       setQuery('');
       toast.success(`${selectedUser.first_name || selectedUser.username} added to the group`);
       
-      // Rafraîchir les conversations après un court délai pour laisser le temps au backend
+      // Refresh conversations after a short delay to give the backend time
       setTimeout(() => {
         refreshConversations();
       }, 1000);
@@ -146,29 +146,29 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
                                 errorMsg.includes('Field required');
       
       if (isValidationError) {
-        // Le membre a probablement été ajouté avec succès, mais le backend a rencontré
-        // un problème de validation lors de la création du message système
+        // Member was likely added successfully, but backend encountered
+        // a validation error while creating the system message
         console.log('Backend validation error detected, but member was likely added successfully');
         
-        // Réinitialiser l'interface utilisateur comme si l'opération avait réussi
+        // Reset user interface as if the operation was successful
         setSelectedUser(null);
         setShowAddMember(false);
         setSearchQuery('');
         setQuery('');
         
-        // Afficher un message de succès pour éviter la confusion
-        toast.success(`${selectedUser.first_name || selectedUser.username} ajouté au groupe avec succès`);
+        // Show a success message to avoid confusion
+        toast.success(`${selectedUser.first_name || selectedUser.username} added to the group with success`);
         
-        // Rafraîchir les conversations après un court délai
+        // Refresh conversations after a short delay
         setTimeout(() => {
           refreshConversations();
         }, 1000);
       }
-      // Erreur "déjà membre"
+      // "already a member" error
       else if (errorMsg.includes('already a member')) {
-        toast.error(`${selectedUser.first_name || selectedUser.username} est déjà membre de cette conversation`);
+        toast.error(`${selectedUser.first_name || selectedUser.username} is already a member of this conversation`);
       } else {
-        toast.error("Échec de l'ajout du membre");
+        toast.error("Failed to add member");
       }
     } finally {
       setIsAddingMember(false);

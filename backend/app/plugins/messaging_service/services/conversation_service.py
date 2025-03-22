@@ -330,18 +330,18 @@ class ConversationService:
         """
         try:
             user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-            
+            print("===User ID:", user_id_uuid)
             # Vérifier si la conversation existe
             conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id).first()
             if not conversation:
                 raise HTTPException(status_code=404, detail="Conversation not found")
-            
+            print("===Conversation:", conversation)
             # Vérifier si l'utilisateur est participant
             user_settings = db.query(UserConversationSettingsDB).filter(
                 UserConversationSettingsDB.conversation_id == conversation_id,
                 UserConversationSettingsDB.user_id == user_id_uuid
             ).first()
-            
+            print("===User settings:", user_settings)
             if not user_settings:
                 raise HTTPException(status_code=403, detail="You are not a participant in this conversation")
             
@@ -351,7 +351,7 @@ class ConversationService:
                 user_settings.is_deleted = False
                 db.add(user_settings)
                 db.commit()
-            
+            print("===User settings after check:", user_settings)
             # Fetch the conversation
             conversation = db.query(ConversationDB).filter(
                 ConversationDB.id == conversation_id
@@ -689,6 +689,7 @@ class ConversationService:
                 db.commit()
                 
                 # Create a system message about rejoining
+                now = datetime.utcnow()
                 system_message = MessageDB(
                     conversation_id=conversation_id,
                     sender_id=user_id,
@@ -698,9 +699,13 @@ class ConversationService:
                     is_encrypted=False,
                     is_edited=False,
                     is_forwarded=False,
-                    updated_at=datetime.utcnow()
+                    updated_at=now
                 )
                 db.add(system_message)
+                db.commit()
+                
+                # Update the conversation with latest message info for response validation
+                conversation.last_message_at = now
                 db.commit()
             else:
                 raise HTTPException(status_code=400, detail="User is already a member of this conversation")
@@ -719,6 +724,7 @@ class ConversationService:
             db.add(new_member_settings)
             
             # Create a system message about the new member
+            now = datetime.utcnow()
             system_message = MessageDB(
                 conversation_id=conversation_id,
                 sender_id=user_id,
@@ -728,9 +734,13 @@ class ConversationService:
                 is_encrypted=False,
                 is_edited=False,
                 is_forwarded=False,
-                updated_at=datetime.utcnow()
+                updated_at=now
             )
             db.add(system_message)
+            db.commit()
+            
+            # Update the conversation with latest message info
+            conversation.last_message_at = now
             db.commit()
             
         # Notify all participants about the new member
@@ -746,10 +756,17 @@ class ConversationService:
                     }
                 }
             )
+        
+        print("===Conversation after adding member:", conversation)
+        try:
+            # Return the updated conversation - handle if the response validation fails
+            return await self.get_conversation(db, conversation_id, user_id)
             
-        # Return the updated conversation
-        return await self.get_conversation(db, conversation_id, user_id)
-
+        except Exception as e:
+            # Log the error but still return success since the member was added
+            print(f"Error getting conversation after adding member: {str(e)}")
+            return {"success": True, "message": f"User {new_member.username} added to conversation", "conversation_id": conversation_id}
+    
     async def search_users_for_chat(self, db: Session, current_user_id: str, search_query: str, limit: int = 20) -> List[ChatUserResponse]:
         """
         Search for users to start a chat with.
@@ -930,6 +947,31 @@ class ConversationService:
             else:
                 print("===Non-admin just leaves the conversation")
                 # Non-admin just leaves the conversation
+                
+                # Get user info for the system message
+                user = db.query(User).filter(User.id == user_id_uuid).first()
+                username = user.username if user else "A user"
+                
+                # Create a system message about the user leaving
+                now = datetime.utcnow()
+                system_message = MessageDB(
+                    conversation_id=conversation_id,
+                    sender_id=user_id,
+                    message_type="system",
+                    content=f"{username} has left the conversation",
+                    message_metadata={"action": "member_left", "member_id": str(user_id)},
+                    is_encrypted=False,
+                    is_edited=False,
+                    is_forwarded=False,
+                    updated_at=now
+                )
+                db.add(system_message)
+                
+                # Update the conversation with latest message timestamp
+                conversation.last_message_at = now
+                db.add(conversation)
+                
+                # Now remove the user from the conversation
                 db.delete(user_settings)
                 db.commit()
                 message = "You left the group conversation"
