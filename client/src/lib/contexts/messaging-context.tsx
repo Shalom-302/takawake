@@ -250,9 +250,9 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated || !user) return;
     
     try {
-      // Get the access token another way
-      // In a real system, this should be available in an authentication state property
-      const token = localStorage.getItem('access_token') || 'mock-token'; 
+      // Get the auth token from localStorage
+      const token = localStorage.getItem('auth_token') || 'mock-token'; 
+      console.log('Using auth token for WebSocket:', token.substring(0, 10) + '...');
       
       // Close any existing WebSocket connection
       if (wsClientRef.current) {

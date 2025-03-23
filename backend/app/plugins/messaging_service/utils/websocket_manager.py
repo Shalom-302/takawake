@@ -21,7 +21,7 @@ class MessageWebSocketManager:
     
     def __init__(self):
         """Initialize the WebSocket manager."""
-        self.active_connections = {}  # user_id -> list of connection objects
+        self.active_connections = {}  # user_id -> conversation_id -> websocket
         self.user_conversations = {}  # user_id -> set of conversation_ids
         self.conversation_users = {}  # conversation_id -> set of user_ids
         self.security_handler = None
@@ -36,28 +36,20 @@ class MessageWebSocketManager:
         self.security_handler = security_handler
         logger.info("WebSocket manager initialized with security handler")
     
-    async def connect(self, websocket, user_id: str):
-        """
-        Register a new WebSocket connection for a user.
+    async def connect(self, websocket, user_id: str, conversation_id: str):
+        """Register a new WebSocket connection for a user in a specific conversation."""
+        await websocket.accept()
         
-        Args:
-            websocket: WebSocket connection object
-            user_id: ID of the connecting user
-            
-        Returns:
-            Connection ID for the new connection
-        """
-        # Generate a unique connection ID
-        connection_id = str(uuid.uuid4())
-        
-        # Store the connection
         if user_id not in self.active_connections:
-            self.active_connections[user_id] = []
+            self.active_connections[user_id] = {}
+            
+        # Store the connection for this conversation
+        self.active_connections[user_id][conversation_id] = websocket
         
-        self.active_connections[user_id].append({
-            "id": connection_id,
-            "websocket": websocket
-        })
+        # Log the connection
+        active_users = len(self.active_connections)
+        logger.info(f"New WebSocket connection: user_id={user_id}, conversation_id={conversation_id}")
+        logger.info(f"Current active users count: {active_users}")
         
         # Log connection securely
         if self.security_handler:
@@ -65,36 +57,34 @@ class MessageWebSocketManager:
                 "WebSocket connection established",
                 {
                     "user_id": user_id,
-                    "connection_id": connection_id
+                    "conversation_id": conversation_id
                 }
             )
         else:
-            logger.info(f"WebSocket connection established for user {user_id}")
+            logger.info(f"WebSocket connection established for user {user_id} in conversation {conversation_id}")
         
-        return connection_id
+        return str(uuid.uuid4())
     
-    async def disconnect(self, user_id: str, connection_id: str):
+    async def disconnect(self, user_id: str, conversation_id: str, connection_id: str):
         """
         Remove a WebSocket connection when a user disconnects.
         
         Args:
             user_id: ID of the disconnecting user
+            conversation_id: ID of the conversation
             connection_id: ID of the connection to remove
         """
-        if user_id in self.active_connections:
-            # Find and remove the specific connection
-            self.active_connections[user_id] = [
-                conn for conn in self.active_connections[user_id]
-                if conn["id"] != connection_id
-            ]
+        if user_id in self.active_connections and conversation_id in self.active_connections[user_id]:
+            # Remove the specific connection
+            del self.active_connections[user_id][conversation_id]
             
-            # If no more connections for this user, clean up user-related data
+            # If no more connections for this user in this conversation, clean up
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
                 
                 # Clean up user conversation mappings
                 if user_id in self.user_conversations:
-                    del self.user_conversations[user_id]
+                    self.user_conversations[user_id].discard(conversation_id)
         
         # Log disconnection securely
         if self.security_handler:
@@ -102,11 +92,11 @@ class MessageWebSocketManager:
                 "WebSocket connection closed",
                 {
                     "user_id": user_id,
-                    "connection_id": connection_id
+                    "conversation_id": conversation_id
                 }
             )
         else:
-            logger.info(f"WebSocket connection closed for user {user_id}")
+            logger.info(f"WebSocket connection closed for user {user_id} in conversation {conversation_id}")
     
     async def send_to_user(self, user_id: str, message: Dict[str, Any]):
         """
@@ -123,9 +113,9 @@ class MessageWebSocketManager:
         message_data = self._prepare_message(message, user_id)
         
         # Send to all connections for this user
-        for conn in self.active_connections[user_id]:
+        for conversation_id, websocket in self.active_connections[user_id].items():
             try:
-                await conn["websocket"].send_text(message_data)
+                await websocket.send_text(message_data)
             except Exception as e:
                 logger.error(f"Error sending WebSocket message: {str(e)}")
                 # Connection might be broken, but we'll let the client reconnect
@@ -273,7 +263,7 @@ class MessageWebSocketManager:
         # Filter to only include users with active connections
         online_user_ids = [
             user_id for user_id in user_ids
-            if user_id in self.active_connections
+            if user_id in self.active_connections and conversation_id in self.active_connections[user_id]
         ]
         
         return online_user_ids
@@ -316,4 +306,4 @@ class MessageWebSocketManager:
         Returns:
             True if the user is online, False otherwise
         """
-        return user_id in self.active_connections and len(self.active_connections[user_id]) > 0
+        return user_id in self.active_connections and any(self.active_connections[user_id].values())

@@ -48,6 +48,43 @@ export default function MessageList({ currentUserId }: MessageListProps) {
     }
   }, [messages]);
   
+  // Écouter les événements WebSocket pour les nouveaux messages
+  useEffect(() => {
+    // Obtenir les fonctions du contexte de messagerie à l'avance
+    // pour éviter d'appeler useMessaging() dans la fonction handleNewMessage
+    const refreshConversation = () => {
+      // Forcer une actualisation de la liste des messages
+      // en utilisant setTimeout pour déclencher une mise à jour asynchrone
+      setTimeout(() => {
+        // Ici, nous pourrions appeler une API pour actualiser les messages
+        // mais pour l'instant, nous nous contentons d'un log
+        console.log('Forcing message list refresh for conversation:', activeConversation?.id);
+      }, 100);
+    };
+    
+    // Fonction de rappel pour les nouveaux messages reçus via WebSocket
+    const handleNewMessage = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      
+      // Vérifier si le message concerne la conversation active
+      if (customEvent.detail?.conversationId === activeConversation?.id) {
+        console.log('New WebSocket message for this conversation:', customEvent.detail.message);
+        
+        // Au lieu d'essayer de modifier directement le contexte,
+        // forcer un rafraîchissement de la liste des messages
+        refreshConversation();
+      }
+    };
+    
+    // Écouter les événements personnalisés de nouveaux messages
+    window.addEventListener('kaapi:new-message', handleNewMessage);
+    
+    // Nettoyer l'écouteur lors du démontage du composant
+    return () => {
+      window.removeEventListener('kaapi:new-message', handleNewMessage);
+    };
+  }, [activeConversation?.id]);
+  
   // Handle load more messages when scrolling to top
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;

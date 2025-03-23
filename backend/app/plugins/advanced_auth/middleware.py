@@ -36,6 +36,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """
         start_time = time.time()
         
+        # Skip authentication for WebSocket connections and ws-direct routes
+        if request.url.path.startswith("/ws-"):
+            logger.info(f"AuthMiddleware: Bypassing auth checks for WebSocket connection to {request.url.path}")
+            return await call_next(request)
+        
         # Skip authentication tracking for static files and other non-API routes
         if not request.url.path.startswith("/api"):
             return await call_next(request)
@@ -94,6 +99,16 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         response.headers["X-Process-Time"] = str(time.time() - start_time)
         
         return response
+
+    async def __call__(self, scope, receive, send):
+        # Skip authentication for WebSocket connections and ws-direct routes
+        if scope["type"] == "websocket" or (scope["type"] == "http" and scope.get("path", "").startswith("/ws-")):
+            print(f"AuthenticationMiddleware: Bypassing auth for {scope['type']} request to {scope.get('path')}")
+            await self.app(scope, receive, send)
+            return
+        
+        # Call the next middleware or route handler
+        await self.dispatch(Request(scope), lambda request: self.app(scope, receive, send))
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

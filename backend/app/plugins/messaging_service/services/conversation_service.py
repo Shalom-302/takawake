@@ -1300,6 +1300,5 @@ class ConversationService:
                 participants.append(participant)
             
             result["participants"] = participants
-            print("=====result", result)
         
         return result

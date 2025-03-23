@@ -398,8 +398,7 @@ class MessageService:
         for message in messages:
             message_dict = self._message_to_dict(message, user_id=user_id, include_attachments=True)
             message_dicts.append(message_dict)
-            print("==message dict with updated status==", message_dict["status"] if "status" in message_dict else None)
-        
+
         # If any messages were marked as read, send a batch notification
         # In a real app, this would be optimized to send a single notification for all messages
         return message_dicts
@@ -531,8 +530,6 @@ class MessageService:
         
         if hasattr(message, 'receipts') and message.receipts:
             # For the sender, show the most advanced status among recipients
-            print(f"==user_id: {user_id}, message.sender_id: {message.sender_id}, is sender: {str(message.sender_id) == str(user_id)}==")
-            
             if user_id and str(message.sender_id) == str(user_id):
                 # Priorité: read > delivered > sent
                 status_priority = {"read": 3, "delivered": 2, "sent": 1}

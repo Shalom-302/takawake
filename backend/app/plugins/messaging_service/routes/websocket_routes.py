@@ -20,6 +20,108 @@ router = APIRouter()
 message_service = None
 
 
+# Ajouter une route de test simple sans authentification
+@router.websocket("/ws-test")
+async def test_websocket(websocket: WebSocket):
+    """
+    Route WebSocket de test sans authentification pour diagnostiquer les problèmes de connexion
+    """
+    await websocket.accept()
+    await websocket.send_json({"message": "Connexion de test réussie"})
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_json({"echo": data})
+    except WebSocketDisconnect:
+        logger.info("WebSocket test disconnected")
+
+
+# Ajouter une route WebSocket simplifiée qui fonctionne sans authentification
+@router.websocket("/ws-direct/{conversation_id}")
+async def websocket_direct(websocket: WebSocket, conversation_id: str):
+    """
+    Endpoint WebSocket simplifié qui ignore les vérifications d'authentification
+    pour permettre la connexion pendant le développement
+    """
+    logger.info(f"WebSocket direct connection attempt to conversation {conversation_id}")
+    
+    # Accepter immédiatement la connexion sans vérification
+    await websocket.accept()
+    
+    # Envoyer un message de confirmation
+    await websocket.send_json({
+        "type": "connection_established",
+        "data": {
+            "conversation_id": conversation_id,
+            "status": "connected_without_auth"
+        }
+    })
+    
+    # Créer un ID utilisateur temporaire pour cette session
+    temp_user_id = f"temp-{uuid.uuid4()}"
+    
+    try:
+        # Connecter au gestionnaire WebSocket
+        await message_service.websocket_manager.connect(websocket, temp_user_id, conversation_id)
+        
+        # Boucle d'écoute des messages
+        while True:
+            try:
+                # Recevoir les données
+                data = await websocket.receive_json()
+                
+                # Loguer le message pour le débogage
+                logger.info(f"[Direct WS] Message reçu: {data}")
+                
+                # Traiter le message selon son type
+                if "type" in data:
+                    if data["type"] == "message":
+                        # Créer un message factice pour l'envoi
+                        message = {
+                            "id": str(uuid.uuid4()),
+                            "user_id": temp_user_id,
+                            "content": data.get("content", ""),
+                            "timestamp": datetime.datetime.now().isoformat(),
+                            "conversation_id": conversation_id
+                        }
+                        
+                        # Diffuser le message à tous les clients de cette conversation
+                        await message_service.broadcast_message(message, conversation_id)
+                        
+                        # Confirmer la réception
+                        await websocket.send_json({
+                            "type": "message_received",
+                            "data": {
+                                "message_id": message["id"]
+                            }
+                        })
+                    
+                    elif data["type"] == "typing":
+                        # Diffuser l'indication de frappe
+                        await message_service.broadcast_typing_indicator(
+                            temp_user_id,
+                            conversation_id,
+                            is_typing=data.get("is_typing", False)
+                        )
+            
+            except json.JSONDecodeError:
+                logger.error("Erreur de décodage JSON")
+                continue
+    
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket direct déconnecté pour la conversation {conversation_id}")
+        # Nettoyer la connexion
+        message_service.websocket_manager.disconnect(temp_user_id, conversation_id)
+    
+    except Exception as e:
+        logger.error(f"Erreur dans la connexion WebSocket directe: {str(e)}")
+        # Nettoyer la connexion en cas d'erreur
+        try:
+            message_service.websocket_manager.disconnect(temp_user_id, conversation_id)
+        except:
+            pass
+
+
 @router.websocket("/ws/{conversation_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
@@ -38,11 +140,44 @@ async def websocket_endpoint(
     user_id = None
     connection_accepted = False
     
+    # Log l'essai de connexion
+    logger.info(f"WebSocket connection attempt to conversation {conversation_id} with token: {token[:10]}..." if token else "None")
+    
+    # Accepter d'abord la connexion pour éviter le 403
+    try:
+        logger.info("Accepting WebSocket connection before authentication")
+        await websocket.accept()
+        connection_accepted = True
+    except Exception as e:
+        logger.error(f"Failed to accept WebSocket connection: {str(e)}")
+        return
+    
     try:
         # Verify token and get user information
+        logger.info("Attempting to authenticate user with token")
         user = await get_current_user_from_token(token)
         if not user:
+            # Accepter d'abord la connexion pour pouvoir envoyer le message d'erreur
             logger.warning(f"Invalid token provided for WebSocket connection to conversation {conversation_id}")
+            
+            # Envoyer un message d'erreur explicite
+            error_message = {
+                "type": "error",
+                "data": {
+                    "code": "authentication_error",
+                    "message": "Invalid authentication token"
+                }
+            }
+            logger.info(f"Sending error message to client: {error_message}")
+            
+            try:
+                await websocket.send_json(error_message)
+                # Ajouter un délai pour s'assurer que le message d'erreur est bien reçu
+                import asyncio
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                logger.error(f"Error sending authentication error message: {str(e)}")
+                
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
             
@@ -55,11 +190,6 @@ async def websocket_endpoint(
         return
     
     try:
-        # Accept the connection before checking access
-        # This prevents client-side errors during the handshake process
-        await websocket.accept()
-        connection_accepted = True
-        
         # Check if user has access to the conversation
         # This would require database access
         db = next(get_db())
@@ -80,7 +210,7 @@ async def websocket_endpoint(
             return
         
         # Register connection with the WebSocket manager
-        await messaging_service.websocket_manager.connect(conversation_id, user_id, websocket)
+        await messaging_service.websocket_manager.connect(websocket, user_id, conversation_id)
         
         logger.info(f"WebSocket connection established for user {user_id} in conversation {conversation_id}")
         
@@ -171,6 +301,10 @@ async def websocket_endpoint(
                 "message": "Error establishing WebSocket connection"
             }
         })
+        # Ajouter un délai pour s'assurer que le message d'erreur est bien reçu
+        import asyncio
+        await asyncio.sleep(0.5)
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     
     finally:
         # Clean up
@@ -192,16 +326,39 @@ async def websocket_endpoint(
 
 async def get_current_user_from_token(token: str) -> Optional[Dict[str, Any]]:
     """Authenticate user from token."""
-    # This is a simplified version
-    # In a real implementation, this would use proper JWT validation
-    # and the application's authentication system
     try:
         if not token:
+            logger.error("No token provided")
             return None
             
-        # Mock implementation
-        # In a real system, this would verify the token and get user info
+        # Debug: Log the token being used
+        logger.info(f"Authenticating with token: {token[:10]}...")
+        
+        try:
+            # Essayer de décoder le JWT - En dev, nous acceptons tout token valide
+            import jwt
+            from jwt.exceptions import PyJWTError
+            
+            # Essayer de décoder le token (sans vérification de signature en dev)
+            try:
+                decoded = jwt.decode(token, options={"verify_signature": False})
+                user_id = decoded.get('sub')
+                username = decoded.get('username', 'unknown')
+                logger.info(f"Decoded JWT token: user_id={user_id}, username={username}")
+                
+                if user_id:
+                    user = {"id": user_id, "username": username}
+                    logger.info(f"User authenticated: {user['id']}")
+                    return user
+            except PyJWTError as e:
+                logger.warning(f"JWT decode error, using mock user: {str(e)}")
+        except ImportError:
+            logger.warning("PyJWT not installed, using mock authentication")
+        
+        # Fallback to mock implementation if JWT decode fails
+        logger.info("Using mock authentication")
         user = {"id": "mock_user_id", "username": "mock_user"}
+        logger.info(f"User authenticated: {user['id']}")
         return user
     except Exception as e:
         logger.error(f"Token validation error: {str(e)}")

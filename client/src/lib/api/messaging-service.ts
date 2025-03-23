@@ -22,8 +22,16 @@ export const API_ROUTES = {
   MESSAGE: (conversationId: string, messageId: string) => 
     `/messaging/conversations/${conversationId}/messages/${messageId}`,
   MESSAGING: '/messaging',
-  WEBSOCKET: (conversationId: string) => 
-    `${process.env.NEXT_PUBLIC_WS_URL || (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host}/messaging/ws/${conversationId}`
+  WEBSOCKET: (conversationId: string) => {
+    // Si l'URL WebSocket est configurée dans les variables d'environnement, l'utiliser
+    if (process.env.NEXT_PUBLIC_WS_URL) {
+      return `${process.env.NEXT_PUBLIC_WS_URL}/ws/${conversationId}`;
+    }
+    
+    // Sinon, construire l'URL à partir de l'emplacement actuel
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws/${conversationId}`;
+  }
 };
 
 /**

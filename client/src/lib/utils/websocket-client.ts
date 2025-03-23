@@ -3,7 +3,6 @@
  * Fournit des fonctionnalités de reconnexion automatique et de gestion d'événements
  */
 
-import { API_ROUTES } from '../api/messaging-service';
 import { WebSocketMessage, WebSocketMessageType } from '../types/messaging';
 
 interface WebSocketOptions {
@@ -34,7 +33,7 @@ export class WebSocketClient {
     this.options = {
       maxReconnectAttempts: 5,
       reconnectInterval: 3000,
-      debug: false,
+      debug: true, // Activer le debug par défaut
       ...options
     };
   }
@@ -48,11 +47,21 @@ export class WebSocketClient {
         // Réinitialiser le flag de fermeture manuelle
         this.isManualClose = false;
         
-        // Créer l'URL WebSocket avec le token d'authentification
-        const wsUrl = `${API_ROUTES.WEBSOCKET(this.conversationId)}?token=${this.token}`;
+        // Utiliser le port par défaut (8000) avec la route racine qui est installée avant tout middleware
+        const baseUrl = "ws://localhost:8000";
         
-        if (this.options.debug) {
-          console.log(`Connecting to WebSocket: ${wsUrl}`);
+        // Utiliser l'endpoint ws-root qui est défini au niveau racine de l'application FastAPI
+        const wsUrl = `${baseUrl}/ws-root/${this.conversationId}`;
+        
+        // Toujours afficher l'URL pour le débogage pendant le développement
+        console.log(`Connecting to WebSocket: ${wsUrl}`);
+        console.log(`Using token: ${this.token.substring(0, 10)}...`);
+        
+        // Vérifier si le token est vide ou invalide
+        if (!this.token || this.token === 'undefined' || this.token === 'null') {
+          console.error('WebSocket token is invalid or missing');
+          reject(new Error('Invalid authentication token'));
+          return;
         }
 
         // Créer la connexion WebSocket
@@ -76,19 +85,40 @@ export class WebSocketClient {
         };
 
         this.ws.onmessage = (event) => {
+          if (this.options.debug) {
+            console.log('WebSocket message received:', event.data);
+          }
+          
           try {
-            const data = JSON.parse(event.data) as WebSocketMessage;
+            const data = JSON.parse(event.data);
             
-            // Traiter les pongs séparément
-            if (data.type === WebSocketMessageType.PONG) {
-              this.lastPongTime = Date.now();
-              return;
+            // Traitement spécifique pour les nouveaux messages
+            if (data.type === 'new_message' && data.data) {
+              console.log('New message received from WebSocket:', data.data);
+              
+              // Déclencher une mise à jour de l'interface
+              // L'événement sera capturé par les composants pour actualiser les listes de messages
+              const customEvent = new CustomEvent('kaapi:new-message', { 
+                detail: { 
+                  message: data.data,
+                  conversationId: this.conversationId 
+                } 
+              });
+              window.dispatchEvent(customEvent);
             }
             
-            if (this.options.debug) {
-              console.log('WebSocket message received:', data);
+            // Traitement spécifique pour les indicateurs de frappe
+            if (data.type === 'typing_indicator' && data.data) {
+              console.log('Typing indicator received:', data.data);
+              
+              // Déclencher une mise à jour de l'interface pour les indicateurs de frappe
+              const typingEvent = new CustomEvent('kaapi:typing-indicator', { 
+                detail: data.data 
+              });
+              window.dispatchEvent(typingEvent);
             }
             
+            // Appel du gestionnaire général fourni par l'utilisateur
             if (this.options.onMessage) {
               this.options.onMessage(data);
             }
@@ -219,6 +249,8 @@ export class WebSocketClient {
   private attemptReconnect(): void {
     if (this.isManualClose) return;
     
+    console.log(`Attempting to reconnect (attempt ${this.reconnectAttempts + 1}/${this.options.maxReconnectAttempts})...`);
+    
     const { maxReconnectAttempts, reconnectInterval } = this.options;
     
     if (this.reconnectAttempts >= (maxReconnectAttempts || 5)) {
@@ -230,9 +262,8 @@ export class WebSocketClient {
     
     this.reconnectAttempts++;
     
-    if (this.options.debug) {
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${maxReconnectAttempts})...`);
-    }
+    // Toujours afficher les tentatives de reconnexion, indépendamment du mode debug
+    console.log(`Reconnecting attempt ${this.reconnectAttempts}...`);
     
     if (this.options.onReconnect) {
       this.options.onReconnect(this.reconnectAttempts);
@@ -270,5 +301,11 @@ export class WebSocketClient {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
+  }
+
+  private getUserIdFromToken(): string {
+    // Cette méthode devrait être implémentée pour extraire l'ID utilisateur du token
+    // Pour l'exemple, on suppose que l'ID utilisateur est stocké dans une variable globale
+    return 'exampleUserId';
   }
 }

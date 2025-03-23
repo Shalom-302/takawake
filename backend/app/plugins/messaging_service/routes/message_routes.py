@@ -182,7 +182,6 @@ async def get_messages(
             request.limit, 
             request.before_message_id
         )
-        print("==messages====", messages)
         return messages
     except HTTPException as e:
         # Rethrow HTTP exceptions
