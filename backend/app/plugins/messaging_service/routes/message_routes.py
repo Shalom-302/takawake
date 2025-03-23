@@ -8,6 +8,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Query
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from ..services.message_service import MessageService
 from ..schemas.message import (
@@ -181,7 +182,7 @@ async def get_messages(
             request.limit, 
             request.before_message_id
         )
-      
+        print("==messages====", messages)
         return messages
     except HTTPException as e:
         # Rethrow HTTP exceptions
@@ -326,9 +327,6 @@ async def update_message_status(
     # Get user ID
     user_id = current_user.id
     
-    # This would require implementing a status update method in the message service
-    # For now, we'll raise a not implemented error
-    
     # Securely log the request using standardized approach
     if messaging_service.security_handler:
         messaging_service.security_handler.secure_log(
@@ -340,7 +338,114 @@ async def update_message_status(
             }
         )
     
-    raise HTTPException(status_code=501, detail="Message status update not implemented yet")
+    # Validate the status value
+    valid_statuses = ["sent", "delivered", "read"]
+    if status_request.status.lower() not in valid_statuses:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+    
+    # Update the status for each message
+    updated_count = 0
+    conversation_updates = {}  # Pour suivre les mises à jour par conversation
+    
+    for message_id in status_request.message_ids:
+        try:
+            # Get the message to check access rights
+            message = db.query(MessageDB).filter(MessageDB.id == message_id).first()
+            if not message:
+                continue
+                
+            # Check if user has access to the conversation
+            user_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == message.conversation_id,
+                UserConversationSettingsDB.user_id == user_id
+            ).first()
+            
+            if not user_settings:
+                continue  # Skip if no access
+            
+            # Update or create receipt
+            receipt = db.query(MessageReceiptDB).filter(
+                MessageReceiptDB.message_id == message_id,
+                MessageReceiptDB.user_id == user_id
+            ).first()
+            
+            if receipt:
+                # Seulement mettre à jour si le nouveau statut est plus "élevé"
+                status_priority = {"read": 3, "delivered": 2, "sent": 1}
+                current_status = receipt.status.lower() if receipt.status else "sent"
+                new_status = status_request.status.lower()
+                
+                if status_priority.get(new_status, 0) > status_priority.get(current_status, 0):
+                    old_status = receipt.status
+                    receipt.status = new_status
+                    receipt.updated_at = datetime.now(datetime.timezone.utc)
+                    
+                    # Si on passe à "read", compter pour la mise à jour du unread_count
+                    if new_status == "read" and current_status != "read":
+                        # Ajouter à notre dict de suivi par conversation
+                        conv_id = str(message.conversation_id)
+                        if conv_id not in conversation_updates:
+                            conversation_updates[conv_id] = 1
+                        else:
+                            conversation_updates[conv_id] += 1
+            else:
+                # Create new receipt
+                receipt = MessageReceiptDB(
+                    message_id=message_id,
+                    user_id=user_id,
+                    status=status_request.status.lower()
+                )
+                db.add(receipt)
+                
+                # Si le nouveau statut est "read", compter pour le unread_count
+                if status_request.status.lower() == "read":
+                    conv_id = str(message.conversation_id)
+                    if conv_id not in conversation_updates:
+                        conversation_updates[conv_id] = 1
+                    else:
+                        conversation_updates[conv_id] += 1
+            
+            updated_count += 1
+        except Exception as e:
+            logger.error(f"Error updating message status: {str(e)}")
+            # Continue with other messages even if one fails
+    
+    # Commit changes
+    db.commit()
+    
+    # Mettre à jour les compteurs de messages non lus pour chaque conversation
+    if status_request.status.lower() == "read" and conversation_updates:
+        for conv_id, count in conversation_updates.items():
+            settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conv_id,
+                UserConversationSettingsDB.user_id == user_id
+            ).first()
+            
+            if settings:
+                # Calculer le nouveau nombre de messages non lus (ne jamais descendre en dessous de 0)
+                current_unread = settings.unread_count or 0
+                settings.unread_count = max(0, current_unread - count)
+                print(f"Mise à jour unread_count pour conversation {conv_id}: {current_unread} -> {settings.unread_count}")
+        
+        # Enregistrer les mises à jour des compteurs
+        db.commit()
+    
+    # Notify about the status changes
+    if messaging_service.notification_handler and updated_count > 0:
+        for message_id in status_request.message_ids:
+            message = db.query(MessageDB).filter(MessageDB.id == message_id).first()
+            if message:
+                await messaging_service.notification_handler.notify_message_status(
+                    message_id, 
+                    message.conversation_id, 
+                    str(user_id), 
+                    status_request.status.lower()
+                )
+    
+    return {"success": True, "updated_count": updated_count}
 
 
 @router.post("/messages/delete-bulk", response_model=Dict[str, Any])
@@ -421,6 +526,41 @@ async def send_typing_notification(
                 "error"
             )
         raise HTTPException(status_code=500, detail="Failed to send typing notification")
+
+
+@router.post("/conversations/{conversation_id}/mark-read", response_model=Dict[str, bool])
+async def mark_conversation_as_read(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Mark all unread messages in a conversation as read.
+    
+    Security:
+    - Authentication required
+    - Authorization check for conversation access
+    - Rate limiting to prevent abuse
+    """
+    # Get user ID
+    user_id = current_user.id
+    
+    try:
+        # Marquer les messages comme lus
+        success = await message_service.mark_conversation_as_read(db, conversation_id, user_id)
+        return {"success": success}
+    except HTTPException as e:
+        # Rethrow HTTP exceptions
+        raise e
+    except Exception as e:
+        # Securely log the error
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Error marking conversation as read",
+                {"user_id": user_id, "conversation_id": conversation_id, "error": str(e)},
+                "error"
+            )
+        raise HTTPException(status_code=500, detail="Failed to mark conversation as read")
 
 
 def init_routes(service: MessageService):

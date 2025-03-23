@@ -491,7 +491,7 @@ class ConversationService:
         last_messages_map = {}
         
         for conversation_id in conversation_ids:
-            # Conversion explicite en chaîne pour assurer la compatibilité
+            # Convert to string explicitly to ensure compatibility
             conversation_id_str = str(conversation_id)
             
             last_message = db.query(MessageDB).filter(
@@ -505,22 +505,40 @@ class ConversationService:
         unread_counts_map = {}
         
         for conversation_id in conversation_ids:
-            # Conversion de user_id en UUID pour la comparaison avec la colonne sender_id
+            # Convert user_id to UUID for comparison with sender_id column
             user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            conversation_id_str = str(conversation_id)
             
-            unread_count = db.query(MessageDB).join(
-                MessageReceiptDB, 
-                and_(
-                    str(MessageReceiptDB.message_id) == str(MessageDB.id),
-                    str(MessageReceiptDB.user_id) == str(user_id_uuid),
-                    MessageReceiptDB.status.in_(["sent", "delivered"])
-                )
+            # Get all messages from other users in this conversation
+            messages_query = db.query(MessageDB).filter(
+                MessageDB.conversation_id == conversation_id_str,
+                MessageDB.sender_id != str(user_id_uuid)
+            )
+
+            # From these messages, find ones with receipts that are not "read"
+            unread_messages = messages_query.join(
+                MessageReceiptDB,
+                MessageReceiptDB.message_id == MessageDB.id
             ).filter(
-                str(MessageDB.conversation_id) == str(conversation_id),
-                str(MessageDB.sender_id) != str(user_id_uuid)
-            ).count()
-            
+                MessageReceiptDB.user_id == user_id_uuid,
+                MessageReceiptDB.status.in_(["sent", "delivered"])
+            ).all()
+
+            unread_count = len(unread_messages)
+
             unread_counts_map[conversation_id] = unread_count
+            
+            # Update unread_count in UserConversationSettingsDB
+            user_settings = db.query(UserConversationSettingsDB).filter(
+                str(UserConversationSettingsDB.conversation_id) == str(conversation_id),
+                str(UserConversationSettingsDB.user_id) == str(user_id_uuid)
+            ).first()
+            
+            if user_settings and user_settings.unread_count != unread_count:
+                user_settings.unread_count = unread_count
+        
+        # Save updates
+        db.commit()
         
         # Create response items
         conversation_dicts = []
@@ -549,7 +567,7 @@ class ConversationService:
                 db=db
             )
             
-            # S'assurer que le last_message contient tous les champs requis par MessageResponse
+            # Ensure last_message contains all required fields for MessageResponse
             if conversation_dict.get('last_message'):
                 last_msg = conversation_dict['last_message']
                 if 'updated_at' not in last_msg:
@@ -587,8 +605,8 @@ class ConversationService:
                 }
             )
         
-        # S'assurer que size est toujours un entier, même si limit est None
-        # Utiliser une valeur par défaut de 20 si limit est None
+        # Ensure size is always an integer, even if limit is None
+        # Use a default value of 20 if limit is None
         page_size = limit if limit is not None else 20
         
         return {

@@ -73,6 +73,7 @@ class UserConversationSettingsDB(Base):
     theme_color = Column(String(20), nullable=True)  # For chat theme
     notification_level = Column(String(20), default="all")  # 'all', 'mentions', 'none'
     last_read_message_id = Column(String(36), nullable=True)
+    unread_count = Column(Integer, default=0)  # Nombre de messages non lus
     role = Column(String(20), default="member")  # 'member', 'admin', 'owner'
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -96,6 +96,7 @@ class MessageResponse(MessageBase):
     attachments: List[AttachmentResponse] = []
     receipts: Optional[List[MessageReceiptResponse]] = None
     reactions: Optional[List[MessageReactionResponse]] = None
+    status: str = "sent"
 
     class Config:
         from_attributes = True

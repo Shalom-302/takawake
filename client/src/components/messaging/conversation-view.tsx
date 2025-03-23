@@ -36,8 +36,10 @@ export default function ConversationView() {
   
   // Mark messages as read when conversation is viewed
   useEffect(() => {
-    if (activeConversation) {
-      markAsRead();
+    console.log('Active conversation:', activeConversation);
+    if (activeConversation && (activeConversation.unread_count ?? 0) > 0) {
+      console.log(`Marking messages as read in conversation ${activeConversation.id}`);
+      markAsRead(activeConversation.id);
     }
   }, [activeConversation, markAsRead]);
   

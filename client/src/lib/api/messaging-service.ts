@@ -92,7 +92,6 @@ export async function fetchAPI<T = unknown>(endpoint: string, options: RequestIn
  */
 export async function getConversations(): Promise<Conversation[]> {
   const response = await fetchAPI<Conversation[]>(API_ROUTES.CONVERSATIONS);
-  console.log('===Conversations:', response);
   return response;
 }
 
@@ -182,6 +181,8 @@ export async function getMessages(
     method: 'POST',
     body: JSON.stringify(requestBody)
   });
+
+  console.log('Messages fetched:', response);
   
   return response;
 }
@@ -238,8 +239,12 @@ export async function updateMessageStatus(
 ): Promise<void> {
   await fetchAPI<void>(`${API_ROUTES.MESSAGES}/status`, {
     method: 'POST',
-    body: JSON.stringify({ messageId, status }),
+    body: JSON.stringify({ 
+      message_ids: [messageId], 
+      status 
+    }),
   });
+  console.log('Message status updated:', messageId, status);
 }
 
 /**
@@ -270,10 +275,11 @@ export async function searchMessages(searchRequest: MessageSearchRequest): Promi
 /**
  * Marks all messages of a conversation as read
  */
-export async function markConversationAsRead(conversationId: string): Promise<void> {
-  await fetchAPI<void>(`${API_ROUTES.CONVERSATIONS}/${conversationId}/read`, {
+export async function markConversationAsRead(conversationId: string): Promise<boolean> {
+  const response = await fetchAPI<{success: boolean}>(`/messaging/conversations/${conversationId}/mark-read`, {
     method: 'POST',
   });
+  return response.success;
 }
 
 /**

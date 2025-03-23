@@ -63,7 +63,6 @@ export default function ConversationList() {
   const currentUserId = user?.id;
   
   // Filter conversations based on search query
-  console.log("conversations", conversations);
   const filteredConversations = conversations.filter(conversation => {
     const title = getConversationTitle(conversation, currentUserId!).toLowerCase();
     return title.includes(searchQuery.toLowerCase());
@@ -119,7 +118,7 @@ export default function ConversationList() {
             {sortedConversations.map((conversation) => {
               const isActive = activeConversation?.id === conversation.id;
               const hasUnread = (conversation.unread_count || 0) > 0;
-              
+              console.log("Conversation:", conversation);
               return (
                 <li key={conversation.id}>
                   <Link 
