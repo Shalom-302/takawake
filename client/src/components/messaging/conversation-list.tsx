@@ -153,7 +153,7 @@ export default function ConversationList() {
                         </p>
                         
                         {hasUnread && (
-                          <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                          <span className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                             {conversation.unread_count}
                           </span>
                         )}
