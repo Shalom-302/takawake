@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -56,25 +56,90 @@ const getConversationTitle = (conversation: Conversation, currentUserId: string)
 export default function ConversationList() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { conversations, loadingConversations, activeConversation } = useMessaging();
+  const { conversations, loadingConversations, activeConversation, refreshConversations } = useMessaging();
   const [searchQuery, setSearchQuery] = useState('');
+  const previousConversationsRef = useRef<Conversation[]>([]);
+  
+  // Force refresh conversations on mount
+  useEffect(() => {
+    console.log("ConversationList mounted - forcing refresh");
+    refreshConversations();
+  }, [refreshConversations]);
   
   // Simulate current user ID - replace with real value from your authentication system
   const currentUserId = user?.id;
   
   // Filter conversations based on search query
-  const filteredConversations = [...conversations].filter(conversation => {
-    const title = getConversationTitle(conversation, currentUserId!).toLowerCase();
-    return title.includes(searchQuery.toLowerCase());
-  });
+  const filteredConversations = useMemo(() => {
+    console.log('Filtering conversations with query:', searchQuery);
+    return Array.isArray(conversations) ? [...conversations].filter(conversation => {
+      const title = getConversationTitle(conversation, currentUserId!).toLowerCase();
+      return title.includes(searchQuery.toLowerCase());
+    }) : [];
+  }, [conversations, searchQuery, currentUserId]);
   
   // Sort conversations by last message date
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-    const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-    return dateB - dateA;
-  });
+  const sortedConversations = useMemo(() => {
+    console.log('Sorting conversations by last message date');
+    if (!filteredConversations.length) return [];
+    
+    const sorted = [...filteredConversations].sort((a, b) => {
+      // Ensure we have proper dates to compare
+      const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      
+      console.log(`Comparing: ${a.id} (${a.last_message_at}) vs ${b.id} (${b.last_message_at})`);
+      return dateB - dateA;
+    });
+    
+    console.log('Sorted order: ', sorted.map(c => ({ 
+      id: c.id, 
+      last_message: c.last_message?.content?.substring(0, 15), 
+      date: c.last_message_at,
+      timestamp: c.last_message_at ? new Date(c.last_message_at).getTime() : 0
+    })));
+    
+    return sorted;
+  }, [filteredConversations]);
+
+  // Add effect to log when conversations change
+  useEffect(() => {
+    if (JSON.stringify(conversations) !== JSON.stringify(previousConversationsRef.current)) {
+      console.log('Conversations have changed in ConversationList:', conversations);
+      if (conversations.length > 0) {
+        console.log('First conversation:', {
+          id: conversations[0].id,
+          last_message: conversations[0].last_message?.content,
+          last_message_at: conversations[0].last_message_at,
+          unread_count: conversations[0].unread_count
+        });
+      }
+      previousConversationsRef.current = [...conversations];
+    }
+  }, [conversations]);
+
+  // Force periodical refresh of conversations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("Periodically refreshing conversations");
+      refreshConversations();
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [refreshConversations]);
+
+  console.log('RENDER ConversationList - Conversations count:', conversations.length);
+  if (conversations.length > 0) {
+    console.log('First conversation unread count:', conversations[0].unread_count);
+    console.log('First conversation last_message_at:', conversations[0].last_message_at);
+  }
   
+  // Handle manual refresh
+  const handleManualRefresh = () => {
+    console.log("Manually refreshing conversations");
+    refreshConversations();
+  };
+
   return (
     <div className="flex flex-col h-full border-r">
       <div className="p-4 border-b">
@@ -187,6 +252,12 @@ export default function ConversationList() {
             />
           </svg>
           New conversation
+        </Button>
+        <Button
+          className="w-full mt-2"
+          onClick={handleManualRefresh}
+        >
+          Refresh conversations
         </Button>
       </div>
     </div>

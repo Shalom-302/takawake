@@ -152,11 +152,26 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       
       // Vérifier la structure des données
       if (data) {
-        console.log('HUUUUUUUUUUUMMMMMMM Conversations data:', data);
+        console.log('✅ Fetched fresh conversations data from API');
         if (data && typeof data === 'object' && 'conversations' in data && Array.isArray(data.conversations)) {
+          // Tri des conversations par date du dernier message
+          const sortedConversations = [...data.conversations].sort((a, b) => {
+            const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+            const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+            return dateB - dateA;
+          });
+          
+          console.log('✅ Sorted conversations by last_message_at:', 
+            sortedConversations.map(c => ({ 
+              id: c.id, 
+              last_message: c.last_message?.content?.substring(0, 15) || 'No message', 
+              last_message_at: c.last_message_at,
+              unread: c.unread_count
+            }))
+          );
+          
           // Si data est un objet avec une propriété conversations qui est un tableau
-          console.log('HUUUUUUUUUUUMMMMMMMPPPPPPPP Conversations data:', data);
-          setConversations([...data.conversations]);
+          setConversations([...sortedConversations]);
         } else {
           console.error('API returned invalid format for conversations:', data);
           setConversations([]);
@@ -516,8 +531,43 @@ function MessagingProvider({ children }: { children: ReactNode }) {
         return sortMessages(updatedMessages);
       });
       
+      // Update the conversation with the new message immediately
+      const now = new Date().toISOString();
+      setConversations(prevConversations => {
+        console.log("Updating conversations after sending message:", activeConversationId);
+        
+        // Find the conversation to update
+        const conversationToUpdate = prevConversations.find(c => c.id === activeConversationId);
+        if (!conversationToUpdate) {
+          console.warn("Could not find conversation to update:", activeConversationId);
+          return prevConversations;
+        }
+        
+        // Create updated conversation with the new message
+        const updatedConversation = {
+          ...conversationToUpdate,
+          last_message: newMessage,
+          last_message_at: now
+        };
+        
+        console.log("Updated conversation with new message:", 
+          JSON.stringify({
+            id: updatedConversation.id,
+            last_message_content: updatedConversation.last_message?.content,
+            last_message_at: updatedConversation.last_message_at
+          })
+        );
+        
+        // Remove the conversation from the list and add it at the top
+        const otherConversations = prevConversations.filter(c => c.id !== activeConversationId);
+        return [updatedConversation, ...otherConversations];
+      });
+      
       // Send via REST API
       const sentMessage = await messagingAPI.sendMessage(activeConversationId, content);
+      
+      // NOTE: We're not using addProcessedMessageId here as it doesn't exist
+      // Instead, we'll handle potential duplicates by updating the state correctly
       
       // Update local ID with server ID and status
       setMessages(prev => prev.map(msg => 
@@ -526,8 +576,36 @@ function MessagingProvider({ children }: { children: ReactNode }) {
           : msg
       ));
       
+      // Update conversation with the confirmed server message
+      setConversations(prevConversations => {
+        const updatedConversations = prevConversations.map(conv => 
+          conv.id === activeConversationId 
+          ? { 
+              ...conv, 
+              last_message: sentMessage,
+              last_message_at: sentMessage.created_at
+            } 
+          : conv
+        );
+        
+        // Make sure the updated conversation is first in the list
+        const updatedConv = updatedConversations.find(c => c.id === activeConversationId);
+        if (updatedConv) {
+          const otherConvs = updatedConversations.filter(c => c.id !== activeConversationId);
+          return [updatedConv, ...otherConvs];
+        }
+        
+        return updatedConversations;
+      });
+      
       // Explicitly update message status on the server
       await messagingAPI.updateMessageStatus(sentMessage.id, MessageStatusType.SENT);
+      
+      // Force refresh conversations to ensure everything is in sync
+      setTimeout(() => {
+        refreshConversations();
+      }, 500);
+      
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -553,8 +631,8 @@ function MessagingProvider({ children }: { children: ReactNode }) {
         return sortMessages(updatedMessages);
       });
     }
-  }, [activeConversationId, user, sortMessages]);
-
+  }, [activeConversationId, user, sortMessages, refreshConversations]);
+  
   // Load more messages (for infinite scrolling)
   const loadMoreMessages = useCallback(async ({limit = 20, before}: {limit?: number, before?: string} = {}) => {
     if (!activeConversationId || !hasMoreMessages || isLoadingMore) return;
@@ -692,8 +770,12 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     }
     
     // Update the list of conversations with the new message
-    setConversations(prev => {
-      return prev.map(conv => {
+    setConversations(prevConversations => {
+      console.log("Updating conversations with new message, current state:", JSON.stringify(prevConversations.map(c => ({ id: c.id, last_message_at: c.last_message_at }))));
+      const now = new Date().toISOString();
+      
+      // Create a completely new array to ensure React detects the change
+      const updatedConversations = prevConversations.map(conv => {
         if (conv.id === messageConversationId) {
           const isActive = messageConversationId === activeConversationId;
           // If it's a message from someone else and the conversation is not active,
@@ -704,15 +786,33 @@ function MessagingProvider({ children }: { children: ReactNode }) {
           
           console.log(`Updating conversation ${conv.id}: unread_count = ${newUnreadCount} (was ${conv.unread_count || 0}), isActive=${isActive}, isSelf=${isSelfMessage}`);
           
-          return {
+          // Create a new conversation object with updated properties
+          const updatedConv = {
             ...conv,
             unread_count: newUnreadCount,
             last_message: data as unknown as Message,
-            last_message_at: new Date().toISOString()
+            last_message_at: now
           };
+          
+          console.log("Updated conversation object:", JSON.stringify({
+            id: updatedConv.id,
+            last_message_at: updatedConv.last_message_at,
+            unread_count: updatedConv.unread_count
+          }));
+          
+          return updatedConv;
         }
         return conv;
       });
+      
+      // Move the updated conversation to the top of the list
+      const conversationToMove = updatedConversations.find(c => c.id === messageConversationId);
+      if (conversationToMove) {
+        const filteredConversations = updatedConversations.filter(c => c.id !== messageConversationId);
+        return [conversationToMove, ...filteredConversations];
+      }
+      
+      return updatedConversations;
     });
     
     // Store the last received message to be processed by the effect that handles marking as read
