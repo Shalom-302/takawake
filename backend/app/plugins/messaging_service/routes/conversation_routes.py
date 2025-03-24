@@ -412,6 +412,53 @@ async def leave_or_delete_conversation(
         raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
 
 
+@router.post("/conversations/{conversation_id}/read", response_model=Dict[str, bool])
+async def mark_conversation_as_read(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Mark all messages in a conversation as read for the current user.
+    
+    Security:
+    - Authentication required
+    - Authorization check for conversation access
+    """
+    # Get user ID
+    user_id = current_user.id
+    
+    try:
+        # Call the service method to mark the conversation as read
+        success = await conversation_service.mark_conversation_as_read(
+            db, conversation_id, user_id
+        )
+        
+        # Securely log the action using standardized approach
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Conversation marked as read",
+                {
+                    "user_id": user_id, 
+                    "conversation_id": conversation_id
+                }
+            )
+        
+        return {"success": success}
+    except HTTPException as e:
+        # Rethrow HTTP exceptions
+        raise e
+    except Exception as e:
+        # Log the error
+        if messaging_service.security_handler:
+            messaging_service.security_handler.secure_log(
+                "Error marking conversation as read",
+                {"user_id": user_id, "conversation_id": conversation_id, "error": str(e)},
+                "error"
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to mark conversation as read: {str(e)}")
+
+
 @router.post("/blocks", response_model=UserBlockResponse)
 async def block_user(
     block_data: UserBlockBase,

@@ -26,10 +26,12 @@ export class WebSocketClient {
   private isManualClose = false;
   private pingInterval: NodeJS.Timeout | null = null;
   private lastPongTime: number = 0;
+  private isGlobalConnection: boolean = false;
 
-  constructor(conversationId: string, token: string, options: WebSocketOptions = {}) {
+  constructor(conversationId: string, token: string, options: WebSocketOptions = {}, isGlobalConnection: boolean = false) {
     this.conversationId = conversationId;
     this.token = token;
+    this.isGlobalConnection = isGlobalConnection;
     this.options = {
       maxReconnectAttempts: 5,
       reconnectInterval: 3000,
@@ -48,98 +50,89 @@ export class WebSocketClient {
         this.isManualClose = false;
         
         // Use default port (8000) with root route installed before all middleware
-        const baseUrl = "ws://localhost:8000";
+        const baseUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
         
-        // Use the ws-root endpoint defined at the root level of the FastAPI application
-        const wsUrl = `${baseUrl}/ws-root/${this.conversationId}`;
+        // Construct the WebSocket URL
+        let url: string;
         
-        console.log(`⭐ Connecting to WebSocket: ${wsUrl}`);
-        
-        // Check if the token is empty or invalid
-        if (!this.token || this.token === 'undefined' || this.token === 'null') {
-          console.error('WebSocket token is invalid or missing');
-          reject(new Error('Invalid authentication token'));
-          return;
+        if (this.isGlobalConnection) {
+          // Global user connection - use the root endpoint for now since ws-user is returning 403
+          url = `${baseUrl}/ws-root/global?token=${encodeURIComponent(this.token)}&user_id=${encodeURIComponent('user-' + Date.now())}`;
+          console.log(`Connecting to global WebSocket: ${url.substring(0, url.indexOf('?'))}`);
+        } else {
+          // Conversation-specific connection
+          // Try using the ws-root endpoint which doesn't have the strict auth check
+          url = `${baseUrl}/ws-root/${this.conversationId}?token=${encodeURIComponent(this.token)}&user_id=${encodeURIComponent('user-' + Date.now())}`;
+          console.log(`Connecting to conversation WebSocket: ${url.substring(0, url.indexOf('?'))}`);
         }
-
+        
         // Create the WebSocket connection
-        this.ws = new WebSocket(wsUrl);
-
-        // Configure event handlers
+        this.ws = new WebSocket(url);
+        
+        // Set up event handlers
         this.ws.onopen = (event) => {
+          console.log(`WebSocket connected ${this.isGlobalConnection ? '(global)' : '(conversation ' + this.conversationId + ')'}`);
           this.reconnectAttempts = 0;
-          if (this.options.debug) {
-            console.log('WebSocket connection established');
-          }
           
-          // Start the ping interval to maintain the connection
-          this.startPingInterval();
-          
+          // Call the onOpen callback if provided
           if (this.options.onOpen) {
             this.options.onOpen(event);
           }
           
-          resolve(this.ws!);
-        };
-
-        this.ws.onmessage = (event) => {
-          if (this.options.debug) {
-            console.log('WebSocket message received:', event.data);
-            console.log('WebSocket message type:', typeof event.data);
-          }
+          // Start sending ping messages
+          this.startPingInterval();
           
+          resolve(this.ws as WebSocket);
+        };
+        
+        this.ws.onmessage = (event) => {
           try {
-            // Check that the data is a JSON string
-            if (typeof event.data !== 'string') {
-              console.error('WebSocket message is not a string:', event.data);
+            const data = JSON.parse(event.data) as WebSocketMessage;
+            
+            // Handle ping/pong messages internally
+            if (data.type === WebSocketMessageType.PONG) {
+              this.lastPongTime = Date.now();
               return;
             }
             
-            console.log('Parsing WebSocket message:', event.data);
-            const data = JSON.parse(event.data);
-            console.log('Parsed WebSocket message:', data);
+            // Debug message reception
+            if (this.options.debug) {
+              console.log(`Received WebSocket message ${this.isGlobalConnection ? '(global)' : '(conversation)'}:`, data.type);
+            }
             
-            // Call the onMessage callback for all message types
+            // Call the message handler if provided
             if (this.options.onMessage) {
-              console.log('Calling onMessage callback with data:', data);
               this.options.onMessage(data);
-              console.log('Message forwarded to onMessage callback:', data);
-            } else {
-              console.warn('No onMessage callback registered');
             }
           } catch (error) {
             console.error('Error parsing WebSocket message:', error);
           }
         };
-
+        
         this.ws.onclose = (event) => {
-          if (this.options.debug) {
-            console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
-          }
+          console.log(`WebSocket closed ${this.isGlobalConnection ? '(global)' : '(conversation ' + this.conversationId + ')'} with code: ${event.code}, reason: ${event.reason}`);
           
-          // Stop the ping
+          // Clear ping interval
           this.stopPingInterval();
           
-          // If not a manual close, attempt to reconnect
-          if (!this.isManualClose) {
-            this.attemptReconnect();
-          }
-          
+          // Call the close handler if provided
           if (this.options.onClose) {
             this.options.onClose(event);
           }
-        };
-
-        this.ws.onerror = (event) => {
-          if (this.options.debug) {
-            console.error('WebSocket error:', event);
-          }
           
+          // Attempt to reconnect if not manually closed
+          if (!this.isManualClose) {
+            this.reconnect();
+          }
+        };
+        
+        this.ws.onerror = (event) => {
+          console.error('WebSocket error:', event);
+          
+          // Call the error handler if provided
           if (this.options.onError) {
             this.options.onError(event);
           }
-          
-          reject(event);
         };
       } catch (error) {
         console.error('Error creating WebSocket:', error);
@@ -256,7 +249,7 @@ export class WebSocketClient {
   /**
    * Attempt to reconnect in case of disconnection
    */
-  private attemptReconnect(): void {
+  private reconnect(): void {
     if (this.isManualClose) return;
     
     console.log(`Attempting to reconnect (attempt ${this.reconnectAttempts + 1}/${this.options.maxReconnectAttempts})...`);

@@ -1284,7 +1284,7 @@ class ConversationService:
                     "role": setting.role,
                     "last_read_message_id": _safe_str(setting.last_read_message_id),
                     "created_at": setting.created_at,
-                    "updated_at": setting.updated_at,
+                    "updated_at": setting.updated_at
                 }
                 
                 # Ajouter les informations utilisateur si disponibles
@@ -1302,3 +1302,144 @@ class ConversationService:
             result["participants"] = participants
         
         return result
+    
+    async def mark_conversation_as_read(self, db: Session, conversation_id: str, user_id: str) -> bool:
+        """
+        Mark all messages in a conversation as read for the specified user.
+        
+        Args:
+            db: Database session
+            conversation_id: ID of the conversation
+            user_id: ID of the user marking messages as read
+            
+        Returns:
+            True if successful, False otherwise
+            
+        Raises:
+            HTTPException: If conversation not found or user is not a participant
+        """
+        try:
+            # Ensure user_id is in the correct format for database comparisons
+            user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            
+            # Check if conversation exists
+            conversation = db.query(ConversationDB).filter(ConversationDB.id == conversation_id).first()
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            
+            # Check if user is a participant in the conversation
+            user_settings = db.query(UserConversationSettingsDB).filter(
+                UserConversationSettingsDB.conversation_id == conversation_id,
+                UserConversationSettingsDB.user_id == user_id_uuid
+            ).first()
+            
+            if not user_settings:
+                raise HTTPException(status_code=403, detail="You are not a participant in this conversation")
+            
+            # Find all unread messages from other users in this conversation
+            unread_messages = db.query(MessageDB).outerjoin(
+                MessageReceiptDB,
+                and_(
+                    MessageReceiptDB.message_id == MessageDB.id,
+                    MessageReceiptDB.user_id == user_id_uuid
+                )
+            ).filter(
+                MessageDB.conversation_id == conversation_id,
+                MessageDB.sender_id != str(user_id_uuid),
+                or_(
+                    MessageReceiptDB.status.in_(["sent", "delivered"]),
+                    MessageReceiptDB.id == None
+                )
+            ).all()
+            
+            # Get the most recent message for updating last_read_message_id
+            last_message = db.query(MessageDB).filter(
+                MessageDB.conversation_id == conversation_id
+            ).order_by(MessageDB.created_at.desc()).first()
+            
+            # Update user's conversation settings with the latest message ID
+            if last_message:
+                user_settings.last_read_message_id = last_message.id
+                user_settings.unread_count = 0
+                db.add(user_settings)
+            
+            # Mark each message as read
+            for message in unread_messages:
+                # Check if a receipt exists
+                receipt = db.query(MessageReceiptDB).filter(
+                    MessageReceiptDB.message_id == message.id,
+                    MessageReceiptDB.user_id == user_id_uuid
+                ).first()
+                
+                if receipt:
+                    # Update existing receipt
+                    receipt.status = "read"
+                    receipt.updated_at = datetime.utcnow()
+                    db.add(receipt)
+                else:
+                    # Create new receipt
+                    new_receipt = MessageReceiptDB(
+                        message_id=message.id,
+                        user_id=user_id_uuid,
+                        status="read",
+                        updated_at=datetime.utcnow()
+                    )
+                    db.add(new_receipt)
+            
+            # Commit changes
+            db.commit()
+            
+            # Notify sender(s) that their messages have been read via WebSocket
+            if self.websocket_manager:
+                # Group messages by sender
+                sender_message_map = {}
+                for message in unread_messages:
+                    sender_id = str(message.sender_id)
+                    if sender_id not in sender_message_map:
+                        sender_message_map[sender_id] = []
+                    sender_message_map[sender_id].append(str(message.id))
+                
+                # Send read receipts to each sender
+                for sender_id, message_ids in sender_message_map.items():
+                    if sender_id != str(user_id_uuid):  # Don't send to self
+                        await self.websocket_manager.send_to_user(
+                            sender_id,
+                            {
+                                "type": "read_receipt",
+                                "data": {
+                                    "conversation_id": str(conversation_id),
+                                    "reader_id": str(user_id_uuid),
+                                    "message_ids": message_ids
+                                }
+                            }
+                        )
+                
+                # Get conversation data to broadcast update
+                conversation_data = await self.get_conversation(db, str(conversation_id), str(user_id_uuid))
+                
+                # Broadcast conversation update to all participants to update their conversation list
+                await self.websocket_manager.broadcast_to_conversation(
+                    str(conversation_id),
+                    {
+                        "type": "conversation_update",
+                        "data": {
+                            "conversation_id": str(conversation_id),
+                            "unread_count": 0,  # For the reader, will be calculated client-side for others
+                            "last_message": conversation_data.get("last_message"),
+                            "last_message_at": conversation_data.get("last_message_at")
+                        }
+                    }
+                )
+            
+            return True
+            
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error marking conversation as read: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error marking conversation as read: {str(e)}"
+            )

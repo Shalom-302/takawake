@@ -324,6 +324,125 @@ async def websocket_endpoint(
                 pass
 
 
+@router.websocket("/ws-user")
+async def websocket_user_endpoint(
+    websocket: WebSocket,
+    token: str = Query(None)
+):
+    """
+    Global WebSocket endpoint for real-time user updates.
+    
+    This connection stays active regardless of the active conversation
+    and receives updates for all conversations the user is a part of.
+    
+    Security:
+    - Authentication via token
+    - No specific conversation required
+    """
+    user_id = None
+    connection_accepted = False
+    
+    # Log l'essai de connexion
+    logger.info(f"Global user WebSocket connection attempt with token: {token[:10]}..." if token else "None")
+    
+    # Accepter d'abord la connexion pour éviter le 403
+    try:
+        logger.info("Accepting WebSocket connection before authentication")
+        await websocket.accept()
+        connection_accepted = True
+    except Exception as e:
+        logger.error(f"Error accepting WebSocket connection: {str(e)}")
+        return
+    
+    try:
+        # Authenticate using the token
+        if not token:
+            await websocket.send_json({
+                "type": "error",
+                "data": {"message": "Authentication token required"}
+            })
+            await websocket.close(code=1008, reason="Authentication token required")
+            return
+        
+        # Get the user from the token
+        try:
+            from ..dependencies import verify_token
+            payload = verify_token(token)
+            user_id = payload.get("user_id")
+            
+            if not user_id:
+                raise ValueError("Invalid token - no user_id")
+        except Exception as auth_error:
+            logger.error(f"Authentication error: {str(auth_error)}")
+            await websocket.send_json({
+                "type": "error",
+                "data": {"message": "Authentication failed"}
+            })
+            await websocket.close(code=1008, reason="Authentication failed")
+            return
+        
+        logger.info(f"User authenticated: user_id={user_id}")
+        
+        # Special global connection - using 'global' as conversation_id
+        global_connection_id = 'global'
+        await message_service.websocket_manager.connect(
+            websocket, user_id, global_connection_id, already_accepted=True
+        )
+        
+        # Send confirmation
+        await websocket.send_json({
+            "type": "connection_established",
+            "data": {
+                "user_id": user_id,
+                "connection_type": "global"
+            }
+        })
+        
+        # Websocket message handling loop
+        while True:
+            try:
+                data = await websocket.receive_json()
+                logger.info(f"[Global WS] Received message: {data}")
+                
+                # Process message based on type
+                if "type" in data:
+                    if data["type"] == "ping":
+                        await websocket.send_json({
+                            "type": "pong",
+                            "data": {"timestamp": datetime.datetime.now().isoformat()}
+                        })
+                    elif data["type"] == "user_presence":
+                        # Broadcast user presence to all their conversations
+                        status = data.get("data", {}).get("status", "online")
+                        # Get all conversations for this user
+                        db = next(get_db())
+                        user_conversations = await message_service.get_user_conversations(db, user_id)
+                        
+                        # Broadcast to each conversation
+                        for conv in user_conversations:
+                            await message_service.broadcast_user_presence(
+                                user_id,
+                                conv.id,
+                                status
+                            )
+                
+            except json.JSONDecodeError:
+                logger.error("JSON decode error")
+                continue
+    
+    except WebSocketDisconnect:
+        logger.info(f"Global WebSocket disconnected for user {user_id}")
+    except Exception as e:
+        logger.error(f"Error in global WebSocket connection: {str(e)}")
+    finally:
+        # Clean up the connection
+        if user_id:
+            try:
+                await message_service.websocket_manager.disconnect(user_id, global_connection_id)
+            except Exception as e:
+                logger.error(f"Error disconnecting WebSocket: {str(e)}")
+
+
 async def get_current_user_from_token(token: str) -> Optional[Dict[str, Any]]:
     """Authenticate user from token."""
     try:

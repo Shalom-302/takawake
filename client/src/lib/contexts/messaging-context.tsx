@@ -3,12 +3,13 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
-  Conversation, 
   Message, 
-  MessageType,
-  MessageStatusType,
-  WebSocketMessageType,
-  WebSocketConnectionStatus
+  Conversation, 
+  MessageType, 
+  MessageStatusType, 
+  WebSocketMessageType, 
+  WebSocketMessage, 
+  WebSocketConnectionStatus 
 } from '../types/messaging';
 import { WebSocketClient } from '../utils/websocket-client';
 import * as messagingAPI from '../api/messaging-service';
@@ -35,8 +36,10 @@ interface MessagingContextType {
   createConversation: (data: { participantIds: string[]; title?: string; isGroup: boolean }) => Promise<Conversation>;
   websocketStatus: WebSocketConnectionStatus;
   error: string | null;
-  updateVisibleMessagesStatus: () => void;
+  updateVisibleMessagesStatus: (messageIds: string[]) => void;
   sendStatusUpdate: (status: 'online' | 'offline' | 'away') => void;
+  globalWebsocketStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  isGlobalConnected: boolean;
 }
 
 // Create the context
@@ -44,35 +47,37 @@ const MessagingContext = createContext<MessagingContextType | undefined>(undefin
 
 // Provider of messaging
 function MessagingProvider({ children }: { children: ReactNode }) {
-  const [conversations, setConversations] = useState<Conversation[]>([]); 
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [typingUsers, setTypingUsers] = useState<{[conversationId: string]: {userId: string, username: string, timestamp: number}[]}>({});
-  const typingTimeoutRef = useRef<{[key: string]: NodeJS.Timeout}>({});
-  const [isConnected, setIsConnected] = useState(false);
-  const [loadingConversations, setLoadingConversations] = useState(false);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [hasMoreMessages, setHasMoreMessages] = useState(false);
-  const [websocketStatus, setWebsocketStatus] = useState<WebSocketConnectionStatus>('disconnected');
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [loadingConversations, setLoadingConversations] = useState<boolean>(false);
+  const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [userStatuses, setUserStatuses] = useState<{[userId: string]: {status: string, lastSeen: string}}>({});
-  
-  // Reference for WebSocket connection
+  const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
+  const [typingUsers, setTypingUsers] = useState<Record<string, {userId: string, username: string, timestamp: number}[]>>({});
+  const [userStatuses, setUserStatuses] = useState<Record<string, {status: string, lastSeen: string}>>({});
+  const [websocketStatus, setWebsocketStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [globalWebsocketStatus, setGlobalWebsocketStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const [isGlobalConnected, setIsGlobalConnected] = useState<boolean>(false);
+
+  // WebSocket references
   const wsClientRef = useRef<WebSocketClient | null>(null);
-  
-  // Reference for last received message
-  const lastReceivedMessageRef = useRef<{ id: string; conversationId: string; timestamp: number } | null>(null);
-  
-  // Reference for temporary user ID received from WebSocket server
+  const globalWsClientRef = useRef<WebSocketClient | null>(null);
   const tempUserIdRef = useRef<string | null>(null);
-  
-  // Reference for global view of messages
+  const lastReceivedMessageRef = useRef<{ id: string; conversationId: string; timestamp: number } | null>(null);
+  const typingTimeoutRef = useRef<{[key: string]: NodeJS.Timeout}>({});
   const globalViewRef = useRef<HTMLDivElement | null>(null);
   
   // Get authentication context
   const auth = useAuth();
   const { user, isAuthenticated } = auth;
+  
+  // Récupérer le token d'accès depuis localStorage
+  const getAccessToken = useCallback(() => {
+    return localStorage.getItem('auth_token') || '';
+  }, []);
   
   // Function to sort messages (defined before usage)
   const sortMessages = useCallback((messages: Message[]): Message[] => {
@@ -97,6 +102,21 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     });
   }, []);
   
+  // Method to remove a typing user from a conversation
+  const removeTypingUser = useCallback((conversationId: string, userId: string) => {
+    setTypingUsers(prev => {
+      const conversationTypingUsers = prev[conversationId] || [];
+      // Only update if user is actually in the typing list
+      if (conversationTypingUsers.some(u => u.userId === userId)) {
+        return {
+          ...prev,
+          [conversationId]: conversationTypingUsers.filter(u => u.userId !== userId)
+        };
+      }
+      return prev;
+    });
+  }, []);
+
   // Find active conversation
   const activeConversation = useMemo(() => {
     if (!activeConversationId) return null;
@@ -190,59 +210,41 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     }
   }, [activeConversationId, loadMessages]);
 
-  // Method to mark a conversation as read
-  const markAsRead = useCallback(async (conversationId?: string): Promise<void> => {
-    // If no ID is provided, use the active conversation ID
-    const targetId = conversationId || activeConversationId;
-    if (!targetId) return;
+  // Function to update visible message status 
+  const updateVisibleMessagesStatus = useCallback(async (messageIds: string[]) => {
+    if (!activeConversationId || messageIds.length === 0) return;
     
-    try {
-      console.log(`Marking conversation ${targetId} as read`);
-      const success = await messagingAPI.markConversationAsRead(targetId);
-      
-      if (success) {
-        // Update conversations to reset unread count
-        setConversations(prev => prev.map(conv => 
-          conv.id === targetId
-            ? { ...conv, unread_count: 0 } 
-            : conv
-        ));
-        console.log(`Conversation ${targetId} marked as read successfully`);
-        
-        // Additionally, update the status of visible messages to "read"
-        // This handles the UI display of message status
-        updateVisibleMessagesStatus();
-      } else {
-        console.warn(`Failed to mark conversation ${targetId} as read`);
-      }
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-    }
-  }, [activeConversationId]);
-
-  // Method to update the status of visible messages to "read"
-  const updateVisibleMessagesStatus = useCallback(() => {
-    if (!activeConversationId || !isAuthenticated) return;
-    
-    // Get all messages that are not from the current user and are not already "read"
-    const unreadMessageIds = messages
-      .filter(msg => !msg.is_read && msg.sender_id !== user?.id)
-      .map(msg => msg.id);
+    const unreadMessageIds = messageIds.filter(id => {
+      const msg = messages.find(m => m.id === id);
+      return msg && !msg.is_read && msg.sender_id !== user?.id;
+    });
     
     if (unreadMessageIds.length > 0) {
-      // Mark messages as read via API
-      fetch(`/api/conversations/${activeConversationId}/messages/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message_ids: unreadMessageIds }),
-      })
-      .then(() => {
-        // Mise à jour locale des messages
+      console.log(`Updating read status for ${unreadMessageIds.length} messages in conversation ${activeConversationId}`);
+      
+      try {
+        // Use the correct endpoint for marking messages as read
+        await messagingAPI.fetchAPI(`/messaging/messages/status`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            message_ids: unreadMessageIds,
+            status: "read"
+          })
+        });
+
+        // Update local messages
         setMessages(prev => 
           prev.map(msg => 
             unreadMessageIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+          )
+        );
+        
+        // Update unread count in conversations list
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === activeConversationId 
+              ? { ...conv, unread_count: 0 } 
+              : conv
           )
         );
         
@@ -267,10 +269,44 @@ function MessagingProvider({ children }: { children: ReactNode }) {
             }
           });
         }
-      })
-      .catch(err => console.error('Error marking messages as read:', err));
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+      }
     }
-  }, [activeConversationId, isAuthenticated, messages, user?.id, user?.username]);
+  }, [activeConversationId, messages, user?.id, user?.username]);
+
+  // Method to mark a conversation as read
+  const markAsRead = useCallback(async (conversationId?: string): Promise<void> => {
+    const targetId = conversationId || activeConversationId;
+    if (!targetId) return;
+
+    console.log(`Marking conversation ${targetId} as read`);
+    
+    try {
+      // Use the correct endpoint to mark a conversation as read
+      const response = await messagingAPI.fetchAPI(`/messaging/conversations/${targetId}/read`, {
+        method: 'POST'
+      });
+      
+      // Check if the response indicates success
+      if (response && typeof response === 'object' && 'success' in response && response.success) {
+        console.log(`Updated conversation list - conversation ${targetId} now has unread_count: 0`);
+        setConversations(prev =>
+          prev.map(conv => (conv.id === targetId ? { ...conv, unread_count: 0 } : conv))
+        );
+        
+        // Additionally, update the status of visible messages to "read"
+        // This handles the UI display of message status
+        if (targetId === activeConversationId) {
+          updateVisibleMessagesStatus(messages.map(msg => msg.id));
+        }
+      } else {
+        console.warn(`Failed to mark conversation ${targetId} as read`);
+      }
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }, [activeConversationId, messages, updateVisibleMessagesStatus]);
 
   // WebSocket connection handler
   const connectToWebSocket = useCallback(async (conversationId: string) => {
@@ -278,283 +314,132 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     
     try {
       // Get the auth token from localStorage
-      const token = localStorage.getItem('auth_token') || 'mock-token'; 
+      const token = getAccessToken();
       console.log('Using auth token for WebSocket:', token.substring(0, 10) + '...');
       
       // Close any existing WebSocket connection
       if (wsClientRef.current) {
+        console.log('Closing existing WebSocket connection');
         wsClientRef.current.disconnect();
+        wsClientRef.current = null;
       }
       
-      // Create a new WebSocket connection
-      const wsClient = new WebSocketClient(conversationId, token, {
-        debug: true, // Activate logs for development
-        onOpen: () => {
-          setWebsocketStatus('connected');
-          setIsConnected(true);
-          console.log(`WebSocket connected to conversation ${conversationId}`);
-        },
-        onMessage: (data) => {
-          console.log(`⭐ onMessage called - data: ${JSON.stringify(data)}`);
-          console.log(`Message type: '${data.type}', expected type: '${WebSocketMessageType.MESSAGE}'`);
-
-          // Debug - log all data properties
-          console.log('WebSocketMessage data keys:', Object.keys(data));
-          console.log('WebSocketMessage data.data:', data.data);
-
-          // Handle incoming messages based on their type
-          // Support both enum and string comparison for message type
-          if (data.type === WebSocketMessageType.CONNECTION_ESTABLISHED) {
-            console.log('WebSocket connection established', data);
-            // Stocker l'ID temporaire reçu du serveur
-            if (data.data && typeof data.data.user_id === 'string') {
-              tempUserIdRef.current = data.data.user_id;
-              console.log(`Stored temporary user ID from WebSocket: ${tempUserIdRef.current}`);
-            }
-            return;
-          }
-
-          // Check if the message is of type message (using enum only)
-          if (data.type === WebSocketMessageType.MESSAGE) {
-            console.log('Message type detected correctly');
-            // Extract message data - improve robustness with fallbacks
-            const messageData = data.data as Record<string, unknown>;
+      // Set WebSocket status to connecting
+      setWebsocketStatus('connecting');
+      
+      // Create WebSocket client
+      wsClientRef.current = new WebSocketClient(
+        conversationId,
+        token,
+        {
+          onOpen: () => {
+            console.log(`WebSocket connection opened for conversation ${conversationId}`);
+            setWebsocketStatus('connected');
+            setIsConnected(true);
+          },
+          onMessage: (message) => {
+            console.log('WebSocket message received:', message);
             
-            // Check message data integrity
-            if (!messageData) {
-              console.error('Message data is undefined or invalid');
-              return;
-            }
-            
-            // Add detailed logging for debugging
-            console.log('Full message data received:', messageData);
-            
-            const messageId = messageData.id as string || messageData.message_id as string;
-            const messageConversationId = messageData.conversation_id as string;
-            const messageSenderId = messageData.sender_id as string || messageData.user_id as string;
-            
-            if (!messageId || !messageConversationId || !messageSenderId) {
-              console.error('Message missing required fields:', { messageId, messageConversationId, messageSenderId });
-              return;
-            }
-            
-            // Check if the message is from us
-            const isSelfMessage = 
-              messageSenderId === user?.id || 
-              (tempUserIdRef.current && messageSenderId === tempUserIdRef.current);
-            
-            console.log(`New message received - ID: ${messageId}, ConversationID: ${messageConversationId}, SenderID: ${messageSenderId}, isSelf: ${isSelfMessage}, activeConvID: ${activeConversationId}, tempUserId: ${tempUserIdRef.current}`);
-            
-            // If the message comes from us via WebSocket, ignore completely
-            // because we've already processed it via the REST API response
-            if (isSelfMessage) {
-              console.log(`Ignoring WebSocket message from self (sender_id: ${messageSenderId})`);
-              return;
-            }
-            
-            // Add the message to the local conversation if it's the active conversation
-            if (messageConversationId === activeConversationId) {
-              console.log(`Message added to active conversation ${activeConversationId}`);
-              setMessages(prev => {
-                const exists = prev.some(m => m.id === messageId);
-                if (exists) {
-                  console.log(`Message ${messageId} already exists in the conversation, skipping`);
-                  return prev;
-                }
-                
-                console.log(`Adding new message ${messageId} to conversation ${messageConversationId}`);
-                
-                // If it's our own message, it should have the DELIVERED status
-                if (isSelfMessage) {
-                  return [...prev, {...messageData, status: MessageStatusType.DELIVERED} as unknown as Message];
-                } else {
-                  return [...prev, messageData as unknown as Message];
-                }
-              });
-            }
-            
-            // Update the list of conversations with the new message
-            setConversations(prev => {
-              return prev.map(conv => {
-                if (conv.id === messageConversationId) {
-                  const isActive = messageConversationId === activeConversationId;
-                  // If it's a message from someone else and the conversation is not active,
-                  // increment the unread_count
-                  const newUnreadCount = (!isSelfMessage && !isActive) 
-                    ? (conv.unread_count || 0) + 1
-                    : conv.unread_count || 0;
-                  
-                  console.log(`Updating conversation ${conv.id}: unread_count = ${newUnreadCount} (was ${conv.unread_count || 0}), isActive=${isActive}, isSelf=${isSelfMessage}`);
-                  
-                  return {
-                    ...conv,
-                    unread_count: newUnreadCount,
-                    last_message: messageData as unknown as Message,
-                    last_message_at: new Date().toISOString()
-                  };
-                }
-                return conv;
-              });
-            });
-            
-            // Store the last received message to be processed by the effect that handles marking as read
-            if (!isSelfMessage && messageConversationId === activeConversationId) {
-              // Use a reference object to avoid capture-by-value issues
-              lastReceivedMessageRef.current = {
-                id: messageId,
-                conversationId: messageConversationId,
-                timestamp: Date.now()
-              };
-            }
-          } else if (data.type === WebSocketMessageType.TYPING) {
-            const typingData = data.data;
-            const typingUserId = typingData.user_id as string;
-            const typingUsername = typingData.username as string;
-            const typingConversationId = typingData.conversation_id as string;
-            
-            // Don't show our own typing indicator
-            if (typingUserId === user?.id || typingUserId === tempUserIdRef.current) {
-              return;
-            }
-            
-            console.log(`Typing indicator received from ${typingUsername} in conversation ${typingConversationId}`);
-            
-            // Update typing users state
-            setTypingUsers(prev => {
-              const conversationTypers = prev[typingConversationId] || [];
-              
-              // Check if user is already in typing list
-              const existingIndex = conversationTypers.findIndex(u => u.userId === typingUserId);
-              
-              // Clear any existing timeout for this user
-              if (typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`]) {
-                clearTimeout(typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`]);
-              }
-              
-              // Set timeout to remove typing indicator after 3 seconds
-              typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`] = setTimeout(() => {
-                removeTypingUser(typingConversationId, typingUserId);
-              }, 3000);
-              
-              // Create new typing users array
-              let updatedTypers;
-              
-              if (existingIndex !== -1) {
-                // Update existing entry
-                updatedTypers = [...conversationTypers];
-                updatedTypers[existingIndex] = {
-                  userId: typingUserId,
-                  username: typingUsername,
-                  timestamp: Date.now()
-                };
-              } else {
-                // Add new entry
-                updatedTypers = [
-                  ...conversationTypers,
-                  {
-                    userId: typingUserId,
-                    username: typingUsername,
-                    timestamp: Date.now()
+            // Handle different message types
+            switch (message.type) {
+              case WebSocketMessageType.MESSAGE:
+                // Assurer que les données contiennent conversation_id
+                if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+                  // Type assertion with proper check for required properties
+                  const safeData = message.data as Record<string, unknown>;
+                  if (
+                    typeof safeData.conversation_id === 'string' &&
+                    (typeof safeData.sender_id === 'string' || typeof safeData.user_id === 'string')
+                  ) {
+                    const messageData: WebSocketMessageData = {
+                      conversation_id: safeData.conversation_id,
+                      sender_id: (safeData.sender_id || safeData.user_id) as string,
+                      content: safeData.content as string || '',
+                      // Add other required properties with defaults if needed
+                      id: (safeData.id || safeData.message_id || '') as string,
+                      created_at: (safeData.created_at as string) || new Date().toISOString(),
+                      message_type: (safeData.message_type as string) || 'text'
+                    };
+                    handleNewMessage(messageData);
                   }
-                ];
-              }
-              
-              return {
-                ...prev,
-                [typingConversationId]: updatedTypers
-              };
-            });
-          } else if (data.type === WebSocketMessageType.READ_RECEIPT) {
-            // Update message status
-            setMessages(prev => {
-              const receiptData = data.data as Record<string, unknown>;
-              const messageId = receiptData.message_id as string;
-              return prev.map(msg => {
-                if (msg.id === messageId) {
-                  return {
-                    ...msg,
-                    status: MessageStatusType.READ
-                  };
                 }
-                return msg;
-              });
-            });
-          } else if (data.type === WebSocketMessageType.USER_PRESENCE) {
-            // Handle user presence updates
-            const statusData = data.data;
-            const userId = statusData.user_id as string;
-            const status = statusData.status as string;
-            const timestamp = new Date().toISOString();
-            
-            console.log(`User status update received: ${userId} is now ${status}`);
-            
-            // Do not process our own status updates
-            if (userId === user?.id || userId === tempUserIdRef.current) {
-              return;
+                break;
+                
+              case WebSocketMessageType.TYPING:
+                // Assurer que les données contiennent conversation_id
+                if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+                  // Type assertion with proper check for required properties
+                  const safeData = message.data as Record<string, unknown>;
+                  if (
+                    typeof safeData.conversation_id === 'string' &&
+                    (typeof safeData.user_id === 'string' || typeof safeData.sender_id === 'string')
+                  ) {
+                    const typingData: WebSocketMessageData = {
+                      conversation_id: safeData.conversation_id,
+                      sender_id: (safeData.user_id || safeData.sender_id) as string,
+                      // Add other required properties with defaults
+                      id: (safeData.id || '') as string,
+                      content: (safeData.content as string) || '',
+                      created_at: (safeData.created_at as string) || new Date().toISOString(),
+                      message_type: 'typing'
+                    };
+                    handleTypingIndicator(typingData);
+                  }
+                }
+                break;
+                
+              case WebSocketMessageType.READ_RECEIPT:
+                // Assurer que les données contiennent conversation_id
+                if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+                  // Type assertion with proper check for required properties
+                  const safeData = message.data as Record<string, unknown>;
+                  if (typeof safeData.conversation_id === 'string') {
+                    const readData: WebSocketMessageData = {
+                      conversation_id: safeData.conversation_id,
+                      sender_id: (safeData.reader_id || safeData.user_id || safeData.sender_id || '') as string,
+                      // Add other required properties with defaults
+                      id: (safeData.message_id || safeData.id || '') as string,
+                      content: '',
+                      created_at: new Date().toISOString(),
+                      message_type: 'read_receipt',
+                      message_ids: Array.isArray(safeData.message_ids) ? safeData.message_ids as string[] : 
+                        (safeData.message_id ? [safeData.message_id as string] : [])
+                    };
+                    handleReadReceipt(readData);
+                  }
+                }
+                break;
+                
+              default:
+                console.log('Unknown message type:', message.type);
             }
-            
-            // Update user statuses
-            setUserStatuses(prev => ({
-              ...prev,
-              [userId]: {
-                status,
-                lastSeen: timestamp
-              }
-            }));
-            
-            // If the user is in an active conversation, update their status
-            setConversations(prev => 
-              prev.map(conv => {
-                // Check if the user is a participant of this conversation
-                const isParticipant = conv.participants.some(p => p.user_id === userId);
-                
-                if (isParticipant) {
-                  // Update the participant with the new status
-                  return {
-                    ...conv,
-                    participants: conv.participants.map(p => 
-                      p.user_id === userId 
-                        ? { ...p, is_active: status === 'online' } 
-                        : p
-                    )
-                  };
-                }
-                
-                return conv;
-              })
-            );
-          }
-        },
-        onClose: () => {
-          setWebsocketStatus('disconnected');
-          setIsConnected(false);
-          console.log(`WebSocket disconnected from conversation ${conversationId}`);
-        },
-        onError: (event) => {
-          setWebsocketStatus('error');
-          setIsConnected(false);
-          console.error('WebSocket error:', event);
-          setError('WebSocket connection error');
-        },
-        onReconnect: (attempt) => {
-          setWebsocketStatus('connecting');
-          console.log(`WebSocket reconnection attempt #${attempt}`);
+          },
+          onClose: () => {
+            console.log('WebSocket connection closed');
+            setWebsocketStatus('disconnected');
+            setIsConnected(false);
+          },
+          onError: (error) => {
+            console.error('WebSocket error:', error);
+            setWebsocketStatus('error');
+            setIsConnected(false);
+            setError('WebSocket connection error');
+          },
+          debug: true
         }
-      });
+      );
       
-      // Store the WebSocket client reference
-      wsClientRef.current = wsClient;
+      // Connect to WebSocket
+      console.log(`Connecting to WebSocket for conversation ${conversationId}`);
+      await wsClientRef.current.connect();
       
-      // Establish the connection
-      await wsClient.connect();
-      
-      return wsClient;
     } catch (error) {
-      console.error('Error connecting WebSocket:', error);
+      console.error('Error connecting to WebSocket:', error);
+      setIsConnected(false);
       setError(`Unable to connect to WebSocket: ${error instanceof Error ? error.message : String(error)}`);
       setWebsocketStatus('error');
     }
-  }, [isAuthenticated, user, activeConversationId]);
+  }, [isAuthenticated, user, getAccessToken]);
 
   // Establish WebSocket connection when active conversation changes
   useEffect(() => {
@@ -563,14 +448,28 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       
       // Send an "online" status update when the conversation is active
       if (wsClientRef.current && wsClientRef.current.isConnected()) {
-        wsClientRef.current.sendStatusUpdate('online');
+        wsClientRef.current?.sendMessage({
+          type: WebSocketMessageType.USER_PRESENCE,
+          data: {
+            user_id: user?.id,
+            status: 'online',
+            timestamp: new Date().toISOString()
+          }
+        });
       }
     }
     
     return () => {
       // Send an "offline" status update when the user leaves
       if (wsClientRef.current && wsClientRef.current.isConnected()) {
-        wsClientRef.current.sendStatusUpdate('offline');
+        wsClientRef.current?.sendMessage({
+          type: WebSocketMessageType.USER_PRESENCE,
+          data: {
+            user_id: user?.id,
+            status: 'offline',
+            timestamp: new Date().toISOString()
+          }
+        });
       }
     };
   }, [activeConversationId, isAuthenticated, connectToWebSocket]);
@@ -719,19 +618,199 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     console.log(`Sent typing indicator for conversation ${conversationId}`);
   }, [isConnected, user, wsClientRef]);
 
-  // Function to handle typing indicator expiration
-  const removeTypingUser = useCallback((conversationId: string, userId: string) => {
-    setTypingUsers(prev => {
-      if (!prev[conversationId]) return prev;
-      
-      const updated = {
-        ...prev,
-        [conversationId]: prev[conversationId].filter(u => u.userId !== userId)
-      };
-      
-      return updated;
+  // Typage pour les données de messages WebSocket
+  interface WebSocketMessageData {
+    id?: string;
+    message_id?: string;
+    conversation_id: string;
+    sender_id?: string;
+    user_id?: string;
+    content?: string;
+    username?: string;
+    created_at?: string;
+    status?: string;
+    message_ids?: string[];
+    reader_id?: string;
+    timestamp?: string;
+    reader_name?: string;
+    message_type?: string;
+  }
+
+  function handleNewMessage(data: WebSocketMessageData) {
+    const messageId = data.id || data.message_id || '';
+    const messageConversationId = data.conversation_id;
+    const messageSenderId = data.sender_id || data.user_id || '';
+    
+    if (!messageId || !messageConversationId || !messageSenderId) {
+      console.error('Message missing required fields:', { messageId, messageConversationId, messageSenderId });
+      return;
+    }
+    
+    // Check if the message is from us
+    const isSelfMessage = 
+      messageSenderId === user?.id || 
+      (tempUserIdRef.current && messageSenderId === tempUserIdRef.current);
+    
+    console.log(`New message received - ID: ${messageId}, ConversationID: ${messageConversationId}, SenderID: ${messageSenderId}, isSelf: ${isSelfMessage}, activeConvID: ${activeConversationId}, tempUserId: ${tempUserIdRef.current}`);
+    
+    // If the message comes from us via WebSocket, ignore completely
+    // because we've already processed it via the REST API response
+    if (isSelfMessage) {
+      console.log(`Ignoring WebSocket message from self (sender_id: ${messageSenderId})`);
+      return;
+    }
+    
+    // Add the message to the local conversation if it's the active conversation
+    if (messageConversationId === activeConversationId) {
+      console.log(`Message added to active conversation ${activeConversationId}`);
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === messageId);
+        if (exists) {
+          console.log(`Message ${messageId} already exists in the conversation, skipping`);
+          return prev;
+        }
+        
+        console.log(`Adding new message ${messageId} to conversation ${messageConversationId}`);
+        
+        // If it's our own message, it should have the DELIVERED status
+        if (isSelfMessage) {
+          return [...prev, {...data, status: MessageStatusType.DELIVERED} as unknown as Message];
+        } else {
+          return [...prev, data as unknown as Message];
+        }
+      });
+    }
+    
+    // Update the list of conversations with the new message
+    setConversations(prev => {
+      return prev.map(conv => {
+        if (conv.id === messageConversationId) {
+          const isActive = messageConversationId === activeConversationId;
+          // If it's a message from someone else and the conversation is not active,
+          // increment the unread_count
+          const newUnreadCount = (!isSelfMessage && !isActive) 
+            ? (conv.unread_count || 0) + 1
+            : conv.unread_count || 0;
+          
+          console.log(`Updating conversation ${conv.id}: unread_count = ${newUnreadCount} (was ${conv.unread_count || 0}), isActive=${isActive}, isSelf=${isSelfMessage}`);
+          
+          return {
+            ...conv,
+            unread_count: newUnreadCount,
+            last_message: data as unknown as Message,
+            last_message_at: new Date().toISOString()
+          };
+        }
+        return conv;
+      });
     });
-  }, [setTypingUsers]);
+    
+    // Store the last received message to be processed by the effect that handles marking as read
+    if (!isSelfMessage && messageConversationId === activeConversationId) {
+      lastReceivedMessageRef.current = {
+        id: messageId,
+        conversationId: messageConversationId,
+        timestamp: Date.now()
+      };
+    }
+  };
+
+  function handleTypingIndicator(data: WebSocketMessageData) {
+    const typingUserId = data.user_id as string;
+    const typingUsername = data.username as string;
+    const typingConversationId = data.conversation_id;
+    
+    // Don't show our own typing indicator
+    if (typingUserId === user?.id || typingUserId === tempUserIdRef.current) {
+      return;
+    }
+    
+    console.log(`Typing indicator received from ${typingUsername} in conversation ${typingConversationId}`);
+    
+    // Update typing users state
+    setTypingUsers(prev => {
+      const conversationTypers = prev[typingConversationId] || [];
+      
+      // Check if user is already in typing list
+      const existingIndex = conversationTypers.findIndex(u => u.userId === typingUserId);
+      
+      // Clear any existing timeout for this user
+      if (typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`]) {
+        clearTimeout(typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`]);
+      }
+      
+      // Set timeout to remove typing indicator after 3 seconds
+      typingTimeoutRef.current[`${typingConversationId}-${typingUserId}`] = setTimeout(() => {
+        removeTypingUser(typingConversationId, typingUserId);
+      }, 3000);
+      
+      // Create new typing users array
+      let updatedTypers;
+      
+      if (existingIndex !== -1) {
+        // Update existing entry
+        updatedTypers = [...conversationTypers];
+        updatedTypers[existingIndex] = {
+          userId: typingUserId,
+          username: typingUsername,
+          timestamp: Date.now()
+        };
+      } else {
+        // Add new entry
+        updatedTypers = [
+          ...conversationTypers,
+          {
+            userId: typingUserId,
+            username: typingUsername,
+            timestamp: Date.now()
+          }
+        ];
+      }
+      
+      return {
+        ...prev,
+        [typingConversationId]: updatedTypers
+      };
+    });
+  };
+
+  function handleReadReceipt(data: WebSocketMessageData) {
+    // Handle read receipts
+    const messageIds = data.message_ids || (data.message_id ? [data.message_id] : []);
+    const conversationId = data.conversation_id;
+    const readerId = data.reader_id || '';
+    
+    console.log(`Read receipt received for conversation ${conversationId} by user ${readerId}`, { messageIds });
+    
+    // Update message status for all affected messages
+    setMessages(prev => {
+      return prev.map(msg => {
+        if (messageIds.includes(msg.id) && msg.sender_id === user?.id) {
+          return {
+            ...msg,
+            status: MessageStatusType.READ
+          };
+        }
+        return msg;
+      });
+    });
+    
+    // If the reader is the current user, update the conversation's unread count in the list
+    if (readerId === user?.id || readerId === tempUserIdRef.current) {
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.id === conversationId) {
+            console.log(`Updating conversation ${conv.id} unread_count to 0 (was ${conv.unread_count || 0}) due to read receipt`);
+            return {
+              ...conv,
+              unread_count: 0
+            };
+          }
+          return conv;
+        });
+      });
+    }
+  };
 
   // Function to send a status update
   const sendStatusUpdate = useCallback((status: 'online' | 'offline' | 'away') => {
@@ -741,13 +820,209 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     console.log(`Sent status update: ${status}`);
   }, [isConnected, wsClientRef]);
 
+  // Handler for global WebSocket messages
+  const handleGlobalWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    console.log('Global WebSocket message received:', message);
+    
+    if (!message || !message.type) {
+      console.error('Invalid message format received in global WebSocket:', message);
+      return;
+    }
+
+    switch (message.type) {
+      case WebSocketMessageType.MESSAGE:
+        // Handle new message notification
+        if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+          const conversationId = message.data.conversation_id as string;
+          const messageId = (message.data.id || message.data.message_id || '') as string;
+          const senderId = (message.data.sender_id || message.data.user_id || '') as string;
+          
+          // Don't process messages from ourselves
+          if (senderId === user?.id || senderId === tempUserIdRef.current) {
+            return;
+          }
+          
+          // Update conversation with new last message
+          setConversations(prev => {
+            return prev.map(conv => {
+              if (conv.id === conversationId) {
+                // Only increment unread count if this isn't the active conversation
+                // or if the tab isn't visible
+                const shouldIncrementUnread = 
+                  conv.id !== activeConversationId || !document.hasFocus();
+                
+                const createdAt = message.data.created_at as string || new Date().toISOString();
+                
+                // Create properly-typed last_message
+                const newMessage: Message = {
+                  id: messageId,
+                  conversation_id: conversationId,
+                  sender_id: senderId,
+                  content: message.data.content as string,
+                  created_at: createdAt,
+                  updated_at: createdAt,
+                  message_type: MessageType.TEXT,
+                  is_encrypted: false,
+                  is_edited: false,
+                  is_deleted: false,
+                  is_forwarded: false
+                };
+                
+                // If this is the active conversation, also add to messages
+                if (conv.id === activeConversationId) {
+                  // Add message to messages list if not already there
+                  setMessages(prevMessages => {
+                    if (!prevMessages.some(m => m.id === messageId)) {
+                      return [...prevMessages, newMessage];
+                    }
+                    return prevMessages;
+                  });
+                }
+                
+                return {
+                  ...conv,
+                  last_message: newMessage,
+                  last_message_at: createdAt,
+                  unread_count: shouldIncrementUnread 
+                    ? (conv.unread_count || 0) + 1 
+                    : conv.unread_count || 0
+                };
+              }
+              return conv;
+            });
+          });
+        }
+        break;
+
+      case WebSocketMessageType.CONVERSATION_UPDATE:
+        // Handle conversation update
+        if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+          // Just refresh the conversation list instead of trying to update it manually
+          // This is more reliable and avoids type issues
+          refreshConversations().catch(error => {
+            console.error('Error refreshing conversations after update:', error);
+          });
+        }
+        break;
+
+      case WebSocketMessageType.READ_RECEIPT:
+        // Handle read receipt
+        if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+          const conversationId = message.data.conversation_id as string;
+          
+          // Update conversation's unread count
+          setConversations(prev => {
+            return prev.map(conv => {
+              if (conv.id === conversationId) {
+                return {
+                  ...conv,
+                  unread_count: 0
+                };
+              }
+              return conv;
+            });
+          });
+        }
+        break;
+        
+      case "connection_established":
+        // Connection established - send user presence
+        console.log("WebSocket connection established, sending user presence");
+        if (wsClientRef.current) {
+          // Notify server that user is online
+          setTimeout(() => {
+            sendStatusUpdate('online');
+          }, 500);
+        }
+        break;
+
+      default:
+        console.log('Unhandled global message type:', message.type);
+    }
+  }, [user?.id, tempUserIdRef, activeConversationId, refreshConversations, sendStatusUpdate, setMessages]);
+
+  // Global WebSocket connection for user-specific events
+  const connectToGlobalWebSocket = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    
+    try {
+      // Get the auth token from localStorage
+      const token = getAccessToken();
+      
+      // Close any existing WebSocket connection
+      if (globalWsClientRef.current) {
+        console.log('Closing existing global WebSocket connection');
+        globalWsClientRef.current.disconnect();
+        globalWsClientRef.current = null;
+      }
+      
+      // Set WebSocket status to connecting
+      setGlobalWebsocketStatus('connecting');
+      
+      // Create WebSocket client for global notifications
+      globalWsClientRef.current = new WebSocketClient(
+        'global', // Use 'global' as identifier for user-specific global notifications
+        token,
+        {
+          onOpen: () => {
+            console.log('Global WebSocket connection opened');
+            setGlobalWebsocketStatus('connected');
+            setIsGlobalConnected(true);
+          },
+          onMessage: (message) => {
+            console.log('Global WebSocket message received:', message);
+            handleGlobalWebSocketMessage(message);
+          },
+          onClose: () => {
+            console.log('Global WebSocket connection closed');
+            setGlobalWebsocketStatus('disconnected');
+            setIsGlobalConnected(false);
+          },
+          onError: (error) => {
+            console.error('Global WebSocket connection error', error);
+            setGlobalWebsocketStatus('error');
+            setIsGlobalConnected(false);
+            setError('Global WebSocket connection error');
+          },
+          debug: true
+        },
+        true // Set isGlobalConnection to true for global WebSocket
+      );
+      
+      // Connect to WebSocket
+      console.log('Connecting to global WebSocket');
+      await globalWsClientRef.current.connect();
+      
+    } catch (error) {
+      console.error('Error connecting to global WebSocket:', error);
+      setIsGlobalConnected(false);
+      setError(`Unable to connect to global WebSocket: ${error instanceof Error ? error.message : String(error)}`);
+      setGlobalWebsocketStatus('error');
+    }
+  }, [isAuthenticated, user, getAccessToken, handleGlobalWebSocketMessage]);
+
+  // Initialize global WebSocket connection on app startup
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      connectToGlobalWebSocket();
+    }
+    
+    return () => {
+      // Clean up global WebSocket connection on unmount
+      if (globalWsClientRef.current) {
+        globalWsClientRef.current.disconnect();
+        globalWsClientRef.current = null;
+      }
+    };
+  }, [isAuthenticated, user, connectToGlobalWebSocket]);
+
   // Auto mark messages as read when conversation is viewed
   useEffect(() => {
     if (activeConversationId) {
       // Update visible messages status
-      updateVisibleMessagesStatus();
+      updateVisibleMessagesStatus(messages.map(msg => msg.id));
     }
-  }, [activeConversationId, updateVisibleMessagesStatus]);
+  }, [activeConversationId, isAuthenticated, updateVisibleMessagesStatus, markAsRead, messages]);
 
   // Handle message notifications and updates
   useEffect(() => {
@@ -760,7 +1035,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            updateVisibleMessagesStatus();
+            updateVisibleMessagesStatus(messages.map(msg => msg.id));
           }
         });
       },
@@ -809,17 +1084,15 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     if (!activeConversationId || !isAuthenticated) return;
     
     try {
-      // Call API to mark conversation as read
-      fetch(`/api/conversations/${activeConversationId}/read`, {
-        method: 'POST',
-      });
+      markAsRead(activeConversationId)
+        .catch(error => console.error('Error marking conversation as read:', error));
       
       // Update messages status
-      updateVisibleMessagesStatus();
+      updateVisibleMessagesStatus(messages.map(msg => msg.id));
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
-  }, [activeConversationId, isAuthenticated, updateVisibleMessagesStatus]);
+  }, [activeConversationId, isAuthenticated, updateVisibleMessagesStatus, markAsRead, messages]);
 
   // Context value
   const contextValue: MessagingContextType = {
@@ -843,7 +1116,9 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     websocketStatus,
     error,
     updateVisibleMessagesStatus,
-    sendStatusUpdate
+    sendStatusUpdate,
+    globalWebsocketStatus,
+    isGlobalConnected
   };
 
   return (

@@ -416,6 +416,29 @@ export function useMarkAsRead(conversationId: string) {
 }
 
 /**
+ * Hook to mark multiple messages as read
+ */
+export function useMarkMessagesAsRead(conversationId: string) {
+  const markMessagesAsRead = useCallback(async (messageIds: string[]) => {
+    try {
+      await API.fetchAPI(`/messaging/conversations/${conversationId}/messages/read`, {
+        method: 'POST',
+        body: JSON.stringify({ message_ids: messageIds })
+      });
+      
+      // Update the cache
+      mutate(KEYS.conversations);
+      mutate(KEYS.conversation(conversationId));
+      mutate(KEYS.messages(conversationId));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }, [conversationId]);
+
+  return { markMessagesAsRead };
+}
+
+/**
  * Hook to handle typing notifications
  */
 export function useTypingIndicator(conversationId: string) {
