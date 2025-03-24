@@ -138,6 +138,7 @@ export enum WebSocketMessageType {
   TYPING = 'typing',
   READ_RECEIPT = 'read_receipt',
   USER_PRESENCE = 'user_presence',
+  CONNECTION_ESTABLISHED = 'connection_established',
   PING = 'ping',
   PONG = 'pong',
   ERROR = 'error'

@@ -6,6 +6,7 @@ import time
 import threading
 import logging
 import os
+import uuid
 
 from .core.db import Base, engine, SessionLocal
 from .core.config import settings
@@ -85,7 +86,7 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
     await websocket.accept()
     
     # Create a temporary user ID for this session
-    temp_user_id = f"temp-{uuid.uuid4()}"
+    temp_user_id = str(uuid.uuid4())
     
     try:
         # Send a welcome message
@@ -146,14 +147,15 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         try:
                             print(f"[WS-ROOT] Tentative de diffusion du message: {message_id} à la conversation: {conversation_id}")
                             print(f"[WS-ROOT] Utilisateurs dans la conversation selon WebSocket manager: {websocket_manager.conversation_users.get(conversation_id, set())}")
+                            print(f"[WS-ROOT] Expéditeur à exclure: {temp_user_id}")
                             
                             await websocket_manager.broadcast_to_conversation(
                                 conversation_id,
                                 {
-                                    "type": "message",  # Type attendu par le frontend
+                                    "type": "message",
                                     "data": message
                                 },
-                                exclude_user_id=temp_user_id  # Exclure l'expéditeur pour qu'il ne reçoive pas son propre message
+                                exclude_user_id=temp_user_id
                             )
                             print(f"[WS-ROOT] Message diffusé: {message_id}")
                             

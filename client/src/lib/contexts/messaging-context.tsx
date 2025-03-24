@@ -59,6 +59,9 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   // Reference for last received message
   const lastReceivedMessageRef = useRef<{ id: string; conversationId: string; timestamp: number } | null>(null);
   
+  // Reference for temporary user ID received from WebSocket server
+  const tempUserIdRef = useRef<string | null>(null);
+  
   // Get authentication context
   const auth = useAuth();
   const { user, isAuthenticated } = auth;
@@ -277,6 +280,16 @@ function MessagingProvider({ children }: { children: ReactNode }) {
 
           // Handle incoming messages based on their type
           // Support both enum and string comparison for message type
+          if (data.type === WebSocketMessageType.CONNECTION_ESTABLISHED) {
+            console.log('WebSocket connection established', data);
+            // Stocker l'ID temporaire reçu du serveur
+            if (data.data && typeof data.data.user_id === 'string') {
+              tempUserIdRef.current = data.data.user_id;
+              console.log(`Stored temporary user ID from WebSocket: ${tempUserIdRef.current}`);
+            }
+            return;
+          }
+
           const isMessageType = data.type === WebSocketMessageType.MESSAGE || data.type === 'message';
           
           if (isMessageType) {
@@ -303,9 +316,18 @@ function MessagingProvider({ children }: { children: ReactNode }) {
             }
             
             // Check if the message is from us
-            const isSelfMessage = messageSenderId === user?.id;
+            const isSelfMessage = 
+              messageSenderId === user?.id || 
+              (tempUserIdRef.current && messageSenderId === tempUserIdRef.current);
             
-            console.log(`New message received - ID: ${messageId}, ConversationID: ${messageConversationId}, SenderID: ${messageSenderId}, isSelf: ${isSelfMessage}, activeConvID: ${activeConversationId}`);
+            console.log(`New message received - ID: ${messageId}, ConversationID: ${messageConversationId}, SenderID: ${messageSenderId}, isSelf: ${isSelfMessage}, activeConvID: ${activeConversationId}, tempUserId: ${tempUserIdRef.current}`);
+            
+            // Si le message vient de nous-même via WebSocket, l'ignorer complètement
+            // car nous l'avons déjà traité via la réponse REST API
+            if (isSelfMessage) {
+              console.log(`Ignoring WebSocket message from self (sender_id: ${messageSenderId})`);
+              return;
+            }
             
             // Add the message to the local conversation if it's the active conversation
             if (messageConversationId === activeConversationId) {
