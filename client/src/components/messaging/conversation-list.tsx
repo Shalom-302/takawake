@@ -61,10 +61,10 @@ export default function ConversationList() {
   const previousConversationsRef = useRef<Conversation[]>([]);
   
   // Force refresh conversations on mount
-  useEffect(() => {
-    console.log("ConversationList mounted - forcing refresh");
-    refreshConversations();
-  }, [refreshConversations]);
+  // useEffect(() => {
+  //   console.log("ConversationList mounted - forcing refresh");
+  //   refreshConversations();
+  // }, [refreshConversations]);
   
   // Simulate current user ID - replace with real value from your authentication system
   const currentUserId = user?.id;

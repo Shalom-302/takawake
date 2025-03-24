@@ -69,6 +69,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   const lastReceivedMessageRef = useRef<{ id: string; conversationId: string; timestamp: number } | null>(null);
   const typingTimeoutRef = useRef<{[key: string]: NodeJS.Timeout}>({});
   const globalViewRef = useRef<HTMLDivElement | null>(null);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get authentication context
   const auth = useAuth();
@@ -426,11 +427,47 @@ function MessagingProvider({ children }: { children: ReactNode }) {
               case WebSocketMessageType.CONVERSATION_UPDATE:
                   // Handle conversation update
                   if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
-                    // Just refresh the conversation list instead of trying to update it manually
-                    // This is more reliable and avoids type issues
-                    console.log("HUUUUUUUUUUUMMMMMMM////")
-                    refreshConversations().catch(error => {
-                      console.error('Error refreshing conversations after update:', error);
+                    const conversationData = message.data as { 
+                      conversation_id: string, 
+                      last_message?: { 
+                        id: string, 
+                        content: string, 
+                        created_at: string 
+                      } 
+                    };
+                    
+                    // Log the conversation update but don't refresh every time
+                    console.log(`Received conversation update for: ${conversationData.conversation_id}`);
+                    
+                    // Au lieu de rafraîchir toutes les conversations à chaque fois,
+                    // mettons à jour la conversation spécifique dans l'état
+                    setConversations(prevConversations => {
+                      // Vérifier si on a cette conversation dans l'état
+                      const existingIndex = prevConversations.findIndex(c => c.id === conversationData.conversation_id);
+                      
+                      // Si la conversation n'existe pas, on rafraîchit tout
+                      if (existingIndex === -1) {
+                        // Planifier un rafraîchissement différé pour éviter les appels multiples
+                        setTimeout(() => {
+                          refreshConversationsDebounced();
+                        }, 300);
+                        return prevConversations;
+                      }
+                      
+                      // Sinon, on met juste à jour cette conversation
+                      const updatedConversations = [...prevConversations];
+                      
+                      // Si on a des mises à jour, appliquer
+                      if (conversationData.last_message) {
+                        updatedConversations[existingIndex] = {
+                          ...updatedConversations[existingIndex],
+                          last_message: conversationData.last_message as unknown as Message,
+                          last_message_at: conversationData.last_message.created_at || new Date().toISOString()
+                        };
+                      }
+                      
+                      // Ordonner les conversations par date du dernier message
+                      return sortConversationsByDate(updatedConversations);
                     });
                   }
                 break;
@@ -1206,6 +1243,30 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       console.error('Error marking conversation as read:', error);
     }
   }, [activeConversationId, isAuthenticated, updateVisibleMessagesStatus, markAsRead, messages]);
+
+  // Helper function to sort conversations by date
+  const sortConversationsByDate = useCallback((convs: Conversation[]): Conversation[] => {
+    return [...convs].sort((a, b) => {
+      const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, []);
+
+  // Debounced version of refreshConversations
+  const refreshConversationsDebounced = useCallback(() => {
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    // Set a new timeout
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshConversations().catch(error => {
+        console.error('Error during debounced refresh:', error);
+      });
+    }, 300);
+  }, [refreshConversations]);
 
   // Context value
   const contextValue: MessagingContextType = {
