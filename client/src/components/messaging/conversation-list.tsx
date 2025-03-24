@@ -60,12 +60,6 @@ export default function ConversationList() {
   const [searchQuery, setSearchQuery] = useState('');
   const previousConversationsRef = useRef<Conversation[]>([]);
   
-  // Force refresh conversations on mount
-  // useEffect(() => {
-  //   console.log("ConversationList mounted - forcing refresh");
-  //   refreshConversations();
-  // }, [refreshConversations]);
-  
   // Simulate current user ID - replace with real value from your authentication system
   const currentUserId = user?.id;
   
@@ -77,6 +71,7 @@ export default function ConversationList() {
       return title.includes(searchQuery.toLowerCase());
     }) : [];
   }, [conversations, searchQuery, currentUserId]);
+  
   
   // Sort conversations by last message date
   const sortedConversations = useMemo(() => {
@@ -128,17 +123,7 @@ export default function ConversationList() {
     return () => clearInterval(interval);
   }, [refreshConversations]);
 
-  console.log('RENDER ConversationList - Conversations count:', conversations.length);
-  if (conversations.length > 0) {
-    console.log('First conversation unread count:', conversations[0].unread_count);
-    console.log('First conversation last_message_at:', conversations[0].last_message_at);
-  }
   
-  // Handle manual refresh
-  const handleManualRefresh = () => {
-    console.log("Manually refreshing conversations");
-    refreshConversations();
-  };
 
   return (
     <div className="flex flex-col h-full border-r">
@@ -252,12 +237,6 @@ export default function ConversationList() {
             />
           </svg>
           New conversation
-        </Button>
-        <Button
-          className="w-full mt-2"
-          onClick={handleManualRefresh}
-        >
-          Refresh conversations
         </Button>
       </div>
     </div>
