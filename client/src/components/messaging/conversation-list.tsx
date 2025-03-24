@@ -63,7 +63,7 @@ export default function ConversationList() {
   const currentUserId = user?.id;
   
   // Filter conversations based on search query
-  const filteredConversations = conversations.filter(conversation => {
+  const filteredConversations = [...conversations].filter(conversation => {
     const title = getConversationTitle(conversation, currentUserId!).toLowerCase();
     return title.includes(searchQuery.toLowerCase());
   });

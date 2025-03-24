@@ -152,12 +152,11 @@ function MessagingProvider({ children }: { children: ReactNode }) {
       
       // Vérifier la structure des données
       if (data) {
-        if (Array.isArray(data)) {
-          // Si data est déjà un tableau de conversations
-          setConversations(data);
-        } else if (data && typeof data === 'object' && 'conversations' in data && Array.isArray(data.conversations)) {
+        console.log('HUUUUUUUUUUUMMMMMMM Conversations data:', data);
+        if (data && typeof data === 'object' && 'conversations' in data && Array.isArray(data.conversations)) {
           // Si data est un objet avec une propriété conversations qui est un tableau
-          setConversations(data.conversations);
+          console.log('HUUUUUUUUUUUMMMMMMMPPPPPPPP Conversations data:', data);
+          setConversations([...data.conversations]);
         } else {
           console.error('API returned invalid format for conversations:', data);
           setConversations([]);
@@ -409,7 +408,18 @@ function MessagingProvider({ children }: { children: ReactNode }) {
                   }
                 }
                 break;
-                
+              case WebSocketMessageType.CONVERSATION_UPDATE:
+                  // Handle conversation update
+                  if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
+                    // Just refresh the conversation list instead of trying to update it manually
+                    // This is more reliable and avoids type issues
+                    console.log("HUUUUUUUUUUUMMMMMMM////")
+                    refreshConversations().catch(error => {
+                      console.error('Error refreshing conversations after update:', error);
+                    });
+                  }
+                break;
+
               default:
                 console.log('Unknown message type:', message.type);
             }
@@ -823,7 +833,9 @@ function MessagingProvider({ children }: { children: ReactNode }) {
   // Handler for global WebSocket messages
   const handleGlobalWebSocketMessage = useCallback((message: WebSocketMessage) => {
     console.log('Global WebSocket message received:', message);
-    
+    console.log("HUUUUUUUUUUUMMMMMMM", message.type)
+    console.log("HUUUUUUUUUUUMMMMMMM---", WebSocketMessageType.CONVERSATION_UPDATE)
+    console.log("HUUUUUUUUUUUMMMMMMMS---", message.type === WebSocketMessageType.CONVERSATION_UPDATE)
     if (!message || !message.type) {
       console.error('Invalid message format received in global WebSocket:', message);
       return;
@@ -899,6 +911,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
         if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
           // Just refresh the conversation list instead of trying to update it manually
           // This is more reliable and avoids type issues
+          console.log("HUUUUUUUUUUUMMMMMMM===")
           refreshConversations().catch(error => {
             console.error('Error refreshing conversations after update:', error);
           });
