@@ -12,6 +12,7 @@ from .core.db import Base, engine, SessionLocal
 from .core.config import settings
 from app.casbin_setup import get_casbin_enforcer
 
+
 # Plugins imports
 from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_router
 from app.plugins.webhooks.main import get_router as get_webhooks_router
