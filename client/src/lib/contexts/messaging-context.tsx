@@ -268,13 +268,39 @@ function MessagingProvider({ children }: { children: ReactNode }) {
           console.log(`WebSocket connected to conversation ${conversationId}`);
         },
         onMessage: (data) => {
+          console.log(`⭐ onMessage called - data: ${JSON.stringify(data)}`);
+          console.log(`Message type: '${data.type}', expected type: '${WebSocketMessageType.MESSAGE}'`);
+
+          // Debug - log all data properties
+          console.log('WebSocketMessage data keys:', Object.keys(data));
+          console.log('WebSocketMessage data.data:', data.data);
+
           // Handle incoming messages based on their type
-          if (data.type === WebSocketMessageType.MESSAGE) {
-            // Extract message data
+          // Support both enum and string comparison for message type
+          const isMessageType = data.type === WebSocketMessageType.MESSAGE || data.type === 'message';
+          
+          if (isMessageType) {
+            console.log('Message type detected correctly');
+            // Extract message data - improve robustness with fallbacks
             const messageData = data.data as Record<string, unknown>;
-            const messageId = messageData.id as string;
+            
+            // Vérification de l'intégrité des données
+            if (!messageData) {
+              console.error('Message data is undefined or invalid');
+              return;
+            }
+            
+            // Ajout de logs détaillés pour le débogage
+            console.log('Full message data received:', messageData);
+            
+            const messageId = messageData.id as string || messageData.message_id as string;
             const messageConversationId = messageData.conversation_id as string;
-            const messageSenderId = messageData.sender_id as string;
+            const messageSenderId = messageData.sender_id as string || messageData.user_id as string;
+            
+            if (!messageId || !messageConversationId || !messageSenderId) {
+              console.error('Message missing required fields:', { messageId, messageConversationId, messageSenderId });
+              return;
+            }
             
             // Check if the message is from us
             const isSelfMessage = messageSenderId === user?.id;
@@ -286,7 +312,12 @@ function MessagingProvider({ children }: { children: ReactNode }) {
               console.log(`Message added to active conversation ${activeConversationId}`);
               setMessages(prev => {
                 const exists = prev.some(m => m.id === messageId);
-                if (exists) return prev;
+                if (exists) {
+                  console.log(`Message ${messageId} already exists in the conversation, skipping`);
+                  return prev;
+                }
+                
+                console.log(`Adding new message ${messageId} to conversation ${messageConversationId}`);
                 
                 // If it's our own message, it should have the DELIVERED status
                 if (isSelfMessage) {

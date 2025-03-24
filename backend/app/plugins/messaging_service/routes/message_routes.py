@@ -65,6 +65,23 @@ async def create_message(
         if 'conversation_id' not in message:
             message['conversation_id'] = message_create.conversation_id
             
+        # Diffuser le message par WebSocket à tous les utilisateurs de la conversation
+        try:
+            if messaging_service.websocket_manager:
+                logger.info(f"Diffusion WebSocket du message {message.get('id')} à la conversation {message['conversation_id']}")
+                await messaging_service.websocket_manager.broadcast_to_conversation(
+                    message['conversation_id'],
+                    {
+                        "type": "message",  # Type attendu par le frontend
+                        "data": message
+                    },
+                    exclude_user_id=user_id  # Exclure l'expéditeur qui a déjà le message
+                )
+                logger.info(f"Message diffusé avec succès par WebSocket")
+        except Exception as ws_error:
+            # Log l'erreur mais ne pas interrompre la réponse HTTP
+            logger.error(f"Erreur lors de la diffusion WebSocket: {str(ws_error)}")
+            
         return message
     except HTTPException as e:
         # Rethrow HTTP exceptions
@@ -106,6 +123,24 @@ async def create_message_with_attachment(
             db, message_data, user_id, attachments
         )
         logger.info(f"Message created successfully with ID: {message.get('id', 'unknown')}")
+        
+        # Diffuser le message par WebSocket à tous les utilisateurs de la conversation
+        try:
+            if messaging_service.websocket_manager:
+                logger.info(f"Diffusion WebSocket du message {message.get('id')} à la conversation {message['conversation_id']}")
+                await messaging_service.websocket_manager.broadcast_to_conversation(
+                    message['conversation_id'],
+                    {
+                        "type": "message",  # Type attendu par le frontend
+                        "data": message
+                    },
+                    exclude_user_id=user_id  # Exclure l'expéditeur qui a déjà le message
+                )
+                logger.info(f"Message diffusé avec succès par WebSocket")
+        except Exception as ws_error:
+            # Log l'erreur mais ne pas interrompre la réponse HTTP
+            logger.error(f"Erreur lors de la diffusion WebSocket: {str(ws_error)}")
+            
         return message
     except HTTPException as e:
         # Rethrow HTTP exceptions

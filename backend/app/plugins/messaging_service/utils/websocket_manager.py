@@ -9,6 +9,7 @@ import json
 import asyncio
 from typing import Dict, Any, List, Set, Optional
 import uuid
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +37,30 @@ class MessageWebSocketManager:
         self.security_handler = security_handler
         logger.info("WebSocket manager initialized with security handler")
     
-    async def connect(self, websocket, user_id: str, conversation_id: str):
+    async def connect(self, websocket, user_id: str, conversation_id: str, already_accepted: bool = False):
         """Register a new WebSocket connection for a user in a specific conversation."""
-        await websocket.accept()
+        if not already_accepted:
+            await websocket.accept()
         
         if user_id not in self.active_connections:
             self.active_connections[user_id] = {}
             
         # Store the connection for this conversation
         self.active_connections[user_id][conversation_id] = websocket
+        
+        # Maintenir les mappages utilisateur-conversation bidirectionnels
+        if user_id not in self.user_conversations:
+            self.user_conversations[user_id] = set()
+        self.user_conversations[user_id].add(conversation_id)
+        
+        # Ajouter l'utilisateur à la liste des utilisateurs de la conversation
+        if conversation_id not in self.conversation_users:
+            self.conversation_users[conversation_id] = set()
+        self.conversation_users[conversation_id].add(user_id)
+        
+        # Log la liste complète des utilisateurs pour debugging
+        users_in_conversation = self.conversation_users.get(conversation_id, set())
+        logger.info(f"Users in conversation {conversation_id}: {users_in_conversation}")
         
         # Log the connection
         active_users = len(self.active_connections)
@@ -107,22 +123,27 @@ class MessageWebSocketManager:
             message: Message data to send
         """
         if user_id not in self.active_connections:
+            logger.warning(f"User {user_id} has no active connections")
             return
         
         # Prepare the message for transmission following security standards
-        message_data = self._prepare_message(message, user_id)
+        message_data = self._prepare_message(message, target_user_id=user_id)
+        logger.info(f"Prepared message for user {user_id}: {message_data[:100]}...")
         
         # Send to all connections for this user
-        for conversation_id, websocket in self.active_connections[user_id].items():
+        logger.info(f"User {user_id} has {len(self.active_connections[user_id])} active connections")
+        for conv_id, websocket in self.active_connections[user_id].items():
             try:
+                logger.info(f"Sending message to user {user_id} in conversation {conv_id}")
                 await websocket.send_text(message_data)
+                logger.info(f"Message successfully sent to user {user_id}")
             except Exception as e:
-                logger.error(f"Error sending WebSocket message: {str(e)}")
+                logger.error(f"Error sending WebSocket message to {user_id}: {str(e)}")
                 # Connection might be broken, but we'll let the client reconnect
                 # rather than removing it here
     
     async def broadcast_to_conversation(self, conversation_id: str, message: Dict[str, Any], 
-                                      exclude_user_id: Optional[str] = None):
+                                       exclude_user_id: Optional[str] = None):
         """
         Broadcast a message to all users in a conversation.
         
@@ -131,17 +152,42 @@ class MessageWebSocketManager:
             message: Message data to send
             exclude_user_id: Optional user ID to exclude from broadcast
         """
+        logger.info(f"Broadcasting to conversation {conversation_id}: {message}")
+        
+        # Vérification des types de données dans le message pour débogage
+        if isinstance(message, dict) and "data" in message:
+            logger.info(f"Message type: {message.get('type')}")
+            data = message.get("data")
+            if isinstance(data, dict):
+                logger.info(f"Message data structure: {list(data.keys())}")
+                logger.info(f"Message data types: {[(k, type(v).__name__) for k, v in data.items()]}")
+                
+                # Vérifier spécifiquement les champs problématiques
+                if "timestamp" in data:
+                    logger.info(f"Timestamp type: {type(data['timestamp']).__name__}, Value: {data['timestamp']}")
+        
         if conversation_id not in self.conversation_users:
+            logger.warning(f"No users found for conversation {conversation_id}. Available conversations: {list(self.conversation_users.keys())}")
             return
         
         user_ids = self.conversation_users[conversation_id]
+        logger.info(f"Broadcasting to {len(user_ids)} users in conversation {conversation_id}: {user_ids}")
         
         for user_id in user_ids:
             # Skip the excluded user if specified
             if exclude_user_id and user_id == exclude_user_id:
+                logger.info(f"Skipping excluded user {exclude_user_id}")
                 continue
                 
-            await self.send_to_user(user_id, message)
+            if user_id in self.active_connections:
+                logger.info(f"Sending message to user {user_id}")
+                try:
+                    await self.send_to_user(user_id, message)
+                    logger.info(f"Message successfully sent to user {user_id}")
+                except Exception as e:
+                    logger.error(f"Failed to send message to user {user_id}: {str(e)}")
+            else:
+                logger.warning(f"User {user_id} has no active connections")
     
     async def broadcast_to_all(self, message: Dict[str, Any], exclude_user_id: Optional[str] = None):
         """
@@ -268,33 +314,60 @@ class MessageWebSocketManager:
         
         return online_user_ids
     
-    def _prepare_message(self, message: Dict[str, Any], user_id: str) -> str:
+    def _prepare_message(self, message, target_user_id=None):
         """
-        Prepare a message for WebSocket transmission using the standardized security approach.
+        Prepare a message for sending, optionally with encryption.
         
         Args:
-            message: Message data to prepare
-            user_id: ID of the recipient user for targeted encryption
+            message: The message to prepare
+            target_user_id: Optional user ID for user-specific formatting
             
         Returns:
-            String representation of the message ready for transmission
+            JSON string ready for transmission
         """
-        # Add timestamp if not present
-        if "timestamp" not in message:
-            from datetime import datetime
-            message["timestamp"] = datetime.utcnow().isoformat()
-        
-        # Encrypt sensitive data if security handler is available
-        if self.security_handler:
-            # If there's content that needs to be encrypted specifically for this user
-            if "data" in message and "content" in message["data"]:
-                message["data"]["content"] = self.security_handler.encrypt_message(
-                    message["data"]["content"], 
-                    user_id
-                )
-        
-        # Convert to JSON string
-        return json.dumps(message)
+        # Vérifier si le message est déjà une chaîne JSON
+        if isinstance(message, str):
+            return message
+            
+        try:
+            # Vérifier que toutes les valeurs dans le message sont sérialisables
+            logger.info(f"Preparing message for transmission: {message}")
+            
+            # Si c'est un message de type "message", effectuer une vérification supplémentaire des données
+            if isinstance(message, dict) and message.get("type") == "message" and "data" in message:
+                # S'assurer que toutes les dates sont converties en ISO format
+                data = message["data"]
+                if isinstance(data, dict):
+                    # Convertir explicitement les objets datetime en chaînes ISO
+                    for key, value in data.items():
+                        if isinstance(value, datetime):
+                            data[key] = value.isoformat()
+                    
+                    # Vérifier les types non sérialisables
+                    logger.info(f"Message data after date conversion: {data}")
+            
+            # Convertir le message en JSON avec des paramètres plus détaillés
+            message_json = json.dumps(message, default=str)
+            logger.info(f"Message JSON prepared: {message_json[:100]}...")
+            
+            return message_json
+        except Exception as e:
+            logger.error(f"Error preparing message: {str(e)}, Message: {message}")
+            # Retourner un message d'erreur en cas d'échec
+            error_message = {
+                "type": "error",
+                "data": {
+                    "error": "Failed to prepare message",
+                    "details": str(e)
+                }
+            }
+            
+            # Essayer de sérialiser un message d'erreur simplifié
+            try:
+                return json.dumps(error_message)
+            except:
+                # En cas d'échec complet, retourner une chaîne d'erreur simple
+                return '{"type":"error","data":{"error":"Critical serialization error"}}'
         
     def is_user_online(self, user_id: str) -> bool:
         """

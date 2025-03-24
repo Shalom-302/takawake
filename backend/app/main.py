@@ -64,18 +64,18 @@ security_config = load_security_config()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    docs_url=None,  # Désactiver la documentation par défaut
-    redoc_url=None,  # Désactiver la redoc par défaut
-    openapi_url=None  # Désactiver l'URL openapi par défaut
+    docs_url=None,  # Disable default documentation
+    redoc_url=None,  # Disable redoc@
+    openapi_url=None  # Disable openapi URL
 )
 
-# Ajout direct des routes WebSocket avant tout middleware
-# Cette approche garantit que les connexions WebSocket ne sont pas interceptées par les middlewares
+# Add direct WebSocket routes before all middleware
+# This approach ensures that WebSocket connections are not intercepted by middlewares
 @app.websocket("/ws-root/{conversation_id}")
 async def websocket_root(websocket: WebSocket, conversation_id: str):
     """
-    Endpoint WebSocket de base au niveau racine qui ignore toutes les vérifications
-    mais intègre le service de messagerie pour une expérience complète
+    Base WebSocket endpoint that ignores all verifications
+    but integrates the messaging service for a complete experience
     """
     import uuid
     from app.plugins.messaging_service.main import messaging_service
@@ -84,11 +84,11 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
     print(f"Tentative de connexion WebSocket ROOT pour la conversation: {conversation_id}")
     await websocket.accept()
     
-    # Créer un ID utilisateur temporaire pour cette session
+    # Create a temporary user ID for this session
     temp_user_id = f"temp-{uuid.uuid4()}"
     
     try:
-        # Envoyer un message de bienvenue
+        # Send a welcome message
         await websocket.send_json({
             "type": "connection_established",
             "data": {
@@ -98,53 +98,62 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
             }
         })
         
-        # Connecter au gestionnaire WebSocket
-        from app.plugins.messaging_service.services.websocket_manager import WebSocketManager
+        # Connect to the WebSocket manager
+        from app.plugins.messaging_service.utils.websocket_manager import MessageWebSocketManager
         
-        # Vérifier si le service de messagerie est disponible
+        # Check if the messaging service has a websocket manager
         if not hasattr(messaging_service, 'websocket_manager'):
-            # Créer un gestionnaire WebSocket temporaire pour cette session
-            websocket_manager = WebSocketManager()
+            # Create a temporary websocket manager for this session
+            websocket_manager = MessageWebSocketManager()
             print("[WS-ROOT] Création d'un gestionnaire WebSocket temporaire")
         else:
             websocket_manager = messaging_service.websocket_manager
             print("[WS-ROOT] Utilisation du gestionnaire WebSocket du service de messagerie")
         
-        # Connecter le client au gestionnaire
-        await websocket_manager.connect(websocket, temp_user_id, conversation_id)
+        # Connect the client to the manager
+        await websocket_manager.connect(websocket, temp_user_id, conversation_id, already_accepted=True)
         print(f"[WS-ROOT] Client connecté: {temp_user_id} à conversation: {conversation_id}")
         
-        # Boucle d'écoute des messages
+        # Message listening loop
         while True:
             try:
                 data = await websocket.receive_json()
                 print(f"[WS-ROOT] Message reçu: {data}")
                 
-                # Traiter le message selon son type
+                # Process the message based on its type
                 if "type" in data:
                     if data["type"] == "message":
-                        # Créer un message avec les données minimales nécessaires dans le format attendu par le frontend
+                        # Create a message with the minimal required data in the format expected by the frontend
                         message_id = str(uuid.uuid4())
+                        current_time = datetime.now()
                         message = {
                             "id": message_id,
                             "sender_id": temp_user_id,  # Le frontend attend sender_id et non user_id
                             "content": data.get("content", ""),
-                            "timestamp": datetime.now().isoformat(),
+                            "timestamp": current_time.isoformat(),  # Forme ISO standard pour éviter les problèmes de sérialisation
+                            "created_at": current_time.isoformat(),  # Ajouter created_at que le frontend attend probablement
                             "conversation_id": conversation_id,
                             "username": "Utilisateur temporaire", # Pour l'affichage
                             "message_type": "text",  # Type de message attendu par le frontend
-                            "status": "sent"  # Statut initial du message
+                            "status": "sent",  # Statut initial du message
+                            "is_edited": False,  # Champs supplémentaires qui peuvent être attendus par le frontend
+                            "is_deleted": False,
+                            "is_read": False
                         }
                         
-                        # Diffuser le message à tous les clients connectés à cette conversation
-                        # en utilisant le format attendu par le frontend (WebSocketMessageType.MESSAGE)
+                        # Broadcast the message to all clients connected to this conversation
+                        # using the format expected by the frontend (WebSocketMessageType.MESSAGE)
                         try:
-                            await websocket_manager.broadcast(
+                            print(f"[WS-ROOT] Tentative de diffusion du message: {message_id} à la conversation: {conversation_id}")
+                            print(f"[WS-ROOT] Utilisateurs dans la conversation selon WebSocket manager: {websocket_manager.conversation_users.get(conversation_id, set())}")
+                            
+                            await websocket_manager.broadcast_to_conversation(
+                                conversation_id,
                                 {
                                     "type": "message",  # Type attendu par le frontend
                                     "data": message
-                                }, 
-                                conversation_id
+                                },
+                                exclude_user_id=temp_user_id  # Exclure l'expéditeur pour qu'il ne reçoive pas son propre message
                             )
                             print(f"[WS-ROOT] Message diffusé: {message_id}")
                             
@@ -162,7 +171,8 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         # Diffuser l'indication de frappe
                         try:
                             is_typing = data.get("is_typing", False)
-                            await websocket_manager.broadcast(
+                            await websocket_manager.broadcast_to_conversation(
+                                conversation_id,
                                 {
                                     "type": "typing_indicator", 
                                     "data": {
@@ -172,8 +182,7 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                                         "conversation_id": conversation_id
                                     }
                                 },
-                                conversation_id,
-                                exclude_user_id=temp_user_id # Ne pas envoyer à soi-même
+                                temp_user_id  # exclude_user_id - Ne pas envoyer à soi-même
                             )
                             print(f"[WS-ROOT] Indicateur de frappe diffusé: {is_typing}")
                         except Exception as typing_error:
@@ -468,18 +477,6 @@ async def metrics_middleware(request: Request, call_next):
         ).observe(process_time)
     
     return response
-
-# Add a simple WebSocket test route
-@app.websocket("/ws-test")
-async def websocket_test(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        await websocket.send_json({"status": "connected", "message": "WebSocket test connection successful"})
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_json({"message": f"You sent: {data}"})
-    except WebSocketDisconnect:
-        print("Client disconnected from test WebSocket")
 
 # Add Root metrics endpoint for Prometheus scraping
 @app.get("/metrics")
