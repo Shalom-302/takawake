@@ -192,6 +192,13 @@ export class WebSocketClient {
   }
 
   /**
+   * Send a message with a specific type and data
+   */
+  public sendMessage(message: WebSocketMessage): boolean {
+    return this.send(message);
+  }
+  
+  /**
    * Send a text message
    */
   public sendTextMessage(content: string): boolean {
@@ -204,10 +211,28 @@ export class WebSocketClient {
   /**
    * Send a typing indicator
    */
-  public sendTypingIndicator(isTyping: boolean): boolean {
+  public sendTypingIndicator(conversationId: string, userId: string, username: string = 'User'): boolean {
     return this.send({
       type: WebSocketMessageType.TYPING,
-      data: { is_typing: isTyping }
+      data: { 
+        conversation_id: conversationId,
+        user_id: userId,
+        username: username,
+        timestamp: Date.now()
+      }
+    });
+  }
+
+  /**
+   * Send a user presence/status update
+   */
+  public sendStatusUpdate(status: 'online' | 'offline' | 'away'): boolean {
+    return this.send({
+      type: WebSocketMessageType.USER_PRESENCE,
+      data: { 
+        status: status,
+        timestamp: Date.now()
+      }
     });
   }
 

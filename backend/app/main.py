@@ -119,6 +119,7 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
         # Message listening loop
         while True:
             try:
+                # Attendre un message avec une gestion appropriée des déconnexions
                 data = await websocket.receive_json()
                 print(f"[WS-ROOT] Message reçu: {data}")
                 
@@ -185,11 +186,42 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                                         "conversation_id": conversation_id
                                     }
                                 },
-                                temp_user_id  # exclude_user_id - Ne pas envoyer à soi-même
+                                exclude_user_id=temp_user_id  # Ne pas envoyer à soi-même
                             )
                             print(f"[WS-ROOT] Indicateur de frappe diffusé: {is_typing}")
                         except Exception as typing_error:
                             print(f"[WS-ROOT] Erreur lors de la diffusion de l'indicateur de frappe: {str(typing_error)}")
+                    
+                    elif data["type"] == "read_receipt":
+                        # Traiter et diffuser l'accusé de lecture
+                        try:
+                            # Extraire les données du message lu
+                            receipt_data = data.get("data", {})
+                            message_id = receipt_data.get("message_id")
+                            reader_id = receipt_data.get("reader_id")
+                            reader_name = receipt_data.get("reader_name", "Utilisateur")
+                            
+                            print(f"[WS-ROOT] Accusé de lecture reçu: message {message_id} lu par {reader_id} ({reader_name})")
+                            
+                            # Diffuser l'accusé de lecture dans la conversation
+                            # Ne pas l'envoyer au lecteur lui-même (il sait déjà qu'il a lu le message)
+                            await websocket_manager.broadcast_to_conversation(
+                                conversation_id,
+                                {
+                                    "type": "read_receipt",
+                                    "data": {
+                                        "message_id": message_id,
+                                        "reader_id": reader_id,
+                                        "reader_name": reader_name,
+                                        "conversation_id": conversation_id,
+                                        "timestamp": datetime.now().isoformat()
+                                    }
+                                },
+                                exclude_user_id=reader_id  # Ne pas renvoyer au lecteur
+                            )
+                            print(f"[WS-ROOT] Accusé de lecture diffusé pour le message: {message_id}")
+                        except Exception as read_receipt_error:
+                            print(f"[WS-ROOT] Erreur lors de la diffusion de l'accusé de lecture: {str(read_receipt_error)}")
                     
                     elif data["type"] == "ping":
                         # Renvoyer un pong pour maintenir la connexion active
@@ -205,9 +237,37 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                             "original": data,
                             "timestamp": time.time()
                         })
-                
+            
+            except WebSocketDisconnect:
+                print(f"[WS-ROOT] WebSocket déconnecté pour l'utilisateur {temp_user_id} dans la conversation {conversation_id}")
+                # Nettoyer la connexion et sortir de la boucle
+                websocket_manager.disconnect(temp_user_id, conversation_id)
+                # Informer les autres utilisateurs de la déconnexion
+                try:
+                    await websocket_manager.broadcast_to_conversation(
+                        conversation_id,
+                        {
+                            "type": "user_presence",
+                            "data": {
+                                "user_id": temp_user_id,
+                                "status": "offline",
+                                "timestamp": time.time()
+                            }
+                        },
+                        exclude_user_id=temp_user_id
+                    )
+                except Exception as e:
+                    print(f"[WS-ROOT] Erreur lors de la notification de déconnexion: {str(e)}")
+                break  # Sortir de la boucle while
+
             except Exception as e:
                 print(f"[WS-ROOT] Erreur lors de la réception ou du traitement du message: {str(e)}")
+                # En cas d'erreur grave, on sort de la boucle pour éviter les boucles infinies
+                if "disconnect message has been received" in str(e):
+                    print(f"[WS-ROOT] Déconnexion détectée, fin de la boucle de réception")
+                    # Nettoyer proprement
+                    websocket_manager.disconnect(temp_user_id, conversation_id)
+                    break
                 
     except WebSocketDisconnect:
         print(f"[WS-ROOT] WebSocket déconnecté pour la conversation {conversation_id}")

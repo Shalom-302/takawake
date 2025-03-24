@@ -81,38 +81,73 @@ class MessageWebSocketManager:
         
         return str(uuid.uuid4())
     
-    async def disconnect(self, user_id: str, conversation_id: str, connection_id: str):
+    async def disconnect(self, user_id: str, conversation_id: str, connection_id: str = None):
         """
         Remove a WebSocket connection when a user disconnects.
         
         Args:
             user_id: ID of the disconnecting user
             conversation_id: ID of the conversation
-            connection_id: ID of the connection to remove
+            connection_id: ID of the connection to remove (optional)
         """
-        if user_id in self.active_connections and conversation_id in self.active_connections[user_id]:
-            # Remove the specific connection
-            del self.active_connections[user_id][conversation_id]
-            
-            # If no more connections for this user in this conversation, clean up
-            if not self.active_connections[user_id]:
-                del self.active_connections[user_id]
-                
-                # Clean up user conversation mappings
-                if user_id in self.user_conversations:
-                    self.user_conversations[user_id].discard(conversation_id)
+        logger.info(f"Déconnexion en cours: user_id={user_id}, conversation_id={conversation_id}")
         
-        # Log disconnection securely
-        if self.security_handler:
-            self.security_handler.secure_log(
-                "WebSocket connection closed",
-                {
-                    "user_id": user_id,
-                    "conversation_id": conversation_id
-                }
-            )
-        else:
-            logger.info(f"WebSocket connection closed for user {user_id} in conversation {conversation_id}")
+        try:
+            # Supprimer l'utilisateur de la conversation
+            if conversation_id in self.conversation_users:
+                if user_id in self.conversation_users[conversation_id]:
+                    self.conversation_users[conversation_id].discard(user_id)
+                    logger.info(f"Utilisateur {user_id} supprimé de la conversation {conversation_id}")
+                
+                # Si la conversation n'a plus d'utilisateurs, la supprimer
+                if not self.conversation_users[conversation_id]:
+                    del self.conversation_users[conversation_id]
+                    logger.info(f"Conversation {conversation_id} supprimée car vide")
+            
+            # Supprimer la conversation des associations de l'utilisateur
+            if user_id in self.user_conversations:
+                self.user_conversations[user_id].discard(conversation_id)
+                logger.info(f"Conversation {conversation_id} supprimée des associations de l'utilisateur {user_id}")
+                
+                # Si l'utilisateur n'a plus de conversations, le supprimer
+                if not self.user_conversations[user_id]:
+                    del self.user_conversations[user_id]
+                    logger.info(f"Utilisateur {user_id} supprimé car plus de conversations")
+            
+            # Supprimer la connexion spécifique
+            if user_id in self.active_connections:
+                if conversation_id in self.active_connections[user_id]:
+                    # Fermer la connexion si elle est encore active
+                    try:
+                        websocket = self.active_connections[user_id][conversation_id]
+                        if websocket and hasattr(websocket, 'close'):
+                            await websocket.close(code=1000, reason="User disconnected")
+                    except Exception as e:
+                        logger.error(f"Erreur lors de la fermeture du WebSocket: {str(e)}")
+                    
+                    # Supprimer la référence à la connexion
+                    del self.active_connections[user_id][conversation_id]
+                    logger.info(f"Connexion supprimée pour l'utilisateur {user_id} dans la conversation {conversation_id}")
+                
+                # Si l'utilisateur n'a plus de connexions actives, le supprimer
+                if not self.active_connections[user_id]:
+                    del self.active_connections[user_id]
+                    logger.info(f"Utilisateur {user_id} supprimé des connexions actives")
+            
+            # Log disconnection securely
+            if self.security_handler:
+                self.security_handler.secure_log(
+                    "WebSocket connection closed",
+                    {
+                        "user_id": user_id,
+                        "conversation_id": conversation_id
+                    }
+                )
+            else:
+                logger.info(f"WebSocket connection closed for user {user_id} in conversation {conversation_id}")
+                
+        except Exception as e:
+            logger.error(f"Erreur lors de la déconnexion: {str(e)}")
     
     async def send_to_user(self, user_id: str, message: Dict[str, Any]):
         """

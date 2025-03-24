@@ -70,6 +70,7 @@ export interface Message {
   is_edited: boolean;
   is_deleted: boolean;
   is_forwarded: boolean;
+  is_read?: boolean;
   created_at: string;
   updated_at: string;
   attachments?: MessageAttachment[];
@@ -148,6 +149,9 @@ export interface WebSocketMessage {
   type: WebSocketMessageType;
   data: Record<string, unknown>;
 }
+
+// Type de statut de connexion WebSocket
+export type WebSocketConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error';
 
 // Types pour la création et mise à jour de messages
 export interface MessageCreate {
