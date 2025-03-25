@@ -173,22 +173,49 @@ class MessageWebSocketManager:
         if user_id not in self.active_connections:
             logger.warning(f"User {user_id} has no active connections")
             return
+            
+        # Prepare the message
+        message_json = self._prepare_message(message, user_id)
         
-        # Prepare the message for transmission following security standards
-        message_data = self._prepare_message(message, target_user_id=user_id)
-        logger.info(f"Prepared message for user {user_id}: {message_data[:100]}...")
+        # Get all active conversations for this user
+        active_conversations = list(self.active_connections[user_id].keys())
         
-        # Send to all connections for this user
-        logger.info(f"User {user_id} has {len(self.active_connections[user_id])} active connections")
-        for conv_id, websocket in self.active_connections[user_id].items():
+        logger.info(f"Sending message to user {user_id} on {len(active_conversations)} connections")
+        
+        # Send to all active connections for this user
+        for conversation_id in active_conversations:
+            websocket = self.active_connections[user_id].get(conversation_id)
+            
+            # Vérifier que la connexion est active
+            if not websocket or not self.connection_active.get(user_id, {}).get(conversation_id, False):
+                logger.warning(f"Skipping inactive connection for user {user_id} in conversation {conversation_id}")
+                continue
+                
             try:
-                logger.info(f"Sending message to user {user_id} in conversation {conv_id}")
-                await websocket.send_text(message_data)
-                logger.info(f"Message successfully sent to user {user_id}")
+                logger.info(f"Sending to user {user_id} in conversation {conversation_id}")
+                
+                # Vérifier que la connexion est toujours ouverte et valide
+                if hasattr(websocket, 'client_state') and websocket.client_state.name == 'DISCONNECTED':
+                    logger.warning(f"WebSocket for user {user_id} in conversation {conversation_id} is disconnected")
+                    self.connection_active[user_id][conversation_id] = False
+                    continue
+                
+                await websocket.send_text(message_json)
+                logger.info(f"Message sent to user {user_id} in conversation {conversation_id}")
             except Exception as e:
-                logger.error(f"Error sending WebSocket message to {user_id}: {str(e)}")
-                # Connection might be broken, but we'll let the client reconnect
-                # rather than removing it here
+                logger.error(f"Error sending to user {user_id} in conversation {conversation_id}: {str(e)}")
+                # Marquer la connexion comme inactive
+                if user_id in self.connection_active and conversation_id in self.connection_active.get(user_id, {}):
+                    self.connection_active[user_id][conversation_id] = False
+                
+                # Tentative de nettoyage
+                try:
+                    # Si la connexion est fermée, nettoyons les structures de données
+                    if conversation_id in self.active_connections.get(user_id, {}):
+                        del self.active_connections[user_id][conversation_id]
+                        logger.info(f"Removed closed connection for user {user_id} in conversation {conversation_id}")
+                except Exception as cleanup_error:
+                    logger.error(f"Error during connection cleanup: {str(cleanup_error)}")
     
     async def broadcast_to_conversation(self, conversation_id: str, message: Dict[str, Any], 
                                        exclude_user_id: Optional[str] = None):
