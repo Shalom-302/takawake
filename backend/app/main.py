@@ -48,6 +48,7 @@ from app.plugins.messaging_service.main import messaging_service
 from app.plugins.social_subscriptions.main import setup_social_subscriptions, social_subscriptions_plugin
 from app.plugins.advanced_auth import init_app as init_auth_plugin
 
+from app.api import health_check
 
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
@@ -447,6 +448,9 @@ app.include_router(digital_signature_plugin.router, prefix="/plugins/digital-sig
 app.include_router(recommendation_plugin.router, prefix="/plugins/recommendation", tags=["Recommendation"])
 app.include_router(messaging_service.router, prefix="/plugins/messaging-service", tags=["Messaging Service"])
 app.include_router(social_subscriptions_plugin.router, prefix="/plugins/social-subscriptions", tags=["Social Subscriptions"])
+
+# API Routes
+app.include_router(health_check.router, prefix="/api", tags=["system"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle

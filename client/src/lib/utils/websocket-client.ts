@@ -126,14 +126,14 @@ export class WebSocketClient {
           }
         };
         
-        this.ws.onerror = (event) => {
-          console.error('WebSocket error:', event);
+        // this.ws.onerror = (event) => {
+        //   console.error('WebSocket error:', event);
           
-          // Call the error handler if provided
-          if (this.options.onError) {
-            this.options.onError(event);
-          }
-        };
+        //   // Call the error handler if provided
+        //   if (this.options.onError) {
+        //     this.options.onError(event);
+        //   }
+        // };
       } catch (error) {
         console.error('Error creating WebSocket:', error);
         reject(error);
