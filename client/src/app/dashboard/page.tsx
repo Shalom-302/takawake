@@ -1,26 +1,53 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/lib/contexts/auth-context';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, MessageSquare, Bell, BarChart3, Clock, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { Clock, MessageSquare, Bell, Activity, RefreshCw, BarChart3 } from 'lucide-react';
+import { useAuth } from '@/lib/contexts/auth-context';
+import { useMessaging } from '@/lib/contexts/messaging-context';
+import { formatRelativeTime } from '@/lib/utils/date-utils';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [timeStamp, setTimeStamp] = useState<string>('');
-  const [lastRefresh, setLastRefresh] = useState<string>('');
+  const { conversations, refreshConversations, websocketStatus } = useMessaging();
+  const [timeStamp, setTimeStamp] = useState(new Date().toLocaleTimeString());
   const [tokenStatus, setTokenStatus] = useState<'valid' | 'refreshing'>('valid');
+  const [lastRefresh, setLastRefresh] = useState<string | null>(null);
   const [stats, setStats] = useState({
-    messagesCount: 3,
-    activitiesCount: 2,
-    notificationsCount: 2,
-    lastConnection: "today at 15:30",
+    messagesCount: 0,
+    activitiesCount: 0,
+    notificationsCount: 0,
+    lastConnection: "",
     currentSessionDuration: 0
   });
+
+  // Calculate stats from real data
+  useEffect(() => {
+    // Count unread messages across all conversations
+    const unreadMessages = conversations.reduce(
+      (total, conv) => total + (conv.unread_count || 0), 
+      0
+    );
+    
+    // Last connection time (example - would ideally come from backend)
+    const lastLogin = localStorage.getItem('last_login') || new Date().toISOString();
+    
+    setStats(prev => ({
+      ...prev,
+      messagesCount: unreadMessages,
+      // Conservons ces valeurs pour le moment, à remplacer plus tard par des données réelles
+      activitiesCount: conversations.length,
+      notificationsCount: Math.min(5, unreadMessages + 1), // Simulation basique
+      lastConnection: formatRelativeTime(new Date(lastLogin))
+    }));
+    
+    // Store current login time for next visit
+    localStorage.setItem('last_login', new Date().toISOString());
+  }, [conversations]);
 
   // Function to update session duration
   const updateSessionDuration = useCallback(() => {
@@ -31,6 +58,9 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Force refresh of conversations when component mounts
+    refreshConversations();
+    
     // Listen to console logs to capture refresh events
     const originalConsoleLog = console.log;
     console.log = function(...args) {
@@ -38,7 +68,7 @@ export default function DashboardPage() {
         setTokenStatus('refreshing');
         setLastRefresh(new Date().toLocaleTimeString());
         
-        // Reset status to “valid” after 2 seconds
+        // Reset status to "valid" after 2 seconds
         setTimeout(() => {
           setTokenStatus('valid');
         }, 2000);
@@ -59,7 +89,7 @@ export default function DashboardPage() {
       clearInterval(sessionInterval);
       console.log = originalConsoleLog;
     };
-  }, [updateSessionDuration]);
+  }, [updateSessionDuration, refreshConversations]);
 
   // Format session duration in hours:minutes
   const formatSessionDuration = (minutes: number) => {
@@ -67,6 +97,15 @@ export default function DashboardPage() {
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
+
+  // Select recent conversations to display
+  const recentConversations = conversations
+    .sort((a, b) => {
+      const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return dateB - dateA;
+    })
+    .slice(0, 3);
 
   return (
     <ProtectedRoute>
@@ -97,7 +136,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.messagesCount}</div>
               <p className="text-xs text-muted-foreground">
-                +2 since yesterday
+                {stats.messagesCount > 0 ? `${Math.min(stats.messagesCount, 5)} new since your last visit` : 'No new messages'}
               </p>
             </CardContent>
           </Card>
@@ -123,7 +162,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-md font-bold">{stats.lastConnection}</div>
               <p className="text-xs text-muted-foreground">
-                Session active: {formatSessionDuration(stats.currentSessionDuration)}
+                Active conversations: {stats.activitiesCount}
               </p>
             </CardContent>
           </Card>
@@ -142,8 +181,8 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Detailed section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Messages */}
           <Card className="col-span-1">
             <CardHeader>
@@ -152,36 +191,42 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 rounded-full p-2">
-                    <MessageSquare className="h-4 w-4 text-primary" />
+                {recentConversations.length > 0 ? (
+                  recentConversations.map((conversation) => (
+                    <div key={conversation.id} className="flex items-start space-x-4">
+                      <div className="bg-primary/10 rounded-full p-2">
+                        <MessageSquare className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {conversation.is_group 
+                            ? conversation.title || 'Group conversation' 
+                            : `Conversation with ${conversation.participants
+                                .filter(p => p.id !== user?.id)
+                                .map(p => p.username || p.id)
+                                .join(', ')}`
+                          }
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {conversation.last_message?.content || 'No messages yet'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {conversation.last_message_at 
+                            ? formatRelativeTime(new Date(conversation.last_message_at)) 
+                            : 'Never'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p>No recent conversations</p>
+                    <Button variant="outline" size="sm" className="mt-2" asChild>
+                      <Link href="/messages/new">Start a conversation</Link>
+                    </Button>
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">Conversation with Marie</p>
-                    <p className="text-sm text-muted-foreground">Hello, how are you today?</p>
-                    <p className="text-xs text-muted-foreground">10 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 rounded-full p-2">
-                    <MessageSquare className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">Conversation with Thomas</p>
-                    <p className="text-sm text-muted-foreground">Have you received the documents I sent you?</p>
-                    <p className="text-xs text-muted-foreground">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 rounded-full p-2">
-                    <MessageSquare className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">Conversation with Sophie</p>
-                    <p className="text-sm text-muted-foreground">N&apos;oubliez pas notre rendez-vous de demain à 14h.</p>
-                    <p className="text-xs text-muted-foreground">Yesterday</p>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
             <CardFooter>
@@ -199,7 +244,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex justify-between text-sm">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span>System performance</span>
@@ -211,24 +256,29 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex justify-between text-sm">
                   <div className="flex items-center">
                     <BarChart3 className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span>WebSocket connection status</span>
                   </div>
-                  <span className="font-medium text-green-500">Connected</span>
+                  <span className={`font-medium ${websocketStatus === 'connected' ? 'text-green-500' : 'text-amber-500'}`}>
+                    {websocketStatus === 'connected' ? 'Connected' : 'Connecting...'}
+                  </span>
                 </div>
-                <Progress value={100} className="h-2" />
+                <Progress 
+                  value={websocketStatus === 'connected' ? 100 : 60} 
+                  className="h-2" 
+                />
                 <p className="text-xs text-muted-foreground">
                   Message deduplication system is active and functional.
                 </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="text-sm font-medium">Recent system log</p>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>● WebSocket service connected at {timeStamp}</p>
-                  <p>● Last WebSocket deduplication message: successful</p>
+                  <p>● WebSocket service {websocketStatus} at {timeStamp}</p>
+                  <p>● User: {user?.username || 'Anonymous'} (ID: {user?.id || 'Not logged in'})</p>
                   <p>● User session active since: {formatSessionDuration(stats.currentSessionDuration)}</p>
                 </div>
               </div>

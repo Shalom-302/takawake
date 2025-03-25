@@ -23,6 +23,7 @@ class MessageWebSocketManager:
     def __init__(self):
         """Initialize the WebSocket manager."""
         self.active_connections = {}  # user_id -> conversation_id -> websocket
+        self.connection_active = {}  # user_id -> conversation_id -> bool
         self.user_conversations = {}  # user_id -> set of conversation_ids
         self.conversation_users = {}  # conversation_id -> set of user_ids
         self.security_handler = None
@@ -39,47 +40,55 @@ class MessageWebSocketManager:
     
     async def connect(self, websocket, user_id: str, conversation_id: str, already_accepted: bool = False):
         """Register a new WebSocket connection for a user in a specific conversation."""
-        if not already_accepted:
-            await websocket.accept()
-        
-        if user_id not in self.active_connections:
-            self.active_connections[user_id] = {}
+        try:
+            if not already_accepted:
+                await websocket.accept()
             
-        # Store the connection for this conversation
-        self.active_connections[user_id][conversation_id] = websocket
-        
-        # Maintenir les mappages utilisateur-conversation bidirectionnels
-        if user_id not in self.user_conversations:
-            self.user_conversations[user_id] = set()
-        self.user_conversations[user_id].add(conversation_id)
-        
-        # Ajouter l'utilisateur à la liste des utilisateurs de la conversation
-        if conversation_id not in self.conversation_users:
-            self.conversation_users[conversation_id] = set()
-        self.conversation_users[conversation_id].add(user_id)
-        
-        # Log la liste complète des utilisateurs pour debugging
-        users_in_conversation = self.conversation_users.get(conversation_id, set())
-        logger.info(f"Users in conversation {conversation_id}: {users_in_conversation}")
-        
-        # Log the connection
-        active_users = len(self.active_connections)
-        logger.info(f"New WebSocket connection: user_id={user_id}, conversation_id={conversation_id}")
-        logger.info(f"Current active users count: {active_users}")
-        
-        # Log connection securely
-        if self.security_handler:
-            self.security_handler.secure_log(
-                "WebSocket connection established",
-                {
-                    "user_id": user_id,
-                    "conversation_id": conversation_id
-                }
-            )
-        else:
-            logger.info(f"WebSocket connection established for user {user_id} in conversation {conversation_id}")
-        
-        return str(uuid.uuid4())
+            if user_id not in self.active_connections:
+                self.active_connections[user_id] = {}
+                self.connection_active[user_id] = {}
+                
+            # Store the connection for this conversation
+            self.active_connections[user_id][conversation_id] = websocket
+            self.connection_active[user_id][conversation_id] = True
+            
+            # Maintenir les mappages utilisateur-conversation bidirectionnels
+            if user_id not in self.user_conversations:
+                self.user_conversations[user_id] = set()
+            self.user_conversations[user_id].add(conversation_id)
+            
+            # Ajouter l'utilisateur à la liste des utilisateurs de la conversation
+            if conversation_id not in self.conversation_users:
+                self.conversation_users[conversation_id] = set()
+            self.conversation_users[conversation_id].add(user_id)
+            
+            # Log la liste complète des utilisateurs pour debugging
+            users_in_conversation = self.conversation_users.get(conversation_id, set())
+            logger.info(f"Users in conversation {conversation_id}: {users_in_conversation}")
+            
+            # Log the connection
+            active_users = len(self.active_connections)
+            logger.info(f"New WebSocket connection: user_id={user_id}, conversation_id={conversation_id}")
+            logger.info(f"Current active users count: {active_users}")
+            
+            # Log connection securely
+            if self.security_handler:
+                self.security_handler.secure_log(
+                    "WebSocket connection established",
+                    {
+                        "user_id": user_id,
+                        "conversation_id": conversation_id
+                    }
+                )
+            else:
+                logger.info(f"WebSocket connection established for user {user_id} in conversation {conversation_id}")
+            
+            return str(uuid.uuid4())
+        except Exception as e:
+            logger.error(f"Error in connect: {str(e)}")
+            if user_id in self.connection_active and conversation_id in self.connection_active.get(user_id, {}):
+                self.connection_active[user_id][conversation_id] = False
+            raise
     
     async def disconnect(self, user_id: str, conversation_id: str, connection_id: str = None):
         """
@@ -133,6 +142,10 @@ class MessageWebSocketManager:
                 if not self.active_connections[user_id]:
                     del self.active_connections[user_id]
                     logger.info(f"Utilisateur {user_id} supprimé des connexions actives")
+            
+            # Mettre à jour l'état de la connexion
+            if user_id in self.connection_active and conversation_id in self.connection_active.get(user_id, {}):
+                self.connection_active[user_id][conversation_id] = False
             
             # Log disconnection securely
             if self.security_handler:
@@ -344,7 +357,7 @@ class MessageWebSocketManager:
         # Filter to only include users with active connections
         online_user_ids = [
             user_id for user_id in user_ids
-            if user_id in self.active_connections and conversation_id in self.active_connections[user_id]
+            if user_id in self.active_connections and conversation_id in self.active_connections[user_id] and self.connection_active.get(user_id, {}).get(conversation_id, False)
         ]
         
         return online_user_ids
@@ -414,4 +427,4 @@ class MessageWebSocketManager:
         Returns:
             True if the user is online, False otherwise
         """
-        return user_id in self.active_connections and any(self.active_connections[user_id].values())
+        return user_id in self.active_connections and any(self.connection_active.get(user_id, {}).values())
