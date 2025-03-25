@@ -88,10 +88,8 @@ if [[ "$1" == "db" ]]; then
             echo -e "${BLUE}Application des migrations...${NC}"
             run_in_container kaapi-api alembic upgrade head
             
-            # Génération des schémas DB après l'application des migrations
-            echo -e "${BLUE}Génération des schémas de base de données...${NC}"
-            run_in_container kaapi-api python -m app.commands.generate_db_schemas
-            echo -e "${GREEN}Schémas générés avec succès dans le répertoire docs/${NC}"
+            # La génération des schémas est maintenant intégrée au processus de migration
+            echo -e "${GREEN}Migrations appliquées et schémas générés avec succès dans le répertoire docs/${NC}"
             ;;
         "preview")
             echo -e "${BLUE}Prévisualisation des changements...${NC}"

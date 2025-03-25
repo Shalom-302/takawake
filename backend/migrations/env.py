@@ -5,6 +5,10 @@ from alembic import context
 from datetime import datetime
 import json
 import shutil
+import importlib
+from pathlib import Path
+from sqlalchemy_schemadisplay import create_schema_graph
+import sqlalchemy
 from app.core.config import settings
 
 # The Alembic Config object
@@ -61,8 +65,161 @@ def compare_server_default(context, inspected_column, metadata_column, inspected
     # Pour les autres types, on laisse Alembic faire sa comparaison standard
     return None
 
+def get_project_root() -> Path:
+    """Return the path to the project root directory."""
+    return Path(__file__).resolve().parent.parent
+
+
+def import_all_models():
+    """
+    Ensures that all models defined in the application are loaded,
+    including those defined in plugins.
+    """
+    # Import models from the main application
+    importlib.import_module("app.models")
+    
+    # Import models from plugins
+    plugins_path = get_project_root() / "app" / "plugins"
+    if plugins_path.exists():
+        for plugin_dir in plugins_path.iterdir():
+            if not plugin_dir.is_dir() or plugin_dir.name.startswith("_"):
+                continue
+                
+            models_path = plugin_dir / "models.py"
+            if models_path.exists():
+                module_name = f"app.plugins.{plugin_dir.name}.models"
+                try:
+                    importlib.import_module(module_name)
+                except Exception as e:
+                    print(f"Error importing models from plugin {plugin_dir.name}: {e}")
+
+
+def generate_schema_diagram(output_dir=None):
+    """
+    Generates database schema diagrams and saves them to the specified directory.
+    """
+    # Import all models to ensure they are loaded
+    import_all_models()
+    
+    # If no output directory is specified, use the project root docs directory
+    if output_dir is None:
+        output_dir = get_project_root() / "docs"
+        os.makedirs(output_dir, exist_ok=True)
+    
+    # Create the schema graph
+    graph = create_schema_graph(
+        metadata=Base.metadata,
+        show_datatypes=True,
+        show_indexes=True,
+        rankdir='LR',
+        concentrate=False
+    )
+    
+    # Save the graph in PNG format
+    png_path = output_dir / "db_schema.png"
+    graph.write_png(str(png_path))
+    print(f"Database schema diagram saved to {png_path}")
+    
+    # Save the graph in PDF format
+    pdf_path = output_dir / "db_schema.pdf"
+    graph.write_pdf(str(pdf_path))
+    print(f"Database schema diagram saved to {pdf_path}")
+
+
+def generate_text_schema(output_dir=None):
+    """
+    Generates a detailed text description of the database schema in Markdown format.
+    """
+    # Import all models to ensure they are loaded
+    import_all_models()
+    
+    # If no output directory is specified, use the project root docs directory
+    if output_dir is None:
+        output_dir = get_project_root() / "docs"
+        os.makedirs(output_dir, exist_ok=True)
+    
+    # Generate the text description
+    text_path = output_dir / "db_schema.md"
+    
+    with open(text_path, "w") as f:
+        f.write("# Database Schema\n\n")
+        
+        # Create a clean database connection
+        engine = sqlalchemy.create_engine(DB_URL)
+        inspector = inspect(engine)
+        
+        # Get all table names
+        table_names = sorted(inspector.get_table_names())
+        
+        # Generate documentation for each table
+        for table_name in table_names:
+            if table_name == "casbin_rule":
+                continue
+                
+            f.write(f"## {table_name}\n\n")
+            
+            # Get table information
+            table = Table(table_name, MetaData(), autoload_with=engine)
+            columns = inspector.get_columns(table_name)
+            primary_key = inspector.get_pk_constraint(table_name)
+            
+            # Document columns
+            f.write("### Columns\n\n")
+            f.write("| Name | Type | Nullable | Default | Primary Key |\n")
+            f.write("|------|------|----------|---------|-------------|\n")
+            
+            for column in columns:
+                col_name = column["name"]
+                col_type = str(column["type"])
+                nullable = "Yes" if column["nullable"] else "No"
+                default = str(column.get("default", "")) if column.get("default") else "-"
+                is_primary = "Yes" if col_name in primary_key["constrained_columns"] else "No"
+                
+                f.write(f"| {col_name} | {col_type} | {nullable} | {default} | {is_primary} |\n")
+            
+            f.write("\n")
+            
+            # Document foreign keys
+            foreign_keys = inspector.get_foreign_keys(table_name)
+            if foreign_keys:
+                f.write("### Foreign Keys\n\n")
+                f.write("| Column | References | On Delete | On Update |\n")
+                f.write("|--------|------------|-----------|----------|\n")
+                
+                for fk in foreign_keys:
+                    col_names = ", ".join(fk["constrained_columns"])
+                    ref_table = fk["referred_table"]
+                    ref_cols = ", ".join(fk["referred_columns"])
+                    on_delete = fk.get("options", {}).get("ondelete", "NO ACTION")
+                    on_update = fk.get("options", {}).get("onupdate", "NO ACTION")
+                    
+                    f.write(f"| {col_names} | {ref_table}.{ref_cols} | {on_delete} | {on_update} |\n")
+                
+                f.write("\n")
+            
+            # Document indexes
+            if table.indexes:
+                f.write("### Indexes\n\n")
+                f.write("| Name | Columns | Unique |\n")
+                f.write("|------|---------|--------|\n")
+                
+                for index in table.indexes:
+                    columns = ", ".join(column.name for column in index.columns)
+                    unique = "Yes" if index.unique else "No"
+                    
+                    f.write(f"| {index.name} | {columns} | {unique} |\n")
+                
+                f.write("\n")
+    
+    print(f"Database schema description saved to {text_path}")
+
+
 def generate_schema_visualization(connection):
     """Generate database schema visualization in both high-level and detailed formats."""
+    # Ensure all models are loaded
+    import_all_models()
+    
+    # Get schema info using inspector
     inspector = inspect(connection)
     schema_info = {
         "tables": {},
@@ -165,6 +322,21 @@ def generate_schema_visualization(connection):
     <p>Redirecting to schema visualizer...</p>
 </body>
 </html>""")
+    
+    # Generate schema diagrams (PNG and PDF)
+    try:
+        docs_path = Path(docs_dir)
+        generate_schema_diagram(docs_path)
+    except Exception as e:
+        print(f"Warning: Could not generate schema diagrams: {e}")
+    
+    # Generate textual schema description (Markdown)
+    try:
+        docs_path = Path(docs_dir)
+        generate_text_schema(docs_path)
+    except Exception as e:
+        print(f"Warning: Could not generate schema description: {e}")
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode."""
@@ -174,23 +346,23 @@ def run_migrations_offline():
         target_metadata=target_metadata,
         literal_binds=True,
         compare_type=compare_type,  # Utilise notre fonction personnalisée pour la comparaison des types
-        compare_server_default=compare_server_default,  # Utilise notre fonction personnalisée pour la comparaison des valeurs par défaut
+        compare_server_default=compare_server_default,
         include_object=include_object,
-        render_as_batch=True,  # Utilise des opérations de type batch pour gérer les dépendances
         dialect_opts={"paramstyle": "named", "drop_cascade": True},  # Ajoute CASCADE lors de la suppression
     )
-    
+
     with context.begin_transaction():
         context.run_migrations()
     
-    # Create engine to generate schema documentation
-    engine = engine_from_config(
-        {"sqlalchemy.url": url},
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-    with engine.connect() as connection:
-        generate_schema_visualization(connection)
+    # Generate schema documentation only when running from ./kaapi db apply
+    if os.environ.get("KAAPI_COMMAND") == "apply":
+        engine = engine_from_config(
+            {"sqlalchemy.url": url},
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+        with engine.connect() as connection:
+            generate_schema_visualization(connection)
 
 def run_migrations_online():
     """Run migrations in 'online' mode."""
@@ -214,8 +386,9 @@ def run_migrations_online():
         with context.begin_transaction():
             context.run_migrations()
         
-        # Generate schema documentation
-        generate_schema_visualization(connection)
+        # Generate schema documentation only when running from ./kaapi db apply
+        if os.environ.get("KAAPI_COMMAND") == "apply":
+            generate_schema_visualization(connection)
 
 def run_migrations():
     if context.is_offline_mode():

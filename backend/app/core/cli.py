@@ -96,7 +96,40 @@ def apply_migrations(use_docker: bool = True) -> Dict[str, Any]:
         Dictionary with status and output
     """
     command = ["alembic", "upgrade", "head"]
-    stdout, stderr, return_code = run_alembic_command(command, use_docker)
+    
+    # Définir un environnement spécifique pour indiquer qu'il s'agit de la commande db apply
+    env = os.environ.copy()
+    env["KAAPI_COMMAND"] = "apply"
+    
+    # Utiliser l'environnement personnalisé pour la commande
+    if use_docker:
+        # Pour Docker, on doit passer la variable d'environnement différemment
+        docker_prefix = ["docker", "exec", "-e", "KAAPI_COMMAND=apply", "kaapi-api"]
+        docker_command = docker_prefix + ["sh", "-c", " ".join(command)]
+        process = subprocess.Popen(
+            docker_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=str(get_backend_dir())
+        )
+        stdout, stderr = process.communicate()
+        return_code = process.returncode
+    else:
+        # Exécuter avec notre environnement personnalisé
+        env["PYTHONPATH"] = str(get_backend_dir())
+        env["DB_URL"] = settings.DB_URL
+        
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=str(get_backend_dir()),
+            env=env
+        )
+        stdout, stderr = process.communicate()
+        return_code = process.returncode
     
     if return_code != 0:
         return {
