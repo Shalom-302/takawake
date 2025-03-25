@@ -212,7 +212,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                   {unreadMessagesCount > 0 && (
                     <Badge 
                       variant="default" 
-                      className="ml-auto h-4 px-1 text-[10px]"
+                      className="ml-auto h-4 px-1 text-[10px] -mt-4"
                     >
                       {unreadMessagesCount}
                     </Badge>

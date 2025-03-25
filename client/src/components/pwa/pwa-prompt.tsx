@@ -220,8 +220,8 @@ export function PWAPrompt() {
       {/* Notification prompt */}
       {showNotificationPrompt && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-md border border-gray-200 dark:border-gray-700 flex items-center gap-3">
-          <div className="bg-indigo-100 dark:bg-indigo-900 rounded-full p-2">
-            <Bell className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-full p-2">
+            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-sm">Enable notifications</h3>

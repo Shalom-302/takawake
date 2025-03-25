@@ -3,6 +3,14 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { toast } from 'sonner';
 import axiosClient from '@/lib/api/axios-client';
 
+// Ajouter une variable pour contrôler l'activation de la PWA
+const ENABLE_PWA = process.env.NEXT_PUBLIC_ENABLE_PWA !== 'false';
+// Désactiver automatiquement en développement sauf si explicitement activé
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+const PWA_ENABLED = ENABLE_PWA && (!IS_DEVELOPMENT || process.env.NEXT_PUBLIC_PWA_DEV === 'true');
+
+console.log(`PWA status: ${PWA_ENABLED ? 'Enabled' : 'Disabled'} (Dev: ${IS_DEVELOPMENT})`);
+
 interface NetworkInformation {
   downlink: number;
   effectiveType: string;
@@ -110,8 +118,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Helper function to register service worker
   const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | undefined> => {
-    if (!('serviceWorker' in navigator)) {
-      console.error('Service Worker not supported in this browser');
+    if (!('serviceWorker' in navigator) || !PWA_ENABLED) {
+      console.error('Service Worker not supported in this browser or PWA is disabled');
       return undefined;
     }
     
@@ -164,7 +172,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     // Initialize PWA and check installation status
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && PWA_ENABLED) {
       // Check if the app is running in standalone mode or was launched from the homescreen
       const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
                                 (window.navigator as Navigator & { standalone?: boolean }).standalone || 
