@@ -1,6 +1,7 @@
 "use client"
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import axiosClient from '@/lib/api/axios-client';
 
 interface NetworkInformation {
   downlink: number;
@@ -32,6 +33,8 @@ interface PWAContextType {
   isPushSubscribed: boolean;
   // Request permission for push notifications
   requestPushPermission: () => Promise<boolean>;
+  // Unsubscribe from push notifications
+  unsubscribeFromPush: () => Promise<boolean>;
   // Handle app installation
   installApp: () => Promise<void>;
   // Check if the app is installed
@@ -44,11 +47,14 @@ interface PWAContextType {
   checkOnlineStatus: () => Promise<boolean>;
 }
 
-const PWAContext = createContext<PWAContextType | undefined>(undefined);
+const PWAContext = createContext<PWAContextType | null>(null);
+
+// axiosClient utilise déjà NEXT_PUBLIC_API_URL || 'http://localhost:8000/api' comme baseURL
+// donc nous n'avons pas besoin de définir une constante séparée
 
 export const usePWA = () => {
   const context = useContext(PWAContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('usePWA must be used within a PWAProvider');
   }
   return context;
@@ -64,44 +70,32 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   
-  // Trust navigator.onLine initially, but verify when needed
-  // This approach is more reliable as it doesn't make potentially failing network requests
-  // on startup that might erroneously indicate offline status
+  // Check online status with network request
   const checkOnlineStatus = useCallback(async (): Promise<boolean> => {
-    // Start with the browser's built-in online status
+    // Get browser's opinion on connectivity
     const browserOnlineStatus = navigator.onLine;
     
-    // If browser says we're offline, trust it and don't make network requests
     if (!browserOnlineStatus) {
       if (isOnline) {
         setIsOnline(false);
-        toast.error('You are offline. Some features may be limited.');
       }
       return false;
     }
 
     // Only perform fetch test when browser reports online but we want to confirm
     try {
-      // Use a static file on the server that's guaranteed to exist
-      // The timestamp prevents caching issues
-      const timestamp = Date.now();
-      const response = await fetch(`/favicon.ico?t=${timestamp}`, {
-        method: 'HEAD',
-        cache: 'no-store',
+      // Utiliser l'endpoint health-check
+      // axiosClient ajoute déjà le préfixe /api à toutes les requêtes
+      const response = await axiosClient.get(`/health-check`, {
         // Keep the timeout short to avoid hanging the UI
-        signal: AbortSignal.timeout(2000)
+        timeout: 2000
       });
       
-      const online = response.ok;
+      const online = response.status === 200;
       
       // Only update and notify if the status has changed
       if (online !== isOnline) {
         setIsOnline(online);
-        if (online && !isOnline) {
-          toast.success('Connection restored');
-        } else if (!online && isOnline) {
-          toast.error('You are offline. Some features may be limited.');
-        }
       }
       
       return online;
@@ -109,7 +103,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Network request failed, assume we're offline
       if (isOnline) {
         setIsOnline(false);
-        toast.error('You are offline. Some features may be limited.');
       }
       return false;
     }
@@ -120,7 +113,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       // Check if the app is running in standalone mode or was launched from the homescreen
       const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
-                                (window.navigator as any).standalone || 
+                                (window.navigator as Navigator & { standalone?: boolean }).standalone || 
                                 document.referrer.includes('android-app://');
       
       setIsPWA(isInStandaloneMode);
@@ -139,7 +132,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             // Poor or no connection
             if (isOnline) {
               setIsOnline(false);
-              toast.error('Poor or no connection. Some features may be limited.');
             }
           } else if (!isOnline) {
             // Connection seems fine but state says offline, verify
@@ -160,7 +152,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const handleOfflineEvent = () => {
         // Browser reports offline, update immediately as this is reliable
         setIsOnline(false);
-        toast.error('You are offline. Some features may be limited.');
       };
 
       // Check when user focuses the page after being away
@@ -190,7 +181,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (navigator.onLine) {
           checkOnlineStatus();
         }
-      }, 2000);
+      }, 3000); // Augmenté à 3 secondes pour donner plus de temps au réseau
 
       // Listen for the beforeinstallprompt event to detect if the app is installable
       window.addEventListener('beforeinstallprompt', (e: Event) => {
@@ -262,18 +253,114 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (granted) {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
-          // The subscription should be automatically created by the service worker script
-          // but we check here just to be safe
-          const subscription = await registration.pushManager.getSubscription();
-          setIsPushSubscribed(!!subscription);
-          return true;
+          // Obtenir la subscription Push ou en créer une nouvelle si elle n'existe pas
+          let subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription) {
+            try {
+              // VAPID public key should be set in your environment
+              const { data } = await axiosClient.get(`/push/vapid-public-key`);
+              const { publicKey } = data;
+              
+              // Créer une nouvelle subscription
+              subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+              });
+            } catch (err) {
+              console.error('Error subscribing to push:', err);
+              return false;
+            }
+          }
+          
+          if (subscription) {
+            // Envoyer la subscription au serveur
+            const result = await saveSubscriptionToServer(subscription);
+            setIsPushSubscribed(result);
+            return result;
+          }
         }
       }
     } catch (error) {
       console.error('Error requesting push permission:', error);
+      toast.error('Could not enable notifications');
     }
     
     return false;
+  };
+
+  // Unsubscribe from push notifications
+  const unsubscribeFromPush = async (): Promise<boolean> => {
+    if (!isPushSupported) return false;
+
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          // Remove from server first
+          await deleteSubscriptionFromServer();
+          
+          // Then unsubscribe locally
+          const unsubscribed = await subscription.unsubscribe();
+          
+          if (unsubscribed) {
+            setIsPushSubscribed(false);
+            return true;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error unsubscribing from push:', error);
+      toast.error('Could not disable notifications');
+    }
+    
+    return false;
+  };
+
+  // Helper function to save subscription to server
+  const saveSubscriptionToServer = async (subscription: PushSubscription): Promise<boolean> => {
+    try {
+      const { data } = await axiosClient.post(`/push/subscribe`, {
+        subscription: subscription.toJSON(),
+      });
+
+      if (data && data.isSubscribed) {
+        toast.success('Notifications enabled successfully');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to save subscription to server:', error);
+      return false;
+    }
+  };
+
+  // Helper function to delete subscription from server
+  const deleteSubscriptionFromServer = async (): Promise<boolean> => {
+    try {
+      const { data } = await axiosClient.post(`/push/unsubscribe`);
+      return data && !data.isSubscribed;
+    } catch (error) {
+      console.error('Failed to delete subscription from server:', error);
+      return false;
+    }
+  };
+
+  // Helper function to convert base64 to Uint8Array for VAPID key
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   };
 
   // Handle app installation
@@ -305,12 +392,26 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Check online status periodically (every 30 seconds)
+  useEffect(() => {
+    const periodicCheck = setInterval(() => {
+      if (navigator.onLine) {
+        checkOnlineStatus();
+      }
+    }, 30000); // 30 secondes entre chaque vérification
+
+    return () => {
+      clearInterval(periodicCheck);
+    };
+  }, [checkOnlineStatus]);
+
   const value = {
     isPWA,
     isServiceWorkerRegistered,
     isPushSupported,
     isPushSubscribed,
     requestPushPermission,
+    unsubscribeFromPush,
     installApp,
     isAppInstalled,
     isInstallable,

@@ -20,7 +20,7 @@ import logging
 from datetime import datetime
 
 from app.core.db import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_user_optional
 from app.plugins.advanced_auth.models import User
 
 from .models import PWASettings, PushSubscription, NotificationSegment, NotificationHistory, NotificationReceipt
@@ -60,7 +60,32 @@ logger = logging.getLogger("pwa")
 
 def get_router() -> APIRouter:
     """Get the router for the PWA Support plugin"""
-    router = APIRouter(prefix="/pwa", tags=["pwa"])
+    # Les routes seront accessibles sous /api/pwa grâce au préfixe défini dans main.py
+    router = APIRouter()
+    
+    # Health check endpoint
+    @router.get("/health/ping", response_model=dict)
+    async def health_ping():
+        """Simple health check endpoint for the PWA module"""
+        return {"status": "ok", "timestamp": str(datetime.now())}
+    
+    # Push notification status endpoint
+    @router.get("/push/status", response_model=dict)
+    async def push_status(
+        db: Session = Depends(get_db),
+        current_user: Optional[User] = Depends(get_current_user_optional)
+    ):
+        """Check if the current user has any push subscriptions"""
+        is_subscribed = False
+        
+        if current_user:
+            # Check if user has any subscriptions
+            subscriptions = db.query(PushSubscription).filter(
+                PushSubscription.user_id == current_user.id
+            ).all()
+            is_subscribed = len(subscriptions) > 0
+        
+        return {"isSubscribed": is_subscribed}
     
     # Manifest endpoint
     @router.get("/manifest.json", response_class=JSONResponse)
@@ -168,7 +193,7 @@ def get_router() -> APIRouter:
         const registerServiceWorker = async () => {{
             if ('serviceWorker' in navigator) {{
                 try {{
-                    const registration = await navigator.serviceWorker.register('{base_url}/pwa/service-worker.js', {{
+                    const registration = await navigator.serviceWorker.register('{base_url}/api/pwa/service-worker.js', {{
                         scope: '/'
                     }});
                     
@@ -223,7 +248,7 @@ def get_router() -> APIRouter:
                     tags: [] // This can be populated with user preferences
                 }};
                 
-                const response = await fetch('{base_url}/pwa/push/subscribe', {{
+                const response = await fetch('{base_url}/api/pwa/push/subscribe', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -267,7 +292,7 @@ def get_router() -> APIRouter:
                 const receiptId = event.data.receiptId;
                 
                 if (receiptId) {{
-                    fetch('{base_url}/pwa/push/receipt/' + receiptId + '/clicked', {{
+                    fetch('{base_url}/api/pwa/push/receipt/' + receiptId + '/clicked', {{
                         method: 'POST'
                     }}).catch(error => {{
                         console.error('Failed to record notification click:', error);
@@ -298,7 +323,7 @@ def get_router() -> APIRouter:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Offline - Kaapi App</title>
-            <link rel="manifest" href="/pwa/manifest.json">
+            <link rel="manifest" href="/api/pwa/manifest.json">
             <style>
                 :root {
                     --primary-color: #4F46E5;

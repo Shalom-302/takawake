@@ -3,7 +3,8 @@ import { CookieSettings, CookieConsentSubmission } from '../types/cookies';
 
 // Constants
 const CONSENT_STORAGE_KEY = 'cookie_consent';
-
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  
 // Fetcher for SWR calls
 const fetcher = async (url: string) => {
   const response = await fetch(url);
@@ -20,7 +21,7 @@ const fetcher = async (url: string) => {
  */
 export function useCookieSettings() {
   const { data, error, isLoading, mutate } = useSWR<CookieSettings>(
-    `/api/privacy/cookie-settings`,
+    `${BACKEND_URL}/privacy/cookie-settings`,
     fetcher
   );
 
@@ -46,7 +47,7 @@ export function useSubmitCookieConsent() {
         timestamp: Date.now()
       };
       
-      const response = await fetch(`/api/privacy/cookie-consent`, {
+      const response = await fetch(`${BACKEND_URL}/privacy/cookie-consent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +175,7 @@ interface CookieStatusResponse {
  */
 export function useCookieStatus() {
   const { data, error, isLoading, mutate } = useSWR<CookieStatusResponse>(
-    `/api/privacy/cookie-status`,
+    `/privacy/cookie-status`,
     fetcher
   );
 

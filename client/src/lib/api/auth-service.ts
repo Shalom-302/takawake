@@ -106,7 +106,7 @@ const authService = {
 
   // Get available auth providers
   async getProviders(): Promise<AuthProvider[]> {
-    const response = await axiosClient.get<AuthProvider[]>('/providers');
+    const response = await axiosClient.get<AuthProvider[]>('/auth/providers');
     return response.data;
   },
 

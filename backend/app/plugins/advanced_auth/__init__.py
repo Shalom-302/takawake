@@ -26,10 +26,17 @@ def init_app(app: FastAPI, **kwargs) -> None:
         app: FastAPI application
         **kwargs: Additional initialization parameters
     """
-    # Include the regular router with API prefix
-    app.include_router(router)
+    # Vérifier si un api_router est fourni pour le préfixe /api
+    api_router = kwargs.get("api_router")
     
-    # Include the public router directly at root level without any prefix
+    if api_router:
+        # Utiliser le api_router pour que les routes soient sous /api
+        api_router.include_router(router, tags=["authentication"])
+    else:
+        # Fallback - ancien comportement
+        app.include_router(router)
+        
+    # Les routes publiques restent au niveau racine
     app.include_router(public_router)
     
     logger.info("Advanced Authentication plugin initialized")

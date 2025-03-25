@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { usePWA } from '@/lib/contexts/pwa-context';
 import { Button } from '../ui/button';
 import { Bell, Download, WifiOff } from 'lucide-react';
+import axiosClient from '@/lib/api/axios-client';
+import axios from 'axios';
 
 export function PWAPrompt() {
   const { 
@@ -10,12 +12,43 @@ export function PWAPrompt() {
     isPushSupported, 
     isPushSubscribed, 
     requestPushPermission, 
+    unsubscribeFromPush,
     isOnline 
   } = usePWA();
 
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showOfflineIndicator, setShowOfflineIndicator] = useState(false);
+  const [serverNotificationStatus, setServerNotificationStatus] = useState<boolean | null>(null);
+  const [showManageNotifications, setShowManageNotifications] = useState(false);
+
+  // Vérifier le statut d'abonnement aux notifications sur le serveur
+  useEffect(() => {
+    const checkServerSubscriptionStatus = async () => {
+      if (!isPushSupported) return;
+      
+      try {
+        const { data } = await axiosClient.get(`/push/status`);
+        setServerNotificationStatus(data.isSubscribed);
+        
+        // Si le statut du serveur est différent de notre état local, mettre à jour
+        if (data.isSubscribed !== isPushSubscribed) {
+          console.log('Synchronizing push status with server');
+        }
+      } catch (error) {
+        // En cas d'erreur 401, l'utilisateur n'est pas connecté
+        // Dans ce cas, on définit simplement le statut comme non abonné
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          setServerNotificationStatus(false);
+          // Pas besoin de logger cette erreur car c'est un cas attendu
+        } else {
+          console.error('Failed to check server subscription status:', error);
+        }
+      }
+    };
+    
+    checkServerSubscriptionStatus();
+  }, [isPushSupported, isPushSubscribed]);
 
   // Manage installation prompt display
   useEffect(() => {
@@ -33,7 +66,7 @@ export function PWAPrompt() {
 
   // Manage notification prompt display
   useEffect(() => {
-    if (isPushSupported && !isPushSubscribed) {
+    if (isPushSupported && !isPushSubscribed && serverNotificationStatus === false) {
       // Wait a bit longer before asking for notifications
       const timer = setTimeout(() => {
         setShowNotificationPrompt(true);
@@ -43,7 +76,29 @@ export function PWAPrompt() {
     } else {
       setShowNotificationPrompt(false);
     }
-  }, [isPushSupported, isPushSubscribed]);
+  }, [isPushSupported, isPushSubscribed, serverNotificationStatus]);
+
+  // Montrer l'option de gérer les notifications si déjà abonnées
+  useEffect(() => {
+    // Si les notifications sont activées, montrer occasionnellement l'option de gestion
+    if (isPushSupported && isPushSubscribed && serverNotificationStatus === true) {
+      // Vérifie si l'utilisateur n'a pas vu cette option récemment (stocké dans localStorage)
+      const lastShown = localStorage.getItem('notificationManageLastShown');
+      const now = new Date().getTime();
+      
+      // Ne montrer l'option que tous les 7 jours
+      if (!lastShown || (now - parseInt(lastShown)) > 7 * 24 * 60 * 60 * 1000) {
+        const timer = setTimeout(() => {
+          setShowManageNotifications(true);
+          localStorage.setItem('notificationManageLastShown', now.toString());
+        }, 15000);
+        
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setShowManageNotifications(false);
+    }
+  }, [isPushSupported, isPushSubscribed, serverNotificationStatus]);
 
   // Manage offline status indicator
   useEffect(() => {
@@ -61,11 +116,23 @@ export function PWAPrompt() {
     const success = await requestPushPermission();
     if (success) {
       setShowNotificationPrompt(false);
+      // Mettre à jour immédiatement le statut sans attendre le prochain effet
+      setServerNotificationStatus(true);
+    }
+  };
+  
+  // Handler pour désactiver les notifications
+  const handleDisableNotifications = async () => {
+    const success = await unsubscribeFromPush();
+    if (success) {
+      setShowManageNotifications(false);
+      // Mettre à jour immédiatement le statut sans attendre le prochain effet
+      setServerNotificationStatus(false);
     }
   };
 
   // If no prompt is displayed, do nothing
-  if (!showInstallPrompt && !showNotificationPrompt && !showOfflineIndicator) {
+  if (!showInstallPrompt && !showNotificationPrompt && !showOfflineIndicator && !showManageNotifications) {
     return null;
   }
 
@@ -120,6 +187,33 @@ export function PWAPrompt() {
             </Button>
             <Button size="sm" onClick={handleEnableNotifications}>
               Accept
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Manage notifications prompt */}
+      {showManageNotifications && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-md border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+          <div className="bg-indigo-100 dark:bg-indigo-900 rounded-full p-2">
+            <Bell className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-sm">Notifications activated</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              You will receive notifications for new messages
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowManageNotifications(false)}
+            >
+              Keep
+            </Button>
+            <Button size="sm" variant="destructive" onClick={handleDisableNotifications}>
+              Disable
             </Button>
           </div>
         </div>

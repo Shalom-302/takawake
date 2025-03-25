@@ -133,7 +133,7 @@
             statusElement.className = 'status';
             
             try {
-                const response = await fetch('http://localhost:8000/plugins/api_gateway/health');
+                const response = await fetch('http://localhost:8000/api/api_gateway/health');
                 const data = await response.json();
                 
                 if (response.ok) {

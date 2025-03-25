@@ -6,7 +6,7 @@ import base64
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.core.config import settings
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.db import get_db
@@ -14,6 +14,18 @@ from app.plugins.advanced_auth.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/auth/login")
+
+
+# Schéma OAuth2 qui ne lève pas d'exception si aucun token n'est fourni
+class OAuth2PasswordBearerOptional(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> Optional[str]:
+        try:
+            return await super().__call__(request)
+        except HTTPException:
+            return None
+
+
+oauth2_scheme_optional = OAuth2PasswordBearerOptional(tokenUrl=f"/auth/login")
 
 
 class EncryptionHandler(Protocol):
@@ -125,6 +137,37 @@ async def get_current_user(
     
     if user is None:
         raise credentials_exception
+    return user
+
+def get_current_user_optional(
+    db: Session = Depends(get_db), token: Optional[str] = Depends(oauth2_scheme_optional)
+) -> Optional[User]:
+    """
+    Similar to get_current_user but returns None instead of raising an exception
+    if authentication fails. This is useful for endpoints that can work with or
+    without authentication.
+    
+    Args:
+        db: Database session
+        token: JWT token from Authorization header (optional)
+        
+    Returns:
+        User object if authenticated, None otherwise
+    """
+    if token is None:
+        return None
+    
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+    
+    user = db.query(User).filter(User.id == user_id).first()
     return user
 
 async def get_current_active_user(

@@ -18,7 +18,6 @@ from app.plugins.advanced_scheduler.models import ScheduledJob
 # AI integration models
 from app.plugins.ai_integration.models import AIProvider, AIModel, AIUsageRecord, TextAnalysisResult, ContentRecommendation, AIEmbedding
 
-
 # API Gateway models
 from app.plugins.api_gateway.models import ApiKeyDB, ApiPermissionDB, RateLimitDB, ApiAuditLogDB
 
@@ -58,7 +57,7 @@ from app.plugins.privacy_compliance.models import CookieCategory, Cookie, Cookie
 from app.plugins.push_notifications.models import Device, Notification, NotificationDevice, NotificationSegment
 
 # PWA Support models
-from app.plugins.pwa_support.models import PWASettings, NotificationSegment, PushSubscription, NotificationHistory, NotificationReceipt
+from app.plugins.pwa_support.models import PWASettings, NotificationSegment, NotificationHistory, NotificationReceipt
 
 # Recommendation models
 from app.plugins.recommendation.models import InteractionDB, RecommendationDB, UserPreferenceDB, ItemFeatureDB, SimilarityMatrixDB, ItemSimilarityDB
@@ -74,4 +73,3 @@ from app.plugins.webhooks.models import WebhookSubscription
 
 # Workflow models
 from app.plugins.workflow.models import Workflow, WorkflowStep, WorkflowState, WorkflowTransition, WorkflowInstance, StepApproval, WorkflowHistory
-

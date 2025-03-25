@@ -24,7 +24,7 @@ scrape_configs:
         replacement: 'kaapi-api'
 
   - job_name: 'kaapi-audit'
-    metrics_path: '/plugins/advanced_audit/metrics'
+    metrics_path: '/api/advanced_audit/metrics'
     static_configs:
       - targets: ['kaapi-api:8000']
     relabel_configs:

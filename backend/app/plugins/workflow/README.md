@@ -187,7 +187,7 @@ The workflow plugin provides a complete REST API that can be integrated with you
 ```javascript
 // Get user's pending approvals
 async function getPendingApprovals() {
-  const response = await fetch('/api/workflow/users/me/pending-approvals', {
+  const response = await fetch('/workflow/users/me/pending-approvals', {
     headers: {
       'Authorization': `Bearer ${accessToken}`
     }
@@ -197,7 +197,7 @@ async function getPendingApprovals() {
 
 // Approve a workflow step
 async function approveStep(approvalId, comments) {
-  const response = await fetch(`/api/workflow/approvals/${approvalId}/approve`, {
+  const response = await fetch(`/workflow/approvals/${approvalId}/approve`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

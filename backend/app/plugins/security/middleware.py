@@ -137,8 +137,8 @@ class SecurityMiddlewareEnhanced(BaseHTTPMiddleware):
 
         # Bypass all security checks for privacy routes
         if (scope.get("path", "").startswith("/privacy/") or 
-            scope.get("path", "").startswith("/plugins/privacy_compliance/") or
-            scope.get("path", "").startswith("/plugins/advanced_audit/")):
+            scope.get("path", "").startswith(f"{config.API_V1_STR}/privacy_compliance/") or
+            scope.get("path", "").startswith(f"{config.API_V1_STR}/advanced_audit/")):
             logging.debug(f"SecurityMiddleware: Bypassing security checks for route: {scope.get('path')}")
             await self.app(scope, receive, send)
             return

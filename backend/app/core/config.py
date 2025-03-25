@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "KAAPI Backend"
     ENVIRONMENT: str = "development"
     
+    # API Configuration
+    API_PREFIX: str = "/api"  # Central prefix for all API routes
+    API_V1_STR: str = "/api"  # Pour la compatibilité avec le code existant
+    
     # Security
     SECRET_KEY: str = "CHANGE_ME"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 2  # For tests, only 2 minutes

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, List
 from fastapi import FastAPI
 from pydantic import BaseModel
+from app.core.config import settings
 
 # Simple plugin state schema
 class PluginStateSchema(BaseModel):
@@ -32,7 +33,7 @@ def load_plugins_into_app(app: FastAPI, db=None):
                 plugin_module = importlib.import_module(module_str)
                 if hasattr(plugin_module, "get_router"):
                     router = plugin_module.get_router()
-                    prefix = f"/plugins/{folder_name}"
+                    prefix = f"{settings.API_PREFIX}/{folder_name}"
                     app.include_router(router, prefix=prefix, tags=[folder_name])
                     print(f"✅ Plugin {folder_name} loaded with router {prefix}")
                     
@@ -48,4 +49,3 @@ plugin_manager_router = APIRouter()
 def list_plugins():
     """Return all discovered plugins."""
     return list(LOADED_PLUGINS.values())
-

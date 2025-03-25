@@ -50,7 +50,7 @@ export class WebSocketClient {
         this.isManualClose = false;
         
         // Use default port (8000) with root route installed before all middleware
-        const baseUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+        const baseUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/api";
         
         // Construct the WebSocket URL
         let url: string;

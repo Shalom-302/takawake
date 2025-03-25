@@ -4,7 +4,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   
   try {
     const response = await fetch(`${BACKEND_URL}/privacy/cookie-settings`, {

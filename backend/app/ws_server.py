@@ -10,17 +10,17 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Dict, Any, List
 
-# Configurer le logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ws_server")
 
-# Créer une application FastAPI dédiée aux WebSockets
+# Create a FastAPI application dedicated to WebSockets
 app = FastAPI(title="Kaapi WebSocket Server")
 
-# Configuration CORS - accepte toutes les origines en développement
+# Configure CORS - accept all origins in development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En production, limitez aux origines spécifiques
+    allow_origins=["*"],  # In production, limit to specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,7 +45,7 @@ class ConnectionManager:
                 del self.active_connections[conversation_id][user_id]
                 logger.info(f"User {user_id} disconnected from conversation {conversation_id}")
             
-            # Supprimer la conversation si elle est vide
+            # Remove conversation if empty
             if not self.active_connections[conversation_id]:
                 del self.active_connections[conversation_id]
                 
@@ -57,27 +57,27 @@ class ConnectionManager:
                 await connection.send_json(message)
 
 
-# Créer le gestionnaire de connexions
+# Create the connection manager
 manager = ConnectionManager()
 
-# Route WebSocket de test - aucune authentification requise
-@app.websocket("/ws-test")
+# WebSocket test route - no authentication required
+@app.websocket(f"{settings.API_PREFIX}/ws-test")
 async def websocket_test(websocket: WebSocket):
     await websocket.accept()
     try:
-        # Envoyer un message de bienvenue
+        # Send a welcome message
         await websocket.send_json({"status": "connected", "message": "Test connection successful"})
         
-        # Boucle d'echo simple
+        # Simple echo loop
         while True:
             data = await websocket.receive_text()
-            # Echo du message reçu
+            # Echo the received message
             await websocket.send_json({"echo": data})
     except WebSocketDisconnect:
         logger.info("Client disconnected from test WebSocket")
 
-# Route WebSocket principale avec ID de conversation
-@app.websocket("/ws/{conversation_id}")
+# WebSocket route with conversation ID
+@app.websocket(f"{settings.API_PREFIX}/ws/{{conversation_id}}")
 async def websocket_endpoint(
     websocket: WebSocket, 
     conversation_id: str, 
@@ -85,19 +85,19 @@ async def websocket_endpoint(
     user_id: Optional[str] = Query("anonymous")
 ):
     """
-    Endpoint WebSocket simple sans authentification pour le développement
-    Accepte toutes les connexions et fournit un service d'écho
+    Endpoint WebSocket without authentication for development
+    Accepts all connections and provides an echo service
     """
-    # Log pour le debug
+    # Log for debugging
     logger.info(f"WebSocket connection attempt to conversation {conversation_id}")
     if token:
         logger.info(f"Token provided: {token[:10]}...")
     
-    # Accepter la connexion sans vérification
+    # Accept the connection without verification
     await manager.connect(websocket, conversation_id, user_id)
     
     try:
-        # Envoyer un message de confirmation
+        # Send a confirmation message
         await websocket.send_json({
             "type": "connection_established",
             "data": {
@@ -106,20 +106,20 @@ async def websocket_endpoint(
             }
         })
         
-        # Boucle principale pour recevoir les messages
+        # Main loop to receive messages
         while True:
-            # Attendre les messages
+            # Wait for messages
             data = await websocket.receive_json()
             
-            # Loguer le message reçu
+            # Log the received message
             logger.info(f"Message from user {user_id} in conversation {conversation_id}: {data}")
             
-            # Déterminer le type de message
+            # Determine message type
             message_type = data.get("type", "text")
             
-            # Traiter le message selon son type
+            # Process message based on type
             if message_type == "text":
-                # Créer un message structuré pour le broadcast
+                # Create a structured message for broadcast
                 message_to_broadcast = {
                     "type": "message",
                     "data": {
@@ -131,14 +131,14 @@ async def websocket_endpoint(
                     }
                 }
                 
-                # Diffuser à tous les participants de la conversation (sauf l'expéditeur)
+                # Broadcast to all participants in the conversation (excluding sender)
                 await manager.broadcast_to_conversation(
                     message_to_broadcast, 
                     conversation_id,
-                    exclude_user=None  # Optionnel: exclure l'expéditeur avec user_id
+                    exclude_user=None  # Optional: exclude sender with user_id
                 )
                 
-                # Confirmer la réception à l'expéditeur
+                # Confirm message receipt to sender
                 await websocket.send_json({
                     "type": "message_received",
                     "data": {
@@ -147,7 +147,7 @@ async def websocket_endpoint(
                 })
             
             elif message_type == "typing":
-                # Diffuser l'indication de frappe
+                # Broadcast typing indicator
                 await manager.broadcast_to_conversation(
                     {
                         "type": "typing",
@@ -161,10 +161,10 @@ async def websocket_endpoint(
                 )
     
     except WebSocketDisconnect:
-        # Gérer la déconnexion
+        # Handle disconnection
         manager.disconnect(conversation_id, user_id)
         
-        # Informer les autres utilisateurs de la déconnexion
+        # Inform other users of the disconnection
         await manager.broadcast_to_conversation(
             {
                 "type": "user_offline",
@@ -182,5 +182,5 @@ async def websocket_endpoint(
 
 if __name__ == "__main__":
     import uvicorn
-    # Lancer le serveur sur le port 8001 pour éviter les conflits avec l'API principale
+    # Launch the server on port 8001 to avoid conflicts with the main API
     uvicorn.run("ws_server:app", host="0.0.0.0", port=8001, reload=True)

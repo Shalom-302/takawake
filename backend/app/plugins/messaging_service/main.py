@@ -221,3 +221,21 @@ class MessagingService:
 
 # Create singleton instance
 messaging_service = MessagingService()
+
+# Function pour être compatible avec le gestionnaire de plugins
+def get_router():
+    """
+    Retourne le routeur du service de messagerie.
+    Cette fonction est nécessaire pour que le plugin soit correctement chargé 
+    par le gestionnaire de plugins.
+    """
+    if not messaging_service._is_initialized:
+        # Initialiser les handlers nécessaires mais sans attacher le routeur à l'app
+        messaging_service._init_security_handler()
+        messaging_service._init_notification_handler()
+        messaging_service._init_file_handler()
+        messaging_service._init_websocket_manager()
+        messaging_service._setup_routes()
+        messaging_service._is_initialized = True
+        
+    return messaging_service.router

@@ -7,6 +7,9 @@ import threading
 import logging
 import os
 import uuid
+import time
+from typing import Optional
+from fastapi import Query
 
 from .core.db import Base, engine, SessionLocal
 from .core.config import settings
@@ -18,7 +21,7 @@ from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_rou
 from app.plugins.webhooks.main import get_router as get_webhooks_router
 from app.plugins.advanced_audit.main import get_router as get_audit_router
 from app.plugins.monitoring.main import get_router as get_monitoring_router
-from app.plugins.messaging.main import get_router as get_messaging_router
+from app.plugins.messaging_service.main import get_router as get_messaging_service_router
 from app.plugins.api_versioning.main import router as api_versioning_router
 from app.plugins.api_versioning.integration import register_with_main_app
 from app.plugins.advanced_logging.main import get_router as get_advanced_logging_router
@@ -44,11 +47,11 @@ from app.plugins.kyc.main import get_admin_router as get_kyc_admin_router, get_a
 from app.plugins.business_alerts.main import business_alerts_plugin
 from app.plugins.digital_signature.main import digital_signature_plugin
 from app.plugins.recommendation.main import recommendation_plugin
-from app.plugins.messaging_service.main import messaging_service
 from app.plugins.social_subscriptions.main import setup_social_subscriptions, social_subscriptions_plugin
 from app.plugins.advanced_auth import init_app as init_auth_plugin
 
 from app.api import health_check
+from app.api.push import router as push_router
 
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
@@ -74,7 +77,7 @@ app = FastAPI(
 
 # Add direct WebSocket routes before all middleware
 # This approach ensures that WebSocket connections are not intercepted by middlewares
-@app.websocket("/ws-root/{conversation_id}")
+@app.websocket(f"{settings.API_PREFIX}/ws-root/{{conversation_id}}")
 async def websocket_root(websocket: WebSocket, conversation_id: str):
     """
     Base WebSocket endpoint that ignores all verifications
@@ -286,6 +289,23 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
         except:
             pass
 
+# Add a specific WebSocket route for global connections
+@app.websocket(f"{settings.API_PREFIX}/ws-root/global")
+async def websocket_root_global(websocket: WebSocket, token: Optional[str] = Query(None), user_id: Optional[str] = Query(None)):
+    """
+    WebSocket endpoint for global connections that handles real-time updates across the application
+    """
+    import uuid
+    from app.plugins.messaging_service.routes.websocket_routes import handle_global_websocket
+    
+    print(f"Tentative de connexion WebSocket global avec token: {token and token[:10]}...")
+    
+    if not user_id:
+        user_id = f"user-{int(time.time() * 1000)}"
+    
+    # Pass the connection to the handler in the messaging service
+    await handle_global_websocket(websocket, token, user_id)
+
 # CORS Middleware
 origins = settings.CORS_ORIGINS
 app.add_middleware(
@@ -369,10 +389,6 @@ def init_db():
         digital_signature_plugin.init_app(app)
         print("🟢 Digital Signature plugin initialized")
         
-        # Initialize messaging service plugin
-        messaging_service.init_app(app)
-        print("🟢 Messaging Service plugin initialized")
-        
         # Initialize social subscriptions plugin
         setup_social_subscriptions(app)
         print("🟢 Social Subscriptions plugin initialized")
@@ -405,8 +421,11 @@ def on_startup():
 register_with_main_app(app)
 print("🟢 API Versioning initialized")
 
+# Create an APIRouter to group all API routes under the configured prefix
+api_router = APIRouter(prefix=settings.API_PREFIX)
+
 # Initialize Advanced Authentication plugin
-init_auth_plugin(app)
+init_auth_plugin(app, api_router=api_router)
 print("🟢 Advanced Authentication plugin initialized")
 
 # Initialize API Gateway plugin
@@ -418,43 +437,46 @@ init_api_gateway_plugin(
 )
 print("🟢 API Gateway initialized")
 
-# (4) Include all your normal app routers
+# (4) Include all your normal app routers under the /api prefix
 
 # Core plugins
-app.include_router(get_webhooks_router(), prefix="/plugins/webhooks", tags=["Webhooks"])
-app.include_router(get_audit_router(), prefix="/plugins/advanced_audit", tags=["Advanced Audit"])
-app.include_router(get_monitoring_router(), prefix="/plugins/monitoring", tags=["Advanced Monitoring"])
-app.include_router(get_messaging_router(), prefix="/plugins/messaging", tags=["Messaging"])
-app.include_router(crypto_router, prefix="/plugins/security", tags=["Security"])
-app.include_router(api_versioning_router, prefix="/plugins/api-versioning", tags=["API Versioning"])
+api_router.include_router(get_webhooks_router(), prefix="/webhooks", tags=["Webhooks"])
+api_router.include_router(get_audit_router(), prefix="/advanced_audit", tags=["Advanced Audit"])
+api_router.include_router(get_monitoring_router(), prefix="/monitoring", tags=["Advanced Monitoring"])
+api_router.include_router(get_messaging_service_router(), prefix="/messaging", tags=["Messaging Service"])
+api_router.include_router(crypto_router, prefix="/security", tags=["Security"])
+api_router.include_router(api_versioning_router, prefix="/api-versioning", tags=["API Versioning"])
 
 # Additional plugins
-app.include_router(get_advanced_logging_router(), prefix="/plugins/advanced-logging", tags=["Advanced Logging"])
-app.include_router(get_advanced_scheduler_router(), prefix="/plugins/advanced-scheduler", tags=["Advanced Scheduler"])
+api_router.include_router(get_advanced_logging_router(), prefix="/advanced-logging", tags=["Advanced Logging"])
+api_router.include_router(get_advanced_scheduler_router(), prefix="/advanced-scheduler", tags=["Advanced Scheduler"])
 # Note: advanced_auth plugin is already included via init_auth_plugin, this is just for clarity in the list
-app.include_router(ai_integration_router, prefix="/plugins/ai-integration", tags=["AI Integration"])
-app.include_router(data_exchange_router, prefix="/plugins/data-exchange", tags=["Data Exchange"])
-app.include_router(file_storage_router, prefix="/plugins/file-storage", tags=["File Storage"])
-app.include_router(privacy_compliance_router, tags=["Privacy Compliance"])
-app.include_router(push_notifications_router, prefix="/plugins/push-notifications", tags=["Push Notifications"])
-app.include_router(pwa_support_router, prefix="/plugins/pwa-support", tags=["PWA Support"])
-app.include_router(workflow_router, prefix="/plugins/workflow", tags=["Workflow"])
-app.include_router(get_api_gateway_router(), prefix="/admin/api-gateway", tags=["API Gateway"])
-app.include_router(get_offline_sync_router(), prefix="/plugins/offline-sync", tags=["Offline Sync"])
-app.include_router(get_kyc_admin_router(), prefix="/admin", tags=["KYC Admin"])
-app.include_router(get_kyc_api_router(), prefix="/api", tags=["KYC"])
-app.include_router(business_alerts_plugin.router, prefix="/plugins/business-alerts", tags=["Business Alerts"])
-app.include_router(digital_signature_plugin.router, prefix="/plugins/digital-signature", tags=["Digital Signature"])
-app.include_router(recommendation_plugin.router, prefix="/plugins/recommendation", tags=["Recommendation"])
-app.include_router(messaging_service.router, prefix="/plugins/messaging-service", tags=["Messaging Service"])
-app.include_router(social_subscriptions_plugin.router, prefix="/plugins/social-subscriptions", tags=["Social Subscriptions"])
+api_router.include_router(ai_integration_router, prefix="/ai-integration", tags=["AI Integration"])
+api_router.include_router(data_exchange_router, prefix="/data-exchange", tags=["Data Exchange"])
+api_router.include_router(file_storage_router, prefix="/file-storage", tags=["File Storage"])
+api_router.include_router(privacy_compliance_router, tags=["Privacy Compliance"])
+api_router.include_router(push_notifications_router, prefix="/push-notifications", tags=["Push Notifications"])
+api_router.include_router(pwa_support_router, prefix="/pwa-support", tags=["PWA Support"])
+api_router.include_router(workflow_router, prefix="/workflow", tags=["Workflow"])
+api_router.include_router(get_api_gateway_router(), prefix="/api-gateway", tags=["API Gateway"])
+api_router.include_router(get_offline_sync_router(), prefix="/offline-sync", tags=["Offline Sync"])
+api_router.include_router(get_kyc_admin_router(), prefix="/admin", tags=["KYC Admin"])
+api_router.include_router(get_kyc_api_router(), tags=["KYC"])
+api_router.include_router(business_alerts_plugin.router, prefix="/business-alerts", tags=["Business Alerts"])
+api_router.include_router(digital_signature_plugin.router, prefix="/digital-signature", tags=["Digital Signature"])
+api_router.include_router(recommendation_plugin.router, prefix="/recommendation", tags=["Recommendation"])
+api_router.include_router(social_subscriptions_plugin.router, prefix="/social-subscriptions", tags=["Social Subscriptions"])
 
 # API Routes
-app.include_router(health_check.router, prefix="/api", tags=["system"])
+api_router.include_router(health_check.router, tags=["system"])
+api_router.include_router(push_router, tags=["push"])
+
+# Inclure le router API principal dans l'application
+app.include_router(api_router)
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
-app.include_router(plugin_manager_router)
+app.include_router(plugin_manager_router, prefix=f"{settings.API_PREFIX}/admin")
 
 @app.get("/debug/env", tags=["debug"])
 async def debug_env():

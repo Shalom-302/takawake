@@ -17,9 +17,9 @@ import * as API from '../api/messaging-service';
 
 // Clés pour les requêtes SWR
 const KEYS = {
-  conversations: '/api/conversations',
-  conversation: (id: string) => `/api/conversations/${id}`,
-  messages: (id: string) => `/api/conversations/${id}/messages`
+  conversations: '/conversations',
+  conversation: (id: string) => `/conversations/${id}`,
+  messages: (id: string) => `/conversations/${id}/messages`
 };
 
 /**
@@ -112,7 +112,7 @@ export const useCreateConversation = () => {
       };
       
       // In a real app, trigger a revalidation of the conversations list
-      // mutate('/api/conversations');
+      // mutate('/conversations');
       
       return newConversation;
     } catch (error) {
@@ -143,12 +143,12 @@ export const useMessages = (conversationId: string | null) => {
     
     // First page, we don't have previousPageData
     if (pageIndex === 0) {
-      return [`/api/conversations/${conversationId}/messages`, { limit: initialLimit }];
+      return [`/conversations/${conversationId}/messages`, { limit: initialLimit }];
     }
     
     // Add the before cursor to get the next page
     const beforeId = previousPageData![previousPageData!.length - 1].id;
-    return [`/api/conversations/${conversationId}/messages`, { limit: initialLimit, before: beforeId }];
+    return [`/conversations/${conversationId}/messages`, { limit: initialLimit, before: beforeId }];
   }, [conversationId, initialLimit]);
 
   const {
@@ -667,7 +667,7 @@ export function useDeleteMessage() {
       
       // Mise à jour du cache SWR pour refléter la suppression
       mutate(
-        (key) => Array.isArray(key) && key[0] === `/api/messaging/conversations/${messageId}/messages`
+        (key) => Array.isArray(key) && key[0] === `/conversations/${messageId}/messages`
       );
       
       return true;
@@ -713,10 +713,10 @@ export const fetchAPI = async (endpoint: string, options: RequestInit = {}) => {
 
 // Définition des routes API pour les messages
 export const API_ROUTES = {
-  CONVERSATIONS: '/api/conversations',
-  CONVERSATION: (id: string) => `/api/conversations/${id}`,
-  MESSAGES: (conversationId: string) => `/api/conversations/${conversationId}/messages`,
+  CONVERSATIONS: '/conversations',
+  CONVERSATION: (id: string) => `/conversations/${id}`,
+  MESSAGES: (conversationId: string) => `/conversations/${conversationId}/messages`,
   MESSAGE: (conversationId: string, messageId: string) => 
-    `/api/conversations/${conversationId}/messages/${messageId}`,
-  WEBSOCKET: (conversationId: string) => `/api/ws/${conversationId}`
+    `/conversations/${conversationId}/messages/${messageId}`,
+  WEBSOCKET: (conversationId: string) => `/ws/${conversationId}`
 };

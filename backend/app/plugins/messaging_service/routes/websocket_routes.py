@@ -16,7 +16,8 @@ from ..utils.websocket_manager import MessageWebSocketManager
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+# Modifier le router pour inclure le préfixe /api
+router = APIRouter(prefix="/api")
 message_service = None
 
 
