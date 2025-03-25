@@ -17,6 +17,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { useMessaging } from '@/lib/contexts/messaging-context';
 
 interface SidebarProps {
   className?: string;
@@ -28,6 +30,11 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(initialExpanded);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { conversations } = useMessaging();
+  
+  // Calculer le nombre total de messages non lus
+  const unreadMessagesCount = conversations.reduce((total, conversation) => 
+    total + (conversation.unread_count || 0), 0);
 
   // Synchroniser avec initialExpanded si celui-ci change
   useEffect(() => {
@@ -53,11 +60,11 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
       href: '/dashboard',
       icon: LayoutDashboard
     },
-    {
-      name: 'Messages',
-      href: '/messages',
-      icon: MessageSquare
-    },
+    // {
+    //   name: 'Messages',
+    //   href: '/messages',
+    //   icon: MessageSquare
+    // },
     {
       name: 'Notifications',
       href: '/notifications',
@@ -135,6 +142,8 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
             <TooltipProvider>
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
+                const isMessages = item.name === 'Messages';
+                const showBadge = isMessages && unreadMessagesCount > 0;
                 
                 return (
                   <Tooltip key={item.href} delayDuration={expanded ? 999999 : 0}>
@@ -142,7 +151,7 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors",
+                          "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors relative",
                           isActive
                             ? "bg-primary/10 text-primary"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -151,10 +160,24 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
                       >
                         <item.icon className={cn("h-5 w-5", expanded && "mr-3")} />
                         {expanded && <span>{item.name}</span>}
+                        
+                        {/* Badge pour les messages non lus */}
+                        {showBadge && (
+                          <Badge 
+                            variant="default" 
+                            className={cn(
+                              "ml-auto flex h-5 w-5 items-center justify-center p-0 text-xs",
+                              !expanded && "absolute -top-1 -right-1 h-4 w-4 text-[10px]"
+                            )}
+                          >
+                            {unreadMessagesCount}
+                          </Badge>
+                        )}
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right" className={cn(expanded && "hidden")}>
-                      {item.name}
+                      {item.name} 
+                      {isMessages && unreadMessagesCount > 0 && ` (${unreadMessagesCount})`}
                     </TooltipContent>
                   </Tooltip>
                 );

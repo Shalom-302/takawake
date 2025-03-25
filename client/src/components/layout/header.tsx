@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useMessaging } from '@/lib/contexts/messaging-context';
 
 interface Notification {
   id: string;
@@ -38,6 +39,12 @@ interface AppHeaderProps {
 export function AppHeader({ user, onLogout }: AppHeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { conversations } = useMessaging();
+  
+  // Calculer le nombre total de messages non lus
+  const unreadMessagesCount = conversations.reduce((total, conversation) => 
+    total + (conversation.unread_count || 0), 0);
+    
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -83,9 +90,17 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
               pathname === '/dashboard' ? "text-foreground" : "text-foreground/60")}>
               Dashboard
             </Link>
-            <Link href="/messages" className={cn("transition-colors hover:text-foreground/80", 
+            <Link href="/messages" className={cn("transition-colors hover:text-foreground/80 relative", 
               pathname === '/messages' ? "text-foreground" : "text-foreground/60")}>
               Messages
+              {unreadMessagesCount > 0 && (
+                <Badge 
+                  variant="default" 
+                  className="absolute -top-2 -right-4 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+                >
+                  {unreadMessagesCount}
+                </Badge>
+              )}
             </Link>
             <Link href="/settings" className={cn("transition-colors hover:text-foreground/80", 
               pathname === '/settings' ? "text-foreground" : "text-foreground/60")}>
@@ -95,6 +110,21 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
         </div>
         <div className="flex-1"></div>
         <div className="flex items-center gap-2">
+          {/* Messages */}
+          <Link href="/messages">
+            <Button variant="ghost" size="icon" className="relative mr-1 md:hidden">
+              <MessageSquare className="h-4 w-4" />
+              {unreadMessagesCount > 0 && (
+                <Badge 
+                  variant="default" 
+                  className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+                >
+                  {unreadMessagesCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -102,7 +132,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <Badge 
-                    variant="destructive" 
+                    variant="default" 
                     className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
                   >
                     {unreadCount}
@@ -176,9 +206,17 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/messages" className="cursor-pointer flex w-full">
+                <Link href="/messages" className="cursor-pointer flex w-full relative">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   <span>Messages</span>
+                  {unreadMessagesCount > 0 && (
+                    <Badge 
+                      variant="default" 
+                      className="ml-auto h-4 px-1 text-[10px]"
+                    >
+                      {unreadMessagesCount}
+                    </Badge>
+                  )}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
@@ -216,10 +254,18 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                 </Link>
                 <Link 
                   href="/messages" 
-                  className="flex items-center py-2"
+                  className="flex items-center py-2 relative"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Messages
+                  {unreadMessagesCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-auto h-4 px-1 text-[10px]"
+                    >
+                      {unreadMessagesCount}
+                    </Badge>
+                  )}
                 </Link>
                 <Link 
                   href="/settings" 
