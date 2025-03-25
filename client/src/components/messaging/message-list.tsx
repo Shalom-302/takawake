@@ -48,38 +48,38 @@ export default function MessageList({ currentUserId }: MessageListProps) {
     }
   }, [messages]);
   
-  // Écouter les événements WebSocket pour les nouveaux messages
+  // Listen for WebSocket events for new messages
   useEffect(() => {
-    // Obtenir les fonctions du contexte de messagerie à l'avance
-    // pour éviter d'appeler useMessaging() dans la fonction handleNewMessage
+    // Get functions from the messaging context in advance
+    // to avoid calling useMessaging() in the handleNewMessage function
     const refreshConversation = () => {
-      // Forcer une actualisation de la liste des messages
-      // en utilisant setTimeout pour déclencher une mise à jour asynchrone
+      // Force a refresh of the message list
+      // using setTimeout to trigger an asynchronous update
       setTimeout(() => {
-        // Ici, nous pourrions appeler une API pour actualiser les messages
-        // mais pour l'instant, nous nous contentons d'un log
+        // Here, we could call an API to refresh the messages
+        // but for now, we'll just log
         console.log('Forcing message list refresh for conversation:', activeConversation?.id);
       }, 100);
     };
     
-    // Fonction de rappel pour les nouveaux messages reçus via WebSocket
+    // Callback function for new messages received via WebSocket
     const handleNewMessage = (event: Event) => {
       const customEvent = event as CustomEvent;
       
-      // Vérifier si le message concerne la conversation active
+      // Check if the message concerns the active conversation
       if (customEvent.detail?.conversationId === activeConversation?.id) {
         console.log('New WebSocket message for this conversation:', customEvent.detail.message);
         
-        // Au lieu d'essayer de modifier directement le contexte,
-        // forcer un rafraîchissement de la liste des messages
+        // Instead of trying to modify the context directly,
+        // force a refresh of the message list
         refreshConversation();
       }
     };
     
-    // Écouter les événements personnalisés de nouveaux messages
+    // Listen for custom events for new messages
     window.addEventListener('kaapi:new-message', handleNewMessage);
     
-    // Nettoyer l'écouteur lors du démontage du composant
+    // Cleanup listener on component unmount
     return () => {
       window.removeEventListener('kaapi:new-message', handleNewMessage);
     };

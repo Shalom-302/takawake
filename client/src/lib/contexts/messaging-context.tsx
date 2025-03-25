@@ -358,7 +358,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
             // Handle different message types
             switch (message.type) {
               case WebSocketMessageType.MESSAGE:
-                // Assurer que les données contiennent conversation_id
+                // Ensure data contains conversation_id
                 if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
                   // Type assertion with proper check for required properties
                   const safeData = message.data as Record<string, unknown>;
@@ -381,7 +381,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
                 break;
                 
               case WebSocketMessageType.TYPING:
-                // Assurer que les données contiennent conversation_id
+                // Ensure data contains conversation_id
                 if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
                   // Type assertion with proper check for required properties
                   const safeData = message.data as Record<string, unknown>;
@@ -404,7 +404,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
                 break;
                 
               case WebSocketMessageType.READ_RECEIPT:
-                // Assurer que les données contiennent conversation_id
+                // Ensure data contains conversation_id
                 if (message.data && typeof message.data === 'object' && 'conversation_id' in message.data) {
                   // Type assertion with proper check for required properties
                   const safeData = message.data as Record<string, unknown>;
@@ -439,25 +439,25 @@ function MessagingProvider({ children }: { children: ReactNode }) {
                     // Log the conversation update but don't refresh every time
                     console.log(`Received conversation update for: ${conversationData.conversation_id}`);
                     
-                    // Au lieu de rafraîchir toutes les conversations à chaque fois,
-                    // mettons à jour la conversation spécifique dans l'état
+                    // Instead of refreshing all conversations every time,
+                    // update the specific conversation in the state
                     setConversations(prevConversations => {
-                      // Vérifier si on a cette conversation dans l'état
+                      // Check if we have this conversation in the state
                       const existingIndex = prevConversations.findIndex(c => c.id === conversationData.conversation_id);
                       
-                      // Si la conversation n'existe pas, on rafraîchit tout
+                      // If the conversation doesn't exist, refresh all
                       if (existingIndex === -1) {
-                        // Planifier un rafraîchissement différé pour éviter les appels multiples
+                        // Schedule a delayed refresh to avoid multiple calls
                         setTimeout(() => {
                           refreshConversationsDebounced();
                         }, 300);
                         return prevConversations;
                       }
                       
-                      // Sinon, on met juste à jour cette conversation
+                      // Otherwise, just update this conversation
                       const updatedConversations = [...prevConversations];
                       
-                      // Si on a des mises à jour, appliquer
+                      // If we have updates, apply them
                       if (conversationData.last_message) {
                         updatedConversations[existingIndex] = {
                           ...updatedConversations[existingIndex],
@@ -466,7 +466,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
                         };
                       }
                       
-                      // Ordonner les conversations par date du dernier message
+                      // Sort conversations by last message date
                       return sortConversationsByDate(updatedConversations);
                     });
                   }
