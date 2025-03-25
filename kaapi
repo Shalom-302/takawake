@@ -52,7 +52,6 @@ run_in_container() {
 if [ $# -eq 0 ]; then
     echo -e "${YELLOW}Usage: ./kaapi <commande>${NC}"
     echo -e "${BLUE}Commandes disponibles:${NC}"
-    echo -e "  db init     ${GREEN}# Initialiser la migration${NC}"
     echo -e "  db generate ${GREEN}# Générer une nouvelle migration (optionnel: message)${NC}"
     echo -e "  db apply    ${GREEN}# Appliquer les migrations${NC}"
     echo -e "  db preview  ${GREEN}# Prévisualiser les changements de migration${NC}"
@@ -75,16 +74,6 @@ if [[ "$1" == "db" ]]; then
     check_kaapi_container
 
     case "$CMD" in
-        "init")
-            echo -e "${BLUE}Initialisation de la migration...${NC}"
-            # S'assurer que le fichier init_migration.py est exécutable
-            if [[ "$1" == "--force" ]]; then
-                run_in_container kaapi-api bash -c "cd / && echo '127.0.0.1 kaapi' >> /etc/hosts && cat /etc/hosts"
-                run_in_container kaapi-api python -m app.commands.init_migration --force
-            else
-                run_in_container kaapi-api python -m app.commands.init_migration
-            fi
-            ;;
         "generate")
             # Joindre tous les arguments restants comme un seul message
             MESSAGE="$*"
@@ -98,6 +87,11 @@ if [[ "$1" == "db" ]]; then
         "apply")
             echo -e "${BLUE}Application des migrations...${NC}"
             run_in_container kaapi-api alembic upgrade head
+            
+            # Génération des schémas DB après l'application des migrations
+            echo -e "${BLUE}Génération des schémas de base de données...${NC}"
+            run_in_container kaapi-api python -m app.commands.generate_db_schemas
+            echo -e "${GREEN}Schémas générés avec succès dans le répertoire docs/${NC}"
             ;;
         "preview")
             echo -e "${BLUE}Prévisualisation des changements...${NC}"
@@ -105,7 +99,7 @@ if [[ "$1" == "db" ]]; then
             ;;
         *)
             echo -e "${RED}Commande db inconnue: $CMD${NC}"
-            echo -e "${YELLOW}Commandes disponibles: init, generate, apply, preview${NC}"
+            echo -e "${YELLOW}Commandes disponibles: generate, apply, preview${NC}"
             exit 1
             ;;
     esac
