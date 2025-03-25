@@ -2,6 +2,25 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+interface NetworkInformation {
+  downlink: number;
+  effectiveType: string;
+  saveData: boolean;
+  rtt: number;
+  addEventListener: (type: string, listener: EventListener) => void;
+  removeEventListener: (type: string, listener: EventListener) => void;
+}
+
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
+}
+
+// Type pour l'événement BeforeInstallPrompt
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 interface PWAContextType {
   // Whether the app is running as a PWA
   isPWA: boolean;
@@ -43,24 +62,39 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false);
   const [isInstallable, setIsInstallable] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   
-  // Active check for online status by pinging the server
+  // Trust navigator.onLine initially, but verify when needed
+  // This approach is more reliable as it doesn't make potentially failing network requests
+  // on startup that might erroneously indicate offline status
   const checkOnlineStatus = useCallback(async (): Promise<boolean> => {
-    // Add a timestamp parameter to prevent caching
-    const timestamp = new Date().getTime();
+    // Start with the browser's built-in online status
+    const browserOnlineStatus = navigator.onLine;
+    
+    // If browser says we're offline, trust it and don't make network requests
+    if (!browserOnlineStatus) {
+      if (isOnline) {
+        setIsOnline(false);
+        toast.error('You are offline. Some features may be limited.');
+      }
+      return false;
+    }
+
+    // Only perform fetch test when browser reports online but we want to confirm
     try {
-      // Try to fetch a small resource from our server
-      const response = await fetch(`/api/health-check?t=${timestamp}`, { 
+      // Use a static file on the server that's guaranteed to exist
+      // The timestamp prevents caching issues
+      const timestamp = Date.now();
+      const response = await fetch(`/favicon.ico?t=${timestamp}`, {
         method: 'HEAD',
-        // Short timeout to avoid long waits
-        signal: AbortSignal.timeout(3000),
-        // Don't use the cache
-        cache: 'no-store'
+        cache: 'no-store',
+        // Keep the timeout short to avoid hanging the UI
+        signal: AbortSignal.timeout(2000)
       });
       
       const online = response.ok;
-      // Only update if status has changed to avoid unnecessary renders
+      
+      // Only update and notify if the status has changed
       if (online !== isOnline) {
         setIsOnline(online);
         if (online && !isOnline) {
@@ -69,9 +103,10 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           toast.error('You are offline. Some features may be limited.');
         }
       }
+      
       return online;
     } catch {
-      // If fetch fails, we're offline (ignore specific error)
+      // Network request failed, assume we're offline
       if (isOnline) {
         setIsOnline(false);
         toast.error('You are offline. Some features may be limited.');
@@ -90,58 +125,79 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       setIsPWA(isInStandaloneMode);
       
-      // Initial check using navigator.onLine - will be verified by active check
+      // Start with navigator.onLine - it's usually accurate for initial state
       setIsOnline(navigator.onLine);
+      
+      // For browsers that support the connection API, use it for more accurate readings
+      const navigatorWithConnection = navigator as NavigatorWithConnection;
+      const connection = navigatorWithConnection.connection;
+      
+      let connectionChangeHandler: EventListener;
+      if (connection) {
+        connectionChangeHandler = () => {
+          if (connection.downlink === 0 || connection.effectiveType === 'slow-2g') {
+            // Poor or no connection
+            if (isOnline) {
+              setIsOnline(false);
+              toast.error('Poor or no connection. Some features may be limited.');
+            }
+          } else if (!isOnline) {
+            // Connection seems fine but state says offline, verify
+            checkOnlineStatus();
+          }
+        };
+        
+        // Listen for connection changes if supported
+        connection.addEventListener('change', connectionChangeHandler);
+      }
 
-      // Immediate active check on mount
-      checkOnlineStatus();
-
-      // Listen for online/offline events
+      // These event handlers are reliable for catching OS-level connectivity changes
       const handleOnlineEvent = () => {
-        // When browser reports online, verify with an active check
-        if (navigator.onLine) {
-          checkOnlineStatus();
-        }
+        // When browser says we're back online, verify with an active check
+        checkOnlineStatus();
       };
 
       const handleOfflineEvent = () => {
-        // When browser reports offline, update immediately
-        if (isOnline) {
-          setIsOnline(false);
-          toast.error('You are offline. Some features may be limited.');
-        }
+        // Browser reports offline, update immediately as this is reliable
+        setIsOnline(false);
+        toast.error('You are offline. Some features may be limited.');
       };
 
-      // Set up periodic online status checks (every 30 seconds)
-      const onlineCheckInterval = setInterval(() => {
-        // Only check if the document is visible to save resources
-        if (document.visibilityState === 'visible') {
+      // Check when user focuses the page after being away
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && navigator.onLine) {
+          // Only check when becoming visible AND browser reports online
           checkOnlineStatus();
         }
-      }, 30000);
-
-      // Event handlers for focus and visibility checks
-      const handleFocus = () => {
-        checkOnlineStatus();
       };
       
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
+      // Use handleFocus for focus events to avoid creating a new function on each render
+      const handleFocus = () => {
+        if (navigator.onLine) {
           checkOnlineStatus();
         }
       };
 
       window.addEventListener('online', handleOnlineEvent);
       window.addEventListener('offline', handleOfflineEvent);
-      window.addEventListener('focus', handleFocus);
       document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+
+      // Initial verification happens after a small delay
+      // This prevents false offline states during initial page load when network
+      // may not be fully established yet
+      const initialCheckTimeout = setTimeout(() => {
+        if (navigator.onLine) {
+          checkOnlineStatus();
+        }
+      }, 2000);
 
       // Listen for the beforeinstallprompt event to detect if the app is installable
-      window.addEventListener('beforeinstallprompt', (e) => {
+      window.addEventListener('beforeinstallprompt', (e: Event) => {
         // Prevent the mini-infobar from appearing on mobile
         e.preventDefault();
         // Store the event so it can be triggered later
-        setDeferredPrompt(e);
+        setDeferredPrompt(e as BeforeInstallPromptEvent);
         setIsInstallable(true);
       });
 
@@ -157,9 +213,13 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return () => {
         window.removeEventListener('online', handleOnlineEvent);
         window.removeEventListener('offline', handleOfflineEvent);
-        window.removeEventListener('focus', handleFocus);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
-        clearInterval(onlineCheckInterval);
+        window.removeEventListener('focus', handleFocus);
+        clearTimeout(initialCheckTimeout);
+        
+        if (connection && connectionChangeHandler) {
+          connection.removeEventListener('change', connectionChangeHandler);
+        }
       };
     }
   }, [checkOnlineStatus, isOnline]);
@@ -225,7 +285,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       // Show the install prompt
-      deferredPrompt.prompt();
+      await deferredPrompt.prompt();
       
       // Wait for the user to respond to the prompt
       const choiceResult = await deferredPrompt.userChoice;
