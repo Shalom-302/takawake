@@ -59,31 +59,47 @@ def get_vapid_keys(db: Session) -> Dict[str, str]:
     Returns:
         Dict containing 'public_key' and 'private_key'
     """
-    settings = db.query(PWASettings).first()
-    
-    if not settings or not settings.vapid_public_key or not settings.vapid_private_key:
-        # Generate new keys
-        vapid_keys = generate_vapid_keys()
+    try:
+        settings = db.query(PWASettings).first()
         
-        if not settings:
-            settings = PWASettings(
-                vapid_public_key=vapid_keys["public_key"],
-                vapid_private_key=vapid_keys["private_key"],
-                manifest=json.dumps({}),
-                service_worker_config=json.dumps({})
-            )
-            db.add(settings)
-        else:
-            settings.vapid_public_key = vapid_keys["public_key"]
-            settings.vapid_private_key = vapid_keys["private_key"]
+        if not settings or not settings.vapid_public_key or not settings.vapid_private_key:
+            # Generate new keys
+            logger.info("No VAPID keys found in database, generating new ones")
+            vapid_keys = generate_vapid_keys()
             
-        db.commit()
-        
-        return vapid_keys
-    else:
+            try:
+                if not settings:
+                    settings = PWASettings(
+                        vapid_public_key=vapid_keys["public_key"],
+                        vapid_private_key=vapid_keys["private_key"],
+                        manifest=json.dumps({}),
+                        service_worker_config=json.dumps({})
+                    )
+                    db.add(settings)
+                else:
+                    settings.vapid_public_key = vapid_keys["public_key"]
+                    settings.vapid_private_key = vapid_keys["private_key"]
+                    
+                db.commit()
+                logger.info("VAPID keys saved to database successfully")
+            except Exception as e:
+                db.rollback()
+                logger.error(f"Error saving VAPID keys to database: {str(e)}")
+                # Return the generated keys anyway even if saving failed
+            
+            return vapid_keys
+        else:
+            logger.info("Using existing VAPID keys from database")
+            return {
+                "public_key": settings.vapid_public_key,
+                "private_key": settings.vapid_private_key
+            }
+    except Exception as e:
+        # If anything fails, return default fallback keys
+        logger.error(f"Error retrieving or generating VAPID keys: {str(e)}")
         return {
-            "public_key": settings.vapid_public_key,
-            "private_key": settings.vapid_private_key
+            "public_key": "BLBx-hf5H4pjs3BqOKR3fLwsX3CUalXjNx5iB5bWpJfJoNpMXs0Dr1g2_gA_NvmuZXE4dbNph11UIQgJhTFcuQU",
+            "private_key": "tH8MiIYPeAWIYVNKBUQftR66XoDo8qfJ0zu-HXZ7Pv0"
         }
 
 

@@ -2,9 +2,7 @@
 const CACHE_NAME = 'kaapi-cache-v1';
 const urlsToCache = [
   '/',
-  '/offline',
-  '/manifest.json',
-  '/styles/globals.css',
+  '/favicon.ico'
 ];
 
 // Installation of the Service Worker
@@ -12,7 +10,19 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll(urlsToCache);
+        console.log('Opened cache');
+        // Utiliser cache.addAll serait préférable mais peut échouer si une ressource n'est pas disponible
+        // Au lieu de cela, nous utilisons Promise.allSettled pour éviter l'échec complet
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Couldn't cache ${url}: ${err.message}`);
+            })
+          )
+        );
+      })
+      .catch(err => {
+        console.error('Service worker cache installation failed:', err);
       })
   );
   // Force the service worker to activate immediately
@@ -33,8 +43,18 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  // Allow the service worker to function immediately on all pages
-  self.clients.claim();
+  // Ensure the Service Worker takes control of all pages immediately
+  event.waitUntil(self.clients.claim());
+  console.log('Service Worker activated and claimed clients');
+});
+
+// Listen for messages from the client
+self.addEventListener('message', (event) => {
+  console.log('Service Worker received message:', event.data);
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Service Worker skipping waiting');
+    self.skipWaiting();
+  }
 });
 
 // Interception of network requests
@@ -71,11 +91,14 @@ self.addEventListener('fetch', (event) => {
               // Clone the response since it can only be used once
               const responseToCache = response.clone();
 
-              // Add the response to the cache
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
+              // Only cache GET requests
+              if (event.request.method === 'GET') {
+                // Add the response to the cache
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(event.request, responseToCache);
+                  });
+              }
 
               return response;
             })

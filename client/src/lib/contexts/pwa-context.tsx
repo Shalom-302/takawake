@@ -108,8 +108,62 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [isOnline]);
 
-  // Check if the app is running as a PWA
+  // Helper function to register service worker
+  const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | undefined> => {
+    if (!('serviceWorker' in navigator)) {
+      console.error('Service Worker not supported in this browser');
+      return undefined;
+    }
+    
+    try {
+      console.log('Registering service worker...');
+      
+      // Vérifiez d'abord s'il existe déjà un Service Worker actif
+      const existingRegistration = await navigator.serviceWorker.getRegistration();
+      if (existingRegistration?.active) {
+        console.log('Service Worker already active:', existingRegistration);
+        return existingRegistration;
+      }
+
+      // Si aucun Service Worker actif n'est trouvé, enregistrez-en un nouveau
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+      
+      console.log('Service Worker registered with scope:', registration.scope);
+      
+      // Assurez-vous que le Service Worker est activé
+      if (registration.installing) {
+        console.log('Service Worker is installing...');
+        
+        // Attendez que l'installation soit terminée
+        await new Promise<void>((resolve) => {
+          registration.installing?.addEventListener('statechange', (e) => {
+            const sw = e.target as ServiceWorker;
+            console.log('Service Worker state changed to:', sw.state);
+            if (sw.state === 'activated') {
+              console.log('Service Worker successfully activated');
+              resolve();
+            }
+          });
+        });
+      } else if (registration.waiting) {
+        console.log('Service Worker is waiting...');
+        // Force activation if waiting
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } else if (registration.active) {
+        console.log('Service Worker is already active');
+      }
+      
+      return registration;
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+      return undefined;
+    }
+  };
+
   useEffect(() => {
+    // Initialize PWA and check installation status
     if (typeof window !== 'undefined') {
       // Check if the app is running in standalone mode or was launched from the homescreen
       const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
@@ -183,6 +237,22 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }, 3000); // Augmenté à 3 secondes pour donner plus de temps au réseau
 
+      // Register service worker
+      registerServiceWorker().then(registration => {
+        if (registration) {
+          setIsServiceWorkerRegistered(true);
+          // Check if push notifications are supported
+          setIsPushSupported('PushManager' in window);
+          
+          // Check if push notifications are subscribed
+          if (registration && isPushSupported) {
+            registration.pushManager.getSubscription().then((subscription) => {
+              setIsPushSubscribed(!!subscription);
+            });
+          }
+        }
+      });
+
       // Listen for the beforeinstallprompt event to detect if the app is installable
       window.addEventListener('beforeinstallprompt', (e: Event) => {
         // Prevent the mini-infobar from appearing on mobile
@@ -213,77 +283,110 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       };
     }
-  }, [checkOnlineStatus, isOnline]);
-
-  // Check if service worker and push notifications are supported
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Check if service worker is supported
-      const isServiceWorkerSupported = 'serviceWorker' in navigator;
-      
-      // Check if push notifications are supported
-      const isPushSupported = 'PushManager' in window && 'Notification' in window;
-      
-      setIsPushSupported(isPushSupported);
-
-      // Check if service worker is registered
-      if (isServiceWorkerSupported) {
-        navigator.serviceWorker.getRegistration().then((registration) => {
-          setIsServiceWorkerRegistered(!!registration);
-          
-          // Check if push notifications are subscribed
-          if (registration && isPushSupported) {
-            registration.pushManager.getSubscription().then((subscription) => {
-              setIsPushSubscribed(!!subscription);
-            });
-          }
-        });
-      }
-    }
-  }, []);
+  }, [checkOnlineStatus, isOnline, isPushSupported]);
 
   // Request permission for push notifications
   const requestPushPermission = async (): Promise<boolean> => {
-    if (!isPushSupported) return false;
+    if (!isPushSupported) {
+      toast.error('Push notifications are not supported in your browser');
+      return false;
+    }
 
     try {
+      // Check if notifications are blocked in browser settings
+      if (Notification.permission === 'denied') {
+        console.log('Notifications are blocked by browser settings');
+        toast.error('Notifications are blocked. Please enable them in your browser settings.');
+        return false;
+      }
+      
+      // Demande de permission
       const permission = await Notification.requestPermission();
       const granted = permission === 'granted';
+      console.log('Permission granted:', granted);
       
       if (granted) {
-        const registration = await navigator.serviceWorker.getRegistration();
+        // Enregistrer ou obtenir le Service Worker existant
+        console.log('Checking for service worker registration...');
+        const registration = await registerServiceWorker();
+        console.log('Service worker registration object:', registration);
+        
         if (registration) {
-          // Obtenir la subscription Push ou en créer une nouvelle si elle n'existe pas
+          // Get Push subscription or create a new one if it doesn't exist
           let subscription = await registration.pushManager.getSubscription();
+          console.log('Existing subscription:', subscription);
           
           if (!subscription) {
             try {
+              console.log('No existing subscription, creating a new one...');
               // VAPID public key should be set in your environment
+              console.log('Fetching VAPID public key...');
               const { data } = await axiosClient.get(`/push/vapid-public-key`);
               const { publicKey } = data;
-              
-              // Créer une nouvelle subscription
+              console.log('Received public key:', publicKey);
+                
+              // Create a new subscription
+              console.log('Creating push subscription...');
               subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(publicKey)
               });
+              console.log('Push subscription created:', subscription);
             } catch (err) {
               console.error('Error subscribing to push:', err);
+              
+              // Détection spécifique du mode incognito
+              const errorMessage = err instanceof Error ? err.message : String(err);
+              console.error('Error details:', errorMessage);
+              
+              // Vérifie si l'erreur est liée au mode incognito
+              if (
+                (err instanceof Error && 
+                  (err.name === 'AbortError' && errorMessage.includes('permission denied')) ||
+                  errorMessage.includes('Permission denied') ||
+                  errorMessage.toLowerCase().includes('incognito')
+                ) || 
+                // Vérification supplémentaire pour Chrome en mode incognito
+                navigator.userAgent.includes('Chrome') && 
+                (typeof window !== 'undefined' && !window.indexedDB.open('test').onupgradeneeded)
+              ) {
+                console.warn('Detected incognito mode or permission issue');
+                toast.error('Les notifications push ne sont pas disponibles en mode navigation privée/incognito');
+                return false;
+              }
+              
+              toast.error(`Échec de l'abonnement: ${errorMessage}`);
               return false;
             }
           }
           
           if (subscription) {
-            // Envoyer la subscription au serveur
+            // Send the subscription to the server
+            console.log('Saving subscription to server...');
             const result = await saveSubscriptionToServer(subscription);
+            console.log('Subscription saved to server:', result);
             setIsPushSubscribed(result);
+            if (result) {
+              toast.success('Notifications enabled successfully!');
+            }
             return result;
           }
+        } else {
+          console.error('Failed to get service worker registration');
+          toast.error('Failed to register service worker');
         }
+      } else {
+        console.warn(`Permission not granted: ${permission}`);
+        toast.warning('Notification permission was not granted');
       }
     } catch (error) {
       console.error('Error requesting push permission:', error);
-      toast.error('Could not enable notifications');
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        toast.error(`Failed to enable notifications: ${error.message}`);
+      } else {
+        toast.error('Could not enable notifications due to an unknown error');
+      }
     }
     
     return false;

@@ -30,7 +30,7 @@ async function initializePushNotifications(registration) {
     }
     
     // Retrieve the VAPID public key from the server
-    const response = await fetch('/pwa/push/keys');
+    const response = await fetch('/api/pwa-support/push/vapid-public-key');
     if (!response.ok) {
       throw new Error('Unable to retrieve VAPID keys');
     }
@@ -69,7 +69,7 @@ async function sendSubscriptionToServer(subscription) {
     };
     
     // Send the subscription to the server
-    const response = await fetch('/pwa/push/subscribe', {
+    const response = await fetch('/api/pwa-support/push/subscribe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

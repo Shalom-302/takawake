@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { usePWA } from '@/lib/contexts/pwa-context';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { Bell, Download, WifiOff } from 'lucide-react';
 import axiosClient from '@/lib/api/axios-client';
 import axios from 'axios';
+import { toast } from 'sonner';
+
+// Étendre l'interface Window pour inclure les méthodes expérimentales
+declare global {
+  interface Window {
+    TEMPORARY?: number;
+    // Définir un type plus précis pour la fonction webkitRequestFileSystem
+    webkitRequestFileSystem?: (
+      type: number, 
+      size: number, 
+      successCallback: () => void, 
+      errorCallback: () => void
+    ) => void;
+  }
+}
 
 export function PWAPrompt() {
   const { 
@@ -66,14 +81,23 @@ export function PWAPrompt() {
 
   // Manage notification prompt display
   useEffect(() => {
-    if (isPushSupported && !isPushSubscribed && serverNotificationStatus === false) {
+    console.log('Notification prompt conditions:', { 
+      isPushSupported, 
+      isPushSubscribed, 
+      serverNotificationStatus
+    });
+    
+    if (isPushSupported && !isPushSubscribed && (serverNotificationStatus === false || serverNotificationStatus === null)) {
+      console.log('All conditions met to show notification prompt, will show in 10 seconds');
       // Wait a bit longer before asking for notifications
       const timer = setTimeout(() => {
+        console.log('Now showing notification prompt');
         setShowNotificationPrompt(true);
       }, 10000);
 
       return () => clearTimeout(timer);
     } else {
+      console.log('Not showing notification prompt due to conditions not met');
       setShowNotificationPrompt(false);
     }
   }, [isPushSupported, isPushSubscribed, serverNotificationStatus]);
@@ -105,6 +129,27 @@ export function PWAPrompt() {
     setShowOfflineIndicator(!isOnline);
   }, [isOnline]);
 
+  // Fonction de détection du mode incognito
+  const isInIncognitoMode = async (): Promise<boolean> => {
+    // Détection par IndexedDB (la méthode la plus fiable)
+    return new Promise((resolve) => {
+      const db = indexedDB.open('test_incognito_detect');
+      db.onerror = () => {
+        console.log('Incognito mode detected (IndexedDB)');
+        resolve(true);
+      };
+      db.onsuccess = () => {
+        console.log('Not in incognito mode (IndexedDB)');
+        resolve(false);
+      };
+      
+      // Timeout pour être sûr d'avoir une réponse
+      setTimeout(() => {
+        resolve(false);
+      }, 1000);
+    });
+  };
+
   // Handler for app installation
   const handleInstall = async () => {
     await installApp();
@@ -113,11 +158,18 @@ export function PWAPrompt() {
 
   // Handler for notification activation
   const handleEnableNotifications = async () => {
+    // Vérifier si en mode incognito
+    const incognito = await isInIncognitoMode();
+    
+    if (incognito) {
+      toast.error('Les notifications push ne sont pas disponibles en mode navigation privée/incognito');
+      return;
+    }
+    
+    // Continuer avec la demande de permission
     const success = await requestPushPermission();
     if (success) {
       setShowNotificationPrompt(false);
-      // Mettre à jour immédiatement le statut sans attendre le prochain effet
-      setServerNotificationStatus(true);
     }
   };
   

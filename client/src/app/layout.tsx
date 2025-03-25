@@ -44,7 +44,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="theme-color" content="#4F46E5" />
-        <Script src="/pwa-register.js" strategy="lazyOnload" />
+        <Script src="/pwa-register.js" strategy="afterInteractive" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
