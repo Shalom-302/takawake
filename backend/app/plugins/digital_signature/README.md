@@ -70,7 +70,7 @@ data = {
 
 # Call the signature API
 response = requests.post(
-    'https://api.example.com/api/digital-signature/sign/document',
+    'https://api.example.com/digital-signature/sign/document',
     files=files,
     data=data,
     headers={'Authorization': f'Bearer {token}'}
