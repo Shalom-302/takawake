@@ -76,6 +76,22 @@ export interface DocumentCreateResponse {
   message: string;
 }
 
+// Interface for document creation request
+export interface CreateDocumentRequest {
+  name: string;
+  description: string;
+  file: File;
+  signature_type: SignatureType;
+  workflow_type: 'sequential' | 'parallel';
+  expiration_days: number;
+  signatories: {
+    name: string;
+    email: string;
+    role: string;
+    order: number;
+  }[];
+}
+
 // Services pour la gestion des documents
 const DocumentService = {
   // Récupérer tous les documents de l'utilisateur
@@ -99,10 +115,17 @@ const DocumentService = {
   },
 
   // Créer un nouveau document
-  async createDocument(file: File, description: string): Promise<DocumentCreateResponse> {
+  async createDocument(request: CreateDocumentRequest): Promise<DocumentCreateResponse> {
     const formData = new FormData();
-    formData.append('document', file);
-    formData.append('description', description);
+    formData.append('file', request.file);
+    formData.append('name', request.name);
+    formData.append('description', request.description);
+    formData.append('signature_type', request.signature_type);
+    formData.append('workflow_type', request.workflow_type);
+    formData.append('expiration_days', request.expiration_days.toString());
+    
+    // Add signatories as JSON string
+    formData.append('signatories', JSON.stringify(request.signatories));
 
     const response = await axiosClient.post('/digital-signature/documents', formData, {
       headers: {

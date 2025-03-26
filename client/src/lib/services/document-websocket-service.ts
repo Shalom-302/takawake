@@ -1,6 +1,6 @@
-import { WebSocketClient } from '@/lib/services/websocket-service';
+import { WebSocketClient, WebSocketMessage } from '@/lib/services';
 
-// Types de messages WebSocket pour les documents
+// Document WebSocket message types
 export enum DocumentWebSocketMessageType {
   DOCUMENT_UPDATE = 'document_update',
   SIGNATURE_ADD = 'signature_add',
@@ -8,14 +8,14 @@ export enum DocumentWebSocketMessageType {
   CERTIFICATE_REQUEST_STATUS = 'certificate_request_status'
 }
 
-// Interfaces pour les messages
+// Message interfaces
 export interface DocumentUpdateMessage {
   document_id: string;
   updated_at: string;
   updated_by: string;
   changes: {
     field: string;
-    value: any;
+    value: unknown;
   }[];
 }
 
@@ -47,7 +47,12 @@ export interface CertificateRequestStatusMessage {
   };
 }
 
-// Service de WebSocket pour les documents
+/**
+ * DocumentWebSocketService: Handles real-time updates for document-related events
+ * 
+ * Uses the WebSocketClient singleton for connection management and message deduplication.
+ * Provides typed handlers for different document event types.
+ */
 export class DocumentWebSocketService {
   private static instance: DocumentWebSocketService;
   private websocketClient: WebSocketClient;
@@ -55,6 +60,8 @@ export class DocumentWebSocketService {
   private signatureAddHandlers: ((message: SignatureAddMessage) => void)[] = [];
   private workflowStatusHandlers: ((message: WorkflowStatusChangeMessage) => void)[] = [];
   private certificateRequestHandlers: ((message: CertificateRequestStatusMessage) => void)[] = [];
+  private isConnected: boolean = false;
+  private url: string | null = null;
 
   private constructor() {
     this.websocketClient = WebSocketClient.getInstance();
@@ -68,49 +75,154 @@ export class DocumentWebSocketService {
     return DocumentWebSocketService.instance;
   }
 
+  /**
+   * Connect to the document WebSocket service
+   * @param url WebSocket server URL
+   */
+  public connect(url: string): void {
+    if (this.isConnected && this.url === url) {
+      console.log('DocumentWebSocketService: Already connected to this URL');
+      return;
+    }
+
+    // Store the URL for reconnection purposes
+    this.url = url;
+    
+    try {
+      this.websocketClient.connect(url);
+      this.isConnected = true;
+      console.log('DocumentWebSocketService: Connected to', url);
+    } catch (error) {
+      console.error('DocumentWebSocketService: Connection error:', error);
+      this.isConnected = false;
+    }
+  }
+
+  /**
+   * Disconnect from the document WebSocket service
+   */
+  public disconnect(): void {
+    try {
+      if (this.isConnected) {
+        this.websocketClient.disconnect();
+        console.log('DocumentWebSocketService: Disconnected');
+      }
+    } catch (error) {
+      console.error('DocumentWebSocketService: Error during disconnect:', error);
+    } finally {
+      this.isConnected = false;
+      this.url = null;
+    }
+  }
+
+  /**
+   * Check if the service is currently connected
+   */
+  public getConnectionStatus(): boolean {
+    return this.websocketClient.isConnected();
+  }
+
+  /**
+   * Initialize handlers for different message types
+   */
   private initializeMessageHandlers() {
-    this.websocketClient.addMessageHandler((message) => {
+    this.websocketClient.addMessageHandler((message: WebSocketMessage) => {
       try {
-        const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
+        // Message is already parsed by WebSocketClient
         
-        switch(parsedMessage.type) {
+        switch(message.type) {
           case DocumentWebSocketMessageType.DOCUMENT_UPDATE:
-            this.handleDocumentUpdate(parsedMessage.data);
+            this.handleDocumentUpdate(message.data as unknown as DocumentUpdateMessage);
             break;
           case DocumentWebSocketMessageType.SIGNATURE_ADD:
-            this.handleSignatureAdd(parsedMessage.data);
+            this.handleSignatureAdd(message.data as unknown as SignatureAddMessage);
             break;
           case DocumentWebSocketMessageType.WORKFLOW_STATUS_CHANGE:
-            this.handleWorkflowStatusChange(parsedMessage.data);
+            this.handleWorkflowStatusChange(message.data as unknown as WorkflowStatusChangeMessage);
             break;
           case DocumentWebSocketMessageType.CERTIFICATE_REQUEST_STATUS:
-            this.handleCertificateRequestStatus(parsedMessage.data);
+            this.handleCertificateRequestStatus(message.data as unknown as CertificateRequestStatusMessage);
             break;
+          default:
+            console.log('DocumentWebSocketService: Unknown message type', message.type);
         }
       } catch (error) {
-        console.error('Error processing document WebSocket message:', error);
+        console.error('DocumentWebSocketService: Error processing message:', error);
       }
     });
   }
 
-  // Handlers pour chaque type de message
+  /**
+   * Send a document-related message through the WebSocket
+   * @param type The message type
+   * @param data The message data
+   * @returns True if message was sent successfully
+   */
+  public sendMessage<T extends Record<string, unknown>>(type: DocumentWebSocketMessageType, data: T): boolean {
+    if (!this.isConnected) {
+      console.error('DocumentWebSocketService: Cannot send message, not connected');
+      return false;
+    }
+
+    const message: WebSocketMessage = {
+      id: this.generateMessageId(),
+      type,
+      data,
+      timestamp: new Date().toISOString()
+    };
+
+    return this.websocketClient.sendMessage(message);
+  }
+
+  /**
+   * Generate a unique message ID
+   */
+  private generateMessageId(): string {
+    return `doc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  // Message type handlers
   private handleDocumentUpdate(data: DocumentUpdateMessage) {
-    this.documentUpdateHandlers.forEach(handler => handler(data));
+    this.documentUpdateHandlers.forEach(handler => {
+      try {
+        handler(data);
+      } catch (error) {
+        console.error('DocumentWebSocketService: Error in document update handler:', error);
+      }
+    });
   }
 
   private handleSignatureAdd(data: SignatureAddMessage) {
-    this.signatureAddHandlers.forEach(handler => handler(data));
+    this.signatureAddHandlers.forEach(handler => {
+      try {
+        handler(data);
+      } catch (error) {
+        console.error('DocumentWebSocketService: Error in signature add handler:', error);
+      }
+    });
   }
 
   private handleWorkflowStatusChange(data: WorkflowStatusChangeMessage) {
-    this.workflowStatusHandlers.forEach(handler => handler(data));
+    this.workflowStatusHandlers.forEach(handler => {
+      try {
+        handler(data);
+      } catch (error) {
+        console.error('DocumentWebSocketService: Error in workflow status handler:', error);
+      }
+    });
   }
 
   private handleCertificateRequestStatus(data: CertificateRequestStatusMessage) {
-    this.certificateRequestHandlers.forEach(handler => handler(data));
+    this.certificateRequestHandlers.forEach(handler => {
+      try {
+        handler(data);
+      } catch (error) {
+        console.error('DocumentWebSocketService: Error in certificate request handler:', error);
+      }
+    });
   }
 
-  // Méthodes publiques pour ajouter/supprimer des handlers
+  // Public methods to add/remove handlers
   public addDocumentUpdateHandler(handler: (message: DocumentUpdateMessage) => void) {
     this.documentUpdateHandlers.push(handler);
     return () => this.removeDocumentUpdateHandler(handler);

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,14 +10,89 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentList } from '@/components/documents/document-list';
 import { Plus, FileUp, FileText } from 'lucide-react';
 import { useDocuments } from '@/lib/contexts/document-context';
+import { DocumentStatus, SignatureType } from '@/lib/services/document-service';
 
 export default function DocumentsPage() {
-  const { isLoading } = useDocuments();
+  const { documents, fetchDocuments } = useDocuments();
   const [viewType, setViewType] = useState<'grid' | 'table'>('grid');
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    signed: 0,
+    certificates: 0,
+    newLastMonth: 0,
+    newToday: 0,
+    signedLastMonth: 0,
+    expiringCertificates: 0
+  });
+
+  // Fetch documents on mount
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  // Calculate statistics based on documents data
+  useEffect(() => {
+    if (documents.length === 0) return;
+    
+    const now = new Date();
+    const lastMonth = new Date(now);
+    lastMonth.setMonth(now.getMonth() - 1);
+    
+    const thirtyDaysFromNow = new Date(now);
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Count documents by status
+    const newLastMonth = documents.filter(doc => 
+      new Date(doc.created_at) > lastMonth
+    ).length;
+    
+    const newToday = documents.filter(doc => 
+      new Date(doc.created_at) > startOfToday
+    ).length;
+    
+    const pending = documents.filter(doc => 
+      doc.status === DocumentStatus.PENDING
+    ).length;
+    
+    const signed = documents.filter(doc => 
+      doc.status === DocumentStatus.SIGNED || doc.status === DocumentStatus.COMPLETED
+    ).length;
+    
+    const signedLastMonth = documents.filter(doc => 
+      (doc.status === DocumentStatus.SIGNED || doc.status === DocumentStatus.COMPLETED) && 
+      doc.updated_at && new Date(doc.updated_at) > lastMonth
+    ).length;
+    
+    // Count signatures with digital certificates
+    const certificateSigs = documents.reduce((count, doc) => {
+      const certSigs = doc.signatures?.filter(sig => 
+        sig.signature_type === SignatureType.ADVANCED || sig.signature_type === SignatureType.QUALIFIED
+      ).length || 0;
+      return count + certSigs;
+    }, 0);
+    
+    // For this example, we'll just show 0 expiring certificates
+    // In a real app, you'd need to get this from a certificate service
+    const expiringCertificates = 0;
+
+    setStats({
+      total: documents.length,
+      pending,
+      signed,
+      certificates: certificateSigs,
+      newLastMonth,
+      newToday,
+      signedLastMonth,
+      expiringCertificates
+    });
+  }, [documents]);
 
   return (
     <div className="container py-10 space-y-6">
@@ -42,7 +117,7 @@ export default function DocumentsPage() {
         </div>
       </div>
       
-      {/* Statistiques */}
+      {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -50,9 +125,9 @@ export default function DocumentsPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">27</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              +5 since last month
+              +{stats.newLastMonth} since last month
             </p>
           </CardContent>
         </Card>
@@ -76,9 +151,9 @@ export default function DocumentsPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{stats.pending}</div>
             <p className="text-xs text-muted-foreground">
-              3 added today
+              {stats.newToday} added today
             </p>
           </CardContent>
         </Card>
@@ -100,15 +175,15 @@ export default function DocumentsPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{stats.signed}</div>
             <p className="text-xs text-muted-foreground">
-              +30% since last month
+              {stats.signedLastMonth > 0 ? '+' : ''}{Math.round((stats.signedLastMonth / Math.max(1, stats.signed - stats.signedLastMonth)) * 100)}% since last month
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Certificates</CardTitle>
+            <CardTitle className="text-sm font-medium">Certificate Signatures</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -123,15 +198,15 @@ export default function DocumentsPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{stats.certificates}</div>
             <p className="text-xs text-muted-foreground">
-              1 expires in 30 days
+              {stats.expiringCertificates} expires in 30 days
             </p>
           </CardContent>
         </Card>
       </div>
       
-      {/* Liste des documents */}
+      {/* Document list */}
       <DocumentList listType={viewType} />
       
       {/* Guide rapide */}

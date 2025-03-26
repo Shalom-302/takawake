@@ -1,19 +1,18 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import DocumentService, { 
   Document, 
-  DocumentStatus, 
-  Signatory, 
+  SignatureType,
   WorkflowStep,
-  SignatureType
+  CreateDocumentRequest
 } from '@/lib/services/document-service';
 import SignatureService, {
   SignatureResponse,
   SignatureVerifyResponse
 } from '@/lib/services/signature-service';
+import { DocumentWebSocketService } from '@/lib/services/document-websocket-service';
 
 interface DocumentContextType {
   // État
@@ -25,7 +24,7 @@ interface DocumentContextType {
   // Actions pour les documents
   fetchDocuments: () => Promise<void>;
   fetchDocument: (id: string) => Promise<Document | null>;
-  createDocument: (file: File, description: string) => Promise<string | null>;
+  createDocument: (request: CreateDocumentRequest) => Promise<string | null>;
   updateDocument: (id: string, data: Partial<Document>) => Promise<boolean>;
   deleteDocument: (id: string) => Promise<boolean>;
   downloadDocument: (id: string) => Promise<void>;
@@ -79,12 +78,11 @@ export const useDocuments = () => {
 };
 
 export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
+  
   // Récupérer la liste des documents
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true);
@@ -92,13 +90,63 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const data = await DocumentService.getDocuments();
       setDocuments(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch documents');
-      toast.error('Impossible de récupérer la liste des documents');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch documents');
+      toast.error('Unable to retrieve documents list');
     } finally {
       setIsLoading(false);
     }
   }, []);
+  
+  // Initialize WebSocket service for real-time updates
+  useEffect(() => {
+    const wsService = DocumentWebSocketService.getInstance();
+    
+    // Set up document update handler
+    const documentUpdateUnsubscribe = wsService.addDocumentUpdateHandler((message) => {
+      // Update the document in our local state if it exists
+      setDocuments(prev => 
+        prev.map(doc => 
+          doc.id === message.document_id 
+            ? { ...doc, updated_at: message.updated_at } 
+            : doc
+        )
+      );
+      
+      // If this is the current document, update it too
+      if (currentDocument && currentDocument.id === message.document_id) {
+        setCurrentDocument(prev => {
+          if (!prev) return null;
+          return { ...prev, updated_at: message.updated_at };
+        });
+      }
+      
+      toast.info(`Document "${documents.find(d => d.id === message.document_id)?.name}" has been updated`);
+    });
+    
+    // Set up signature add handler
+    const signatureAddUnsubscribe = wsService.addSignatureAddHandler((message) => {
+      toast.success(`New signature added to document by ${message.signatory_email}`);
+      
+      // Refresh documents list to get updated status
+      fetchDocuments();
+    });
+    
+    // Set up workflow status change handler
+    const workflowStatusUnsubscribe = wsService.addWorkflowStatusHandler((message) => {
+      toast.info(`Document workflow status changed: ${message.current_step} → ${message.next_step || 'completed'}`);
+      
+      // Refresh documents list to get updated status
+      fetchDocuments();
+    });
+    
+    return () => {
+      // Clean up all handlers
+      documentUpdateUnsubscribe();
+      signatureAddUnsubscribe();
+      workflowStatusUnsubscribe();
+    };
+  }, [documents, currentDocument, fetchDocuments]);
 
   // Récupérer un document par ID
   const fetchDocument = useCallback(async (id: string) => {
@@ -108,9 +156,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const data = await DocumentService.getDocument(id);
       setCurrentDocument(data);
       return data;
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch document');
-      toast.error('Impossible de récupérer le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch document');
+      toast.error('Unable to retrieve document');
       return null;
     } finally {
       setIsLoading(false);
@@ -118,17 +166,17 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   // Créer un nouveau document
-  const createDocument = useCallback(async (file: File, description: string) => {
+  const createDocument = useCallback(async (request: CreateDocumentRequest) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await DocumentService.createDocument(file, description);
-      toast.success('Document créé avec succès');
-      await fetchDocuments(); // Rafraîchir la liste
+      const response = await DocumentService.createDocument(request);
+      toast.success('Document created successfully');
+      await fetchDocuments(); // Refresh the list
       return response.id;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create document');
-      toast.error('Impossible de créer le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create document');
+      toast.error('Unable to create document');
       return null;
     } finally {
       setIsLoading(false);
@@ -152,11 +200,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCurrentDocument(prev => prev ? { ...prev, ...data } : null);
       }
       
-      toast.success('Document mis à jour avec succès');
+      toast.success('Document updated successfully');
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update document');
-      toast.error('Impossible de mettre à jour le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update document');
+      toast.error('Unable to update document');
       return false;
     } finally {
       setIsLoading(false);
@@ -178,11 +226,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCurrentDocument(null);
       }
       
-      toast.success('Document supprimé avec succès');
+      toast.success('Document deleted successfully');
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete document');
-      toast.error('Impossible de supprimer le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete document');
+      toast.error('Unable to delete document');
       return false;
     } finally {
       setIsLoading(false);
@@ -200,22 +248,22 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const url = window.URL.createObjectURL(blob);
       
       // Créer un lien temporaire et cliquer dessus
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
       
       // Obtenir le nom du document depuis l'état local si possible
-      const document = documents.find(doc => doc.id === id);
-      link.download = document ? document.name : `document-${id}`;
+      const docObj = documents.find(doc => doc.id === id);
+      link.download = docObj ? docObj.name : `document-${id}`;
       
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
       
       // Nettoyer
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setError(err.message || 'Failed to download document');
-      toast.error('Impossible de télécharger le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to download document');
+      toast.error('Unable to download document');
     } finally {
       setIsLoading(false);
     }
@@ -239,11 +287,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       }
       
-      toast.success('Signataire ajouté avec succès');
+      toast.success('Signatory added successfully');
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to add signatory');
-      toast.error('Impossible d\'ajouter le signataire');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to add signatory');
+      toast.error('Unable to add signatory');
       return false;
     } finally {
       setIsLoading(false);
@@ -267,7 +315,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         position
       );
       
-      toast.success('Document signé avec succès');
+      toast.success('Document signed successfully');
       
       // Rafraîchir le document courant
       if (currentDocument && currentDocument.id === documentId) {
@@ -275,9 +323,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       
       return response;
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign document');
-      toast.error('Impossible de signer le document');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to sign document');
+      toast.error('Unable to sign document');
       return null;
     } finally {
       setIsLoading(false);
@@ -292,15 +340,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const response = await SignatureService.verifySignature(documentId, signatureId);
       
       if (response.verified) {
-        toast.success('Signature valide');
+        toast.success('Valid signature');
       } else {
-        toast.error(`Signature invalide: ${response.error}`);
+        toast.error(`Invalid signature: ${response.error}`);
       }
       
       return response;
-    } catch (err: any) {
-      setError(err.message || 'Failed to verify signature');
-      toast.error('Impossible de vérifier la signature');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to verify signature');
+      toast.error('Unable to verify signature');
       return null;
     } finally {
       setIsLoading(false);
@@ -314,9 +362,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const status = await DocumentService.getWorkflowStatus(documentId);
       return status;
-    } catch (err: any) {
-      setError(err.message || 'Failed to get workflow status');
-      toast.error('Impossible de récupérer le statut du workflow');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to get workflow status');
+      toast.error('Unable to retrieve workflow status');
       return null;
     } finally {
       setIsLoading(false);
@@ -330,9 +378,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const certificate = await SignatureService.getUserCertificate();
       return certificate;
-    } catch (err: any) {
-      setError(err.message || 'Failed to get user certificate');
-      toast.error('Impossible de récupérer le certificat utilisateur');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to get user certificate');
+      toast.error('Unable to retrieve user certificate');
       return null;
     } finally {
       setIsLoading(false);
@@ -345,11 +393,11 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
     try {
       const response = await SignatureService.requestCertificate(signatureType);
-      toast.success('Demande de certificat envoyée avec succès');
+      toast.success('Certificate request sent successfully');
       return response.request_id;
-    } catch (err: any) {
-      setError(err.message || 'Failed to request certificate');
-      toast.error('Impossible de demander un certificat');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to request certificate');
+      toast.error('Unable to request certificate');
       return null;
     } finally {
       setIsLoading(false);
@@ -362,7 +410,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
     try {
       const response = await SignatureService.createTimestamp(documentId, description);
-      toast.success('Horodatage créé avec succès');
+      toast.success('Timestamp created successfully');
       
       // Rafraîchir le document courant
       if (currentDocument && currentDocument.id === documentId) {
@@ -370,9 +418,9 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       
       return response.id;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create timestamp');
-      toast.error('Impossible de créer l\'horodatage');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create timestamp');
+      toast.error('Unable to create timestamp');
       return null;
     } finally {
       setIsLoading(false);
@@ -390,21 +438,21 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const url = window.URL.createObjectURL(blob);
       
       // Créer un lien temporaire et cliquer dessus
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
       link.download = `legal-evidence-${documentId}.pdf`;
       
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
       
       // Nettoyer
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Preuve légale générée avec succès');
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate legal evidence');
-      toast.error('Impossible de générer la preuve légale');
+      toast.success('Legal evidence generated successfully');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate legal evidence');
+      toast.error('Unable to generate legal evidence');
     } finally {
       setIsLoading(false);
     }

@@ -239,7 +239,7 @@ function NewDocumentContent() {
       {uploadStatus === 'success' ? (
         <Alert variant="success">
           <CheckCircle className="h-4 w-4" />
-          <AlertTitle>Document créé avec succès!</AlertTitle>
+          <AlertTitle>Document created successfully!</AlertTitle>
           <AlertDescription>
           Your document has been uploaded and the signature workflow initialized.
           You will be redirected to the document list.
@@ -465,7 +465,7 @@ function NewDocumentContent() {
                       }}
                       disabled={!canProceedToSignatories}
                     >
-                      Suivant
+                      Next
                     </Button>
                   </CardFooter>
                 </Card>
@@ -542,7 +542,7 @@ function NewDocumentContent() {
                                 onValueChange={(value) => updateSignatory(index, 'role', value)}
                               >
                                 <SelectTrigger id={`signatory-role-${index}`}>
-                                  <SelectValue placeholder="Sélectionnez un rôle" />
+                                  <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="signer">Signer</SelectItem>
