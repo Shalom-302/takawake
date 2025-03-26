@@ -123,7 +123,7 @@ from app.plugins.offline_sync.main import plugin as offline_sync
 
 # Queue a create operation
 await offline_sync.enqueue_operation(
-    endpoint="/api/v1/tasks",
+    endpoint="/apitasks",
     method="POST",
     payload={"title": "New Task", "description": "Task details"},
     user_id="user123",
@@ -159,7 +159,7 @@ batch_response = await batch_router.create_sync_batch(
 # Queue operations with the batch ID
 batch_id = batch_response.id
 await offline_sync.enqueue_operation(
-    endpoint="/api/v1/users/profile",
+    endpoint="/apiusers/profile",
     method="PUT",
     payload={"name": "Updated Name"},
     user_id=current_user.id,

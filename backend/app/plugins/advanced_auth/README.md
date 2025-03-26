@@ -81,40 +81,40 @@ The plugin provides the following API endpoints:
 
 #### Authentication
 
-- `POST /api/v1/auth/register`: Register a new user
-- `POST /api/v1/auth/login`: Login with email and password
-- `POST /api/v1/auth/token/refresh`: Refresh an access token
-- `POST /api/v1/auth/logout`: Logout the current user
+- `POST /api/auth/register`: Register a new user
+- `POST /api/auth/login`: Login with email and password
+- `POST /api/auth/token/refresh`: Refresh an access token
+- `POST /api/auth/logout`: Logout the current user
 
 #### OAuth Authentication
 
-- `POST /api/v1/auth/oauth/init`: Initialize OAuth flow
-- `POST /api/v1/auth/oauth/callback`: Handle OAuth callback
+- `POST /api/auth/oauth/init`: Initialize OAuth flow
+- `POST /api/auth/oauth/callback`: Handle OAuth callback
 
 #### User Management
 
-- `GET /api/v1/auth/me`: Get current user info
-- `PUT /api/v1/auth/me`: Update current user
-- `POST /api/v1/auth/me/change-password`: Change password
+- `GET /api/auth/me`: Get current user info
+- `PUT /api/auth/me`: Update current user
+- `POST /api/auth/me/change-password`: Change password
 
 #### Email Verification and Password Reset
 
-- `POST /api/v1/auth/password-reset/request`: Request password reset
-- `POST /api/v1/auth/password-reset/verify`: Verify password reset token
-- `POST /api/v1/auth/email-verification/request`: Request email verification
-- `POST /api/v1/auth/email-verification/verify`: Verify email
+- `POST /api/auth/password-reset/request`: Request password reset
+- `POST /api/auth/password-reset/verify`: Verify password reset token
+- `POST /api/auth/email-verification/request`: Request email verification
+- `POST /api/auth/email-verification/verify`: Verify email
 
 #### Multi-Factor Authentication
 
-- `POST /api/v1/auth/mfa/setup`: Set up MFA
-- `POST /api/v1/auth/mfa/verify`: Verify MFA code
+- `POST /api/auth/mfa/setup`: Set up MFA
+- `POST /api/auth/mfa/verify`: Verify MFA code
 
 #### Admin Routes
 
-- `GET /api/v1/auth/users`: Get all users (admin only)
-- `GET /api/v1/auth/users/{user_id}`: Get a user by ID (admin only)
-- `PUT /api/v1/auth/users/{user_id}`: Update a user (admin only)
-- `DELETE /api/v1/auth/users/{user_id}`: Delete a user (admin only)
+- `GET /api/auth/users`: Get all users (admin only)
+- `GET /api/auth/users/{user_id}`: Get a user by ID (admin only)
+- `PUT /api/auth/users/{user_id}`: Update a user (admin only)
+- `DELETE /api/auth/users/{user_id}`: Delete a user (admin only)
 
 ### Example: Register a New User
 
@@ -122,7 +122,7 @@ The plugin provides the following API endpoints:
 import requests
 
 response = requests.post(
-    "http://localhost:8000/api/v1/auth/register",
+    "http://localhost:8000/api/auth/register",
     json={
         "email": "user@example.com",
         "username": "user123",
@@ -140,7 +140,7 @@ print(response.json())
 import requests
 
 response = requests.post(
-    "http://localhost:8000/api/v1/auth/login",
+    "http://localhost:8000/api/auth/login",
     data={
         "username": "user@example.com",  # Email is used as username
         "password": "StrongPassword123!"
@@ -157,7 +157,7 @@ refresh_token = tokens["token"]["refresh_token"]
 import requests
 
 response = requests.get(
-    "http://localhost:8000/api/v1/auth/me",
+    "http://localhost:8000/api/auth/me",
     headers={"Authorization": f"Bearer {access_token}"}
 )
 user_info = response.json()

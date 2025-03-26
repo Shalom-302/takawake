@@ -20,7 +20,7 @@ For each OAuth provider, the general setup process is:
    - Fill in the application details:
      - Application name: Your application name
      - Homepage URL: `https://your-domain.com`
-     - Authorization callback URL: `https://your-domain.com/api/v1/auth/oauth/github/callback`
+     - Authorization callback URL: `https://your-domain.com/api/auth/oauth/github/callback`
    - Click "Register application"
 
 2. **Get your credentials**:
@@ -56,7 +56,7 @@ For each OAuth provider, the general setup process is:
    - Application type: Web application
    - Name: Your application name
    - Authorized JavaScript origins: `https://your-domain.com`
-   - Authorized redirect URIs: `https://your-domain.com/api/v1/auth/oauth/google/callback`
+   - Authorized redirect URIs: `https://your-domain.com/api/auth/oauth/google/callback`
    - Click "Create"
 
 4. **Set environment variables**:
@@ -72,7 +72,7 @@ For each OAuth provider, the general setup process is:
    - Navigate to "Azure Active Directory" > "App registrations"
    - Click "New registration"
    - Enter a name for your application
-   - Set the redirect URI: `https://your-domain.com/api/v1/auth/oauth/microsoft/callback`
+   - Set the redirect URI: `https://your-domain.com/api/auth/oauth/microsoft/callback`
    - Click "Register"
 
 2. **Configure authentication**:
@@ -107,7 +107,7 @@ For each OAuth provider, the general setup process is:
    - From the app dashboard, click "Add Product"
    - Select "Facebook Login" and choose "Web"
    - Enter your website URL
-   - Set the Valid OAuth Redirect URIs: `https://your-domain.com/api/v1/auth/oauth/facebook/callback`
+   - Set the Valid OAuth Redirect URIs: `https://your-domain.com/apiauth/oauth/facebook/callback`
    - Save changes
 
 3. **Get app credentials**:
@@ -145,8 +145,8 @@ Once your OAuth providers are set up, you can test the login by:
 4. Being redirected back to your application
 
 OAuth debugging endpoints are available at:
-- `/api/v1/auth/oauth/{provider}/login`
-- `/api/v1/auth/oauth/{provider}/callback`
+- `/apiauth/oauth/{provider}/login`
+- `/apiauth/oauth/{provider}/callback`
 
 ## Troubleshooting
 

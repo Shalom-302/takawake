@@ -7,7 +7,7 @@ This document provides detailed information about the API endpoints provided by 
 All endpoints are relative to the API base URL:
 
 ```plaintext
-/api/v1/auth
+/api/auth
 ```
 
 ## Authentication

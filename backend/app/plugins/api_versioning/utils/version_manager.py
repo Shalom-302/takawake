@@ -70,7 +70,7 @@ def resolve_version_from_request(request: Request, db: Session) -> str:
     Determine which API version to use based on the request.
     
     The version can be specified in multiple ways (in order of precedence):
-    1. URL path prefix (e.g., /api/v1/...)
+    1. URL path prefix (e.g., /api...)
     2. Accept header with version parameter
     3. Custom X-API-Version header
     4. Default to the latest version

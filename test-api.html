@@ -104,7 +104,7 @@
             statusElement.className = 'status';
             
             try {
-                const response = await fetch('http://localhost:8000/api/v1/debug/db-check');
+                const response = await fetch('http://localhost:8000/api/debug/db-check');
                 const data = await response.json();
                 
                 if (response.ok) {

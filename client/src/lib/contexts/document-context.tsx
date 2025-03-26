@@ -30,7 +30,7 @@ interface DocumentContextType {
   downloadDocument: (id: string) => Promise<void>;
   
   // Actions pour les signataires
-  addSignatory: (documentId: string, email: string, order: number) => Promise<boolean>;
+  addSignatory: (documentId: string, email: string, name: string, order: number) => Promise<boolean>;
   
   // Actions pour les signatures
   signDocument: (
@@ -270,11 +270,15 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [documents]);
 
   // Ajouter un signataire à un document
-  const addSignatory = useCallback(async (documentId: string, email: string, order: number) => {
+  const addSignatory = useCallback(async (documentId: string, email: string, name: string, order: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const signatory = await DocumentService.addSignatory(documentId, email, order);
+      const signatory = await DocumentService.addSignatory(documentId, { 
+        email, 
+        name, 
+        order 
+      });
       
       // Mettre à jour le document courant si c'est celui qui est modifié
       if (currentDocument && currentDocument.id === documentId) {

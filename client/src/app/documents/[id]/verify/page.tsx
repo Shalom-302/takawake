@@ -131,7 +131,7 @@ function VerifyDocumentContent({ documentId }: { documentId: string }) {
             </div>
             
             <div className="pt-4">
-              <Button variant="outline" className="w-full" onClick={() => window.open(`/api/digital-signature/documents/${documentId}/download`, '_blank')}>
+              <Button variant="outline" className="w-full" onClick={() => window.open(`/api/digital-signature/sign/document/${documentId}/download`, '_blank')}>
                 <Download className="mr-2 h-4 w-4" />
                 Télécharger
               </Button>

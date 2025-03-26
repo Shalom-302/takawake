@@ -23,32 +23,32 @@ logger = logging.getLogger("api_traffic_generator")
 # Sample data for API requests
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE"]
 API_ENDPOINTS = [
-    "/api/v1/users",
-    "/api/v1/products",
-    "/api/v1/orders",
-    "/api/v1/auth/login",
-    "/api/v1/auth/refresh",
-    "/api/v1/settings",
-    "/api/v1/dashboard",
-    "/api/v1/reports",
+    "/apiusers",
+    "/apiproducts",
+    "/apiorders",
+    "/apiauth/login",
+    "/apiauth/refresh",
+    "/apisettings",
+    "/apidashboard",
+    "/apireports",
     "/api/v2/users",
     "/api/v2/products"
 ]
 
 SAMPLE_PAYLOADS = {
-    "/api/v1/users": {
+    "/apiusers": {
         "POST": {"username": "testuser", "email": "test@example.com", "role": "user"},
         "PUT": {"email": "updated@example.com", "role": "admin"}
     },
-    "/api/v1/products": {
+    "/apiproducts": {
         "POST": {"name": "Test Product", "price": 19.99, "category": "electronics"},
         "PUT": {"price": 24.99, "stock": 100}
     },
-    "/api/v1/orders": {
+    "/apiorders": {
         "POST": {"product_id": 123, "quantity": 2, "user_id": 456},
         "PUT": {"status": "shipped", "tracking_number": "TRK123456"}
     },
-    "/api/v1/auth/login": {
+    "/apiauth/login": {
         "POST": {"username": "testuser", "password": "password123"}
     },
     "/api/v2/users": {
@@ -147,9 +147,9 @@ async def generate_api_traffic(base_url, duration=60, requests_per_second=10, au
                     endpoint = random.choice(API_ENDPOINTS)
                     
                     # Special cases: Only POST to login, no DELETE for certain endpoints
-                    if endpoint == "/api/v1/auth/login":
+                    if endpoint == "/apiauth/login":
                         method = "POST"
-                    elif endpoint in ["/api/v1/auth/refresh", "/api/v1/settings"]:
+                    elif endpoint in ["/apiauth/refresh", "/apisettings"]:
                         method = random.choice(["GET", "POST", "PUT"])
                     
                     tasks.append(send_api_request(session, base_url, method, endpoint, auth_token))

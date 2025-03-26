@@ -250,26 +250,26 @@ cancelled_refund = await cancel_refund_service(
 
 The plugin exposes the following REST API endpoints:
 
-* `GET /api/v1/payments/`: List payments with optional filters
-* `GET /api/v1/payments/{payment_id}`: Get a specific payment
-* `POST /api/v1/payments/`: Create a new payment
-* `PUT /api/v1/payments/{payment_id}`: Update an existing payment
-* `POST /api/v1/payments/{payment_id}/process`: Process a payment
-* `POST /api/v1/payments/{payment_id}/cancel`: Cancel a payment
-* `POST /api/v1/payments/{payment_id}/approve`: Approve a payment
-* `POST /api/v1/payments/{payment_id}/reject`: Reject a payment
-* `GET /api/v1/payments/providers/list`: Get available payment providers
-* `GET /api/v1/payments/methods/list`: Get available payment methods
-* `POST /api/v1/payments/webhook/{provider}`: Webhook handler for payment providers
+* `GET /apipayments/`: List payments with optional filters
+* `GET /apipayments/{payment_id}`: Get a specific payment
+* `POST /apipayments/`: Create a new payment
+* `PUT /apipayments/{payment_id}`: Update an existing payment
+* `POST /apipayments/{payment_id}/process`: Process a payment
+* `POST /apipayments/{payment_id}/cancel`: Cancel a payment
+* `POST /apipayments/{payment_id}/approve`: Approve a payment
+* `POST /apipayments/{payment_id}/reject`: Reject a payment
+* `GET /apipayments/providers/list`: Get available payment providers
+* `GET /apipayments/methods/list`: Get available payment methods
+* `POST /apipayments/webhook/{provider}`: Webhook handler for payment providers
 
 ### Refund Endpoints
 
-- **POST** `/api/v1/payments/{payment_id}/refunds` - Create a new refund request for a payment
-- **GET** `/api/v1/payments/{payment_id}/refunds` - Get all refunds for a payment
-- **GET** `/api/v1/payments/refunds/{refund_id}` - Get details of a specific refund
-- **POST** `/api/v1/payments/refunds/{refund_id}/process` - Process a refund with the payment provider
-- **POST** `/api/v1/payments/refunds/{refund_id}/verify` - Verify the status of a refund with the payment provider
-- **POST** `/api/v1/payments/refunds/{refund_id}/cancel` - Cancel a pending refund
+- **POST** `/apipayments/{payment_id}/refunds` - Create a new refund request for a payment
+- **GET** `/apipayments/{payment_id}/refunds` - Get all refunds for a payment
+- **GET** `/apipayments/refunds/{refund_id}` - Get details of a specific refund
+- **POST** `/apipayments/refunds/{refund_id}/process` - Process a refund with the payment provider
+- **POST** `/apipayments/refunds/{refund_id}/verify` - Verify the status of a refund with the payment provider
+- **POST** `/apipayments/refunds/{refund_id}/cancel` - Cancel a pending refund
 
 ## Provider Integration
 
@@ -339,7 +339,7 @@ completed_payment = await complete_test_payment(
 )
 ```
 
-There's also a test UI available at `/api/v1/payments/test/mock/{reference}` that simulates a payment provider interface.
+There's also a test UI available at `/apipayments/test/mock/{reference}` that simulates a payment provider interface.
 
 ## Integrating New Payment Providers
 

@@ -28,7 +28,7 @@ class LokiClient:
 
     def push_log(self, level: str, message: str, labels: Dict[str, str] = None):
         """
-        Minimal example of pushing a single log line to Loki's /loki/api/v1/push
+        Minimal example of pushing a single log line to Loki's /loki/apipush
         """
         if labels is None:
             labels = {}
@@ -53,7 +53,7 @@ class LokiClient:
         ]
         payload = {"streams": streams}
 
-        url = f"{self.loki_url}/loki/api/v1/push"
+        url = f"{self.loki_url}/loki/apipush"
         try:
             logging.info(f"Sending log to Loki at: {url}")
             logging.info(f"Payload: {json.dumps(payload)}")
@@ -117,7 +117,7 @@ class LokiClient:
             "limit": str(limit)
         }
         
-        url = f"{self.loki_url}/loki/api/v1/query_range?{urlencode(params)}"
+        url = f"{self.loki_url}/loki/apiquery_range?{urlencode(params)}"
         logging.info(f"Querying Loki logs: {url}")
         
         try:

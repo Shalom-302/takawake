@@ -169,7 +169,7 @@ class Hub2Provider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/payments",
+                    f"{self.api_base_url}payments",
                     headers=headers,
                     json=payment_data
                 ) as response:
@@ -248,7 +248,7 @@ class Hub2Provider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/payments/{reference}",
+                    f"{self.api_base_url}payments/{reference}",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -338,7 +338,7 @@ class Hub2Provider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/refunds",
+                    f"{self.api_base_url}refunds",
                     headers=headers,
                     json=refund_data
                 ) as response:

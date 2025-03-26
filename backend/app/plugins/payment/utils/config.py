@@ -43,9 +43,9 @@ class PaymentSettings(BaseSettings):
     paystack_webhook_secret: Optional[str] = Field(None, env="PAYMENT_PAYSTACK_WEBHOOK_SECRET")
     
     # URLs
-    return_url_template: str = Field("/api/v1/payments/{payment_id}/return", env="PAYMENT_RETURN_URL_TEMPLATE")
-    cancel_url_template: str = Field("/api/v1/payments/{payment_id}/cancel", env="PAYMENT_CANCEL_URL_TEMPLATE")
-    webhook_url_template: str = Field("/api/v1/payments/webhook/{provider}", env="PAYMENT_WEBHOOK_URL_TEMPLATE")
+    return_url_template: str = Field("/apipayments/{payment_id}/return", env="PAYMENT_RETURN_URL_TEMPLATE")
+    cancel_url_template: str = Field("/apipayments/{payment_id}/cancel", env="PAYMENT_CANCEL_URL_TEMPLATE")
+    webhook_url_template: str = Field("/apipayments/webhook/{provider}", env="PAYMENT_WEBHOOK_URL_TEMPLATE")
     
     # Approval workflow settings
     default_approval_workflow: str = Field("standard_payment_approval", env="PAYMENT_DEFAULT_APPROVAL_WORKFLOW")

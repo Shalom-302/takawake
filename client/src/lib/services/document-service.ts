@@ -1,19 +1,43 @@
 import axiosClient from '@/lib/api/axios-client';
 
-export interface Document {
+// Types exportés pour être utilisés dans le reste de l'application
+export enum DocumentStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending', 
+  SIGNED = 'signed',
+  COMPLETED = 'completed',  
+  REJECTED = 'rejected',
+  EXPIRED = 'expired',
+  APPROVED = 'approved',
+  CANCELLED = 'cancelled'
+}
+
+export enum WorkflowStep {
+  PREPARATION = 'preparation',
+  SIGNATURE = 'signature',
+  VERIFICATION = 'verification',
+  ARCHIVING = 'archiving',   
+  COMPLETED = 'completed'
+}
+
+export enum SignatureType {
+  SIMPLE = 'simple',
+  STANDARD = 'standard',
+  ADVANCED = 'advanced',
+  QUALIFIED = 'qualified'
+}
+
+export enum SignatoryStatus {
+  PENDING = 'pending',
+  SIGNED = 'signed',
+  REJECTED = 'rejected'
+}
+
+// Interface pour l'état du workflow
+export interface WorkflowState {
   id: string;
   name: string;
   description: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  created_at: string;
-  updated_at: string;
-  status: DocumentStatus;
-  workflow_step: WorkflowStep;
-  owner_id: string;
-  signatures: Signature[];
-  signatories: Signatory[];
 }
 
 export interface Signature {
@@ -22,13 +46,11 @@ export interface Signature {
   user_id: string;
   user_name: string;
   signature_type: SignatureType;
-  signature_image?: string;
-  position_x: number;
-  position_y: number;
-  page: number;
+  position_x?: number;
+  position_y?: number;
+  page?: number;
   created_at: string;
-  verified: boolean;
-  timestamp_id?: string;
+  verified?: boolean;
 }
 
 export interface Signatory {
@@ -41,129 +63,485 @@ export interface Signatory {
   order: number;
 }
 
-export enum DocumentStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  SIGNED = 'signed',
-  COMPLETED = 'completed',
-  REJECTED = 'rejected',
-  EXPIRED = 'expired',
+// Interface pour les métadonnées
+export interface DocumentMetadata {
+  name?: string;
+  description?: string;
+  signatories?: Signatory[];
+  signature_type?: string;
+  expiration_days?: number;
+  [key: string]: any;
 }
 
-export enum WorkflowStep {
-  PREPARATION = 'preparation',
-  SIGNATURE = 'signature',
-  VERIFICATION = 'verification',
-  ARCHIVING = 'archiving',
-}
-
-export enum SignatureType {
-  STANDARD = 'standard',
-  ADVANCED = 'advanced',
-  QUALIFIED = 'qualified',
-}
-
-export enum SignatoryStatus {
-  PENDING = 'pending',
-  SIGNED = 'signed',
-  REJECTED = 'rejected',
-  EXPIRED = 'expired',
-}
-
-// Type de réponse pour la création d'un document
-export interface DocumentCreateResponse {
+export interface Document {
   id: string;
-  message: string;
+  name: string;
+  description: string;
+  file_path?: string;
+  file_size?: number;
+  file_type?: string;
+  created_at: string;
+  updated_at: string;
+  status: DocumentStatus;
+  workflow_step?: WorkflowStep;
+  owner_id: string;
+  signatures: Signature[];
+  signatories: Signatory[];
+  workflow_instance_id: string;
+  current_state: WorkflowState;
+  metadata: DocumentMetadata;
 }
 
-// Interface for document creation request
 export interface CreateDocumentRequest {
   name: string;
   description: string;
   file: File;
   signature_type: SignatureType;
-  workflow_type: 'sequential' | 'parallel';
+  workflow_type: string;
   expiration_days: number;
   signatories: {
-    name: string;
     email: string;
-    role: string;
+    name: string;
     order: number;
   }[];
 }
 
-// Services pour la gestion des documents
+export interface DocumentCreateResponse {
+  id: string;
+  name: string;
+  status?: DocumentStatus;
+  created_at?: string;
+  workflow_instance_id?: string;
+  workflow?: any;
+  file_path?: string;
+}
+
+export interface DocumentUpdateMessage {
+  document_id: string;
+  updated_at: string;
+  action: 'updated' | 'signed' | 'rejected';
+}
+
+// Interface pour la transition de workflow
+interface WorkflowTransition {
+  id: string;
+  source_state: WorkflowState;
+  target_state: WorkflowState;
+  name: string;
+}
+
+// Interface pour l'instance de workflow
+interface WorkflowInstance {
+  id: string;
+  workflow_id: number;
+  target_type: string;
+  target_id: string;
+  current_state: WorkflowState;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+  metadata: DocumentMetadata;
+}
+
+// Interface pour les résultats paginés
+interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * Fonction utilitaire pour convertir un état de workflow en statut de document
+ */
+const mapWorkflowStateToDocumentStatus = (state: WorkflowState | undefined): DocumentStatus => {
+  // Mapping basé sur les noms d'états courants dans les workflows
+  if (!state || !state.name) {
+    return DocumentStatus.DRAFT;
+  }
+  
+  switch (state.name.toLowerCase()) {
+    case 'draft':
+      return DocumentStatus.DRAFT;
+    case 'pending':
+    case 'in review':
+    case 'awaiting approval':
+      return DocumentStatus.PENDING;
+    case 'approved':
+      return DocumentStatus.APPROVED;
+    case 'signed':
+      return DocumentStatus.SIGNED;
+    case 'rejected':
+      return DocumentStatus.REJECTED;
+    case 'cancelled':
+    case 'canceled':
+      return DocumentStatus.CANCELLED;
+    case 'expired':
+      return DocumentStatus.EXPIRED;
+    default:
+      return DocumentStatus.DRAFT;
+  }
+};
+
 const DocumentService = {
-  // Récupérer tous les documents de l'utilisateur
+  /**
+   * Récupérer tous les documents de l'utilisateur
+   * Utilise le plugin workflow pour obtenir les instances liées aux documents
+   */
   async getDocuments(): Promise<Document[]> {
-    const response = await axiosClient.get('/digital-signature/documents');
-    return response.data;
+    try {
+      console.log('Fetching documents from workflow API...');
+      const response = await axiosClient.get<PaginatedResponse<WorkflowInstance>>('/workflow/instances', {
+        params: {
+          target_type: 'document',
+          page: 1,
+          page_size: 100
+        }
+      });
+      console.log('Workflow documents API response:', response.data);
+      
+      // Transformer les instances de workflow en documents
+      const documents = response.data.items.map((item: WorkflowInstance) => ({
+        id: item.target_id,
+        name: item.metadata?.name || 'Document sans titre',
+        description: item.metadata?.description || '',
+        status: mapWorkflowStateToDocumentStatus(item.current_state),
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        workflow_instance_id: item.id,
+        current_state: item.current_state,
+        metadata: item.metadata,
+        owner_id: '', // Valeur par défaut
+        signatures: [], // Valeur par défaut
+        signatories: item.metadata?.signatories || []
+      }));
+      
+      return documents;
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      throw error;
+    }
   },
 
-  // Récupérer un document par ID
+  /**
+   * Récupérer un document par ID
+   * Combine les données du workflow et du document signé
+   */
   async getDocument(id: string): Promise<Document> {
-    const response = await axiosClient.get(`/digital-signature/documents/${id}`);
-    return response.data;
-  },
-
-  // Télécharger un document
-  async downloadDocument(id: string): Promise<Blob> {
-    const response = await axiosClient.get(`/digital-signature/documents/${id}/download`, {
-      responseType: 'blob'
-    });
-    return response.data;
-  },
-
-  // Créer un nouveau document
-  async createDocument(request: CreateDocumentRequest): Promise<DocumentCreateResponse> {
-    const formData = new FormData();
-    formData.append('file', request.file);
-    formData.append('name', request.name);
-    formData.append('description', request.description);
-    formData.append('signature_type', request.signature_type);
-    formData.append('workflow_type', request.workflow_type);
-    formData.append('expiration_days', request.expiration_days.toString());
-    
-    // Add signatories as JSON string
-    formData.append('signatories', JSON.stringify(request.signatories));
-
-    const response = await axiosClient.post('/digital-signature/documents', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    try {
+      // 1. Récupérer l'instance de workflow
+      const workflowResponse = await axiosClient.get<WorkflowInstance>(`/workflow/instances/${id}`);
+      console.log('Workflow instance API response:', workflowResponse.data);
+      
+      // 2. Récupérer les détails du document signé si disponible
+      let signatureData: { signatures?: Signature[] } = { signatures: [] };
+      try {
+        const signatureResponse = await axiosClient.get(`/digital-signature/sign/document/${workflowResponse.data.target_id}`);
+        console.log('Document signature API response:', signatureResponse.data);
+        signatureData = signatureResponse.data;
+      } catch (signError) {
+        console.warn('Could not fetch signature data, document may not be signed yet:', signError);
       }
-    });
-    return response.data;
+      
+      // Combiner les données
+      return {
+        id: workflowResponse.data.target_id,
+        name: workflowResponse.data.metadata?.name || 'Document sans titre',
+        description: workflowResponse.data.metadata?.description || '',
+        status: mapWorkflowStateToDocumentStatus(workflowResponse.data.current_state),
+        created_at: workflowResponse.data.created_at,
+        updated_at: workflowResponse.data.updated_at,
+        workflow_instance_id: workflowResponse.data.id,
+        current_state: workflowResponse.data.current_state,
+        metadata: workflowResponse.data.metadata,
+        owner_id: '', // Valeur par défaut, à remplacer si disponible
+        signatures: signatureData.signatures || [],
+        signatories: workflowResponse.data.metadata?.signatories || []
+      };
+    } catch (error) {
+      console.error(`Error fetching document ${id}:`, error);
+      throw error;
+    }
   },
 
-  // Mettre à jour un document
+  /**
+   * Créer un nouveau document
+   * Utilise le plugin digital-signature pour créer le document et le plugin workflow pour gérer son cycle de vie
+   */
+  async createDocument(request: CreateDocumentRequest): Promise<DocumentCreateResponse> {
+    try {
+      console.log('Creating document with request:', request);
+      
+      // 1. Créer le document physique via digital-signature
+      const formData = new FormData();
+      formData.append('document', request.file);
+      formData.append('description', request.description);
+      formData.append('signature_type', request.signature_type);
+      
+      console.log('Uploading document to digital-signature service...');
+      const signResponse = await axiosClient.post('/api/digital-signature/sign/document', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      console.log('Document upload API response:', signResponse.data);
+      
+      // 2. Créer le workflow pour ce document
+      const workflowData = {
+        workflow_id: parseInt(request.workflow_type), // ID du workflow approprié
+        target_type: "document",
+        target_id: signResponse.data.id, // ID du document créé
+        metadata: {
+          name: request.name,
+          description: request.description,
+          signature_type: request.signature_type,
+          signatories: request.signatories,
+          expiration_days: request.expiration_days
+        }
+      };
+      
+      console.log('Creating workflow instance for document...', workflowData);
+      const workflowResponse = await axiosClient.post<WorkflowInstance>('/workflow/instances', workflowData);
+      console.log('Workflow creation API response:', workflowResponse.data);
+      
+      // 3. Retourner les données combinées
+      return {
+        id: signResponse.data.id,
+        name: request.name,
+        status: mapWorkflowStateToDocumentStatus(workflowResponse.data.current_state),
+        created_at: workflowResponse.data.created_at,
+        workflow_instance_id: workflowResponse.data.id,
+        workflow: workflowResponse.data
+      };
+    } catch (error) {
+      console.error('Error creating document:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mettre à jour un document
+   * Met à jour à la fois les métadonnées du workflow et le document si nécessaire
+   */
   async updateDocument(id: string, data: Partial<Document>): Promise<Document> {
-    const response = await axiosClient.put(`/digital-signature/documents/${id}`, data);
-    return response.data;
+    try {
+      console.log('Updating document with data:', data);
+      
+      // 1. Mettre à jour l'instance de workflow
+      const workflowData = {
+        metadata: {
+          ...(data.metadata || {}),
+          name: data.name,
+          description: data.description
+        }
+      };
+      
+      console.log('Updating workflow instance...', workflowData);
+      const workflowResponse = await axiosClient.patch(`//workflow/instances/${data.workflow_instance_id}`, workflowData);
+      console.log('Workflow update API response:', workflowResponse.data);
+      
+      // 2. Récupérer le document mis à jour
+      return this.getDocument(id);
+    } catch (error) {
+      console.error(`Error updating document ${id}:`, error);
+      throw error;
+    }
   },
 
-  // Supprimer un document
-  async deleteDocument(id: string): Promise<void> {
-    await axiosClient.delete(`/digital-signature/documents/${id}`);
+  /**
+   * Télécharger un document
+   * Utilise le plugin digital-signature pour récupérer le contenu du document
+   */
+  async downloadDocument(id: string): Promise<Blob> {
+    try {
+      console.log('Downloading document...');
+      const response = await axiosClient.get(`/api/digital-signature/sign/document/${id}/download`, {
+        responseType: 'blob'
+      });
+      console.log('Document download API response received');
+      return response.data;
+    } catch (error) {
+      console.error(`Error downloading document ${id}:`, error);
+      throw error;
+    }
   },
 
-  // Ajouter un signataire à un document
-  async addSignatory(documentId: string, email: string, order: number): Promise<Signatory> {
-    const response = await axiosClient.post(`/digital-signature/documents/${documentId}/signatories`, {
-      email,
-      order
-    });
-    return response.data;
+  /**
+   * Signer un document
+   * Utilise le plugin digital-signature pour la signature et met à jour le workflow
+   */
+  async signDocument(documentId: string, signatureData: {
+    signature_type: SignatureType,
+    position_x?: number,
+    position_y?: number,
+    page?: number
+  }): Promise<Signature> {
+    try {
+      console.log('Signing document with signature data:', signatureData);
+      
+      // 1. Signer le document via digital-signature
+      const response = await axiosClient.post<Signature>(`/api/digital-signature/sign/document/${documentId}/signature`, signatureData);
+      console.log('Document signing API response:', response.data);
+      
+      // 2. Faire avancer le workflow si nécessaire
+      // Récupérer d'abord les informations du workflow
+      const document = await this.getDocument(documentId);
+      if (document.workflow_instance_id) {
+        try {
+          // Essayer de faire progresser le workflow vers l'état "signé"
+          // Nous devons d'abord vérifier les transitions possibles
+          const transitionsResponse = await axiosClient.get<WorkflowTransition[]>(`/workflow/instances/${document.workflow_instance_id}/transitions`);
+          const transitions = transitionsResponse.data;
+          
+          // Chercher une transition vers un état "signé" ou similaire
+          const signingTransition = transitions.find((t: WorkflowTransition) => 
+            t.target_state.name.toLowerCase().includes('sign') ||
+            t.target_state.name.toLowerCase().includes('completed')
+          );
+          
+          if (signingTransition) {
+            await axiosClient.post(`/workflow/instances/${document.workflow_instance_id}/transition`, {
+              state_id: signingTransition.target_state.id
+            });
+            console.log('Workflow transitioned to signed state');
+          }
+        } catch (workflowError) {
+          console.warn('Could not update workflow after signing:', workflowError);
+        }
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error signing document ${documentId}:`, error);
+      throw error;
+    }
   },
 
-  // Obtenir le statut du workflow d'un document
-  async getWorkflowStatus(documentId: string): Promise<{ 
-    current_step: WorkflowStep,
-    next_step: WorkflowStep | null,
-    progress: number,
-    pending_actions: string[]
+  /**
+   * Ajouter un signataire à un document
+   * Met à jour les métadonnées du workflow
+   */
+  async addSignatory(documentId: string, signatoryData: {
+    email: string;
+    name: string;
+    order: number;
+  }): Promise<Signatory> {
+    try {
+      console.log('Adding signatory to document with signatory data:', signatoryData);
+      
+      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      const document = await this.getDocument(documentId);
+      
+      // 2. Mettre à jour les métadonnées de l'instance workflow
+      const signatories = [...(document.metadata?.signatories || []), signatoryData];
+      
+      const workflowData = {
+        metadata: {
+          ...document.metadata,
+          signatories
+        }
+      };
+      
+      console.log('Updating workflow instance with new signatory...', workflowData);
+      await axiosClient.patch(`/workflow/instances/${document.workflow_instance_id}`, workflowData);
+      console.log('Workflow update API response received');
+      
+      // Créer un nouvel objet Signatory avec les champs requis
+      const newSignatory: Signatory = {
+        id: `temp-${Date.now()}`, // Identifiant temporaire
+        document_id: documentId,
+        user_id: '', // À remplir par le backend
+        user_name: signatoryData.name,
+        email: signatoryData.email,
+        order: signatoryData.order,
+        status: SignatoryStatus.PENDING // Statut par défaut
+      };
+      
+      return newSignatory;
+    } catch (error) {
+      console.error(`Error adding signatory to document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtenir le statut du workflow d'un document
+   * Interroge directement le plugin workflow
+   */
+  async getWorkflowStatus(documentId: string): Promise<{
+    current_step: WorkflowStep;
+    next_step: WorkflowStep | null;
+    completed: boolean;
   }> {
-    const response = await axiosClient.get(`/digital-signature/documents/${documentId}/workflow`);
-    return response.data;
+    try {
+      console.log('Getting workflow status for document...');
+      
+      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      const document = await this.getDocument(documentId);
+      
+      // 2. Récupérer l'état du workflow
+      const workflowResponse = await axiosClient.get<WorkflowInstance>(`/workflow/instances/${document.workflow_instance_id}`);
+      console.log('Workflow status API response:', workflowResponse.data);
+      
+      // 3. Récupérer les étapes suivantes possibles (transitions)
+      const transitionsResponse = await axiosClient.get<WorkflowTransition[]>(`/workflow/instances/${document.workflow_instance_id}/transitions`);
+      console.log('Workflow transitions API response:', transitionsResponse.data);
+      
+      // Déterminer l'étape suivante, s'il y en a une
+      const nextTransition = transitionsResponse.data[0]; // Prendre la première transition disponible
+      
+      // Mapper l'état du workflow à une étape de workflow
+      const mapStateToStep = (state: WorkflowState): WorkflowStep => {
+        const name = state.name.toLowerCase();
+        if (name.includes('preparation') || name.includes('draft')) {
+          return WorkflowStep.PREPARATION;
+        } else if (name.includes('sign')) {
+          return WorkflowStep.SIGNATURE;
+        } else if (name.includes('verif')) {
+          return WorkflowStep.VERIFICATION;
+        } else if (name.includes('archiv')) {
+          return WorkflowStep.ARCHIVING;
+        } else if (name.includes('complet')) {
+          return WorkflowStep.COMPLETED;
+        }
+        return WorkflowStep.PREPARATION; // Par défaut
+      };
+      
+      return {
+        current_step: mapStateToStep(workflowResponse.data.current_state),
+        next_step: nextTransition ? mapStateToStep(nextTransition.target_state) : null,
+        completed: workflowResponse.data.is_completed
+      };
+    } catch (error) {
+      console.error(`Error getting workflow status for document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Supprimer un document
+   * Annule l'instance de workflow et supprime le document
+   */
+  async deleteDocument(id: string): Promise<void> {
+    try {
+      console.log('Deleting document...');
+      
+      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      const document = await this.getDocument(id);
+      
+      // 2. Annuler l'instance de workflow
+      await axiosClient.post(`/workflow/instances/${document.workflow_instance_id}/cancel`);
+      console.log('Workflow cancellation API response received');
+      
+      // 3. Supprimer le document si nécessaire
+      try {
+        await axiosClient.delete(`/digital-signature/sign/document/${id}`);
+        console.log('Document deletion API response received');
+      } catch (deleteError) {
+        console.warn('Could not delete document from digital-signature service:', deleteError);
+      }
+    } catch (error) {
+      console.error(`Error deleting document ${id}:`, error);
+      throw error;
+    }
   }
 };
 

@@ -154,11 +154,11 @@ Example HTML:
 
 ```html
 <div class="oauth-buttons">
-    <a href="/api/v1/auth/oauth/github/login" class="oauth-button github">
+    <a href="/api/auth/oauth/github/login" class="oauth-button github">
         <i class="fab fa-github"></i> Login with GitHub
     </a>
     
-    <a href="/api/v1/auth/oauth/google/login" class="oauth-button google">
+    <a href="/api/auth/oauth/google/login" class="oauth-button google">
         <i class="fab fa-google"></i> Login with Google
     </a>
 </div>

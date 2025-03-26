@@ -206,7 +206,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/payments",
+                    f"{self.api_base_url}payments",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -313,7 +313,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/payments/{payment_id}",
+                    f"{self.api_base_url}payments/{payment_id}",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -430,7 +430,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/payments/{payment_id}/cancel",
+                    f"{self.api_base_url}payments/{payment_id}/cancel",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -518,7 +518,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/payments/{payment_id}/refunds",
+                    f"{self.api_base_url}payments/{payment_id}/refunds",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -623,7 +623,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/refunds/{refund_id}",
+                    f"{self.api_base_url}refunds/{refund_id}",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -1038,7 +1038,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/subscriptions",
+                    f"{self.api_base_url}subscriptions",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -1136,7 +1136,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.patch(
-                    f"{self.api_base_url}/v1/subscriptions/{subscription_id}",
+                    f"{self.api_base_url}subscriptions/{subscription_id}",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -1209,7 +1209,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.patch(
-                    f"{self.api_base_url}/v1/subscriptions/{subscription_id}",
+                    f"{self.api_base_url}subscriptions/{subscription_id}",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -1286,7 +1286,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.patch(
-                    f"{self.api_base_url}/v1/subscriptions/{subscription_id}",
+                    f"{self.api_base_url}subscriptions/{subscription_id}",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -1411,7 +1411,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.patch(
-                    f"{self.api_base_url}/v1/subscriptions/{subscription_id}",
+                    f"{self.api_base_url}subscriptions/{subscription_id}",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -1464,7 +1464,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/subscriptions/{subscription_id}",
+                    f"{self.api_base_url}subscriptions/{subscription_id}",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -1587,7 +1587,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/customers/{customer_id}/subscriptions",
+                    f"{self.api_base_url}customers/{customer_id}/subscriptions",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -1636,7 +1636,7 @@ class WaveProvider(BasePaymentProvider):
             # First try to find the customer
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/customers",
+                    f"{self.api_base_url}customers",
                     headers=headers,
                     params={"email": email}
                 ) as response:
@@ -1660,7 +1660,7 @@ class WaveProvider(BasePaymentProvider):
                 
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
-                        f"{self.api_base_url}/v1/customers",
+                        f"{self.api_base_url}customers",
                         headers=headers,
                         json=customer_data
                     ) as response:
@@ -1726,7 +1726,7 @@ class WaveProvider(BasePaymentProvider):
             # First check if the plan already exists
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/v1/plans",
+                    f"{self.api_base_url}plans",
                     headers=headers,
                     params={"code": plan_code}
                 ) as response:
@@ -1755,7 +1755,7 @@ class WaveProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/plans",
+                    f"{self.api_base_url}plans",
                     headers=headers,
                     json=plan_data
                 ) as response:

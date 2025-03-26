@@ -100,7 +100,7 @@ class PayPalProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/v1/oauth2/token",
+                    f"{self.api_base_url}oauth2/token",
                     headers={
                         "Accept": "application/json",
                         "Authorization": f"Basic {encoded_auth}"

@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 # Configuration
 LOKI_URL = os.environ.get("LOKI_URL", "http://loki:3100")
-PUSH_ENDPOINT = f"{LOKI_URL}/loki/api/v1/push"
+PUSH_ENDPOINT = f"{LOKI_URL}/loki/api/push"
 
 logger = logging.getLogger(__name__)
 

@@ -75,7 +75,7 @@ class MPesaProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.api_base_url}/oauth/v1/generate?grant_type=client_credentials",
+                    f"{self.api_base_url}/oauthgenerate?grant_type=client_credentials",
                     headers=headers
                 ) as response:
                     result = await response.json()
@@ -208,7 +208,7 @@ class MPesaProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/mpesa/stkpush/v1/processrequest",
+                    f"{self.api_base_url}/mpesa/stkpushprocessrequest",
                     headers=headers,
                     json=stk_push_data
                 ) as response:
@@ -289,7 +289,7 @@ class MPesaProvider(BasePaymentProvider):
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base_url}/mpesa/stkpushquery/v1/query",
+                    f"{self.api_base_url}/mpesa/stkpushqueryquery",
                     headers=headers,
                     json=verify_data
                 ) as response:

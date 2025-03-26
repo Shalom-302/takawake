@@ -121,7 +121,7 @@ class MockPaymentProvider(BasePaymentProvider):
                 status=PaymentStatus.PROCESSING,
                 provider_reference=reference,
                 message="Payment initiated (mock provider)",
-                payment_url=f"http://localhost:8000/api/v1/payments/test/mock/{reference}",
+                payment_url=f"http://localhost:8000/apipayments/test/mock/{reference}",
                 raw_response={
                     "status": "processing",
                     "reference": reference,
@@ -612,7 +612,7 @@ def register_test_routes(app: FastAPI) -> None:
                 
                 async function sendWebhook(status) {{
                     try {{
-                        const response = await fetch('/api/v1/payments/webhook/mock_provider', {{
+                        const response = await fetch('/apipayments/webhook/mock_provider', {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/json',

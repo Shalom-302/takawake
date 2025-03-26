@@ -22,23 +22,23 @@ logger = logging.getLogger("http_traffic_generator")
 # Define endpoints that will predictably return specific status codes
 STATUS_ENDPOINTS = {
     # 2xx - Success
-    200: ["/api/v1/users", "/api/v1/products", "/"],
-    201: ["/api/v1/users", "/api/v1/products"],
+    200: ["/apiusers", "/apiproducts", "/"],
+    201: ["/apiusers", "/apiproducts"],
     
     # 3xx - Redirection
     301: ["/old-endpoint", "/deprecated"],
     302: ["/temp-redirect", "/login-redirect"],
     
     # 4xx - Client errors
-    400: ["/api/v1/users/invalid", "/api/v1/products?invalid=true"],
-    401: ["/api/v1/secure/endpoint", "/api/v1/admin/settings"],
-    403: ["/api/v1/admin/users", "/api/v1/restricted"],
-    404: ["/not-found", "/missing", "/api/v1/products/9999"],
-    429: ["/api/v1/rate-limited"],
+    400: ["/apiusers/invalid", "/apiproducts?invalid=true"],
+    401: ["/apisecure/endpoint", "/apiadmin/settings"],
+    403: ["/apiadmin/users", "/apirestricted"],
+    404: ["/not-found", "/missing", "/apiproducts/9999"],
+    429: ["/apirate-limited"],
     
     # 5xx - Server errors
-    500: ["/api/v1/error", "/api/v1/server-error"],
-    503: ["/api/v1/maintenance", "/api/v1/overloaded"]
+    500: ["/apierror", "/apiserver-error"],
+    503: ["/apimaintenance", "/apioverloaded"]
 }
 
 # HTTP methods to use for each status code
@@ -79,7 +79,7 @@ async def send_http_request(session, base_url, status_code):
             endpoint = random.choice(STATUS_ENDPOINTS[status_code])
         else:
             # Fallback for any undefined status codes
-            endpoint = f"/api/v1/status/{status_code}"
+            endpoint = f"/apistatus/{status_code}"
         
         # Select an appropriate HTTP method
         if status_code in STATUS_METHODS and STATUS_METHODS[status_code]:
