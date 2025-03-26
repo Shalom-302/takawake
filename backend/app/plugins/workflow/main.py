@@ -25,7 +25,7 @@ from .engine import (
 )
 
 # Create main plugin router
-router = APIRouter(prefix="/workflow", tags=["workflow"])
+router = APIRouter(tags=["workflow"])  # Removed prefix to avoid double-prefixing in main.py
 
 # Include all sub-routers
 router.include_router(workflows_router)
