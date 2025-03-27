@@ -1,6 +1,11 @@
-import axiosClient from '@/lib/api/axios-client';
+/**
+ * Service for managing documents
+ */
 
-// Types exportés pour être utilisés dans le reste de l'application
+import axiosClient from '@/lib/api/axios-client';
+import auditService from './audit-service';
+
+// Types pour le service de documents
 export enum DocumentStatus {
   DRAFT = 'draft',
   PENDING = 'pending', 
@@ -112,7 +117,7 @@ export interface DocumentCreateResponse {
   status?: DocumentStatus;
   created_at?: string;
   workflow_instance_id?: string;
-  workflow?: any;
+  workflow?: WorkflowInstance;
   file_path?: string;
 }
 
@@ -410,6 +415,13 @@ const DocumentService = {
         }
       }
       
+      // Enregistrer l'action de signature dans le système d'audit
+      await auditService.createAuditLog({
+        action: 'SIGN',
+        resource: 'document',
+        details: `Document ID: ${documentId}, Signature Type: ${signatureData.signature_type}`
+      });
+      
       return response.data;
     } catch (error) {
       console.error(`Error signing document ${documentId}:`, error);
@@ -456,6 +468,13 @@ const DocumentService = {
         order: signatoryData.order,
         status: SignatoryStatus.PENDING // Statut par défaut
       };
+      
+      // Enregistrer l'action d'ajout de signataire dans le système d'audit
+      await auditService.createAuditLog({
+        action: 'ADD_SIGNATORY',
+        resource: 'document',
+        details: `Document ID: ${documentId}, Signatory Email: ${newSignatory.email}`
+      });
       
       return newSignatory;
     } catch (error) {
@@ -540,6 +559,13 @@ const DocumentService = {
       } catch (deleteError) {
         console.warn('Could not delete document from digital-signature service:', deleteError);
       }
+      
+      // Enregistrer l'action de suppression dans le système d'audit
+      await auditService.createAuditLog({
+        action: 'DELETE',
+        resource: 'document',
+        details: `Document ID: ${id}`
+      });
     } catch (error) {
       console.error(`Error deleting document ${id}:`, error);
       throw error;

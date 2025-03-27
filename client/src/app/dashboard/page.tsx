@@ -179,6 +179,22 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
+
+          {/* Carte d'aperçu des audits */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Activités récentes</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <Link href="/audit" className="hover:underline">Audit Log</Link>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Suivez et analysez toutes les activités système
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content */}

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from app.core.db import get_db
 from .models import AuditLog
 from .schemas import AuditLogCreate, AuditLogOut
@@ -14,9 +14,13 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 from . import initialize_audit_metrics
 from .loki_integration import push_audit_log_to_loki
+from .audit_table import TableAuditor
 
 def get_router() -> APIRouter:
     router = APIRouter()
+    
+    # Initialisation de l'auditeur de table
+    table_auditor = TableAuditor(get_db)
     
     # Initialize metrics when router is created, mais avec gestion des erreurs
     try:
@@ -108,4 +112,3 @@ def get_router() -> APIRouter:
             AUDIT_EVENTS_BY_ACTION.labels(action=action).set(count)
 
     return router
-

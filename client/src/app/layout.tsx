@@ -10,6 +10,7 @@ import { PWAWrapper } from '@/components/layouts/pwa-wrapper';
 import Script from "next/script";
 import "./globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
+import { AuditProvider } from "@/lib/contexts/audit-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,7 +59,9 @@ export default function RootLayout({
                 <CookieManager />
                 <PWAWrapper>
                   <DocumentProvider>
-                    {children}
+                    <AuditProvider>
+                      {children}
+                    </AuditProvider>
                   </DocumentProvider>
                 </PWAWrapper>
               </CookieProvider>

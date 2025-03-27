@@ -8,7 +8,8 @@ import {
   Files,
   Settings, 
   Bell, 
-  User, 
+  User,
+  Activity,
   Bookmark,
   ChevronLeft,
   ChevronRight,
@@ -76,9 +77,9 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
       icon: Files
     },
     {
-      name: 'Profile',
-      href: '/profile',
-      icon: User
+      name: 'Audit',
+      href: '/audit',
+      icon: Activity
     },
     {
       name: 'Settings',
