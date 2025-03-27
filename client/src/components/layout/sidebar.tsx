@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
-  MessageSquare, 
+  Files,
   Settings, 
   Bell, 
   User, 
@@ -71,9 +71,9 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
       icon: Bell
     },
     {
-      name: 'Bookmarks',
-      href: '/bookmarks',
-      icon: Bookmark
+      name: 'Documents',
+      href: '/documents',
+      icon: Files
     },
     {
       name: 'Profile',
