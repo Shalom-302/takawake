@@ -19,7 +19,7 @@ export function LayoutWithSidebar({ children }: LayoutWithSidebarProps) {
   // Fonction de déconnexion
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   // Gestionnaire pour l'état de la sidebar

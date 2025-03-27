@@ -1,8 +1,8 @@
 /**
- * Service pour gérer les fonctionnalités PWA
+ * Service for managing PWA features
  */
 
-// Enregistrer une souscription aux notifications push
+// Register a push subscription
 export async function registerPushSubscription(subscription: PushSubscriptionJSON, metadata: any = {}) {
   try {
     const response = await fetch('/pwa/push/subscribe', {
@@ -17,34 +17,34 @@ export async function registerPushSubscription(subscription: PushSubscriptionJSO
     });
 
     if (!response.ok) {
-      throw new Error('Erreur lors de l\'enregistrement de la souscription');
+      throw new Error('Error during push subscription registration');
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement de la souscription push:', error);
+    console.error('Error during push subscription registration:', error);
     throw error;
   }
 }
 
-// Récupérer les clés VAPID publiques du serveur
+// Get the public VAPID keys from the server
 export async function getVapidPublicKey(): Promise<string> {
   try {
     const response = await fetch('/pwa/push/keys');
     
     if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des clés VAPID');
+      throw new Error('Error during VAPID key retrieval');
     }
     
     const data = await response.json();
     return data.publicKey;
   } catch (error) {
-    console.error('Erreur lors de la récupération de la clé VAPID publique:', error);
+    console.error('Error during VAPID key retrieval:', error);
     throw error;
   }
 }
 
-// Désinscrire une souscription aux notifications push
+// Unregister a push subscription
 export async function unregisterPushSubscription(subscriptionId: string) {
   try {
     const response = await fetch(`/pwa/push/unsubscribe/${subscriptionId}`, {
@@ -52,24 +52,24 @@ export async function unregisterPushSubscription(subscriptionId: string) {
     });
 
     if (!response.ok) {
-      throw new Error('Erreur lors de la désinscription');
+      throw new Error('Error during push subscription unregistration');
     }
 
     return true;
   } catch (error) {
-    console.error('Erreur lors de la désinscription des notifications push:', error);
+    console.error('Error during push subscription unregistration:', error);
     throw error;
   }
 }
 
-// Vérifier si le navigateur prend en charge les PWA
+// Check if the browser supports PWA
 export function isPwaSupported() {
   return 'serviceWorker' in navigator && 
          'PushManager' in window && 
          'Notification' in window;
 }
 
-// Convertir une clé VAPID en Uint8Array
+// Convert a VAPID key to Uint8Array
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
@@ -86,7 +86,7 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-// Types pour les souscriptions push
+// Types for push subscriptions
 export interface PushSubscriptionJSON {
   endpoint: string;
   expirationTime: number | null;
@@ -96,7 +96,7 @@ export interface PushSubscriptionJSON {
   };
 }
 
-// Récupérer le statut du Service Worker
+// Get the Service Worker status
 export async function getServiceWorkerStatus(): Promise<{
   registered: boolean;
   active: boolean;
@@ -112,12 +112,12 @@ export async function getServiceWorkerStatus(): Promise<{
       active: !!registration && !!registration.active,
     };
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut du Service Worker:', error);
+    console.error('Error during Service Worker status verification:', error);
     return { registered: false, active: false };
   }
 }
 
-// Enregistrer un évènement de clic sur une notification
+// Register a click event on a notification
 export async function recordNotificationClick(receiptId: string) {
   try {
     const response = await fetch(`/pwa/push/receipt/${receiptId}/clicked`, {
@@ -125,28 +125,28 @@ export async function recordNotificationClick(receiptId: string) {
     });
 
     if (!response.ok) {
-      throw new Error('Erreur lors de l\'enregistrement du clic sur la notification');
+      throw new Error('Error during notification click registration');
     }
 
     return true;
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement du clic sur la notification:', error);
+    console.error('Error during notification click registration:', error);
     return false;
   }
 }
 
-// Récupérer les notifications récentes
+// Get recent notifications
 export async function getRecentNotifications(limit: number = 10) {
   try {
     const response = await fetch(`/pwa/push/notifications/recent?limit=${limit}`);
     
     if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des notifications récentes');
+      throw new Error('Error during recent notifications retrieval');
     }
     
     return await response.json();
   } catch (error) {
-    console.error('Erreur lors de la récupération des notifications récentes:', error);
+    console.error('Error during recent notifications retrieval:', error);
     throw error;
   }
 }

@@ -3,9 +3,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { toast } from 'sonner';
 import axiosClient from '@/lib/api/axios-client';
 
-// Ajouter une variable pour contrôler l'activation de la PWA
+// Add a variable to control PWA activation
 const ENABLE_PWA = process.env.NEXT_PUBLIC_ENABLE_PWA !== 'false';
-// Désactiver automatiquement en développement sauf si explicitement activé
+// Automatically disable in development unless explicitly enabled
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 const PWA_ENABLED = ENABLE_PWA && (!IS_DEVELOPMENT || process.env.NEXT_PUBLIC_PWA_DEV === 'true');
 
@@ -24,7 +24,7 @@ interface NavigatorWithConnection extends Navigator {
   connection?: NetworkInformation;
 }
 
-// Type pour l'événement BeforeInstallPrompt
+// Type for the BeforeInstallPrompt event
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -57,8 +57,8 @@ interface PWAContextType {
 
 const PWAContext = createContext<PWAContextType | null>(null);
 
-// axiosClient utilise déjà NEXT_PUBLIC_API_URL || 'http://localhost:8000/api' comme baseURL
-// donc nous n'avons pas besoin de définir une constante séparée
+// axiosClient already uses NEXT_PUBLIC_API_URL || 'http://localhost:8000/api' as baseURL
+// so we don't need to define a separate constant
 
 export const usePWA = () => {
   const context = useContext(PWAContext);
@@ -92,8 +92,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Only perform fetch test when browser reports online but we want to confirm
     try {
-      // Utiliser l'endpoint health-check
-      // axiosClient ajoute déjà le préfixe /api à toutes les requêtes
+      // Use the health-check endpoint
+      // axiosClient already adds the /api prefix to all requests
       const response = await axiosClient.get(`/health-check`, {
         // Keep the timeout short to avoid hanging the UI
         timeout: 2000
@@ -126,25 +126,25 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       console.log('Registering service worker...');
       
-      // Vérifiez d'abord s'il existe déjà un Service Worker actif
+      // Check if there is already an active Service Worker
       const existingRegistration = await navigator.serviceWorker.getRegistration();
       if (existingRegistration?.active) {
         console.log('Service Worker already active:', existingRegistration);
         return existingRegistration;
       }
 
-      // Si aucun Service Worker actif n'est trouvé, enregistrez-en un nouveau
+      // If no active Service Worker is found, register a new one
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       });
       
       console.log('Service Worker registered with scope:', registration.scope);
       
-      // Assurez-vous que le Service Worker est activé
+      // Make sure the Service Worker is activated
       if (registration.installing) {
         console.log('Service Worker is installing...');
         
-        // Attendez que l'installation soit terminée
+        // Wait for the installation to complete
         await new Promise<void>((resolve) => {
           registration.installing?.addEventListener('statechange', (e) => {
             const sw = e.target as ServiceWorker;
@@ -314,7 +314,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('Permission granted:', granted);
       
       if (granted) {
-        // Enregistrer ou obtenir le Service Worker existant
+        // Register or get the existing Service Worker
         console.log('Checking for service worker registration...');
         const registration = await registerServiceWorker();
         console.log('Service worker registration object:', registration);
@@ -343,27 +343,27 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             } catch (err) {
               console.error('Error subscribing to push:', err);
               
-              // Détection spécifique du mode incognito
+              // Specific detection of incognito mode
               const errorMessage = err instanceof Error ? err.message : String(err);
               console.error('Error details:', errorMessage);
               
-              // Vérifie si l'erreur est liée au mode incognito
+              // Check if the error is related to incognito mode
               if (
                 (err instanceof Error && 
                   (err.name === 'AbortError' && errorMessage.includes('permission denied')) ||
                   errorMessage.includes('Permission denied') ||
                   errorMessage.toLowerCase().includes('incognito')
                 ) || 
-                // Vérification supplémentaire pour Chrome en mode incognito
+                // Additional check for Chrome incognito mode
                 navigator.userAgent.includes('Chrome') && 
                 (typeof window !== 'undefined' && !window.indexedDB.open('test').onupgradeneeded)
               ) {
                 console.warn('Detected incognito mode or permission issue');
-                toast.error('Les notifications push ne sont pas disponibles en mode navigation privée/incognito');
+                toast.error('Push notifications are not available in incognito mode');
                 return false;
               }
               
-              toast.error(`Échec de l'abonnement: ${errorMessage}`);
+              toast.error(`Subscription failed: ${errorMessage}`);
               return false;
             }
           }

@@ -15,14 +15,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
   React.useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login');
+      router.push('/auth/login');
     }
   }, [user, isLoading, router]);
 
   // Fonction de déconnexion
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   // Afficher un indicateur de chargement pendant la vérification de l'authentification

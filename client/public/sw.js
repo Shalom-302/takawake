@@ -1,5 +1,6 @@
 // Service Worker
 const CACHE_NAME = 'kaapi-cache-v1';
+const IS_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const urlsToCache = [
   '/',
   '/favicon.ico'
@@ -7,12 +8,18 @@ const urlsToCache = [
 
 // Installation of the Service Worker
 self.addEventListener('install', (event) => {
+  // In development, do not cache
+  if (IS_DEV) {
+    console.log('Development mode - skipping cache installation');
+    return self.skipWaiting();
+  }
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        // Utiliser cache.addAll serait préférable mais peut échouer si une ressource n'est pas disponible
-        // Au lieu de cela, nous utilisons Promise.allSettled pour éviter l'échec complet
+        // Using cache.addAll would be preferable, but may fail if a resource is not available
+        // Instead, we use Promise.allSettled to avoid complete failure
         return Promise.allSettled(
           urlsToCache.map(url => 
             cache.add(url).catch(err => {
@@ -55,10 +62,32 @@ self.addEventListener('message', (event) => {
     console.log('Service Worker skipping waiting');
     self.skipWaiting();
   }
+  
+  // Message pour vider le cache
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    console.log('Clearing cache on request');
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          return caches.delete(cacheName);
+        })
+      );
+    });
+  }
 });
 
 // Interception of network requests
 self.addEventListener('fetch', (event) => {
+  // In development, avoid caching and always go to the network
+  if (IS_DEV) {
+    return event.respondWith(
+      fetch(event.request).catch(error => {
+        console.error('Fetch failed in dev mode:', error);
+        throw error;
+      })
+    );
+  }
+  
   // Handle API requests
   if (event.request.url.includes('/api/')) {
     // "network first" strategy for API requests
