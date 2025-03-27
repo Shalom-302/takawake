@@ -13,7 +13,8 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  Folder
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,11 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
       name: 'Documents',
       href: '/documents',
       icon: Files
+    },
+    {
+      name: 'Files',
+      href: '/files',
+      icon: Folder
     },
     {
       name: 'Audit',
