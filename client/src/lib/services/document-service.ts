@@ -265,8 +265,17 @@ const DocumentService = {
       // 1. Créer le document physique via digital-signature
       const formData = new FormData();
       formData.append('document', request.file);
-      formData.append('description', request.description);
+      formData.append('description', request.description || '');
       formData.append('signature_type', request.signature_type);
+      
+      // Log détaillé des informations du formulaire pour le débogage
+      console.log('Form data details:', {
+        fileName: request.file.name,
+        fileSize: request.file.size,
+        fileType: request.file.type,
+        description: request.description,
+        signatureType: request.signature_type
+      });
       
       console.log('Uploading document to digital-signature service...');
       const signResponse = await axiosClient.post('/digital-signature/sign/document', formData, {

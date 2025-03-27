@@ -68,8 +68,25 @@ def get_signature_router():
             SignatureResponse: Information about the created signature
         """
         try:
+            # Log detailed request information
+            logger.info(f"Received sign_document request with params:")
+            logger.info(f"  - document: {document.filename} ({document.content_type}, {document.size} bytes)")
+            logger.info(f"  - description: {description}")
+            logger.info(f"  - signature_type: {signature_type}")
+            logger.info(f"  - current_user_id: {current_user_id}")
+            
+            # Validate input parameters
+            if not document:
+                logger.error("Missing document in request")
+                raise HTTPException(status_code=422, detail="Document file is required")
+                
+            if signature_type not in ["qualified", "advanced", "standard"]:
+                logger.error(f"Invalid signature_type: {signature_type}")
+                raise HTTPException(status_code=422, detail="Invalid signature type")
+            
             # Read document content
             document_content = await document.read()
+            logger.info(f"Successfully read document content: {len(document_content)} bytes")
             
             # Create signature
             document_service = DocumentService(db)
@@ -80,6 +97,7 @@ def get_signature_router():
                 user_id=current_user_id,
                 signature_type=signature_type
             )
+            logger.info(f"Document signature created successfully: {signature.id}")
             
             return SignatureResponse(
                 id=signature.id,
@@ -89,8 +107,11 @@ def get_signature_router():
                 status="completed"
             )
         except Exception as e:
-            logger.error(f"Error signing document: {e}")
-            raise HTTPException(status_code=500, detail=f"Error signing document: {str(e)}")
+            error_msg = f"Error signing document: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=500, detail=error_msg)
     
     @router.post(
         "/batch",
