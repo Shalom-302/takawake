@@ -50,13 +50,6 @@ export interface FileFolder {
   updated_at: string;
 }
 
-export interface CreateProviderRequest {
-  name: string;
-  type: StorageProviderType;
-  config: Record<string, any>;
-  is_default?: boolean;
-}
-
 export interface CreateFolderRequest {
   name: string;
   description?: string;
@@ -108,37 +101,6 @@ const fileStorageService = {
       return response.data;
     } catch (error) {
       console.error(`Erreur lors de la récupération du fournisseur de stockage ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Créer un nouveau fournisseur de stockage MinIO
-   */
-  async createMinioProvider(name: string, config: {
-    endpoint_url: string;
-    access_key: string;
-    secret_key: string;
-    bucket_name: string;
-    region?: string;
-    secure?: boolean;
-  }, isDefault: boolean = false): Promise<StorageProvider> {
-    try {
-      const providerData: CreateProviderRequest = {
-        name,
-        type: StorageProviderType.MINIO,
-        config,
-        is_default: isDefault
-      };
-      
-      const response: AxiosResponse<StorageProvider> = await axiosClient.post(
-        '/file_storage/providers',
-        providerData
-      );
-      
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la création du fournisseur MinIO:', error);
       throw error;
     }
   },
@@ -227,6 +189,7 @@ const fileStorageService = {
    */
   async uploadFile(
     file: File,
+    providerId: number,
     folderId?: number,
     isPublic: boolean = false,
     customFilename?: string,
@@ -235,6 +198,9 @@ const fileStorageService = {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      
+      // Ajouter le provider_id obligatoire
+      formData.append('provider_id', providerId.toString());
       
       if (folderId !== undefined) {
         formData.append('folder_id', folderId.toString());

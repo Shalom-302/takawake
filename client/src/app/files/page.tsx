@@ -156,8 +156,19 @@ export default function FilesPage() {
     customFilename?: string
   ) => {
     try {
+      // Vérifier si au moins un fournisseur est disponible
+      if (providers.length === 0) {
+        toast.error("No storage provider configured. Please add a MinIO provider first.");
+        setMinioModalOpen(true);
+        return;
+      }
+
+      // Trouver le fournisseur par défaut ou utiliser le premier disponible
+      const defaultProvider = providers.find(p => p.is_default) || providers[0];
+      
       await fileStorageService.uploadFile(
         file,
+        defaultProvider.id,
         currentFolder?.id,
         isPublic,
         customFilename

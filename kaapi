@@ -48,6 +48,7 @@ run_in_container() {
     return 0
 }
 
+
 # Afficher l'usage si aucun argument n'est fourni
 if [ $# -eq 0 ]; then
     echo -e "${YELLOW}Usage: ./kaapi <commande>${NC}"
@@ -57,6 +58,7 @@ if [ $# -eq 0 ]; then
     echo -e "  db preview  ${GREEN}# Prévisualiser les changements de migration${NC}"
     echo -e "  auth init   ${GREEN}# Initialiser l'authentification (créer un user test, configurer les providers)${NC}"
     echo -e "  auth init-simple ${GREEN}# Version simplifiée de l'initialisation d'authentification${NC}"
+    echo -e "  storage init ${GREEN}# Initialize the MinIO storage provider and set it as default${NC}"
     echo -e "  [...]      ${GREEN}# Autres commandes de kaapi_cli.py${NC}"
     exit 0
 fi
@@ -130,6 +132,88 @@ elif [[ "$1" == "auth" ]]; then
         *)
             echo -e "${RED}Commande auth inconnue: $CMD${NC}"
             echo -e "${YELLOW}Commandes disponibles: init, init-simple${NC}"
+            exit 1
+            ;;
+    esac
+elif [[ "$1" == "storage" ]]; then
+    # Storage management commands
+    shift  # Remove 'storage' from arguments
+    CMD="$1"
+    shift  # Remove the specific command
+    
+    # Ensure api container is running
+    check_kaapi_container
+
+    case "$CMD" in
+        "init")
+            echo -e "${BLUE}Initializing MinIO storage provider...${NC}"
+            # Parse additional options
+            EXTRA_ARGS=""
+            
+            while [[ "$#" -gt 0 ]]; do
+                case "$1" in
+                    --endpoint=*)
+                        EXTRA_ARGS="$EXTRA_ARGS --endpoint=${1#*=}"
+                        ;;
+                    --bucket=*)
+                        EXTRA_ARGS="$EXTRA_ARGS --bucket=${1#*=}"
+                        ;;
+                    --access-key=*)
+                        EXTRA_ARGS="$EXTRA_ARGS --access-key=${1#*=}"
+                        ;;
+                    --secret-key=*)
+                        EXTRA_ARGS="$EXTRA_ARGS --secret-key=${1#*=}"
+                        ;;
+                    --region=*)
+                        EXTRA_ARGS="$EXTRA_ARGS --region=${1#*=}"
+                        ;;
+                    --secure)
+                        EXTRA_ARGS="$EXTRA_ARGS --secure"
+                        ;;
+                    --force)
+                        EXTRA_ARGS="$EXTRA_ARGS --force"
+                        ;;
+                    *)
+                        echo -e "${RED}Unknown option: $1${NC}"
+                        exit 1
+                        ;;
+                esac
+                shift
+            done
+            
+            # First, generate the SQL script
+            if run_in_container kaapi-api python -m app.commands.init_storage $EXTRA_ARGS; then
+                # Copier le fichier SQL du conteneur API vers l'hôte
+                echo -e "${BLUE}Copying SQL script from API container...${NC}"
+                docker cp kaapi-api:/tmp/init_minio.sql ./init_minio.sql
+                
+                # Exécuter le script SQL directement dans le conteneur de base de données
+                echo -e "${BLUE}Running SQL commands to set up MinIO provider...${NC}"
+                
+                # Exécuter des commandes simples pour voir les variables d'environnement disponibles
+                echo -e "${BLUE}Checking database environment variables...${NC}"
+                run_in_container kaapi-db env | grep POSTGRES
+                
+                # Exécuter le script SQL avec une commande plus robuste
+                docker cp ./init_minio.sql kaapi-db:/tmp/init_minio.sql
+                docker exec kaapi-db sh -c 'psql -U postgres -d kaapi -f /tmp/init_minio.sql'
+                
+                # Nettoyage du fichier temporaire sur l'hôte
+                rm ./init_minio.sql
+                
+                echo -e "${GREEN}MinIO storage provider initialized successfully.${NC}"
+                
+                # Vérifier que le fournisseur a bien été créé
+                echo -e "${BLUE}Verifying provider creation...${NC}"
+                docker exec kaapi-db sh -c 'psql -U postgres -d kaapi -c "SELECT * FROM file_storage_providers;"'
+            else
+                echo -e "${RED}Failed to generate SQL script for MinIO initialization.${NC}"
+                exit 1
+            fi
+            ;;
+        *)
+            echo -e "${RED}Unknown storage command: $CMD${NC}"
+            echo -e "${YELLOW}Available commands: init${NC}"
             exit 1
             ;;
     esac
