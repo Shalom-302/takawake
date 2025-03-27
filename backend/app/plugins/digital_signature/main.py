@@ -17,70 +17,65 @@ from app.plugins.digital_signature.utils.security import initialize_signature_se
 logger = logging.getLogger(__name__)
 
 
-class DigitalSignaturePlugin:
+def get_router():
     """
-    Digital Signature and Timestamping plugin for certifying document integrity.
+    Get the Digital Signature and Timestamping router.
     
-    This plugin provides functionality for digitally signing documents,
-    timestamping data to prove its existence at a particular time,
-    and verifying the authenticity of signed documents using PKI.
+    Returns:
+        APIRouter: Configured router for the digital signature plugin
     """
+    router = APIRouter()
     
-    def __init__(self):
-        """Initialize the digital signature plugin."""
-        self.router = APIRouter()
-        self.name = "digital_signature"
-        self.initialized = False
+    # Add sub-routers
+    signature_router = get_signature_router()
+    timestamp_router = get_timestamp_router()
+    verification_router = get_verification_router()
     
-    def init_app(self, app: FastAPI, prefix: str = "/digital-signature") -> None:
-        """
-        Initialize the plugin with the FastAPI application.
-        
-        Args:
-            app: FastAPI application
-            prefix: URL prefix for the plugin
-        """
-        if self.initialized:
-            logger.warning("Digital signature plugin already initialized")
-            return
-            
-        # Initialize security components
-        initialize_signature_security()
-        
-        # Set up routers
-        self.router.prefix = prefix
-        self.router.tags = ["Digital Signature"]
-        
-        # Add sub-routers
-        signature_router = get_signature_router()
-        timestamp_router = get_timestamp_router()
-        verification_router = get_verification_router()
-        
-        self.router.include_router(
-            signature_router,
-            prefix="/sign",
-            tags=["Document Signing"]
-        )
-        
-        self.router.include_router(
-            timestamp_router,
-            prefix="/timestamp",
-            tags=["Secure Timestamping"]
-        )
-        
-        self.router.include_router(
-            verification_router,
-            prefix="/verify",
-            tags=["Signature Verification"]
-        )
-        
-        # Include the router in the main app
-        app.include_router(self.router)
-        
-        # Mark as initialized
-        self.initialized = True
-        logger.info("Digital signature plugin initialized")
+    router.include_router(
+        signature_router,
+        prefix="/sign"
+    )
+    
+    router.include_router(
+        timestamp_router,
+        prefix="/timestamp"
+    )
+    
+    router.include_router(
+        verification_router,
+        prefix="/verify"
+    )
+    
+    return router
 
 
-# Create a singleton instance
-digital_signature_plugin = DigitalSignaturePlugin()
+def init_app(app: FastAPI):
+    """
+    Initialize the digital signature plugin with the FastAPI application.
+    
+    Args:
+        app: FastAPI application
+    
+    Returns:
+        dict: Plugin metadata
+    """
+    # Initialize security components
+    initialize_signature_security()
+    
+    # Include the router in the main app
+    app.include_router(get_router(), prefix="/digital-signature")
+    
+    logger.info("Digital signature plugin initialized")
+    
+    return {
+        "name": "digital_signature",
+        "description": "Digital Signature and Timestamping",
+        "version": "1.0.0"
+    }
+
+
+# Create router instance
+router = get_router()
+
+# Export the router
+digital_signature_router = router

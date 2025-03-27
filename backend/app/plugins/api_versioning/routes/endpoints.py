@@ -1,5 +1,5 @@
 """
-Routes for managing API endpoints across different versions.
+Routes for managing API endpoints.
 """
 
 from typing import List, Dict, Any, Optional
@@ -17,7 +17,7 @@ from app.plugins.api_versioning.schemas import (
 )
 
 
-router = APIRouter()
+router = APIRouter(prefix="/endpoints", tags=["API Endpoints"])
 
 
 @router.post("/", response_model=APIEndpointInDB, status_code=status.HTTP_201_CREATED)

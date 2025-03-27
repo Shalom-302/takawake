@@ -25,16 +25,7 @@ from .schemas import (
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(
-    prefix="/auth",
-    tags=["authentication"],
-    responses={
-        401: {"description": "Unauthorized"},
-        403: {"description": "Forbidden"},
-        404: {"description": "Not found"},
-        500: {"description": "Server error"}
-    }
-)
+router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

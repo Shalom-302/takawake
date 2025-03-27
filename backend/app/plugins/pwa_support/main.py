@@ -841,3 +841,6 @@ def default_manifest():
             }
         ]
     }
+
+
+pwa_support_router = get_router()

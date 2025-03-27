@@ -164,3 +164,5 @@ def get_router() -> APIRouter:
         return {"detail": f"Log {log_id} deleted from memory"}
 
     return router
+
+advanced_logging_router = get_router()

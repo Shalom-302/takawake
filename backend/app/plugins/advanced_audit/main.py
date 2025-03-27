@@ -108,3 +108,4 @@ def get_router() -> APIRouter:
             AUDIT_EVENTS_BY_ACTION.labels(action=action).set(count)
 
     return router
+

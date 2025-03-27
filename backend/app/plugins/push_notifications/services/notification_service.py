@@ -42,7 +42,9 @@ class NotificationService:
     
     def __init__(self, db: Session, security_handler: SecurityHandler,
                 redis_handler: Optional[RedisHandler] = None,
-                rabbitmq_handler: Optional[RabbitMQHandler] = None):
+                rabbitmq_handler: Optional[RabbitMQHandler] = None,
+                device_service: Optional[DeviceService] = None,
+                template_service: Optional[TemplateService] = None):
         """
         Initialize the notification service.
         
@@ -51,6 +53,8 @@ class NotificationService:
             security_handler: Security handler for encryption and validation
             redis_handler: Redis handler for caching and rate limiting
             rabbitmq_handler: RabbitMQ handler for async processing
+            device_service: Optional existing device service instance
+            template_service: Optional existing template service instance
         """
         self.db = db
         self.security_handler = security_handler
@@ -63,9 +67,9 @@ class NotificationService:
         self.apns_provider = None
         self.web_push_provider = None
         
-        # Initialize related services
-        self.device_service = DeviceService(db, security_handler, redis_handler)
-        self.template_service = TemplateService(db, security_handler, redis_handler)
+        # Use provided services or create new ones
+        self.device_service = device_service or DeviceService(db, security_handler, redis_handler)
+        self.template_service = template_service or TemplateService(db, security_handler, redis_handler)
         
         logger.info("Notification service initialized")
     

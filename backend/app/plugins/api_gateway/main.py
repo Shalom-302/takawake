@@ -79,3 +79,5 @@ def get_plugin_info() -> PluginInfo:
 def get_router() -> APIRouter:
     """Retourne le routeur API du plugin."""
     return plugin.router
+
+api_gateway_router = get_router()

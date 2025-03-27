@@ -1,5 +1,5 @@
 """
-Routes for tracking changes between API versions.
+Routes for managing API changes.
 """
 
 from typing import List, Dict, Any, Optional
@@ -16,7 +16,7 @@ from app.plugins.api_versioning.schemas import (
 )
 
 
-router = APIRouter()
+router = APIRouter(prefix="/changes", tags=["API Changes"])
 
 
 @router.post("/", response_model=APIChangeInDB, status_code=status.HTTP_201_CREATED)

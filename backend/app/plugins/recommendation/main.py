@@ -20,9 +20,9 @@ class RecommendationPlugin:
     def __init__(self):
         # Initialize plugin router with separate endpoint routers
         from .routes import recommend, feedback, admin
-        self.router.include_router(recommend.router, prefix="/recommend", tags=["Recommend"])
-        self.router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
-        self.router.include_router(admin.router, prefix="/admin", tags=["Admin"])
+        self.router.include_router(recommend.router, prefix="/recommend")
+        self.router.include_router(feedback.router, prefix="/feedback")
+        self.router.include_router(admin.router, prefix="/admin")
         
         # Set default configuration
         self.encryption_handler = None
@@ -137,3 +137,5 @@ recommendation_plugin = RecommendationPlugin()
 def get_plugin():
     """Return the plugin instance for integration with the main application"""
     return recommendation_plugin
+
+recommendation_router = recommendation_plugin.router

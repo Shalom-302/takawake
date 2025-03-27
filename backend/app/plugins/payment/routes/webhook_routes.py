@@ -32,8 +32,4 @@ async def payment_webhook(
     It is generally unauthenticated, but webhook signatures are validated
     based on provider-specific methods.
     """
-    return await handle_webhook(
-        request=request,
-        provider_id=provider,
-        db=db
-    )
+    return await handle_webhook(db, provider, request)

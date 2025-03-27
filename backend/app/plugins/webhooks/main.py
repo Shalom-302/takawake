@@ -10,6 +10,7 @@ from app.core.security import get_current_user  # or your own auth
 from app.casbin_setup import get_casbin_enforcer  # optional, if you do RBAC checks
 
 def get_router() -> APIRouter:
+
     router = APIRouter()
 
     @router.get("/", name="list_webhooks")
@@ -109,3 +110,6 @@ def get_router() -> APIRouter:
         return {"detail": "Webhook deleted"}
 
     return router
+
+
+webhooks_router = get_router()

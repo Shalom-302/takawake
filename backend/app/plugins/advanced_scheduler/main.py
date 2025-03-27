@@ -140,3 +140,5 @@ def get_router() -> APIRouter:
         }
 
     return router
+
+advanced_scheduler_router = get_router()

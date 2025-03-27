@@ -276,3 +276,5 @@ def get_plugin_info() -> Dict[str, Any]:
         "version": plugin.version,
         "dependencies": plugin.dependencies
     }
+
+offline_sync_router = get_router()

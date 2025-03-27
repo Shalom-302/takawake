@@ -487,7 +487,7 @@ def register_test_routes(app: FastAPI) -> None:
     # Create test router
     router = APIRouter()
     
-    @router.post("/payments/test/create", tags=["payments-test"])
+    @router.post("/test/create")
     async def create_test_payment_route(
         amount: float = Body(100.0),
         currency: str = Body("USD"),
@@ -514,7 +514,7 @@ def register_test_routes(app: FastAPI) -> None:
             approvers=approvers
         )
     
-    @router.post("/payments/test/{payment_id}/complete", tags=["payments-test"])
+    @router.post("/test/{payment_id}/complete")
     async def complete_test_payment_route(
         payment_id: int = Path(...),
         status: str = Body(PaymentStatus.COMPLETED.value),
@@ -532,7 +532,7 @@ def register_test_routes(app: FastAPI) -> None:
             status=status
         )
     
-    @router.get("/payments/test/mock/{reference}", tags=["payments-test"])
+    @router.get("/test/mock/{reference}")
     async def view_mock_payment(
         reference: str = Path(...),
         current_user: User = Depends(get_current_active_user)
@@ -650,4 +650,4 @@ def register_test_routes(app: FastAPI) -> None:
         return HTMLResponse(content=html)
     
     # Add routes to the application
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router)

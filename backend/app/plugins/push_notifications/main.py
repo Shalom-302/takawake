@@ -44,7 +44,7 @@ class PushNotificationService:
     
     def __init__(self):
         """Initialize the push notification service plugin."""
-        self.router = APIRouter()
+        self.router = None
         self.security_handler = None
         self.rabbitmq_handler = None
         self.redis_handler = None
@@ -97,12 +97,13 @@ class PushNotificationService:
             }
         }
 
-    def init_app(self, app: FastAPI, prefix: str = "/push-notifications"):
+    def init_app(self, app: FastAPI, router: APIRouter, prefix: str = "/push-notifications"):
         """
         Initialize the plugin with the main application.
         
         Args:
             app: FastAPI application instance
+            router: API router to use for routes
             prefix: API route prefix
         """
         if self._is_initialized:
@@ -110,6 +111,9 @@ class PushNotificationService:
             return
         
         logger.info("Initializing Push Notification Service")
+        
+        # Store router reference
+        self.router = router
         
         # Merge settings from environment with defaults
         self._init_config_from_settings()
@@ -125,8 +129,9 @@ class PushNotificationService:
         # Set up routes
         self._setup_routes()
         
-        # Include router in main app
-        app.include_router(self.router, prefix=prefix, tags=["push-notifications"])
+        # Include router in main app if needed
+        if app is not None:
+            app.include_router(self.router, prefix=prefix, tags=["push-notifications"])
         
         self._is_initialized = True
         logger.info("Push Notification Service initialized")
@@ -184,67 +189,70 @@ class PushNotificationService:
         
     def _init_services(self):
         """Initialize all plugin services."""
-        self.device_service = DeviceService(
-            security_handler=self.security_handler,
-            redis_handler=self.redis_handler,
-            config=self.config
-        )
+        # Créer une session BD
+        from app.core.db import SessionLocal
+        db = SessionLocal()
         
-        self.template_service = TemplateService(
-            security_handler=self.security_handler,
-            redis_handler=self.redis_handler,
-            config=self.config
-        )
-        
-        self.notification_service = NotificationService(
-            security_handler=self.security_handler,
-            rabbitmq_handler=self.rabbitmq_handler,
-            redis_handler=self.redis_handler,
-            device_service=self.device_service,
-            template_service=self.template_service,
-            config=self.config
-        )
-        
-        self.analytics_service = AnalyticsService(
-            redis_handler=self.redis_handler,
-            config=self.config
-        )
-        
-        logger.info("All services initialized")
+        try:
+            # Initialize services with their correct constructor signatures
+            self.device_service = DeviceService(
+                db=db,
+                security_handler=self.security_handler,
+                redis_handler=self.redis_handler
+            )
+            
+            self.template_service = TemplateService(
+                db=db,
+                security_handler=self.security_handler,
+                redis_handler=self.redis_handler
+            )
+            
+            # Pass the existing device and template services to the notification service
+            self.notification_service = NotificationService(
+                db=db,
+                security_handler=self.security_handler,
+                redis_handler=self.redis_handler,
+                rabbitmq_handler=self.rabbitmq_handler,
+                device_service=self.device_service,
+                template_service=self.template_service
+            )
+            
+            self.analytics_service = AnalyticsService(
+                db=db,
+                security_handler=self.security_handler,
+                redis_handler=self.redis_handler
+            )
+            
+            logger.info("All services initialized")
+        finally:
+            db.close()
         
     def _setup_routes(self):
         """Set up all API routes for the push notification service."""
-        # Import routes modules
-        from .routes import device_routes, notification_routes, template_routes, analytics_routes
+        if self.router is None:
+            raise RuntimeError("Router not initialized")
+            
+        # Import routes module and copy all routes to the main router
+        from .routes import router as all_routes
         
-        # Add routes to the router
-        device_routes.register_routes(
-            self.router, 
-            self.device_service, 
-            self.security_handler
-        )
+        # Copy all routes from the imported router to our main router
+        self.router.routes.extend(all_routes.routes)
         
-        notification_routes.register_routes(
-            self.router, 
-            self.notification_service, 
-            self.security_handler,
-            self.device_service
-        )
+        # Add status route
+        @self.router.get("/status")
+        async def get_plugin_status():
+            """
+            Get the status of the Push Notifications plugin.
+            
+            Returns:
+                dict: Status information
+            """
+            return {
+                "status": "active",
+                "version": "1.0.0",
+                "timestamp": datetime.utcnow().isoformat()
+            }
         
-        template_routes.register_routes(
-            self.router, 
-            self.template_service, 
-            self.security_handler
-        )
-        
-        analytics_routes.register_routes(
-            self.router, 
-            self.analytics_service, 
-            self.security_handler
-        )
-        
-        logger.info("API routes configured")
-    
     def update_config(self, new_config: Dict[str, Any]):
         """
         Update plugin configuration.
@@ -498,23 +506,52 @@ class PushNotificationService:
             group_by=group_by
         )
 
+    def get_router(self) -> APIRouter:
+        """
+        Get the push notifications router with all routes configured.
+        
+        Returns:
+            APIRouter: The configured router
+        """
+        if self.router is None:
+            raise RuntimeError("Router not initialized")
+        
+        return self.router
+
 
 # Create singleton instance
 push_notifications_service = PushNotificationService()
 
-# Create a router that can be imported by the main application
-router = APIRouter()
-
-@router.get("/status")
-async def get_plugin_status():
+def get_router() -> APIRouter:
     """
-    Get the status of the Push Notifications plugin.
+    Get the push notifications router with all routes configured.
     
     Returns:
-        dict: Status information
+        APIRouter: The configured router
     """
-    return {
-        "status": "active",
-        "version": "1.0.0",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    router = APIRouter()
+    
+    # Initialize the service with the router
+    push_notifications_service.init_app(app=None, router=router)
+    
+    @router.get("/", response_model=Dict[str, Any])
+    async def plugin_info():
+        """Get push notification plugin information."""
+        return {
+            "name": "Push Notifications System",
+            "description": "Comprehensive push notification solution with multi-provider support",
+            "version": "1.0.0",
+            "features": [
+                "Multi-provider support (FCM, APNs, Web Push)",
+                "Template-based notifications",
+                "Scheduled notifications",
+                "Device management",
+                "Analytics and reporting"
+            ]
+        }
+    
+    return router
+
+
+# Initialize and export router
+push_notifications_router = get_router()

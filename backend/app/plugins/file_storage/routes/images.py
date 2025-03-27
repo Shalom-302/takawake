@@ -20,7 +20,7 @@ from ..schemas import FileThumbnailCreate, FileThumbnailResponse
 from ..utils.image_processor import ImageProcessor
 from ..providers import StorageException
 
-router = APIRouter(prefix="/images", tags=["image-processing"])
+router = APIRouter(prefix="/images")
 
 logger = logging.getLogger(__name__)
 

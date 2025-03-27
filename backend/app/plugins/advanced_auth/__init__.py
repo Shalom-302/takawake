@@ -1,59 +1,9 @@
 """
-Advanced Authentication Plugin
-==============================
+Advanced Authentication plugin for Kaapi.
 
-A comprehensive authentication system with support for multiple providers,
+This plugin provides a comprehensive authentication system with support for multiple providers,
 secure session management, and advanced security features.
 """
-from typing import Dict, Any, Optional, List
-import logging
-from fastapi import FastAPI, Depends
+from .main import auth_router
 
-from app.core.config import settings
-from .routes import router
-from .public_routes import public_router
-
-__version__ = "1.0.0"
-
-logger = logging.getLogger(__name__)
-
-
-def init_app(app: FastAPI, **kwargs) -> None:
-    """
-    Initialize the plugin and register its routes with the FastAPI app.
-    
-    Args:
-        app: FastAPI application
-        **kwargs: Additional initialization parameters
-    """
-    # Vérifier si un api_router est fourni pour le préfixe /api
-    api_router = kwargs.get("api_router")
-    
-    if api_router:
-        # Utiliser le api_router pour que les routes soient sous /api
-        api_router.include_router(router, tags=["authentication"])
-    else:
-        # Fallback - ancien comportement
-        app.include_router(router)
-        
-    # Les routes publiques restent au niveau racine
-    app.include_router(public_router)
-    
-    logger.info("Advanced Authentication plugin initialized")
-    
-    # Register plugin with the registry if available
-    try:
-        from app.api.deps import get_plugin_registry
-        from app.core.plugin import PluginRegistry
-        
-        registry: PluginRegistry = kwargs.get("plugin_registry")
-        if registry:
-            registry.register_plugin(
-                name="advanced_auth",
-                version=__version__,
-                description="Advanced authentication plugin with multiple providers",
-                routes=router.routes
-            )
-    except (ImportError, AttributeError):
-        # Plugin registry not available, just continue
-        pass
+__all__ = ["auth_router"]

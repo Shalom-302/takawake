@@ -16,42 +16,47 @@ from .core.config import settings
 from app.casbin_setup import get_casbin_enforcer
 
 
-# Plugins imports
-from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_router
-from app.plugins.webhooks.main import get_router as get_webhooks_router
-from app.plugins.advanced_audit.main import get_router as get_audit_router
-from app.plugins.monitoring.main import get_router as get_monitoring_router
-from app.plugins.messaging_service.main import get_router as get_messaging_service_router
-from app.plugins.api_versioning.main import router as api_versioning_router
-from app.plugins.api_versioning.integration import register_with_main_app
-from app.plugins.advanced_logging.main import get_router as get_advanced_logging_router
-from app.plugins.advanced_scheduler.main import get_router as get_advanced_scheduler_router
-from app.plugins.ai_integration.main import router as ai_integration_router
-from app.plugins.data_exchange.main import data_exchange_router
-from app.plugins.file_storage.main import router as file_storage_router
-from app.plugins.payment.main import init_app as init_payment_plugin
-from app.plugins.privacy_compliance import router as privacy_compliance_router
-from app.plugins.push_notifications.main import router as push_notifications_router
-from app.plugins.pwa_support import router as pwa_support_router
-from app.plugins.workflow.main import router as workflow_router
-from app.plugins.api_gateway.main import initialize_plugin as init_api_gateway_plugin
-from app.plugins.api_gateway.main import get_router as get_api_gateway_router
-from app.plugins.offline_sync.main import get_router as get_offline_sync_router
+
+# Middleware imports
 from app.plugins.security.middleware import SecurityMiddlewareEnhanced
 from app.plugins.security.intrusion_detection import IntrusionDetector
 from app.plugins.security.mfa_service import MFAService
 from app.plugins.security.waf import WebApplicationFirewall, ThreatIntelFeed
-from app.plugins.security.main import crypto_router
-from app.plugins.security.security_config import load_security_config
-from app.plugins.kyc.main import get_admin_router as get_kyc_admin_router, get_api_router as get_kyc_api_router, on_plugin_init as init_kyc_plugin
-from app.plugins.business_alerts.main import business_alerts_plugin
-from app.plugins.digital_signature.main import digital_signature_plugin
-from app.plugins.recommendation.main import recommendation_plugin
-from app.plugins.social_subscriptions.main import setup_social_subscriptions, social_subscriptions_plugin
-from app.plugins.advanced_auth import init_app as init_auth_plugin
 
-from app.api import health_check
+# Plugins imports
+from app.plugins.plugin_manager import load_plugins_into_app, plugin_manager_router
+
+from app.plugins.advanced_auth import auth_router
+from app.plugins.webhooks import webhooks_router
+from app.plugins.advanced_audit.main import get_router as get_audit_router
+from app.plugins.monitoring import monitoring_router
+
+from app.plugins.security import security_router
+from app.plugins.business_alerts import business_alerts_router
+from app.plugins.digital_signature import digital_signature_router
+from app.plugins.recommendation import recommendation_router
+
+from app.plugins.pwa_support import pwa_support_router
+from app.plugins.workflow import workflow_router
+from app.plugins.api_versioning import api_versioning_router, register_with_main_app
+from app.plugins.advanced_logging import advanced_logging_router
+from app.plugins.advanced_scheduler import advanced_scheduler_router
+from app.plugins.ai_integration import ai_integration_router
+from app.plugins.data_exchange import data_exchange_router
+from app.plugins.file_storage import file_storage_router
+from app.plugins.payment import payment_router
+from app.plugins.privacy_compliance import privacy_compliance_router
+from app.plugins.kyc import kyc_admin_router, kyc_api_router
+from app.plugins.offline_sync import offline_sync_router
+from app.plugins.social_subscriptions import social_subscriptions_router
+
+from app.plugins.messaging_service.main import messaging_service_router
+from app.plugins.push_notifications import push_notifications_router
+from app.plugins.api_gateway import api_gateway_router
+from app.plugins.security.security_config import load_security_config
+
 from app.api.push import router as push_router
+from app.api.health_check import health_check_router
 
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
@@ -368,33 +373,11 @@ def init_db():
         enforcer = get_casbin_enforcer()
         print("🟢 Database initialization finished")
         
-        # Initialize payment plugin
-        init_payment_plugin(app)
-        print("🟢 Payment plugin initialized")
-        
-        # Initialize offline sync plugin
-        from app.plugins.offline_sync.main import initialize_plugin as init_offline_sync_plugin
-        init_offline_sync_plugin(app)
-        print("🟢 Offline Sync plugin initialized")
-        
-        # Initialize KYC plugin
-        init_kyc_plugin(app)
-        print("🟢 KYC plugin initialized")
-        
-        # Initialize Business Alerts plugin
-        business_alerts_plugin.init_app(app)
-        print("🟢 Business Alerts plugin initialized")
-        
-        # Initialize Digital Signature plugin
-        digital_signature_plugin.init_app(app)
-        print("🟢 Digital Signature plugin initialized")
-        
-        # Initialize social subscriptions plugin
-        setup_social_subscriptions(app)
-        print("🟢 Social Subscriptions plugin initialized")
     finally:
+        # Make sure to close the database connection
         db.close()
-    print("✅ Startup finished")
+        
+        print("🚀 Event startup complete!")
 
 @app.on_event("startup")
 def on_startup():
@@ -424,51 +407,38 @@ print("🟢 API Versioning initialized")
 # Create an APIRouter to group all API routes under the configured prefix
 api_router = APIRouter(prefix=settings.API_PREFIX)
 
-# Initialize Advanced Authentication plugin
-init_auth_plugin(app, api_router=api_router)
-print("🟢 Advanced Authentication plugin initialized")
-
-# Initialize API Gateway plugin
-init_api_gateway_plugin(
-    app, 
-    api_title=settings.PROJECT_NAME + " API",
-    api_description="Secure API Gateway for " + settings.PROJECT_NAME,
-    api_version="1.0.0"
-)
-print("🟢 API Gateway initialized")
-
 # (4) Include all your normal app routers under the /api prefix
 
 # Core plugins
-api_router.include_router(get_webhooks_router(), prefix="/webhooks", tags=["Webhooks"])
+api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(webhooks_router, prefix="/webhooks", tags=["Webhooks"])
 api_router.include_router(get_audit_router(), prefix="/advanced_audit", tags=["Advanced Audit"])
-api_router.include_router(get_monitoring_router(), prefix="/monitoring", tags=["Advanced Monitoring"])
-api_router.include_router(get_messaging_service_router(), prefix="/messaging", tags=["Messaging Service"])
-api_router.include_router(crypto_router, prefix="/security", tags=["Security"])
-api_router.include_router(api_versioning_router, prefix="/api-versioning", tags=["API Versioning"])
-
+api_router.include_router(monitoring_router, prefix="/monitoring", tags=["Advanced Monitoring"])
+api_router.include_router(messaging_service_router, prefix="/messaging", tags=["Messaging Service"])
+api_router.include_router(security_router, prefix="/security", tags=["Security"])
+api_router.include_router(api_versioning_router, prefix="/versioning", tags=["API Versioning"], include_in_schema=False)
 # Additional plugins
-api_router.include_router(get_advanced_logging_router(), prefix="/advanced-logging", tags=["Advanced Logging"])
-api_router.include_router(get_advanced_scheduler_router(), prefix="/advanced-scheduler", tags=["Advanced Scheduler"])
-# Note: advanced_auth plugin is already included via init_auth_plugin, this is just for clarity in the list
+api_router.include_router(payment_router, prefix="/payment", tags=["Payment"])
+api_router.include_router(advanced_logging_router, prefix="/advanced-logging", tags=["Advanced Logging"])
+api_router.include_router(advanced_scheduler_router, prefix="/advanced-scheduler", tags=["Advanced Scheduler"])
 api_router.include_router(ai_integration_router, prefix="/ai-integration", tags=["AI Integration"])
 api_router.include_router(data_exchange_router, prefix="/data-exchange", tags=["Data Exchange"])
 api_router.include_router(file_storage_router, prefix="/file-storage", tags=["File Storage"])
-api_router.include_router(privacy_compliance_router, tags=["Privacy Compliance"])
+api_router.include_router(privacy_compliance_router, prefix="/privacy", tags=["Privacy Compliance"])
 api_router.include_router(push_notifications_router, prefix="/push-notifications", tags=["Push Notifications"])
 api_router.include_router(pwa_support_router, prefix="/pwa-support", tags=["PWA Support"])
 api_router.include_router(workflow_router, prefix="/workflow", tags=["Workflow"])
-api_router.include_router(get_api_gateway_router(), prefix="/api-gateway", tags=["API Gateway"])
-api_router.include_router(get_offline_sync_router(), prefix="/offline-sync", tags=["Offline Sync"])
-api_router.include_router(get_kyc_admin_router(), prefix="/admin", tags=["KYC Admin"])
-api_router.include_router(get_kyc_api_router(), tags=["KYC"])
-api_router.include_router(business_alerts_plugin.router, prefix="/business-alerts", tags=["Business Alerts"])
-api_router.include_router(digital_signature_plugin.router, prefix="/digital-signature", tags=["Digital Signature"])
-api_router.include_router(recommendation_plugin.router, prefix="/recommendation", tags=["Recommendation"])
-api_router.include_router(social_subscriptions_plugin.router, prefix="/social-subscriptions", tags=["Social Subscriptions"])
+api_router.include_router(api_gateway_router, prefix="/api-gateway", tags=["API Gateway"])
+api_router.include_router(offline_sync_router, prefix="/offline-sync", tags=["Offline Sync"])
+api_router.include_router(kyc_admin_router, prefix="/kyc-admin", tags=["KYC Admin"])
+api_router.include_router(kyc_api_router, prefix="/kyc", tags=["KYC"])
+api_router.include_router(business_alerts_router, prefix="/business-alerts", tags=["Business Alerts"])
+api_router.include_router(digital_signature_router, prefix="/digital-signature", tags=["Digital Signature"])
+api_router.include_router(recommendation_router, prefix="/recommendation", tags=["Recommendation"])
+api_router.include_router(social_subscriptions_router, prefix="/social-subscriptions", tags=["Social Subscriptions"])
 
 # API Routes
-api_router.include_router(health_check.router, tags=["system"])
+api_router.include_router(health_check_router, tags=["system"])
 api_router.include_router(push_router, tags=["push"])
 
 # Inclure le router API principal dans l'application
@@ -606,3 +576,18 @@ async def get_docs():
 @app.get("/redoc", include_in_schema=False)
 async def get_redoc():
     return get_redoc_html(openapi_url="/openapi.json", title=settings.PROJECT_NAME)
+
+@app.on_event("shutdown")
+async def shutdown():
+    """
+    Shutdown event handler
+    """
+    print("🛑 Application shutdown, performing cleanup tasks...")
+    
+    # Gracefully stop API gateway
+    # close_api_gateway()
+    
+    # Close database connections
+    print("🔄 Closing database connections...")
+    
+    print("✅ Shutdown complete")

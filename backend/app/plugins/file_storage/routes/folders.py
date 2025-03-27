@@ -15,7 +15,7 @@ from app.plugins.advanced_auth.models import User
 from ..models import FileFolder, StorageProvider, StoredFile
 from ..schemas import FileFolderCreate, FileFolderResponse, FileFolderDetailResponse
 
-router = APIRouter(prefix="/folders", tags=["file-folders"])
+router = APIRouter(prefix="/folders")
 
 logger = logging.getLogger(__name__)
 

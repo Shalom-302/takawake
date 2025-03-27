@@ -13,18 +13,6 @@ It also includes image processing features:
 - Image transformations (resizing, cropping, etc.)
 """
 
-from fastapi import APIRouter
+from .main import file_storage_router
 
-from .main import router as main_router
-from .routes.folders import router as folders_router
-from .routes.images import router as images_router
-
-# Router principal grouping all sub-routers
-router = APIRouter()
-
-# Include all sub-routers
-router.include_router(main_router)
-router.include_router(folders_router)
-router.include_router(images_router)
-
-__all__ = ["router"]
+__all__ = ["file_storage_router"]

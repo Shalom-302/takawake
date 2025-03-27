@@ -27,158 +27,142 @@ logger = logging.getLogger("kaapi.payment.refund_routes")
 router = APIRouter()
 
 
-@router.post("/payments/{payment_id}/refunds", response_model=RefundResponse, tags=["payments"])
+@router.post("/{payment_id}", response_model=RefundResponse)
 async def create_refund_route(
-    payment_id: int = Path(..., title="Payment ID"),
-    refund_data: RefundCreate = Body(...),
+    payment_id: int = Path(..., description="Payment ID to refund"),
+    refund: RefundCreate = Body(..., description="Refund details"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Create a refund request for a payment.
+    Create a new refund request for a payment.
     
-    Args:
-        payment_id: ID of the payment to refund
-        refund_data: Refund data including amount and reason
-        db: Database session
-        current_user: Authenticated user making the request
+    This creates a refund request but does not process it.
+    The request will be created in PENDING status and must be
+    processed separately.
     
-    Returns:
-        Created refund
+    Regular users can only refund their own payments,
+    while superusers can refund any payment.
     """
-    try:
-        refund = await create_refund(
-            db=db,
-            payment_id=payment_id,
-            refund_data=refund_data,
-            current_user=current_user
-        )
-        return refund
-    except ValueError as e:
-        logger.error(f"Error creating refund: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Unexpected error creating refund: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    return await create_refund(
+        db=db,
+        payment_id=payment_id,
+        refund=refund,
+        current_user=current_user
+    )
 
 
-@router.post("/payments/refunds/{refund_id}/process", response_model=RefundResponse, tags=["payments"])
-async def process_refund_route(
-    refund_id: int = Path(..., title="Refund ID"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Process a refund with the payment provider.
-    
-    Args:
-        refund_id: ID of the refund to process
-        db: Database session
-        current_user: Authenticated user making the request
-    
-    Returns:
-        Processed refund
-    """
-    try:
-        refund = await process_refund(
-            db=db,
-            refund_id=refund_id,
-            current_user=current_user
-        )
-        return refund
-    except ValueError as e:
-        logger.error(f"Error processing refund: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Unexpected error processing refund: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
-
-
-@router.post("/payments/refunds/{refund_id}/cancel", response_model=RefundResponse, tags=["payments"])
-async def cancel_refund_route(
-    refund_id: int = Path(..., title="Refund ID"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Cancel a pending refund.
-    
-    Args:
-        refund_id: ID of the refund to cancel
-        db: Database session
-        current_user: Authenticated user making the request
-    
-    Returns:
-        Cancelled refund
-    """
-    try:
-        refund = await cancel_refund(
-            db=db,
-            refund_id=refund_id,
-            current_user=current_user
-        )
-        return refund
-    except ValueError as e:
-        logger.error(f"Error cancelling refund: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Unexpected error cancelling refund: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
-
-
-@router.get("/payments/refunds/{refund_id}", response_model=RefundResponse, tags=["payments"])
-async def get_refund_route(
-    refund_id: int = Path(..., title="Refund ID"),
-    verify: bool = Query(False, title="Verify status with provider"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Get a refund by ID.
-    
-    Args:
-        refund_id: ID of the refund to retrieve
-        verify: Whether to verify the refund status with the provider
-        db: Database session
-        current_user: Authenticated user making the request
-    
-    Returns:
-        Refund details
-    """
-    try:
-        if verify:
-            refund = await verify_refund_status(db=db, refund_id=refund_id)
-        else:
-            refund = await get_refund(db=db, refund_id=refund_id)
-        return refund
-    except ValueError as e:
-        logger.error(f"Error getting refund: {str(e)}")
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Unexpected error getting refund: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
-
-
-@router.get("/payments/{payment_id}/refunds", response_model=List[RefundResponse], tags=["payments"])
+@router.get("/{payment_id}", response_model=List[RefundResponse])
 async def get_refunds_for_payment_route(
-    payment_id: int = Path(..., title="Payment ID"),
+    payment_id: int = Path(..., description="Payment ID"),
+    status: Optional[str] = Query(None, description="Filter by refund status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get all refunds for a payment.
+    Get all refunds for a specific payment.
     
-    Args:
-        payment_id: ID of the payment to get refunds for
-        db: Database session
-        current_user: Authenticated user making the request
-    
-    Returns:
-        List of refunds for the payment
+    Regular users can only view refunds for their own payments,
+    while superusers can view refunds for any payment.
     """
-    try:
-        refunds = await get_refunds_for_payment(db=db, payment_id=payment_id)
-        return refunds
-    except Exception as e:
-        logger.error(f"Unexpected error getting refunds: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    return await get_refunds_for_payment(
+        db=db,
+        payment_id=payment_id,
+        status=status,
+        current_user=current_user
+    )
+
+
+@router.get("/{payment_id}/{refund_id}", response_model=RefundResponse)
+async def get_refund_route(
+    payment_id: int = Path(..., description="Payment ID"),
+    refund_id: int = Path(..., description="Refund ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get details of a specific refund.
+    
+    Regular users can only view refunds for their own payments,
+    while superusers can view any refund.
+    """
+    return await get_refund(
+        db=db,
+        refund_id=refund_id,
+        payment_id=payment_id,
+        current_user=current_user
+    )
+
+
+@router.post("/{payment_id}/{refund_id}/process", response_model=RefundResponse)
+async def process_refund_route(
+    payment_id: int = Path(..., description="Payment ID"),
+    refund_id: int = Path(..., description="Refund ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Process a refund request.
+    
+    This will initiate the refund processing through the appropriate
+    payment provider. The refund must be in PENDING status.
+    
+    Regular users can only process refunds for their own payments,
+    while superusers can process any refund.
+    """
+    return await process_refund(
+        db=db,
+        refund_id=refund_id,
+        payment_id=payment_id,
+        current_user=current_user
+    )
+
+
+@router.post("/{payment_id}/{refund_id}/cancel", response_model=RefundResponse)
+async def cancel_refund_route(
+    payment_id: int = Path(..., description="Payment ID"),
+    refund_id: int = Path(..., description="Refund ID"),
+    reason: str = Body(..., embed=True, description="Reason for cancellation"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Cancel a refund request.
+    
+    This will cancel the refund request and notify the payment provider if necessary.
+    The refund must be in PENDING status.
+    
+    Regular users can only cancel refunds for their own payments,
+    while superusers can cancel any refund.
+    """
+    return await cancel_refund(
+        db=db,
+        refund_id=refund_id,
+        payment_id=payment_id,
+        reason=reason,
+        current_user=current_user
+    )
+
+
+@router.get("/{payment_id}/{refund_id}/verify", response_model=RefundResponse)
+async def verify_refund_status_route(
+    payment_id: int = Path(..., description="Payment ID"),
+    refund_id: int = Path(..., description="Refund ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Verify the status of a refund with the payment provider.
+    
+    This will check the current status of the refund with the payment provider
+    and update the local database if necessary.
+    
+    Regular users can only verify refunds for their own payments,
+    while superusers can verify any refund.
+    """
+    return await verify_refund_status(
+        db=db,
+        refund_id=refund_id,
+        payment_id=payment_id,
+        current_user=current_user
+    )

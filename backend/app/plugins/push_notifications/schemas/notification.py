@@ -393,3 +393,71 @@ class NotificationCategoryUpdate(BaseModel):
         if not any(v is not None for v in values.values()):
             raise ValueError("At least one field must be provided for update")
         return values
+
+
+class NotificationListResponse(BaseModel):
+    """Response schema for listing notifications."""
+    notifications: List[NotificationResponse]
+    total: int
+    
+    class Config:
+        from_attributes = True
+
+
+class NotificationHistoryResponse(BaseModel):
+    """Response schema for notification history."""
+    notifications: List[NotificationResponse]
+    total: int
+    
+    class Config:
+        from_attributes = True
+
+
+class NotificationTemplateResponse(BaseModel):
+    """Response schema for notification template information."""
+    id: str
+    name: str
+    title_template: str
+    body_template: str
+    description: Optional[str] = None
+    category_id: Optional[str] = None
+    data_template: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class NotificationTemplateListResponse(BaseModel):
+    """Response schema for listing notification templates."""
+    templates: List[NotificationTemplateResponse]
+    total: int
+    
+    class Config:
+        from_attributes = True
+
+
+class NotificationCategoryResponse(BaseModel):
+    """Response schema for notification category information."""
+    id: str
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class NotificationCategoryListResponse(BaseModel):
+    """Response schema for listing notification categories."""
+    categories: List[NotificationCategoryResponse]
+    total: int
+    
+    class Config:
+        from_attributes = True

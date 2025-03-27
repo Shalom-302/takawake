@@ -17,7 +17,7 @@ from app.plugins.api_versioning.schemas import (
 )
 
 
-router = APIRouter()
+router = APIRouter(prefix="/versions", tags=["API Versions"])
 
 
 @router.post("/", response_model=APIVersionInDB, status_code=status.HTTP_201_CREATED)

@@ -21,8 +21,7 @@ from app.plugins.ai_integration.schemas import (
 )
 
 router = APIRouter(
-    prefix="/usage",
-    tags=["AI Usage"],
+    prefix="/usage"
 )
 
 

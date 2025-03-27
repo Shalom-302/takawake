@@ -24,40 +24,44 @@ from .engine import (
     WorkflowEngine
 )
 
-# Create main plugin router
-router = APIRouter(tags=["workflow"])  # Removed prefix to avoid double-prefixing in main.py
+def get_router() -> APIRouter:
 
-# Include all sub-routers
-router.include_router(workflows_router)
-router.include_router(steps_router)
-router.include_router(states_router)
-router.include_router(transitions_router)
-router.include_router(instances_router)
-router.include_router(approvals_router)
-
-
-@router.get("/", response_model=Dict[str, Any])
-async def plugin_info():
-    """Get workflow plugin information."""
-    return {
-        "name": "Workflow & Approval System",
-        "description": "Configurable workflow system with approval steps and state transitions",
-        "version": "1.0.0",
-        "features": [
-            "Configurable workflow processes",
-            "Multi-step approval workflows",
-            "Role-based approval permissions",
-            "State transitions with triggers",
-            "Workflow history tracking"
-        ]
-    }
+    router = APIRouter()
+    # Include all sub-routers
+    router.include_router(workflows_router)
+    router.include_router(steps_router)
+    router.include_router(states_router)
+    router.include_router(transitions_router)
+    router.include_router(instances_router)
+    router.include_router(approvals_router)
 
 
-def init_app(app):
-    """Initialize the workflow plugin."""
-    app.include_router(router)
-    return {
-        "name": "workflow",
-        "description": "Workflow & Approval System",
-        "version": "1.0.0"
-    }
+    @router.get("/", response_model=Dict[str, Any])
+    async def plugin_info():
+        """Get workflow plugin information."""
+        return {
+            "name": "Workflow & Approval System",
+            "description": "Configurable workflow system with approval steps and state transitions",
+            "version": "1.0.0",
+            "features": [
+                "Configurable workflow processes",
+                "Multi-step approval workflows",
+                "Role-based approval permissions",
+                "State transitions with triggers",
+                "Workflow history tracking"
+            ]
+        }
+
+
+    def init_app(app):
+        """Initialize the workflow plugin."""
+        app.include_router(router)
+        return {
+            "name": "workflow",
+            "description": "Workflow & Approval System",
+            "version": "1.0.0"
+        }
+
+    return router
+
+workflow_router = get_router()

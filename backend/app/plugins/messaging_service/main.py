@@ -239,3 +239,5 @@ def get_router():
         messaging_service._is_initialized = True
         
     return messaging_service.router
+
+messaging_service_router = get_router()

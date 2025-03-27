@@ -1,5 +1,5 @@
 """
-Routes for API documentation across different versions.
+Routes for API documentation management.
 """
 
 from typing import Dict, Any, Optional, List
@@ -12,8 +12,7 @@ from app.core.security import get_current_active_user
 from app.plugins.api_versioning.models import APIVersion, APIEndpoint
 from app.plugins.api_versioning.schemas import VersionedAPIInfo, APIVersionInDB
 
-
-router = APIRouter()
+router = APIRouter(prefix="/docs", tags=["API Documentation"])
 
 
 @router.get("/info", response_model=VersionedAPIInfo)

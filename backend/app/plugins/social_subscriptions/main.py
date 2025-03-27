@@ -15,7 +15,8 @@ Security features include:
 """
 
 import logging
-from fastapi import FastAPI, APIRouter, Depends
+from typing import Dict, Any, List, Optional
+from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -43,200 +44,183 @@ from .services.feed_service import FeedService
 from .services.notification_service import NotificationService
 
 
-class SocialSubscriptionsPlugin:
-    """
-    Plugin for managing user subscriptions, activity feeds, and social notifications
-    """
-    
-    def __init__(self):
-        """Initialize the Social Subscriptions plugin"""
-        self.router = APIRouter(prefix="/social", tags=["social"])
-        self.logger = logging.getLogger(__name__)
-        
-        # Initialize security handler
-        self.security_handler = SecurityHandler()
-        
-        # Initialize services
-        self.subscription_service = None
-        self.activity_service = None
-        self.feed_service = None
-        self.notification_service = None
-        
-        self.logger.info("Social Subscriptions plugin initialized")
-    
-    def initialize(self):
-        """Initialize plugin components"""
-        try:
-            # Les tables de base de données sont désormais gérées par Alembic migrations
-            # au lieu d'être créées directement ici
-            
-            # Initialize services with dependencies
-            self.subscription_service = SubscriptionService(self.security_handler)
-            self.activity_service = ActivityService(self.security_handler, self.subscription_service)
-            self.feed_service = FeedService(self.security_handler, self.subscription_service, self.activity_service)
-            self.notification_service = NotificationService(self.security_handler, self.activity_service)
-            
-            # Include sub-routers - dependency injection happens at the app level in setup_social_subscriptions
-            self.router.include_router(subscription_router)
-            self.router.include_router(feed_router)
-            self.router.include_router(preferences_router)
-            
-            self.logger.info("Social Subscriptions plugin services initialized successfully")
-        except Exception as e:
-            self.logger.error(f"Error initializing Social Subscriptions plugin: {e}")
-            raise
-    
-    async def create_standard_subscription(
-        self,
-        db: Session,
-        subscriber_id: str,
-        publisher_id: str,
-        categories: list = None
-    ) -> Subscription:
-        """
-        Create a standard subscription between users
-        
-        Args:
-            db: Database session
-            subscriber_id: ID of the subscriber
-            publisher_id: ID of the publisher
-            categories: Optional list of categories
-            
-        Returns:
-            Created subscription object
-        """
-        from .schemas.subscription import SubscriptionCreate
-        
-        # Create subscription data
-        data = SubscriptionCreate(
-            publisher_id=publisher_id,
-            categories=categories or ["post", "update"]
-        )
-        
-        # Create subscription using service
-        return await self.subscription_service.create_subscription(db, subscriber_id, data)
-    
-    async def create_standard_activity(
-        self,
-        db: Session,
-        publisher_id: str,
-        activity_type: str,
-        resource_type: str,
-        resource_id: str,
-        title: str = None,
-        description: str = None,
-        metadata: dict = None
-    ) -> ActivityEvent:
-        """
-        Create a standard activity event
-        
-        Args:
-            db: Database session
-            publisher_id: ID of the publisher
-            activity_type: Type of activity
-            resource_type: Type of resource
-            resource_id: ID of the resource
-            title: Optional title
-            description: Optional description
-            metadata: Optional metadata
-            
-        Returns:
-            Created activity event
-        """
-        return await self.activity_service.create_standard_activity(
-            db,
-            publisher_id,
-            activity_type,
-            resource_type,
-            resource_id,
-            title,
-            description,
-            metadata
-        )
-    
-    async def process_activity(
-        self,
-        db: Session,
-        activity_id: int
-    ) -> int:
-        """
-        Process an activity for feeds and notifications
-        
-        Args:
-            db: Database session
-            activity_id: ID of the activity
-            
-        Returns:
-            Number of feed items created
-        """
-        # Process activity for feeds
-        feed_count = await self.feed_service.process_activity_for_feeds(db, activity_id)
-        
-        # Process activity for notifications
-        notification_count = await self.notification_service.process_activity_notifications(db, activity_id)
-        
-        self.logger.info(
-            f"Processed activity {activity_id}: created {feed_count} feed items and {notification_count} notifications"
-        )
-        
-        return feed_count + notification_count
-    
-    async def get_user_feed(
-        self,
-        db: Session,
-        user_id: str,
-        skip: int = 0,
-        limit: int = 20
-    ):
-        """
-        Get a user's activity feed
-        
-        Args:
-            db: Database session
-            user_id: ID of the user
-            skip: Number of records to skip
-            limit: Maximum number of records to return
-            
-        Returns:
-            List of feed items
-        """
-        from .schemas.subscription import FeedFilter
-        
-        # Create empty filter
-        filter_params = FeedFilter()
-        
-        # Get chronological feed
-        return await self.feed_service.get_user_feed(
-            db, user_id, filter_params, "chronological", skip, limit
-        )
+# Services instance for the whole module
+security_handler = SecurityHandler()
+subscription_service = SubscriptionService(security_handler)
+activity_service = ActivityService(security_handler, subscription_service)
+feed_service = FeedService(security_handler, subscription_service, activity_service)
+notification_service = NotificationService(security_handler, activity_service)
 
 
-# Create plugin instance
-social_subscriptions_plugin = SocialSubscriptionsPlugin()
-
-
-def setup_social_subscriptions(app: FastAPI):
+def get_router() -> APIRouter:
     """
-    Configure the Social Subscriptions plugin
+    Create and configure a router for the social subscriptions plugin.
     
-    Args:
-        app: FastAPI application
+    Returns:
+        APIRouter: The configured router
     """
-    try:
-        # Initialize the plugin
-        social_subscriptions_plugin.initialize()
-        
-        # Configure the dependency injection at the application level
-        # This is the correct place to set dependency_overrides
-        app.dependency_overrides[get_subscription_service] = lambda: social_subscriptions_plugin.subscription_service
-        app.dependency_overrides[get_activity_service] = lambda: social_subscriptions_plugin.activity_service
-        app.dependency_overrides[get_feed_service] = lambda: social_subscriptions_plugin.feed_service
-        app.dependency_overrides[get_notification_service] = lambda: social_subscriptions_plugin.notification_service
+    router = APIRouter(prefix="/social", tags=["social"])
+    
+    # Include all sub-routers
+    router.include_router(subscription_router)
+    router.include_router(feed_router)
+    router.include_router(preferences_router)
+    
+    @router.get("/", response_model=Dict[str, Any])
+    async def plugin_info():
+        """Get social subscriptions plugin information."""
+        return {
+            "name": "Social Subscriptions System",
+            "description": "Complete solution for social subscription management and activity feeds",
+            "version": "1.0.0",
+            "features": [
+                "User subscriptions and follows",
+                "Personalized activity feeds",
+                "Notification preferences",
+                "Activity event processing",
+                "Subscription analytics"
+            ]
+        }
+    
+    # Register service dependencies for routes
+    get_subscription_service_instance = lambda: subscription_service
+    get_activity_service_instance = lambda: activity_service
+    get_feed_service_instance = lambda: feed_service
+    get_notification_service_instance = lambda: notification_service
+    
+    def init_app(app):
+        """Initialize the social subscriptions plugin."""
+        # Override dependencies
+        app.dependency_overrides[get_subscription_service] = get_subscription_service_instance
+        app.dependency_overrides[get_activity_service] = get_activity_service_instance
+        app.dependency_overrides[get_feed_service] = get_feed_service_instance
+        app.dependency_overrides[get_notification_service] = get_notification_service_instance
         
         # Include router
-        app.include_router(social_subscriptions_plugin.router)
+        app.include_router(router)
         
-        logging.getLogger(__name__).info("Social Subscriptions plugin configured successfully")
-    except Exception as e:
-        logging.getLogger(__name__).error(f"Error setting up Social Subscriptions plugin: {e}")
-        raise
+        return {
+            "name": "social_subscriptions",
+            "description": "Social Subscriptions System",
+            "version": "1.0.0"
+        }
+    
+    return router
+
+
+# API helper functions for programmatic usage
+async def create_standard_subscription(
+    db: Session,
+    subscriber_id: str,
+    publisher_id: str,
+    categories: list = None
+) -> Subscription:
+    """
+    Create a standard subscription between users
+    
+    Args:
+        db: Database session
+        subscriber_id: ID of the subscriber
+        publisher_id: ID of the publisher
+        categories: Optional list of categories
+        
+    Returns:
+        Created subscription object
+    """
+    from .schemas.subscription import SubscriptionCreate
+    
+    # Create subscription data
+    data = SubscriptionCreate(
+        publisher_id=publisher_id,
+        categories=categories or ["post", "update"]
+    )
+    
+    # Create subscription using service
+    return await subscription_service.create_subscription(db, subscriber_id, data)
+
+async def create_standard_activity(
+    db: Session,
+    publisher_id: str,
+    activity_type: str,
+    resource_type: str,
+    resource_id: str,
+    title: str = None,
+    description: str = None,
+    metadata: dict = None
+) -> ActivityEvent:
+    """
+    Create a standard activity event
+    
+    Args:
+        db: Database session
+        publisher_id: ID of the publisher
+        activity_type: Type of activity
+        resource_type: Type of resource
+        resource_id: ID of the resource
+        title: Optional title
+        description: Optional description
+        metadata: Optional metadata
+        
+    Returns:
+        Created activity event
+    """
+    return await activity_service.create_standard_activity(
+        db,
+        publisher_id,
+        activity_type,
+        resource_type,
+        resource_id,
+        title,
+        description,
+        metadata
+    )
+
+async def process_activity(
+    db: Session,
+    activity_id: int
+) -> int:
+    """
+    Process an activity for feeds and notifications
+    
+    Args:
+        db: Database session
+        activity_id: ID of the activity
+        
+    Returns:
+        Number of feed items created
+    """
+    # Process activity for feeds
+    feed_count = await feed_service.process_activity_for_feeds(db, activity_id)
+    
+    # Process activity for notifications
+    notification_count = await notification_service.process_activity_notifications(db, activity_id)
+    
+    logging.getLogger(__name__).info(
+        f"Processed activity {activity_id}: created {feed_count} feed items and {notification_count} notifications"
+    )
+    
+    return feed_count + notification_count
+
+async def get_user_feed(
+    db: Session,
+    user_id: str,
+    skip: int = 0,
+    limit: int = 20
+):
+    """
+    Get a user's activity feed
+    
+    Args:
+        db: Database session
+        user_id: ID of the user
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        
+    Returns:
+        List of feed items
+    """
+    return await feed_service.get_user_feed(db, user_id, skip, limit)
+
+
+# Initialize and export router
+social_subscriptions_router = get_router()

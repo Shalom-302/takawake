@@ -21,14 +21,14 @@ from app.schemas.push import (
 
 router = APIRouter(prefix="/push", tags=["push"])
 
-# Clés VAPID pour authentifier les notifications push côté serveur
-# Ces clés doivent être générées et stockées dans les variables d'environnement
+# VAPID keys to authenticate server-side push notifications
+# These keys must be generated and stored in environment variables
 VAPID_PUBLIC_KEY = "BNbKwE-dZP9pbrGrnSRLHgQpCkxnaYWzlvJUBYbMO0FCyNgknmDSQNb__luXyUS8Vtr7HGdQvnD-hFNjN9jd2XU"
 
 
 @router.get("/vapid-public-key", response_model=Dict[str, str])
 async def get_vapid_public_key():
-    """Récupère la clé publique VAPID pour les abonnements push"""
+    """Get the VAPID public key for push subscriptions"""
     return {"publicKey": VAPID_PUBLIC_KEY}
 
 
@@ -38,8 +38,8 @@ async def subscribe_to_push(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Enregistrer un nouvel abonnement push pour l'utilisateur courant"""
-    # Vérifier si un abonnement existe déjà avec cet endpoint
+    """Register a new push subscription for the current user"""
+    # Check if an existing subscription exists with this endpoint
     sub_data = subscription.subscription.copy()
     if not isinstance(sub_data, dict):
         try:
@@ -50,7 +50,7 @@ async def subscribe_to_push(
                 detail="Invalid subscription data format"
             )
     
-    # Extraire les données nécessaires du payload de souscription
+    # Extract necessary subscription data from the payload
     endpoint = sub_data.get("endpoint")
     keys = sub_data.get("keys", {})
     p256dh = keys.get("p256dh")
@@ -62,19 +62,19 @@ async def subscribe_to_push(
             detail="Missing required subscription data (endpoint, p256dh, auth)"
         )
     
-    # Vérifier si cet endpoint existe déjà pour cet utilisateur
+    # Check if this endpoint already exists for this user
     existing_subscription = db.query(PushSubscription).filter(
         PushSubscription.user_id == current_user.id,
         PushSubscription.endpoint == endpoint
     ).first()
     
     if existing_subscription:
-        # Mettre à jour les données d'abonnement existantes
+        # Update existing subscription data
         existing_subscription.p256dh = p256dh
         existing_subscription.auth = auth
         existing_subscription.last_used = datetime.utcnow()
         
-        # Mettre à jour les métadonnées si fournies
+        # Update metadata if provided
         if subscription.userAgent:
             existing_subscription.user_agent = subscription.userAgent
         if hasattr(subscription, 'deviceType') and subscription.deviceType:
@@ -92,13 +92,13 @@ async def subscribe_to_push(
             message="Subscription updated successfully"
         )
     
-    # Extraire les métadonnées optionnelles
+    # Extract optional metadata
     user_agent = subscription.userAgent if hasattr(subscription, 'userAgent') else None
     device_type = subscription.deviceType if hasattr(subscription, 'deviceType') else None
     language = subscription.language if hasattr(subscription, 'language') else None
     tags = json.dumps(subscription.tags) if hasattr(subscription, 'tags') and subscription.tags else None
     
-    # Créer un nouvel abonnement
+    # Create a new subscription
     new_subscription = PushSubscription(
         user_id=current_user.id,
         endpoint=endpoint,
@@ -135,8 +135,8 @@ async def unsubscribe_from_push(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Supprime tous les abonnements push pour l'utilisateur courant"""
-    # Trouver tous les abonnements pour cet utilisateur
+    """Unsubscribe from push notifications for the current user"""
+    # Find all subscriptions for this user
     subscriptions = db.query(PushSubscription).filter(
         PushSubscription.user_id == current_user.id
     ).all()
@@ -148,7 +148,7 @@ async def unsubscribe_from_push(
             message="No subscriptions found to remove"
         )
     
-    # Supprimer tous les abonnements
+    # Delete all subscriptions for this user
     for subscription in subscriptions:
         db.delete(subscription)
     
@@ -165,8 +165,8 @@ async def get_push_subscription_status(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Vérifie si l'utilisateur est abonné aux notifications push"""
-    # Compter le nombre d'abonnements pour cet utilisateur
+    """Check if the current user is subscribed to push notifications"""
+    # Count the number of subscriptions for this user
     subscription_count = db.query(PushSubscription).filter(
         PushSubscription.user_id == current_user.id
     ).count()

@@ -33,7 +33,6 @@ from ..utils.payment_service import (
 
 logger = logging.getLogger("kaapi.payment.routes")
 
-# Create router
 router = APIRouter()
 
 @router.get("/", response_model=List[PaymentResponse])
@@ -158,14 +157,17 @@ async def cancel_payment(
 @router.post("/{payment_id}/approve", response_model=PaymentResponse)
 async def approve_payment(
     payment_id: int,
-    approval: PaymentApproval = Body(...),
+    approval: PaymentApproval,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Approve a payment in a multi-user approval workflow.
+    Approve a payment.
     
-    The current user must be an approver for this payment.
+    This is used in multi-user approval workflows where multiple
+    approvers are required for a payment to be processed.
+    
+    Only users who are in the list of approvers for the payment can approve it.
     """
     return await approve_payment_service(
         db=db,
@@ -182,9 +184,13 @@ async def reject_payment(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Reject a payment in a multi-user approval workflow.
+    Reject a payment.
     
-    The current user must be an approver for this payment.
+    This is used in multi-user approval workflows where multiple
+    approvers are required for a payment to be processed.
+    
+    Only users who are in the list of approvers for the payment can reject it.
+    A reason for rejection must be provided.
     """
     return await reject_payment_service(
         db=db,
@@ -193,20 +199,26 @@ async def reject_payment(
         current_user=current_user
     )
 
-@router.get("/providers/list", response_model=List[Dict[str, Any]])
+@router.get("/providers", response_model=List[Dict[str, Any]])
 async def list_providers(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get a list of available payment providers.
+    List all available payment providers.
+    
+    This endpoint returns information about all the payment providers
+    that are currently configured and enabled in the system.
     """
     return await get_available_providers()
 
-@router.get("/methods/list", response_model=List[Dict[str, Any]])
+@router.get("/methods", response_model=List[Dict[str, Any]])
 async def list_payment_methods(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get a list of available payment methods.
+    List all available payment methods.
+    
+    This endpoint returns information about all the payment methods
+    that are supported by the enabled payment providers.
     """
     return await get_available_payment_methods()

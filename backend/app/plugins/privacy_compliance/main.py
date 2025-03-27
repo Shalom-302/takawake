@@ -41,7 +41,7 @@ logger = logging.getLogger("privacy")
 
 def get_router():
     """Return the FastAPI router for the plugin"""
-    router = APIRouter(prefix="/privacy", tags=["privacy"])
+    router = APIRouter()
     
     # Cookie settings management
     @router.get("/cookie-settings", response_model=CookieSettingsRead)
@@ -670,3 +670,6 @@ def get_router():
         return record
     
     return router
+
+
+privacy_compliance_router = get_router()

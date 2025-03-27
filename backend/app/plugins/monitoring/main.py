@@ -23,7 +23,7 @@ REQUEST_LATENCY = Histogram(
 # CPU_USAGE and MEMORY_USAGE are removed since they are already defined in main.py
 
 def get_router():
-    router = APIRouter(tags=["Monitoring"])
+    router = APIRouter()
     
     @router.get("/metrics")
     async def metrics_endpoint():
@@ -90,3 +90,5 @@ def get_router():
             return {"error": str(e)}
     
     return router
+
+monitoring_router = get_router()

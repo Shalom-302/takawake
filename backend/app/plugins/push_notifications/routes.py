@@ -12,16 +12,17 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Path
 from sqlalchemy.orm import Session
 
-from app.core.db.session import get_db
-from app.core.auth.dependencies import get_current_user, get_current_admin_user
+from app.core.db import get_db
+from app.core.security import get_current_user, get_current_active_admin_user
 from app.plugins.push_notifications.schemas.device import (
-    DeviceCreate, DeviceResponse, DeviceUpdate, DeviceListResponse
+    DeviceCreate, DeviceResponse, DeviceUpdate, UserDevicesResponse
 )
 from app.plugins.push_notifications.schemas.notification import (
     NotificationCreate, NotificationResponse, NotificationListResponse,
     TemplateNotificationCreate, NotificationHistoryResponse,
     NotificationTemplateCreate, NotificationTemplateResponse, NotificationTemplateListResponse,
-    NotificationCategoryCreate, NotificationCategoryResponse, NotificationCategoryListResponse
+    NotificationCategoryCreate, NotificationCategoryResponse, NotificationCategoryListResponse,
+    NotificationTemplateUpdate, NotificationCategoryUpdate
 )
 from app.plugins.push_notifications.services.notification_service import NotificationService
 from app.plugins.push_notifications.services.device_service import DeviceService
@@ -35,8 +36,6 @@ logger = logging.getLogger(__name__)
 # Initialize router
 router = APIRouter(
     prefix="/push-notifications",
-    tags=["push-notifications"],
-    responses={404: {"description": "Not found"}}
 )
 
 # Initialize handlers
@@ -214,7 +213,7 @@ async def deactivate_device(
         raise HTTPException(status_code=500, detail=f"Failed to deactivate device: {str(e)}")
 
 
-@router.get("/devices", response_model=DeviceListResponse, summary="Get user's registered devices")
+@router.get("/devices", response_model=UserDevicesResponse, summary="Get user's registered devices")
 async def get_user_devices(
     active_only: bool = Query(False, description="Whether to return only active devices"),
     db: Session = Depends(get_db),
@@ -256,9 +255,10 @@ async def get_user_devices(
                 updated_at=device.updated_at
             ))
         
-        return DeviceListResponse(
+        return UserDevicesResponse(
+            user_id=current_user["id"],
             devices=device_responses,
-            count=len(device_responses)
+            total=len(device_responses)
         )
     except Exception as e:
         logger.error(f"Error retrieving user devices: {str(e)}")
@@ -271,7 +271,7 @@ async def send_notification(
     notification_data: NotificationCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Send a push notification to one or more users.
@@ -322,7 +322,7 @@ async def send_template_notification(
     notification_data: TemplateNotificationCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Send a notification using a template.
@@ -378,7 +378,7 @@ async def get_notification_history(
     start_date: Optional[datetime] = Query(None, description="Start date filter"),
     end_date: Optional[datetime] = Query(None, description="End date filter"),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Get notification history.
@@ -437,7 +437,7 @@ async def get_notification_history(
 async def create_template(
     template_data: NotificationTemplateCreate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Create a notification template.
@@ -487,7 +487,7 @@ async def update_template(
     template_id: str = Path(..., description="Template ID"),
     template_data: NotificationTemplateUpdate = None,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Update a notification template.
@@ -538,7 +538,7 @@ async def update_template(
 async def delete_template(
     template_id: str = Path(..., description="Template ID"),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Delete a notification template.
@@ -573,7 +573,7 @@ async def get_templates(
     limit: int = Query(50, description="Maximum number of results"),
     offset: int = Query(0, description="Result offset"),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Get notification templates.
@@ -629,7 +629,7 @@ async def get_templates(
 async def create_category(
     category_data: NotificationCategoryCreate,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Create a notification category.
@@ -673,7 +673,7 @@ async def update_category(
     category_id: str = Path(..., description="Category ID"),
     category_data: NotificationCategoryUpdate = None,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Update a notification category.
@@ -718,7 +718,7 @@ async def update_category(
 async def delete_category(
     category_id: str = Path(..., description="Category ID"),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Delete a notification category.
@@ -752,7 +752,7 @@ async def get_categories(
     limit: int = Query(50, description="Maximum number of results"),
     offset: int = Query(0, description="Result offset"),
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_admin_user)
+    current_user: Dict[str, Any] = Depends(get_current_active_admin_user)
 ):
     """
     Get notification categories.

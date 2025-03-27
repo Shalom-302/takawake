@@ -19,8 +19,7 @@ from app.plugins.ai_integration.schemas import (
 )
 
 router = APIRouter(
-    prefix="/providers",
-    tags=["AI Providers"],
+    prefix="/providers"
 )
 
 

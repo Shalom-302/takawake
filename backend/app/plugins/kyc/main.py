@@ -21,165 +21,100 @@ from .routes import (
     get_dashboard_router
 )
 
+# Export security utilities
 from .utils.security import initialize_kyc_security, kyc_security
 
 logger = logging.getLogger(__name__)
 
-# Global variables
-kyc_initialized = False
 
-# Pre-initialize routers to avoid None returns
-kyc_admin_router = APIRouter(prefix="/kyc/admin", tags=["KYC Admin"])
-kyc_user_router = APIRouter(prefix="/kyc", tags=["KYC"])
-
-
-def on_plugin_init(app: FastAPI, **kwargs):
+def get_admin_router() -> APIRouter:
     """
-    Initialize the KYC plugin.
+    Create and configure the KYC admin router.
     
-    Args:
-        app: FastAPI application
-        **kwargs: Additional arguments
+    Returns:
+        APIRouter: The configured admin router
     """
-    global kyc_initialized, kyc_admin_router, kyc_user_router
-    
-    logger.info("Initializing KYC plugin")
-    
-    # Initialize security utilities
-    initialize_kyc_security()
-    
-    # Clear existing routes if any (for reinitialization cases)
-    if hasattr(kyc_admin_router, "routes"):
-        kyc_admin_router.routes.clear()
-    
-    if hasattr(kyc_user_router, "routes"):
-        kyc_user_router.routes.clear()
+    router = APIRouter()
     
     # Add admin routes
-    kyc_admin_router.include_router(
+    router.include_router(
         get_dashboard_router(),
-        prefix="/dashboard",
-        tags=["KYC Dashboard"]
+        prefix="/dashboard"
     )
+    
+    @router.get("/", response_model=Dict[str, Any])
+    async def plugin_info():
+        """Get KYC plugin information."""
+        return {
+            "name": "KYC Plugin",
+            "version": "1.0.0",
+            "description": "Know Your Customer verification and identity management",
+            "author": "Kaapi Team",
+            "features": [
+                "Identity verification",
+                "Profile management",
+                "Regional adaptability for different infrastructure levels",
+                "Simplified KYC for low-infrastructure regions",
+                "Admin dashboard with verification metrics"
+            ]
+        }
+        
+    def init_app(app):
+        """Initialize the KYC admin plugin."""
+        # Initialize security utilities
+        initialize_kyc_security()
+        app.include_router(router)
+        return {
+            "name": "kyc_admin",
+            "description": "KYC Admin Dashboard",
+            "version": "1.0.0"
+        }
+    
+    return router
+
+
+def get_api_router() -> APIRouter:
+    """
+    Create and configure the KYC API router.
+    
+    Returns:
+        APIRouter: The configured API router
+    """
+    router = APIRouter()
     
     # Add user routes
-    kyc_user_router.include_router(
+    router.include_router(
         get_verification_router(),
-        prefix="/verifications",
-        tags=["KYC Verifications"]
+        prefix="/verifications"
     )
     
-    kyc_user_router.include_router(
+    router.include_router(
         get_profile_router(),
-        prefix="/profiles",
-        tags=["KYC Profiles"]
+        prefix="/profiles"
     )
     
-    kyc_user_router.include_router(
+    router.include_router(
         get_region_router(),
-        prefix="/regions",
-        tags=["KYC Regions"]
+        prefix="/regions"
     )
     
-    kyc_user_router.include_router(
+    router.include_router(
         get_simplified_kyc_router(),
-        prefix="/simplified",
-        tags=["Simplified KYC"]
+        prefix="/simplified"
     )
     
-    # Log initialization
-    logger.info("KYC plugin initialized")
-    kyc_initialized = True
-    
-    return {
-        "status": "success",
-        "message": "KYC plugin initialized"
-    }
+    @router.get("/", response_model=Dict[str, Any])
+    async def api_info():
+        """Get KYC API information."""
+        return {
+            "name": "KYC API",
+            "version": "1.0.0",
+            "description": "KYC verification and profile management API",
+        }
+        
+    return router
 
 
-def on_plugin_shutdown(app: FastAPI, **kwargs):
-    """
-    Shutdown the KYC plugin.
-    
-    Args:
-        app: FastAPI application
-        **kwargs: Additional arguments
-    """
-    global kyc_initialized
-    
-    logger.info("Shutting down KYC plugin")
-    
-    # Perform any cleanup needed
-    kyc_security.cleanup()
-    
-    # Log shutdown
-    logger.info("KYC plugin shutdown complete")
-    kyc_initialized = False
-    
-    return {
-        "status": "success",
-        "message": "KYC plugin shutdown"
-    }
-
-
-def on_db_migrate(db: Session, **kwargs):
-    """
-    Migrate the database for KYC plugin.
-    
-    Args:
-        db: Database session
-        **kwargs: Additional arguments
-    """
-    # This function is called during database migrations
-    # You can perform any plugin-specific migrations here
-    logger.info("Running KYC plugin migrations")
-    
-    return {
-        "status": "success",
-        "message": "KYC plugin migrations completed"
-    }
-
-
-def get_admin_router():
-    """
-    Get the KYC admin router.
-    
-    Returns:
-        FastAPI router for KYC admin routes
-    """
-    global kyc_admin_router
-    return kyc_admin_router
-
-
-def get_api_router():
-    """
-    Get the KYC API router.
-    
-    Returns:
-        FastAPI router for KYC API routes
-    """
-    global kyc_user_router
-    return kyc_user_router
-
-
-def get_plugin_info():
-    """
-    Get information about the KYC plugin.
-    
-    Returns:
-        Dictionary with plugin information
-    """
-    return {
-        "name": "KYC Plugin",
-        "version": "1.0.0",
-        "description": "Know Your Customer verification and identity management",
-        "author": "Kaapi Team",
-        "features": [
-            "Identity verification",
-            "Profile management",
-            "Regional adaptability for different infrastructure levels",
-            "Simplified KYC for low-infrastructure regions",
-            "Admin dashboard with verification metrics"
-        ],
-        "initialized": kyc_initialized
-    }
+# Initialize and export routers
+kyc_admin_router = get_admin_router()
+kyc_api_router = get_api_router()

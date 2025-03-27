@@ -22,8 +22,7 @@ from app.plugins.ai_integration.schemas import (
 from app.plugins.ai_integration.utils.ai_client import get_ai_client
 
 router = APIRouter(
-    prefix="/recommendations",
-    tags=["Content Recommendations"],
+    prefix="/recommendations"
 )
 
 

@@ -7,9 +7,6 @@ This plugin adds Progressive Web App capabilities to your Kaapi application:
 - Push Notifications
 """
 
-from .main import get_router
+from .main import pwa_support_router
 
-# Call get_router() to obtain a FastAPI router
-router = get_router()
-
-__all__ = ["router"]
+__all__ = ["pwa_support_router"]

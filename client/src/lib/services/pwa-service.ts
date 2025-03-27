@@ -5,7 +5,7 @@
 // Register a push subscription
 export async function registerPushSubscription(subscription: PushSubscriptionJSON, metadata: any = {}) {
   try {
-    const response = await fetch('/pwa/push/subscribe', {
+    const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export async function registerPushSubscription(subscription: PushSubscriptionJSO
 // Get the public VAPID keys from the server
 export async function getVapidPublicKey(): Promise<string> {
   try {
-    const response = await fetch('/pwa/push/keys');
+    const response = await fetch('/api/push/vapid-public-key');
     
     if (!response.ok) {
       throw new Error('Error during VAPID key retrieval');
@@ -47,7 +47,7 @@ export async function getVapidPublicKey(): Promise<string> {
 // Unregister a push subscription
 export async function unregisterPushSubscription(subscriptionId: string) {
   try {
-    const response = await fetch(`/pwa/push/unsubscribe/${subscriptionId}`, {
+    const response = await fetch(`/api/push/unsubscribe/${subscriptionId}`, {
       method: 'DELETE',
     });
 

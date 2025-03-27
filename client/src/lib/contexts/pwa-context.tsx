@@ -329,7 +329,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               console.log('No existing subscription, creating a new one...');
               // VAPID public key should be set in your environment
               console.log('Fetching VAPID public key...');
-              const { data } = await axiosClient.get(`/push/vapid-public-key`);
+              const { data } = await axiosClient.get(`/api/push/vapid-public-key`);
               const { publicKey } = data;
               console.log('Received public key:', publicKey);
                 
