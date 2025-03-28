@@ -62,10 +62,22 @@ export default function FilesPage() {
       setFiles(fileResponse.map((a) => a.file));
       
       // Get folders if we're in root or a specific folder
-      const folderResponse = await fileStorageService.getFolders();
-      const foldersInCurrentParent = folderResponse.filter(
-        folder => folder.parent_id === currentFolder?.id
-      );
+      let folderResponse = await fileStorageService.getFolders();
+      console.log("folders--", folderResponse.map((a) => a.folder))
+      
+      // Logique de filtrage corrigée:
+      // - Si on est à la racine (currentFolder est null), afficher les dossiers avec parent_id null
+      // - Sinon, afficher les dossiers dont le parent_id correspond à l'ID du dossier courant
+      const foldersInCurrentParent = folderResponse.map((a) => a.folder).filter(folder => {
+        if (currentFolder === null) {
+          return folder.parent_id === null;
+        } else {
+          return folder.parent_id === currentFolder.id;
+        }
+      });
+      
+      console.log("folders^^^", foldersInCurrentParent)
+      
       setFolders(foldersInCurrentParent);
     } catch (error: unknown) {
       console.error('Error fetching files:', error);
@@ -322,7 +334,7 @@ export default function FilesPage() {
             {/* File list */}
             <FileList 
               files={files}
-              folders={folders.filter(f => f.parent_id === currentFolder?.id)}
+              folders={folders}
               isLoading={isLoading}
               currentFolder={currentFolder}
               onFolderClick={handleNavigateToFolder}

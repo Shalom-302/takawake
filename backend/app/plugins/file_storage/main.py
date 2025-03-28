@@ -7,6 +7,7 @@ import io
 import uuid
 import json
 import logging
+import re
 from typing import Dict, List, Optional, Any, BinaryIO, Union
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -185,7 +186,8 @@ def get_router() -> APIRouter:
     async def upload_file(
         file: UploadFile = File(...),
         provider_id: int = Form(...),
-        folder_path: str = Form(None),
+        folder_id: Optional[int] = Form(None),
+        folder_path: Optional[str] = Form(None),
         description: str = Form(None),
         tags: str = Form(None),
         generate_thumbnails: bool = Form(False),
@@ -202,58 +204,61 @@ def get_router() -> APIRouter:
         if not provider_db:
             raise HTTPException(status_code=404, detail="Storage provider not found")
         
+        # Optionally get the folder
+        folder = None
+        folder_prefix = ""
+        if folder_id:
+            folder = db.query(FileFolder).filter(FileFolder.id == folder_id).first()
+            if not folder:
+                raise HTTPException(status_code=404, detail=f"Folder with ID {folder_id} not found")
+            folder_prefix = folder.name + "/"
+        elif folder_path:
+            folder_prefix = folder_path.strip("/") + "/"
+        
         try:
             # Get the provider instance
             provider = get_provider_instance(provider_db, request)
             
-            # Prepare the destination path
-            filename = file.filename
-            file_extension = os.path.splitext(filename)[1].lower() if '.' in filename else ''
-            storage_path = f"{folder_path or ''}/{uuid.uuid4()}{file_extension}"
-            storage_path = storage_path.replace('//', '/')  # Avoid double slashes
-            if storage_path.startswith('/'):
-                storage_path = storage_path[1:]  # Remove initial slash if present
+            # Prepare file content
+            file_content = await file.read()
             
-            # Create base metadata
-            metadata = {
-                "original_filename": filename,
-                "content_type": file.content_type or "application/octet-stream",
-                # "uploaded_by": str(current_user.id)
-            }
+            # Sanitize the filename and add a unique identifier
+            original_filename = file.filename
+            sanitized_filename = re.sub(r'[^\w\-\.]', '_', original_filename)
+            unique_id = uuid.uuid4().hex[:8]
+            filename = f"{unique_id}_{sanitized_filename}"
             
-            # Read the file content
-            content = await file.read()
+            # Complete storage path including folder prefix
+            storage_path = f"{folder_prefix}{filename}"
             
-            # Create a BytesIO to store the file data
-            file_data = io.BytesIO(content)
+            # Create a BytesIO to store the file data (pour avoir un objet avec la méthode seek())
+            file_data = io.BytesIO(file_content)
             
-            # Upload the file
+            # Upload the file to storage - correction de l'ordre des paramètres
             file_url = provider.upload_file(
-                file_data, 
-                storage_path, 
-                content_type=file.content_type, 
-                metadata=metadata
+                file_data,  # 1er paramètre: l'objet fichier avec méthode seek()
+                storage_path,  # 2ème paramètre: le chemin de destination
+                file.content_type  # 3ème paramètre: le type de contenu
             )
             
-            # Analyze tags
-            tag_list = tags.split(',') if tags else []
-            tag_list = [tag.strip() for tag in tag_list if tag.strip()]
+            # Parse tags if provided
+            tag_list = []
+            if tags:
+                tag_list = [tag.strip() for tag in tags.split(',')]
             
-            # Create database record
-            file_size = len(content)
-            
+            # Create the file record
             db_file = StoredFile(
                 provider_id=provider_id,
-                filename=os.path.basename(storage_path),
-                original_filename=filename,
+                filename=filename,
+                original_filename=original_filename,
                 storage_path=storage_path,
-                file_size=file_size,
+                file_size=len(file_content),
                 mime_type=file.content_type or "application/octet-stream",
                 file_metadata={
                     "description": description,
                     "tags": tag_list,
                     "url": file_url,  # Stocker l'URL dans les métadonnées
-                    "created_by": 1   # Stocker l'ID de l'utilisateur dans les métadonnées
+                    "folder_id": folder.id if folder else None  # Stocker l'ID du dossier dans les métadonnées
                 }
             )
             
@@ -282,6 +287,7 @@ def get_router() -> APIRouter:
     @router.get("/files", response_model=List[StoredFileResponse])
     async def list_files(
         provider_id: Optional[int] = None,
+        folder_id: Optional[int] = None,
         folder_path: Optional[str] = None,
         content_type: Optional[str] = None,
         tags: Optional[str] = None,
@@ -299,8 +305,26 @@ def get_router() -> APIRouter:
         if provider_id:
             query = query.filter(StoredFile.provider_id == provider_id)
         
-        if folder_path:
+        # Si folder_id est spécifié, on récupère d'abord le nom du dossier
+        if folder_id is not None:
+            folder = db.query(FileFolder).filter(FileFolder.id == folder_id).first()
+            if folder:
+                # Filtrer par le chemin de stockage qui commence par le nom du dossier suivi de "/"
+                query = query.filter(StoredFile.storage_path.like(f"{folder.name}/%"))
+        elif folder_path:
+            # Filtrage par chemin (comme avant)
             query = query.filter(StoredFile.storage_path.like(f"{folder_path}/%"))
+        else:
+            # Si on est à la racine (ni folder_id ni folder_path spécifiés),
+            # on exclut les fichiers qui sont dans des dossiers
+            
+            # 1. Récupérer tous les noms de dossiers
+            folders = db.query(FileFolder).all()
+            folder_names = [folder.name for folder in folders]
+            
+            # 2. Exclure les fichiers dont le chemin commence par un nom de dossier suivi de "/"
+            for folder_name in folder_names:
+                query = query.filter(~StoredFile.storage_path.like(f"{folder_name}/%"))
         
         if content_type:
             query = query.filter(StoredFile.mime_type.like(f"{content_type}%"))

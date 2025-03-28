@@ -136,7 +136,7 @@ def create_sql_commands(
 
 def main():
     parser = argparse.ArgumentParser(description="Initialize storage providers")
-    parser.add_argument("--endpoint", default="minio:9000", help="MinIO server endpoint")
+    parser.add_argument("--endpoint", default="kaapi-minio:9000", help="MinIO server endpoint")
     parser.add_argument("--bucket", default="files", help="Bucket name")
     parser.add_argument("--access-key", default="minioadmin", help="MinIO access key")
     parser.add_argument("--secret-key", default="minioadmin", help="MinIO secret key")

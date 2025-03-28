@@ -159,6 +159,7 @@ const FileList: React.FC<FileListProps> = ({
     );
   }
 
+  console.log("folders==", folders)
   return (
     <div>
       {/* Delete Confirmation Modal */}
@@ -234,7 +235,7 @@ const FileList: React.FC<FileListProps> = ({
               <TableCell className="hidden md:table-cell">Folder</TableCell>
               <TableCell className="hidden md:table-cell">-</TableCell>
               <TableCell className="hidden md:table-cell">
-                {formatDistanceToNow(new Date(folder.uploaded_at), { addSuffix: true })}
+                {/* {formatDistanceToNow(new Date(folder?.updated_at), { addSuffix: true })} */}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
