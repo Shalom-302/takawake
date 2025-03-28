@@ -352,7 +352,7 @@ def get_router() -> APIRouter:
                 file_metadata = {}
             
             # Get the thumbnails
-            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.file_id == file_id).all()
+            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.original_file_id == file_id).all()
             
             # Collect signed URLs for all thumbnails
             thumbnail_urls = {}
@@ -500,7 +500,7 @@ def get_router() -> APIRouter:
             provider = get_provider_instance(provider_db, request)
             
             # Delete all thumbnails
-            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.file_id == file_id).all()
+            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.original_file_id == file_id).all()
             for thumbnail in thumbnails:
                 # Delete the thumbnail file from storage
                 try:

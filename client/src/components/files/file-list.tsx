@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -25,6 +25,14 @@ import {
 } from 'lucide-react';
 import { StoredFile, FileFolder } from '@/lib/services/file-storage-service';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface FileListProps {
   files: StoredFile[];
@@ -99,6 +107,36 @@ const FileList: React.FC<FileListProps> = ({
     }
   };
 
+  // States for delete confirmation modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Handle delete file confirmation
+  const handleDeleteClick = (fileId: number) => {
+    setFileToDelete(fileId);
+    setDeleteModalOpen(true);
+    setDeleteError(null);
+  };
+
+  // Handle confirming file deletion
+  const confirmDelete = async () => {
+    if (fileToDelete === null) return;
+    
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+      await onDeleteFile(fileToDelete);
+      setDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      setDeleteError('Failed to delete file. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Empty state
   if (!isLoading && files?.length === 0 && folders?.length === 0) {
     return (
@@ -123,6 +161,41 @@ const FileList: React.FC<FileListProps> = ({
 
   return (
     <div>
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this file? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {deleteError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {deleteError}
+            </div>
+          )}
+          
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Navigate to parent folder button */}
       {currentFolder && (
         <Button
@@ -217,9 +290,8 @@ const FileList: React.FC<FileListProps> = ({
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => onDeleteFile(file.id)}
+                    onClick={() => handleDeleteClick(file.id)}
                     title="Delete"
-                    className="text-red-500 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

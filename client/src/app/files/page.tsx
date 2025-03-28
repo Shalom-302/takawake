@@ -23,6 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+import axios from 'axios';
+
 import fileStorageService, { 
   StoredFile, 
   FileFolder,
@@ -50,7 +52,7 @@ export default function FilesPage() {
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Get files
+      // Récupérer les fichiers dans le dossier actuel
       const fileResponse = await fileStorageService.getFiles({
         page: currentPage,
         folder_id: currentFolder?.id,
@@ -65,7 +67,7 @@ export default function FilesPage() {
         folder => folder.parent_id === currentFolder?.id
       );
       setFolders(foldersInCurrentParent);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching files:', error);
       toast.error('Failed to load files');
     } finally {
@@ -79,7 +81,7 @@ export default function FilesPage() {
     try {
       const providersData = await fileStorageService.getProviders();
       return providersData;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching providers:', error);
       return [];
     }
@@ -100,7 +102,7 @@ export default function FilesPage() {
       toast.success(`Folder "${name}" created successfully`);
       await fetchFiles();
       setFolderModalOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Failed to create folder");
       console.error('Error creating folder:', error);
     }
@@ -135,39 +137,47 @@ export default function FilesPage() {
       toast.success(`File "${file.name}" uploaded successfully`);
       await fetchFiles();
       setUploadModalOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Failed to upload file");
       console.error('Error uploading file:', error);
     }
   };
 
-  const handleDeleteFile = async (fileId: number) => {
-    if (!confirm("Are you sure you want to delete this file?")) return;
-    
+  const handleDeleteFile = async (fileId: number): Promise<void> => {
     try {
       await fileStorageService.deleteFile(fileId);
       toast.success("File deleted successfully");
       await fetchFiles();
-    } catch (error) {
-      toast.error("Failed to delete file");
+    } catch (error: unknown) {
       console.error('Error deleting file:', error);
+      
+      // Vérifier si c'est une erreur de l'API avec un message
+      if (axios.isAxiosError(error)) {
+        const apiResponse = error.response?.data as { detail?: string };
+        const apiError = apiResponse?.detail || "Failed to delete file";
+        toast.error(apiError);
+      } else {
+        toast.error("Failed to delete file");
+      }
+      
+      throw error;
     }
-  };
-
-  const handleNavigateToFolder = (folder: FileFolder | null) => {
-    setCurrentFolder(folder);
-    setCurrentPage(1);
   };
 
   const handleDownloadFile = async (fileId: number): Promise<string> => {
     try {
       const downloadUrl = await fileStorageService.getFileDownloadUrl(fileId);
       return downloadUrl;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error downloading file:', error);
       toast.error('Failed to download file');
       return '';
     }
+  };
+
+  const handleNavigateToFolder = (folder: FileFolder | null) => {
+    setCurrentFolder(folder);
+    setCurrentPage(1);
   };
 
   const renderBreadcrumbs = () => {
