@@ -42,9 +42,6 @@ export default function FilesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Test API connectivity
-  const [apiAccessible, setApiAccessible] = useState<boolean | null>(null);
-  
   // Modals
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
@@ -59,7 +56,8 @@ export default function FilesPage() {
         folder_id: currentFolder?.id,
         search: searchQuery
       });
-      setFiles(fileResponse.items);
+      console.log("hihihi", fileResponse.map((a) => a.file));
+      setFiles(fileResponse.map((a) => a.file));
       
       // Get folders if we're in root or a specific folder
       const folderResponse = await fileStorageService.getFolders();
@@ -197,9 +195,9 @@ export default function FilesPage() {
   return (
     <div className="container mx-auto py-6">
       <Heading>
-        <HeadingTitle>Gestionnaire de fichiers</HeadingTitle>
+        <HeadingTitle>File manager</HeadingTitle>
         <HeadingDescription>
-          Gérez et partagez vos fichiers de façon sécurisée
+          Manage and share your files securely
         </HeadingDescription>
       </Heading>
       

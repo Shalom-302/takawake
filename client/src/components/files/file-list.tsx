@@ -57,24 +57,24 @@ const FileList: React.FC<FileListProps> = ({
   };
   
   // Helper function to get an icon based on MIME type
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) {
+  const getFileIcon = (mime_type: string) => {
+    if (mime_type?.startsWith('image/')) {
       return <FileImage className="h-4 w-4 text-blue-500" />;
-    } else if (mimeType.startsWith('video/')) {
+    } else if (mime_type.startsWith('video/')) {
       return <FileVideo className="h-4 w-4 text-purple-500" />;
-    } else if (mimeType.startsWith('audio/')) {
+    } else if (mime_type.startsWith('audio/')) {
       return <FileAudio className="h-4 w-4 text-green-500" />;
     } else if (
-      mimeType.includes('pdf') || 
-      mimeType.includes('word') || 
-      mimeType.includes('text') ||
-      mimeType.includes('document')
+      mime_type.includes('pdf') || 
+      mime_type.includes('word') || 
+      mime_type.includes('text') ||
+      mime_type.includes('document')
     ) {
       return <FileText className="h-4 w-4 text-red-500" />;
     } else if (
-      mimeType.includes('zip') || 
-      mimeType.includes('compressed') || 
-      mimeType.includes('archive')
+      mime_type.includes('zip') || 
+      mime_type.includes('compressed') || 
+      mime_type.includes('archive')
     ) {
       return <Archive className="h-4 w-4 text-yellow-500" />;
     } else {
@@ -161,7 +161,7 @@ const FileList: React.FC<FileListProps> = ({
               <TableCell className="hidden md:table-cell">Folder</TableCell>
               <TableCell className="hidden md:table-cell">-</TableCell>
               <TableCell className="hidden md:table-cell">
-                {formatDistanceToNow(new Date(folder.created_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(folder.uploaded_at), { addSuffix: true })}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
@@ -190,7 +190,7 @@ const FileList: React.FC<FileListProps> = ({
                 {formatFileSize(file.file_size)}
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(file.uploaded_at), { addSuffix: true })}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
