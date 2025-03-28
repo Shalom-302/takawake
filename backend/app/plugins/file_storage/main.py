@@ -440,6 +440,42 @@ def get_router() -> APIRouter:
             logger.error(f"Unexpected error during file download: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error during file download: {str(e)}")
 
+    @router.get("/files/{file_id}/download-url", response_model=dict)
+    async def get_file_download_url(
+        file_id: int,
+        expires: int = 3600,
+        db: Session = Depends(get_db),
+        # current_user: User = Depends(get_current_user),
+        request: Request = None
+    ):
+        """
+        Get a pre-signed URL to download a stored file
+        """
+        db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Generate a pre-signed URL for the file
+            download_url = provider.get_file_url(db_file.storage_path, expires=expires, is_public=False, request=request)
+            
+            return {"url": download_url, "filename": db_file.original_filename}
+            
+        except StorageException as e:
+            logger.error(f"Storage error during URL generation: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Unexpected error during URL generation: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error generating download URL: {str(e)}")
+
     @router.delete("/files/{file_id}", response_model=dict)
     async def delete_file(
         file_id: int,

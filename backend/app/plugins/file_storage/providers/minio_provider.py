@@ -172,7 +172,8 @@ class MinioStorageProvider(StorageProviderInterface):
     def get_file_url(self, 
                     storage_path: str, 
                     expires: int = 3600, 
-                    is_public: bool = False) -> str:
+                    is_public: bool = False,
+                    request=None) -> str:
         """
         Get the access URL for a file in MinIO
         
@@ -180,6 +181,7 @@ class MinioStorageProvider(StorageProviderInterface):
             storage_path: Path of the file in MinIO
             expires: Duration of validity in seconds (for temporary URLs)
             is_public: If the file is public
+            request: Optional FastAPI request object for base URL generation
             
         Returns:
             Access URL for the file
@@ -199,11 +201,26 @@ class MinioStorageProvider(StorageProviderInterface):
                 expires_delta = timedelta(seconds=expires)
                 
                 # Generate a presigned URL with expiration
-                return self.client.presigned_get_object(
+                presigned_url = self.client.presigned_get_object(
                     bucket_name=self.bucket_name,
                     object_name=storage_path,
                     expires=expires_delta
                 )
+                
+                # If running inside Docker, the MinIO hostname might be internal
+                # Replace it with a publicly accessible URL if we have a request context
+                if request and 'minio:' in presigned_url:
+                    # Extract the path and query string from the presigned URL
+                    # Format: http://minio:9000/bucket/path/file?signature...
+                    parts = presigned_url.split('/', 3)
+                    if len(parts) >= 4:
+                        path_and_query = parts[3]  # 'bucket/path/file?signature...'
+                        
+                        # Reconstruct URL with the base URL from the request
+                        base_url = f"{request.url.scheme}://{request.url.netloc}"
+                        return f"{base_url}/proxy/minio/{path_and_query}"
+                
+                return presigned_url
                 
         except Exception as e:
             error_msg = f"Error generating URL for file: {str(e)}"

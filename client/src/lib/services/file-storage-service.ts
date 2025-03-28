@@ -266,10 +266,10 @@ const fileStorageService = {
    */
   async getFileDownloadUrl(id: number): Promise<string> {
     try {
-      const response: AxiosResponse<{ url: string }> = await axiosClient.get(
-        `/public/file-storage/files/${id}/download-url`
-      );
-      return response.data.url;
+      // Au lieu de demander une URL présignée qui pourrait contenir des hôtes internes,
+      // nous retournons directement l'URL de notre API pour télécharger le fichier
+      const baseUrl = axiosClient.defaults.baseURL || '';
+      return `${baseUrl}/public/file-storage/files/${id}/download`;
     } catch (error) {
       console.error(`Erreur lors de la récupération de l'URL de téléchargement pour le fichier ${id}:`, error);
       throw error;
@@ -310,4 +310,3 @@ const fileStorageService = {
 };
 
 export default fileStorageService;
-
