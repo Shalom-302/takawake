@@ -21,8 +21,11 @@ import {
   Download, 
   Trash2, 
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  Copy,
+  Eye
 } from 'lucide-react';
+import Image from 'next/image';
 import { StoredFile, FileFolder } from '@/lib/services/file-storage-service';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -33,6 +36,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+
+// Import des lecteurs personnalisés
+import PDFViewer from '@/components/media-players/pdf-viewer';
+import VideoPlayer from '@/components/media-players/video-player';
+import AudioPlayer from '@/components/media-players/audio-player';
 
 interface FileListProps {
   files: StoredFile[];
@@ -112,6 +120,108 @@ const FileList: React.FC<FileListProps> = ({
   const [fileToDelete, setFileToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // States for preview modal
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<StoredFile | null>(null);
+  
+  // State for copy link notification
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+
+  // Handle preview click
+  const handlePreviewClick = (file: StoredFile) => {
+    setPreviewFile(file);
+    setPreviewModalOpen(true);
+  };
+
+  // Handle copy link to clipboard
+  const handleCopyLink = async (fileId: number) => {
+    try {
+      const url = await onDownloadFile(fileId);
+      await navigator.clipboard.writeText(url);
+      setCopySuccess('Link copied to clipboard!');
+      
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        setCopySuccess(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Error copying link:', error);
+      setCopySuccess('Failed to copy link');
+      
+      // Clear error message after 2 seconds
+      setTimeout(() => {
+        setCopySuccess(null);
+      }, 2000);
+    }
+  };
+
+  // Check if file can be previewed
+  const canPreview = (mimeType: string): boolean => {
+    return (
+      mimeType.startsWith('image/') || 
+      mimeType.startsWith('video/') || 
+      mimeType.startsWith('audio/') || 
+      mimeType === 'application/pdf'
+    );
+  };
+
+  // Render preview content based on file type
+  const renderPreview = (file: StoredFile) => {
+    if (!file) return null;
+    
+    if (file.mime_type.startsWith('image/')) {
+      return (
+        <div className="flex justify-center">
+          <Image
+            src={file.url || `/api/public/file-storage/files/${file.id}/download`}
+            alt={file.original_filename}
+            width={800}
+            height={600}
+            className="max-w-full max-h-[70vh] object-contain"
+            style={{ width: 'auto', height: 'auto' }}
+            unoptimized={!file.url?.startsWith('http')}
+          />
+        </div>
+      );
+    } else if (file.mime_type.startsWith('video/')) {
+      return (
+        <VideoPlayer 
+          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
+          title={file.original_filename}
+          onDownload={() => handleDownload(file.id, file.original_filename)}
+        />
+      );
+    } else if (file.mime_type.startsWith('audio/')) {
+      return (
+        <AudioPlayer
+          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
+          title={file.original_filename}
+          onDownload={() => handleDownload(file.id, file.original_filename)}
+        />
+      );
+    } else if (file.mime_type === 'application/pdf') {
+      return (
+        <PDFViewer
+          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
+          title={file.original_filename}
+          onDownload={() => handleDownload(file.id, file.original_filename)}
+        />
+      );
+    }
+    
+    return (
+      <div className="text-center py-10">
+        <p>Preview not available for this file type.</p>
+        <Button
+          className="mt-4"
+          onClick={() => handleDownload(file.id, file.original_filename)}
+        >
+          Download File
+        </Button>
+      </div>
+    );
+  };
 
   // Handle delete file confirmation
   const handleDeleteClick = (fileId: number) => {
@@ -197,6 +307,61 @@ const FileList: React.FC<FileListProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* File Preview Modal */}
+      <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {previewFile && (
+                <>
+                  {getFileIcon(previewFile.mime_type)}
+                  {previewFile.original_filename}
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="my-4">
+            {previewFile && renderPreview(previewFile)}
+          </div>
+          
+          <DialogFooter className="flex justify-between items-center">
+            <div>
+              {previewFile && (
+                <p className="text-sm text-gray-500">
+                  {formatFileSize(previewFile.file_size)} • 
+                  {/* Uploaded {formatDistanceToNow(new Date(previewFile.created_at), { addSuffix: true })} */}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setPreviewModalOpen(false)}
+              >
+                Close
+              </Button>
+              {previewFile && (
+                <Button 
+                  variant="default"
+                  onClick={() => handleDownload(previewFile.id, previewFile.original_filename)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Success Notification */}
+      {copySuccess && (
+        <div className="fixed bottom-4 right-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded shadow-lg">
+          {copySuccess}
+        </div>
+      )}
+      
       {/* Navigate to parent folder button */}
       {currentFolder && (
         <Button
@@ -264,10 +429,30 @@ const FileList: React.FC<FileListProps> = ({
                 {formatFileSize(file.file_size)}
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {formatDistanceToNow(new Date(file.uploaded_at), { addSuffix: true })}
+                {/* {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })} */}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  {canPreview(file.mime_type) && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handlePreviewClick(file)}
+                      title="Preview"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCopyLink(file.id)}
+                    title="Copy Link"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  
                   <Button
                     size="icon"
                     variant="ghost"
