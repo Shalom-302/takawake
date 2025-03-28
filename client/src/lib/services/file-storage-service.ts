@@ -84,7 +84,7 @@ const fileStorageService = {
    */
   async getProviders(): Promise<StorageProvider[]> {
     try {
-      const response: AxiosResponse<StorageProvider[]> = await axiosClient.get('/file_storage/providers');
+      const response: AxiosResponse<StorageProvider[]> = await axiosClient.get('/public/file-storage/providers');
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des fournisseurs de stockage:', error);
@@ -97,10 +97,23 @@ const fileStorageService = {
    */
   async getProviderById(id: number): Promise<StorageProvider> {
     try {
-      const response: AxiosResponse<StorageProvider> = await axiosClient.get(`/file_storage/providers/${id}`);
+      const response: AxiosResponse<StorageProvider> = await axiosClient.get(`/public/file-storage/providers/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Erreur lors de la récupération du fournisseur de stockage ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer le fournisseur de stockage par défaut
+   */
+  async getDefaultProvider(): Promise<StorageProvider> {
+    try {
+      const response: AxiosResponse<StorageProvider> = await axiosClient.get('/public/file-storage/providers/default');
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération du fournisseur de stockage par défaut:', error);
       throw error;
     }
   },
@@ -110,7 +123,7 @@ const fileStorageService = {
    */
   async deleteProvider(id: number): Promise<void> {
     try {
-      await axiosClient.delete(`/file_storage/providers/${id}`);
+      await axiosClient.delete(`/public/file-storage/providers/${id}`);
     } catch (error) {
       console.error(`Erreur lors de la suppression du fournisseur ${id}:`, error);
       throw error;
@@ -120,9 +133,10 @@ const fileStorageService = {
   /**
    * Récupérer tous les dossiers
    */
-  async getFolders(): Promise<FileFolder[]> {
+  async getFolders(parentId?: number): Promise<FileFolder[]> {
     try {
-      const response: AxiosResponse<FileFolder[]> = await axiosClient.get('/file_storage/folders');
+      const params = parentId ? { parent_folder_id: parentId } : {};
+      const response: AxiosResponse<FileFolder[]> = await axiosClient.get('/public/file-storage/folders', { params });
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des dossiers:', error);
@@ -133,9 +147,9 @@ const fileStorageService = {
   /**
    * Créer un nouveau dossier
    */
-  async createFolder(data: CreateFolderRequest): Promise<FileFolder> {
+  async createFolder(folderData: CreateFolderRequest): Promise<FileFolder> {
     try {
-      const response: AxiosResponse<FileFolder> = await axiosClient.post('/file_storage/folders', data);
+      const response: AxiosResponse<FileFolder> = await axiosClient.post('/public/file-storage/folders', folderData);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la création du dossier:', error);
@@ -148,7 +162,7 @@ const fileStorageService = {
    */
   async deleteFolder(id: number): Promise<void> {
     try {
-      await axiosClient.delete(`/file_storage/folders/${id}`);
+      await axiosClient.delete(`/public/file-storage/folders/${id}`);
     } catch (error) {
       console.error(`Erreur lors de la suppression du dossier ${id}:`, error);
       throw error;
@@ -161,7 +175,7 @@ const fileStorageService = {
   async getFiles(params: FilesListParams = {}): Promise<PaginatedResponse<StoredFile>> {
     try {
       const response: AxiosResponse<PaginatedResponse<StoredFile>> = await axiosClient.get(
-        '/file_storage/files',
+        '/public/file-storage/files',
         { params }
       );
       return response.data;
@@ -176,7 +190,7 @@ const fileStorageService = {
    */
   async getFileById(id: number): Promise<StoredFile> {
     try {
-      const response: AxiosResponse<StoredFile> = await axiosClient.get(`/file_storage/files/${id}`);
+      const response: AxiosResponse<StoredFile> = await axiosClient.get(`/public/file-storage/files/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Erreur lors de la récupération du fichier ${id}:`, error);
@@ -226,11 +240,7 @@ const fileStorageService = {
         }
       };
       
-      const response: AxiosResponse<FileUploadResponse> = await axiosClient.post(
-        '/file_storage/files/upload',
-        formData,
-        config
-      );
+      const response: AxiosResponse<FileUploadResponse> = await axiosClient.post('/public/file-storage/files/upload', formData, config);
       
       return response.data;
     } catch (error) {
@@ -244,7 +254,7 @@ const fileStorageService = {
    */
   async deleteFile(id: number): Promise<void> {
     try {
-      await axiosClient.delete(`/file_storage/files/${id}`);
+      await axiosClient.delete(`/public/file-storage/files/${id}`);
     } catch (error) {
       console.error(`Erreur lors de la suppression du fichier ${id}:`, error);
       throw error;
@@ -257,7 +267,7 @@ const fileStorageService = {
   async getFileDownloadUrl(id: number): Promise<string> {
     try {
       const response: AxiosResponse<{ url: string }> = await axiosClient.get(
-        `/file_storage/files/${id}/download-url`
+        `/public/file-storage/files/${id}/download-url`
       );
       return response.data.url;
     } catch (error) {
@@ -272,7 +282,7 @@ const fileStorageService = {
   async downloadFile(id: number): Promise<Blob> {
     try {
       const response: AxiosResponse<Blob> = await axiosClient.get(
-        `/file_storage/files/${id}/download`,
+        `/public/file-storage/files/${id}/download`,
         { responseType: 'blob' }
       );
       return response.data;
@@ -288,7 +298,7 @@ const fileStorageService = {
   async generatePreSignedUrl(id: number, expiryMinutes: number = 60): Promise<string> {
     try {
       const response: AxiosResponse<{ url: string }> = await axiosClient.get(
-        `/file_storage/files/${id}/presigned-url`,
+        `/public/file-storage/files/${id}/presigned-url`,
         { params: { expiry_minutes: expiryMinutes } }
       );
       return response.data.url;
@@ -300,3 +310,4 @@ const fileStorageService = {
 };
 
 export default fileStorageService;
+

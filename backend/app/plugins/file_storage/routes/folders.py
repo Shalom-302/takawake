@@ -30,19 +30,18 @@ async def create_folder(
     """
     # Check if a folder with the same path already exists
     existing_folder = db.query(FileFolder).filter(
-        FileFolder.path == folder_data.path
+        FileFolder.name == folder_data.name
     ).first()
     
     if existing_folder:
         raise HTTPException(
             status_code=400, 
-            detail="A folder with this path already exists"
+            detail="A folder with this name already exists"
         )
     
     # Create the folder
     folder = FileFolder(
         name=folder_data.name,
-        path=folder_data.path,
         description=folder_data.description,
         parent_folder_id=folder_data.parent_folder_id,
         created_by=current_user.id
@@ -77,10 +76,10 @@ async def list_folders(
         query = query.filter(FileFolder.parent_folder_id == parent_folder_id)
     
     if path_prefix:
-        query = query.filter(FileFolder.path.startswith(path_prefix))
+        query = query.filter(FileFolder.name.startswith(path_prefix))
     
     # Execute the query with pagination
-    folders = query.order_by(FileFolder.path).offset(skip).limit(limit).all()
+    folders = query.order_by(FileFolder.name).offset(skip).limit(limit).all()
     
     return folders
 
@@ -99,7 +98,7 @@ async def get_folder_details(
     
     # Calculate the number of files in this folder
     file_count = db.query(func.count(StoredFile.id)).filter(
-        StoredFile.storage_path.startswith(folder.path + "/")
+        StoredFile.storage_path.startswith(folder.name + "/")
     ).scalar()
     
     # Get the direct subfolders
@@ -132,19 +131,18 @@ async def update_folder(
     
     # Check if another folder with the same path already exists
     existing_folder = db.query(FileFolder).filter(
-        FileFolder.path == folder_data.path,
+        FileFolder.name == folder_data.name,
         FileFolder.id != folder_id
     ).first()
     
     if existing_folder:
         raise HTTPException(
             status_code=400, 
-            detail="Another folder with this path already exists"
+            detail="Another folder with this name already exists"
         )
     
     # Update the fields
     folder.name = folder_data.name
-    folder.path = folder_data.path
     folder.description = folder_data.description
     folder.parent_folder_id = folder_data.parent_folder_id
     folder.updated_by = current_user.id
@@ -182,7 +180,7 @@ async def delete_folder(
     
     # Check if there are files in this folder
     files_count = db.query(func.count(StoredFile.id)).filter(
-        StoredFile.storage_path.startswith(folder.path + "/")
+        StoredFile.storage_path.startswith(folder.name + "/")
     ).scalar()
     
     # If the folder is not empty and force=False, do not delete
@@ -219,7 +217,7 @@ async def delete_folder(
             # Note: Files in the storage are not deleted here.
             # This should be handled by a cleanup task or additional logic.
             files = db.query(StoredFile).filter(
-                StoredFile.storage_path.startswith(folder.path + "/")
+                StoredFile.storage_path.startswith(folder.name + "/")
             ).all()
             
             for file in files:

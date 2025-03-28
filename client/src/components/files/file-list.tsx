@@ -100,7 +100,7 @@ const FileList: React.FC<FileListProps> = ({
   };
 
   // Empty state
-  if (!isLoading && files.length === 0 && folders.length === 0) {
+  if (!isLoading && files?.length === 0 && folders?.length === 0) {
     return (
       <div className="text-center py-12">
         <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -175,7 +175,7 @@ const FileList: React.FC<FileListProps> = ({
           ))}
           
           {/* Files */}
-          {files.map((file) => (
+          {files?.map((file) => (
             <TableRow key={`file-${file.id}`}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">

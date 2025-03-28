@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     
     # API Configuration
     API_PREFIX: str = "/api"  # Central prefix for all API routes
-    API_V1_STR: str = "/api"  # Pour la compatibilité avec le code existant
+    API_V1_STR: str = "/api" 
     
     # Security
     SECRET_KEY: str = "CHANGE_ME"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2  # For tests, only 2 minutes
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10  # For tests, only 2 minutes
     REFRESH_TOKEN_EXPIRE_DAYS: int = 1  # For tests, only 1 day
     ALGORITHM: str = "HS256"
     
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     }
     
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]  # In development, allowing all origins
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000", "http://localhost:9000"]  # Explicitly allow localhost frontend
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     

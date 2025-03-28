@@ -8,6 +8,12 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from app.core.db import Base
+from .providers import (
+    StorageProviderType as ProviderType, 
+    PROVIDER_IMPLEMENTATIONS,
+    StorageProviderInterface,
+    StorageException
+)
 
 
 class StorageProviderType(PyEnum):
@@ -176,36 +182,42 @@ def create_storage_provider(db, provider_data):
     return provider
 
 
-def get_provider_instance(provider_config):
+def get_provider_instance(provider_config, request=None):
     """
     Create a storage provider instance based on the provider configuration
     
     Args:
         provider_config: StorageProvider model instance with configuration
+        request: Optional FastAPI request object that might be needed for URL generation
         
     Returns:
         A storage provider instance that can be used to interact with the storage
     """
-    # Implement provider instance creation based on provider_type
-    # This is a placeholder - actual implementation would create the appropriate
-    # storage provider client based on the provider_type (e.g., S3, MinIO, etc.)
     provider_type = provider_config.provider_type
-    config = provider_config.config_options
     
-    if provider_type == StorageProviderType.LOCAL.value:
-        # Local file system implementation would go here
-        return {"type": "local", "config": config}
-    elif provider_type == StorageProviderType.S3.value:
-        # AWS S3 implementation would go here
-        return {"type": "s3", "config": config}
-    elif provider_type == StorageProviderType.MINIO.value:
-        # MinIO implementation would go here
-        return {"type": "minio", "config": config}
-    elif provider_type == StorageProviderType.GOOGLE_CLOUD.value:
-        # Google Cloud Storage implementation would go here
-        return {"type": "google_cloud", "config": config}
-    elif provider_type == StorageProviderType.AZURE_BLOB.value:
-        # Azure Blob Storage implementation would go here
-        return {"type": "azure_blob", "config": config}
-    else:
+    if provider_type not in [pt.value for pt in ProviderType]:
         raise ValueError(f"Unsupported storage provider type: {provider_type}")
+    
+    # Get the provider class from the mapping
+    provider_class = PROVIDER_IMPLEMENTATIONS[ProviderType(provider_type)]
+    
+    # Create the provider instance
+    provider_instance = provider_class()
+    
+    # Prepare the configuration dictionary
+    config = {
+        'endpoint_url': provider_config.endpoint_url,
+        'access_key': provider_config.access_key,
+        'secret_key': provider_config.secret_key,
+        'bucket_name': provider_config.bucket_name,
+        'region': provider_config.region
+    }
+    
+    # Add any additional config options
+    if provider_config.config_options:
+        config.update(provider_config.config_options)
+    
+    # Initialize the provider with the configuration
+    provider_instance.initialize(config)
+    
+    return provider_instance

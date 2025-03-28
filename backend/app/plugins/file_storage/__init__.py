@@ -13,6 +13,6 @@ It also includes image processing features:
 - Image transformations (resizing, cropping, etc.)
 """
 
-from .main import file_storage_router
+from .main import file_storage_router, file_storage_public_router
 
-__all__ = ["file_storage_router"]
+__all__ = ["file_storage_router", "file_storage_public_router"]

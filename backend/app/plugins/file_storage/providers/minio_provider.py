@@ -195,11 +195,14 @@ class MinioStorageProvider(StorageProviderInterface):
                 
                 return f"{endpoint}{self.bucket_name}/{storage_path}"
             else:
+                # Convert expires (seconds) to a timedelta object
+                expires_delta = timedelta(seconds=expires)
+                
                 # Generate a presigned URL with expiration
                 return self.client.presigned_get_object(
                     bucket_name=self.bucket_name,
                     object_name=storage_path,
-                    expires=expires
+                    expires=expires_delta
                 )
                 
         except Exception as e:

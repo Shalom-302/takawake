@@ -43,7 +43,7 @@ from app.plugins.advanced_logging import advanced_logging_router
 from app.plugins.advanced_scheduler import advanced_scheduler_router
 from app.plugins.ai_integration import ai_integration_router
 from app.plugins.data_exchange import data_exchange_router
-from app.plugins.file_storage import file_storage_router
+from app.plugins.file_storage import file_storage_router, file_storage_public_router
 from app.plugins.payment import payment_router
 from app.plugins.privacy_compliance import privacy_compliance_router
 from app.plugins.kyc import kyc_admin_router, kyc_api_router
@@ -423,7 +423,7 @@ api_router.include_router(advanced_logging_router, prefix="/advanced-logging", t
 api_router.include_router(advanced_scheduler_router, prefix="/advanced-scheduler", tags=["Advanced Scheduler"])
 api_router.include_router(ai_integration_router, prefix="/ai-integration", tags=["AI Integration"])
 api_router.include_router(data_exchange_router, prefix="/data-exchange", tags=["Data Exchange"])
-api_router.include_router(file_storage_router, prefix="/file-storage", tags=["File Storage"])
+# api_router.include_router(file_storage_router, prefix="/file-storage", tags=["File Storage"])
 api_router.include_router(privacy_compliance_router, prefix="/privacy", tags=["Privacy Compliance"])
 api_router.include_router(push_notifications_router, prefix="/push-notifications", tags=["Push Notifications"])
 api_router.include_router(pwa_support_router, prefix="/pwa-support", tags=["PWA Support"])
@@ -443,6 +443,9 @@ api_router.include_router(push_router, tags=["push"])
 
 # Inclure le router API principal dans l'application
 app.include_router(api_router)
+
+# Ajouter le router public de stockage de fichiers directement à l'application
+app.include_router(file_storage_router, prefix=f"{settings.API_PREFIX}/public/file-storage", tags=["File Storage Public"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle

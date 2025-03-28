@@ -10,9 +10,6 @@ import {
   FolderIcon, 
   File as FileIcon, 
   Upload, 
-  Settings, 
-  Database,
-  MoreVertical,
   Search,
   SortAsc,
   Filter
@@ -27,30 +24,30 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import fileStorageService, { 
-  StorageProvider, 
   StoredFile, 
-  FileFolder
+  FileFolder,
+  StorageProvider  
 } from '@/lib/services/file-storage-service';
 
 import FileList from '@/components/files/file-list';
 import UploadFileModal from '@/components/files/upload-file-modal';
 import CreateFolderModal from '@/components/files/create-folder-modal';
-import MinioConfigModal from '@/components/files/minio-config-modal';
 
 export default function FilesPage() {
   const [activeTab, setActiveTab] = useState('files');
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [folders, setFolders] = useState<FileFolder[]>([]);
-  const [providers, setProviders] = useState<StorageProvider[]>([]);
   const [currentFolder, setCurrentFolder] = useState<FileFolder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Test API connectivity
+  const [apiAccessible, setApiAccessible] = useState<boolean | null>(null);
+  
   // Modals
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
-  const [minioModalOpen, setMinioModalOpen] = useState(false);
 
   // Fetch files with the current folder, page, and search settings
   const fetchFiles = useCallback(async () => {
@@ -78,28 +75,22 @@ export default function FilesPage() {
     }
   }, [currentFolder, currentPage, searchQuery]);
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchProviders();
-    fetchFiles();
-  }, [fetchFiles]);
+ 
+
+  const fetchProviders = async () => {
+    try {
+      const providersData = await fileStorageService.getProviders();
+      return providersData;
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+      return [];
+    }
+  };
 
   // Re-fetch files when page, folder or search changes
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles, currentFolder, currentPage, searchQuery]);
-
-  const fetchProviders = async () => {
-    try {
-      const providersData: StorageProvider[] = await fileStorageService.getProviders();
-      setProviders(providersData);
-      return providersData;
-    } catch (error) {
-      toast.error("Failed to load storage providers");
-      console.error('Error fetching providers:', error);
-      return [];
-    }
-  };
 
   const handleCreateFolder = async (name: string, description?: string) => {
     try {
@@ -117,49 +108,18 @@ export default function FilesPage() {
     }
   };
 
-  const handleConfigureMinio = async (config: {
-    name: string;
-    endpoint_url: string;
-    access_key: string;
-    secret_key: string;
-    bucket_name: string;
-    region?: string;
-    secure?: boolean;
-    is_default?: boolean;
-  }) => {
-    try {
-      await fileStorageService.createMinioProvider(
-        config.name,
-        {
-          endpoint_url: config.endpoint_url,
-          access_key: config.access_key,
-          secret_key: config.secret_key,
-          bucket_name: config.bucket_name,
-          region: config.region,
-          secure: config.secure !== false
-        },
-        !!config.is_default
-      );
-      
-      toast.success(`MinIO provider "${config.name}" configured successfully`);
-      await fetchProviders();
-      setMinioModalOpen(false);
-    } catch (error) {
-      toast.error("Failed to configure MinIO provider");
-      console.error('Error configuring MinIO:', error);
-    }
-  };
-
   const handleFileUpload = async (
     file: File,
     isPublic: boolean = false,
     customFilename?: string
   ) => {
     try {
+      // Récupérer les fournisseurs
+      const providers = await fetchProviders();
+      
       // Vérifier si au moins un fournisseur est disponible
       if (providers.length === 0) {
-        toast.error("No storage provider configured. Please add a MinIO provider first.");
-        setMinioModalOpen(true);
+        toast.error("No storage provider configured. Please contact your administrator.");
         return;
       }
 
@@ -237,21 +197,18 @@ export default function FilesPage() {
   return (
     <div className="container mx-auto py-6">
       <Heading>
-        <HeadingTitle>File Storage</HeadingTitle>
+        <HeadingTitle>Gestionnaire de fichiers</HeadingTitle>
         <HeadingDescription>
-          Manage your files using MinIO cloud storage
+          Gérez et partagez vos fichiers de façon sécurisée
         </HeadingDescription>
       </Heading>
+      
 
       <Tabs value={activeTab} className="mt-6" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="files">
             <FileIcon className="mr-2 h-4 w-4" />
             Files & Folders
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="mr-2 h-4 w-4" />
-            Storage Settings
           </TabsTrigger>
         </TabsList>
         
@@ -366,97 +323,6 @@ export default function FilesPage() {
             />
           </Card>
         </TabsContent>
-        
-        {/* Storage Settings Tab */}
-        <TabsContent value="settings">
-          <Card className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-medium">Storage Providers</h3>
-              <Button 
-                onClick={() => setMinioModalOpen(true)}
-                className="gap-2"
-              >
-                <Database className="h-4 w-4" />
-                Configure MinIO
-              </Button>
-            </div>
-            
-            <Separator className="my-4" />
-            
-            {/* Providers list */}
-            {isLoading ? (
-              <div className="flex justify-center py-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : providers.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                <Database className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No storage providers configured</h3>
-                <p className="text-sm max-w-md mx-auto mb-6">
-                  Configure a MinIO storage provider to start managing files
-                </p>
-                <Button 
-                  onClick={() => setMinioModalOpen(true)}
-                  className="gap-2"
-                >
-                  <Database className="h-4 w-4" />
-                  Configure MinIO
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {providers.map((provider) => (
-                  <div 
-                    key={provider.id} 
-                    className="flex justify-between items-center p-4 rounded-md border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Database className="h-5 w-5 text-blue-500" />
-                      <div>
-                        <p className="font-medium">{provider.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {provider.type.toUpperCase()} 
-                          {provider.is_default && " (Default)"}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast.info("Edit not implemented yet")}>
-                          Edit Settings
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-600"
-                          onClick={() => {
-                            if (confirm(`Delete provider ${provider.name}?`)) {
-                              fileStorageService.deleteProvider(provider.id)
-                                .then(() => {
-                                  toast.success("Provider deleted");
-                                  fetchProviders();
-                                })
-                                .catch((error) => {
-                                  toast.error("Failed to delete provider");
-                                  console.error(error);
-                                });
-                            }
-                          }}
-                        >
-                          Delete Provider
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </TabsContent>
       </Tabs>
       
       {/* Modals */}
@@ -472,13 +338,6 @@ export default function FilesPage() {
         onClose={() => setFolderModalOpen(false)}
         onCreateFolder={handleCreateFolder}
         currentFolder={currentFolder}
-      />
-      
-      <MinioConfigModal
-        isOpen={minioModalOpen}
-        onClose={() => setMinioModalOpen(false)}
-        onConfigureMinio={handleConfigureMinio}
-        existingProviders={providers}
       />
     </div>
   );
