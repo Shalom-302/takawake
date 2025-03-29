@@ -24,48 +24,62 @@ class MinioStorageProvider(StorageProviderInterface):
     
     def __init__(self):
         self.client = None
-        self.bucket_name = None
+        self.bucket = None
         self.endpoint = None
         self.logger = logging.getLogger(__name__)
+        self.public_endpoint_url = None
     
     def initialize(self, config: Dict[str, Any]) -> None:
         """
-        Initialize the MinIO client with the provided configuration
+        Initialize the provider with configuration options
         
         Args:
-            config: Dictionary containing:
-                    - endpoint_url: URL of the MinIO server
-                    - access_key: Access key for MinIO
-                    - secret_key: Secret key for MinIO
-                    - bucket_name: Name of the bucket to use
-                    - region: Region (optional)
-                    - secure: Use HTTPS (default: True)
+            config: Configuration options
+                - endpoint_url: MinIO server endpoint URL
+                - bucket_name: Bucket name
+                - access_key: MinIO access key
+                - secret_key: MinIO secret key
+                - region: Region (optional)
+                - secure: Whether to use HTTPS
+                - public_endpoint_url: Public endpoint URL for direct file access (optional)
+        
+        Raises:
+            StorageException: If the initialization fails
         """
         try:
-            self.endpoint = config['endpoint_url']
-            access_key = config['access_key']
-            secret_key = config['secret_key']
-            self.bucket_name = config['bucket_name']
-            region = config.get('region', None)
-            secure = config.get('secure', True)
+            # Get configuration options
+            endpoint_url = config.get("endpoint_url")
+            bucket_name = config.get("bucket_name")
+            access_key = config.get("access_key")
+            secret_key = config.get("secret_key")
+            region = config.get("region")
+            secure = config.get("secure", False)
+            self.public_endpoint_url = config.get("public_endpoint_url")
             
-            # Remove http:// or https:// prefix from endpoint
-            endpoint = self.endpoint.replace('http://', '').replace('https://', '')
+            # Validate required options
+            if not all([endpoint_url, bucket_name, access_key, secret_key]):
+                raise StorageException("MinIO provider requires 'endpoint_url', 'bucket_name', 'access_key', and 'secret_key'")
             
-            # Create the MinIO client
+            # Save configuration
+            self.endpoint = endpoint_url
+            self.bucket = bucket_name
+            self.secure = secure
+            
+            # Initialize MinIO client
             self.client = Minio(
-                endpoint=endpoint,
+                endpoint_url.replace('http://', '').replace('https://', ''),
                 access_key=access_key,
                 secret_key=secret_key,
                 region=region,
                 secure=secure
             )
             
-            # Check if the bucket exists, create if not
-            if not self.client.bucket_exists(self.bucket_name):
-                self.client.make_bucket(self.bucket_name)
-                self.logger.info(f"Bucket {self.bucket_name} created successfully")
+            # Create bucket if it doesn't exist
+            if not self.client.bucket_exists(bucket_name):
+                self.client.make_bucket(bucket_name)
                 
+            self.logger.info(f"MinIO provider initialized with bucket '{bucket_name}'")
+            
         except Exception as e:
             error_msg = f"Error initializing MinIO provider: {str(e)}"
             self.logger.error(error_msg)
@@ -100,7 +114,7 @@ class MinioStorageProvider(StorageProviderInterface):
             
             # Upload the file
             result = self.client.put_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=destination_path,
                 data=file_obj,
                 length=file_size,
@@ -128,7 +142,7 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             response = self.client.get_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             
@@ -159,7 +173,7 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             self.client.remove_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             return True
@@ -175,57 +189,39 @@ class MinioStorageProvider(StorageProviderInterface):
                     is_public: bool = False,
                     request=None) -> str:
         """
-        Get the access URL for a file in MinIO
+        Génère une URL pour accéder au fichier (présignée ou publique)
         
         Args:
-            storage_path: Path of the file in MinIO
-            expires: Duration of validity in seconds (for temporary URLs)
-            is_public: If the file is public
-            request: Optional FastAPI request object for base URL generation
+            storage_path: Chemin du fichier dans le stockage
+            expires: Durée de validité de l'URL en secondes
+            is_public: Si vrai, retourne une URL publique non présignée
+            request: Requête HTTP (utilisée pour générer des URLs absolues si nécessaire)
             
         Returns:
-            Access URL for the file
+            URL d'accès au fichier
         """
         try:
-            if is_public:
-                # For public files, we can use a direct URL if MinIO is configured for it
-                # Otherwise, we end up with a presigned URL generation
-                if self.endpoint.endswith('/'):
-                    endpoint = self.endpoint
-                else:
-                    endpoint = self.endpoint + '/'
+            # Si nous avons un endpoint public configuré, retourner l'URL publique
+            if self.public_endpoint_url:
+                # Pour un accès depuis le navigateur, nous devons utiliser localhost ou une URL publique
+                # au lieu de 'minio' qui est le nom du service dans le réseau Docker
+                public_url = f"{self.public_endpoint_url.rstrip('/')}/{storage_path}"
                 
-                return f"{endpoint}{self.bucket_name}/{storage_path}"
-            else:
-                # Convert expires (seconds) to a timedelta object
-                expires_delta = timedelta(seconds=expires)
+                # Remplacer 'minio:9000' par 'localhost:9000' si l'URL contient minio
+                if 'minio:9000' in public_url:
+                    public_url = public_url.replace('minio:9000', 'localhost:9000')
                 
-                # Generate a presigned URL with expiration
-                presigned_url = self.client.presigned_get_object(
-                    bucket_name=self.bucket_name,
-                    object_name=storage_path,
-                    expires=expires_delta
-                )
-                
-                # If running inside Docker, the MinIO hostname might be internal
-                # Replace it with a publicly accessible URL if we have a request context
-                if request and 'minio:' in presigned_url:
-                    # Extract the path and query string from the presigned URL
-                    # Format: http://minio:9000/bucket/path/file?signature...
-                    parts = presigned_url.split('/', 3)
-                    if len(parts) >= 4:
-                        path_and_query = parts[3]  # 'bucket/path/file?signature...'
-                        
-                        # Reconstruct URL with the base URL from the request
-                        base_url = f"{request.url.scheme}://{request.url.netloc}"
-                        return f"{base_url}/proxy/minio/{path_and_query}"
-                
-                return presigned_url
-                
+                return public_url
+            
+            # Sinon, générer une URL présignée
+            return self.client.presigned_get_object(
+                bucket_name=self.bucket,
+                object_name=storage_path,
+                expires=expires
+            )
         except Exception as e:
-            error_msg = f"Error generating URL for file: {str(e)}"
-            self.logger.error(error_msg)
-            raise StorageException(error_msg)
+            self.logger.error(f"Error generating file URL: {str(e)}")
+            return ""
     
     def file_exists(self, storage_path: str) -> bool:
         """
@@ -239,7 +235,7 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             self.client.stat_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             return True
@@ -259,7 +255,7 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             stat = self.client.stat_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             
@@ -289,7 +285,7 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             objects = self.client.list_objects(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 prefix=prefix,
                 recursive=recursive
             )
@@ -333,7 +329,7 @@ class MinioStorageProvider(StorageProviderInterface):
             
             # Copy the object with the new metadata
             copy_source = ComposeSource(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             
@@ -342,7 +338,7 @@ class MinioStorageProvider(StorageProviderInterface):
             
             # Copy the object with the new metadata
             self.client.copy_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=temp_path,
                 source=copy_source,
                 metadata=merged_metadata,
@@ -351,25 +347,25 @@ class MinioStorageProvider(StorageProviderInterface):
             
             # Delete the original
             self.client.remove_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path
             )
             
             # Rename the copy to the original name
             copy_source = ComposeSource(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=temp_path
             )
             
             self.client.copy_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=storage_path,
                 source=copy_source
             )
             
             # Delete the temporary copy
             self.client.remove_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=temp_path
             )
             
@@ -393,12 +389,12 @@ class MinioStorageProvider(StorageProviderInterface):
         """
         try:
             copy_source = ComposeSource(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=source_path
             )
             
             self.client.copy_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=destination_path,
                 source=copy_source
             )
@@ -424,19 +420,19 @@ class MinioStorageProvider(StorageProviderInterface):
         try:
             # Copy the file first
             copy_source = ComposeSource(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=source_path
             )
             
             self.client.copy_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=destination_path,
                 source=copy_source
             )
             
             # Then delete the original
             self.client.remove_object(
-                bucket_name=self.bucket_name,
+                bucket_name=self.bucket,
                 object_name=source_path
             )
             

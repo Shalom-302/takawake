@@ -445,7 +445,7 @@ api_router.include_router(push_router, tags=["push"])
 app.include_router(api_router)
 
 # Ajouter le router public de stockage de fichiers directement à l'application
-app.include_router(file_storage_router, prefix=f"{settings.API_PREFIX}/public/file-storage", tags=["File Storage Public"])
+app.include_router(file_storage_public_router, prefix=f"{settings.API_PREFIX}/public/file-storage", tags=["File Storage Public"])
 
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle

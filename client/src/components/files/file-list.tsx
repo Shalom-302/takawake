@@ -3,44 +3,33 @@
 import React, { useState } from 'react';
 import { 
   Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
   TableHeader, 
-  TableRow 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { 
-  FolderIcon, 
-  File as FileIcon, 
-  FileText, 
-  FileImage, 
-  FileVideo, 
-  FileAudio, 
-  Archive, 
-  Download, 
-  Trash2, 
+import {
+  FileIcon,
+  FolderIcon,
+  ArrowUp,
+  Download,
+  Trash2,
+  Eye,
   ExternalLink,
-  ChevronLeft,
   Copy,
-  Eye
 } from 'lucide-react';
 import Image from 'next/image';
 import { StoredFile, FileFolder } from '@/lib/services/file-storage-service';
-import { formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-
-// Import des lecteurs personnalisés
-import PDFViewer from '@/components/media-players/pdf-viewer';
-import VideoPlayer from '@/components/media-players/video-player';
-import AudioPlayer from '@/components/media-players/audio-player';
 
 interface FileListProps {
   files: StoredFile[];
@@ -75,24 +64,24 @@ const FileList: React.FC<FileListProps> = ({
   // Helper function to get an icon based on MIME type
   const getFileIcon = (mime_type: string) => {
     if (mime_type?.startsWith('image/')) {
-      return <FileImage className="h-4 w-4 text-blue-500" />;
+      return <FileIcon className="h-4 w-4 text-blue-500" />;
     } else if (mime_type.startsWith('video/')) {
-      return <FileVideo className="h-4 w-4 text-purple-500" />;
+      return <FileIcon className="h-4 w-4 text-purple-500" />;
     } else if (mime_type.startsWith('audio/')) {
-      return <FileAudio className="h-4 w-4 text-green-500" />;
+      return <FileIcon className="h-4 w-4 text-green-500" />;
     } else if (
       mime_type.includes('pdf') || 
       mime_type.includes('word') || 
       mime_type.includes('text') ||
       mime_type.includes('document')
     ) {
-      return <FileText className="h-4 w-4 text-red-500" />;
+      return <FileIcon className="h-4 w-4 text-red-500" />;
     } else if (
       mime_type.includes('zip') || 
       mime_type.includes('compressed') || 
       mime_type.includes('archive')
     ) {
-      return <Archive className="h-4 w-4 text-yellow-500" />;
+      return <FileIcon className="h-4 w-4 text-yellow-500" />;
     } else {
       return <FileIcon className="h-4 w-4 text-gray-500" />;
     }
@@ -166,58 +155,108 @@ const FileList: React.FC<FileListProps> = ({
     );
   };
 
-  // Render preview content based on file type
+  // Render preview content based on file type - version ultra simplifiée
   const renderPreview = (file: StoredFile) => {
     if (!file) return null;
     
+    // S'assurer que nous avons une URL valide
+    if (!file.url) {
+      return (
+        <div className="p-8 text-center">
+          <p className="text-gray-500 mb-4">URL de prévisualisation non disponible pour ce fichier.</p>
+          <Button
+            onClick={() => handleDownload(file.id, file.original_filename)}
+          >
+            Télécharger le fichier
+          </Button>
+        </div>
+      );
+    }
+    
     if (file.mime_type.startsWith('image/')) {
       return (
-        <div className="flex justify-center">
-          <Image
-            src={file.url || `/api/public/file-storage/files/${file.id}/download`}
+        <div className="flex justify-center p-4">
+          <img
+            src={file.url}
             alt={file.original_filename}
-            width={800}
-            height={600}
-            className="max-w-full max-h-[70vh] object-contain"
-            style={{ width: 'auto', height: 'auto' }}
-            unoptimized={!file.url?.startsWith('http')}
+            style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
           />
         </div>
       );
     } else if (file.mime_type.startsWith('video/')) {
       return (
-        <VideoPlayer 
-          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
-          title={file.original_filename}
-          onDownload={() => handleDownload(file.id, file.original_filename)}
-        />
+        <div className="flex flex-col items-center">
+          <div className="w-full max-w-4xl my-2">
+            <video 
+              src={file.url}
+              controls
+              className="w-full h-auto"
+              style={{ maxHeight: '70vh' }}
+              controlsList="nodownload"
+            >
+              Votre navigateur ne prend pas en charge la lecture vidéo.
+            </video>
+          </div>
+          <div className="mt-2 flex justify-center">
+            <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Télécharger
+            </Button>
+          </div>
+        </div>
       );
     } else if (file.mime_type.startsWith('audio/')) {
       return (
-        <AudioPlayer
-          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
-          title={file.original_filename}
-          onDownload={() => handleDownload(file.id, file.original_filename)}
-        />
+        <div className="flex flex-col items-center p-6">
+          <h3 className="text-lg font-medium mb-4">{file.original_filename}</h3>
+          <div className="w-full max-w-xl mb-4">
+            <audio 
+              src={file.url}
+              controls
+              className="w-full"
+              controlsList="nodownload"
+            >
+              Votre navigateur ne prend pas en charge la lecture audio.
+            </audio>
+          </div>
+          <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Télécharger
+          </Button>
+        </div>
       );
     } else if (file.mime_type === 'application/pdf') {
       return (
-        <PDFViewer
-          url={file.url || `/api/public/file-storage/files/${file.id}/download`}
-          title={file.original_filename}
-          onDownload={() => handleDownload(file.id, file.original_filename)}
-        />
+        <div className="text-center py-10">
+          <p>Pour une meilleure expérience, ouvrez le PDF dans un nouvel onglet :</p>
+          <div className="mt-4 flex justify-center gap-4">
+            <Button
+              onClick={() => window.open(file.url, '_blank')}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ouvrir dans un nouvel onglet
+            </Button>
+            <Button
+              onClick={() => handleDownload(file.id, file.original_filename)}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger
+            </Button>
+          </div>
+        </div>
       );
     }
     
     return (
       <div className="text-center py-10">
-        <p>Preview not available for this file type.</p>
+        <p>Prévisualisation non disponible pour ce type de fichier.</p>
         <Button
           className="mt-4"
           onClick={() => handleDownload(file.id, file.original_filename)}
         >
-          Download File
+          Télécharger le fichier
         </Button>
       </div>
     );
@@ -330,7 +369,7 @@ const FileList: React.FC<FileListProps> = ({
               {previewFile && (
                 <p className="text-sm text-gray-500">
                   {formatFileSize(previewFile.file_size)} • 
-                  {/* Uploaded {formatDistanceToNow(new Date(previewFile.created_at), { addSuffix: true })} */}
+                  {/* Uploaded {formatDate(previewFile.created_at)} */}
                 </p>
               )}
             </div>
@@ -369,7 +408,7 @@ const FileList: React.FC<FileListProps> = ({
           className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
           onClick={() => onFolderClick(null)}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ArrowUp className="h-4 w-4" />
           Back to Root
         </Button>
       )}
@@ -400,13 +439,13 @@ const FileList: React.FC<FileListProps> = ({
               <TableCell className="hidden md:table-cell">Folder</TableCell>
               <TableCell className="hidden md:table-cell">-</TableCell>
               <TableCell className="hidden md:table-cell">
-                {/* {formatDistanceToNow(new Date(folder?.updated_at), { addSuffix: true })} */}
+                {/* {formatDate(folder?.updated_at)} */}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   {/* Folder actions could be added here */}
                   <Button size="icon" variant="ghost" disabled>
-                    <ChevronLeft className="h-4 w-4" />
+                    <ArrowUp className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>
@@ -429,7 +468,7 @@ const FileList: React.FC<FileListProps> = ({
                 {formatFileSize(file.file_size)}
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {/* {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })} */}
+                {/* {formatDate(file.created_at)} */}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

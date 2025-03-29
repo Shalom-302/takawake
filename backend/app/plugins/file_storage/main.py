@@ -8,8 +8,9 @@ import uuid
 import json
 import logging
 import re
+import math
 from typing import Dict, List, Optional, Any, BinaryIO, Union
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks, Header
 from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.orm import Session
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -347,11 +348,10 @@ def get_router() -> APIRouter:
     async def get_file_details(
         file_id: int,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user),
         request: Request = None
     ):
         """
-        Get the complete details of a stored file, including signed URLs
+        Get details about a stored file
         """
         db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
         if not db_file:
@@ -362,61 +362,35 @@ def get_router() -> APIRouter:
         if not provider_db:
             raise HTTPException(status_code=404, detail="Storage provider not found")
         
+        # Get the provider instance
+        provider = get_provider_instance(provider_db, request)
+        
+        # Generate URLS
         try:
-            # Get the provider instance
-            provider = get_provider_instance(provider_db, request)
-            
-            # Get the download URL
-            download_url = provider.get_file_url(db_file.storage_path, expires=3600, is_public=False)
-            
-            # Get the file metadata
-            try:
-                file_metadata = provider.get_file_metadata(db_file.storage_path)
-            except:
-                file_metadata = {}
-            
-            # Get the thumbnails
-            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.original_file_id == file_id).all()
-            
-            # Collect signed URLs for all thumbnails
-            thumbnail_urls = {}
-            for thumbnail in thumbnails:
-                try:
-                    thumbnail_url = provider.get_file_url(
-                        thumbnail.storage_path, 
-                        expires=3600, 
-                        is_public=True
-                    )
-                    thumbnail_urls[thumbnail.size] = {
-                        "url": thumbnail_url,
-                        "width": thumbnail.width,
-                        "height": thumbnail.height
-                    }
-                except Exception as e:
-                    logger.warning(f"Unable to obtain URL for thumbnail {thumbnail.id}: {str(e)}")
-            
-            # Build the detailed response
-            response_data = serialize_sqlalchemy_model(db_file)
-            
-            # Ajouter les champs supplémentaires
-            response_data.update({
-                "download_url": download_url,
-                "thumbnails": thumbnail_urls,
-                "last_modified": file_metadata.get("last_modified")
-            })
-            
-            # Retourner la réponse au format attendu par le schéma
-            return {
-                "file": response_data,
-                "message": "File details retrieved successfully"
-            }
-            
-        except StorageException as e:
-            logger.error(f"Storage error during file details retrieval: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            # Essayez d'obtenir des URLs via le provider
+            download_url = provider.get_file_url(db_file.storage_path, expires=3600, is_public=False, request=request)
+            preview_url = provider.get_file_url(db_file.storage_path, expires=86400, is_public=True, request=request)
         except Exception as e:
-            logger.error(f"Unexpected error during file details retrieval: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Error during file details retrieval: {str(e)}")
+            logger.warning(f"Error generating URLs via provider: {str(e)}")
+            # Fallback: générer des URLs directes via l'API
+            base_url = str(request.base_url).rstrip('/')
+            download_url = f"{base_url}/api/public/file-storage/files/{file_id}/download"
+            preview_url = f"{base_url}/api/public/file-storage/files/{file_id}/preview"
+        
+        # Si les URLs sont toujours vides, forcer l'utilisation des URLs de l'API
+        if not download_url or not preview_url:
+            base_url = str(request.base_url).rstrip('/')
+            download_url = f"{base_url}/api/public/file-storage/files/{file_id}/download"
+            preview_url = f"{base_url}/api/public/file-storage/files/{file_id}/preview"
+        
+        # Convertir en objet dict pour la réponse
+        file_dict = serialize_sqlalchemy_model(db_file)
+        
+        # Ajouter les URLs
+        file_dict["url"] = preview_url
+        file_dict["download_url"] = download_url
+        
+        return file_dict
 
     @router.get("/files/{file_id}/download")
     async def download_file(
@@ -500,6 +474,52 @@ def get_router() -> APIRouter:
             logger.error(f"Unexpected error during URL generation: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error generating download URL: {str(e)}")
 
+    @router.get("/files/{file_id}/preview")
+    async def preview_file(
+        file_id: int,
+        db: Session = Depends(get_db),
+        request: Request = None
+    ):
+        """
+        Preview a stored file (optimized for in-browser viewing/playing)
+        Returns file with Content-Disposition: inline for browser rendering
+        """
+        db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Download the file from storage
+            file_data = provider.download_file(db_file.storage_path)
+            
+            # Set Content-Disposition to inline to render in browser
+            headers = {
+                "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
+                "Accept-Ranges": "bytes"  # Enable seeking in media files
+            }
+            
+            # Return the file data for browser rendering
+            return StreamingResponse(
+                iter([file_data.getvalue()]), 
+                media_type=db_file.mime_type,
+                headers=headers
+            )
+            
+        except StorageException as e:
+            logger.error(f"Storage error during file preview: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Unexpected error during file preview: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during file preview: {str(e)}")
+
     @router.delete("/files/{file_id}", response_model=dict)
     async def delete_file(
         file_id: int,
@@ -572,9 +592,207 @@ def get_public_router() -> APIRouter:
         """
         return {
             "status": "ok",
-            "time": datetime.utcnow().isoformat(),
             "message": "File storage service is running"
         }
+    
+    @router.get("/files", response_model=Dict[str, Any])
+    async def list_public_files(
+        page: int = Query(1, ge=1),
+        page_size: int = Query(10, ge=1, le=100),
+        search: str = Query("", min_length=0, max_length=100),
+        sort_by: str = Query("created_at", min_length=1, max_length=50),
+        sort_order: str = Query("desc", min_length=1, max_length=4),
+        file_type: Optional[str] = Query(None, min_length=0, max_length=50),
+        db: Session = Depends(get_db),
+        request: Request = None
+    ):
+        """
+        Liste les fichiers publics
+        """
+        # Créer la requête de base
+        query = db.query(StoredFile)
+        
+        # Filtrer par type de fichier
+        if file_type:
+            query = query.filter(StoredFile.mime_type.ilike(f"{file_type}%"))
+        
+        # Chercher
+        if search:
+            query = query.filter(
+                or_(
+                    StoredFile.original_filename.ilike(f"%{search}%"),
+                    StoredFile.description.ilike(f"%{search}%"),
+                    StoredFile.mime_type.ilike(f"%{search}%")
+                )
+            )
+        
+        # Tri
+        if sort_order.lower() not in ["asc", "desc"]:
+            sort_order = "desc"
+        
+        sort_column = getattr(StoredFile, sort_by, StoredFile.uploaded_at)
+        if sort_order.lower() == "desc":
+            sort_column = sort_column.desc()
+        else:
+            sort_column = sort_column.asc()
+        
+        query = query.order_by(sort_column)
+        
+        # Compter le nombre total
+        total = query.count()
+        
+        # Pagination
+        query = query.offset((page - 1) * page_size).limit(page_size)
+        
+        # Exécuter la requête
+        files = query.all()
+        
+        # Récupérer les fournisseurs pour ces fichiers
+        provider_ids = [file.provider_id for file in files]
+        providers = {
+            provider.id: provider 
+            for provider in db.query(StorageProvider).filter(
+                StorageProvider.id.in_(provider_ids)
+            ).all()
+        }
+        
+        # Préparer les résultats
+        results = []
+        base_url = str(request.base_url).rstrip('/') if request else ""
+        
+        for file in files:
+            # Récupérer l'instance du fournisseur
+            provider_db = providers.get(file.provider_id)
+            if not provider_db:
+                continue
+                
+            provider = get_provider_instance(provider_db, request)
+            
+            # Essayer de générer une URL via le provider
+            try:
+                preview_url = provider.get_file_url(file.storage_path, expires=86400, is_public=True, request=request)
+                download_url = provider.get_file_url(file.storage_path, expires=3600, is_public=False, request=request)
+            except Exception as e:
+                logger.warning(f"Error generating URL for file {file.id}: {str(e)}")
+                preview_url = ""
+                download_url = ""
+            
+            # Si l'URL est vide, générer une URL directe via l'API
+            if not preview_url:
+                preview_url = f"{base_url}/api/public/file-storage/files/{file.id}/preview"
+                
+            if not download_url:
+                download_url = f"{base_url}/api/public/file-storage/files/{file.id}/download"
+            
+            file_dict = serialize_sqlalchemy_model(file)
+            file_dict["url"] = preview_url
+            file_dict["download_url"] = download_url
+            
+            results.append(file_dict)
+            
+        return {
+            "items": results,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": math.ceil(total / page_size)
+        }
+        
+    @router.get("/files/{file_id}/download")
+    async def public_download_file(file_id: int, attachment: bool = True, db: Session = Depends(get_db)):
+        """Télécharger un fichier publiquement"""
+        return await download_file(file_id=file_id, attachment=attachment, db=db)
+        
+    @router.get("/files/{file_id}/preview")
+    async def public_preview_file(
+        file_id: int,
+        db: Session = Depends(get_db),
+        request: Request = None,
+        range_header: Optional[str] = Header(None, alias="Range")
+    ):
+        """
+        Endpoint public pour prévisualiser un fichier avec support de streaming et des requêtes Range
+        """
+        db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Download the file from storage
+            file_data = provider.download_file(db_file.storage_path)
+            file_bytes = file_data.getvalue()
+            file_size = len(file_bytes)
+            
+            # En-têtes de base optimisés pour la prévisualisation
+            headers = {
+                "Content-Type": db_file.mime_type,
+                "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
+                "Accept-Ranges": "bytes",
+                "Cache-Control": "max-age=86400"  # 24h de cache
+            }
+            
+            # Si pas de Range header, retourner le fichier complet
+            if not range_header:
+                headers["Content-Length"] = str(file_size)
+                return StreamingResponse(
+                    io.BytesIO(file_bytes),
+                    headers=headers,
+                    media_type=db_file.mime_type
+                )
+            
+            # Traitement des requêtes Range pour le streaming
+            try:
+                range_header = range_header.replace("bytes=", "")
+                ranges = range_header.split("-")
+                
+                # Extraire début et fin
+                start = int(ranges[0]) if ranges[0] else 0
+                end = int(ranges[1]) if len(ranges) > 1 and ranges[1] else file_size - 1
+                
+                # Vérifier les limites
+                if start < 0:
+                    start = 0
+                if end >= file_size:
+                    end = file_size - 1
+                
+                # Calculer la taille du segment
+                chunk_size = end - start + 1
+                
+                # Préparer les en-têtes pour la réponse partielle
+                headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+                headers["Content-Length"] = str(chunk_size)
+                
+                # Extraire le segment demandé
+                chunk = file_bytes[start:end+1]
+                
+                # Retourner une réponse 206 (Partial Content)
+                return StreamingResponse(
+                    io.BytesIO(chunk),
+                    status_code=206,
+                    headers=headers,
+                    media_type=db_file.mime_type
+                )
+            
+            except (ValueError, IndexError) as e:
+                # En cas d'erreur de parsing du Range, retourner le fichier complet
+                logger.warning(f"Invalid Range header: {range_header}, error: {str(e)}")
+                return StreamingResponse(
+                    io.BytesIO(file_bytes),
+                    headers=headers,
+                    media_type=db_file.mime_type
+                )
+                
+        except Exception as e:
+            logger.error(f"Error previewing file: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during file preview: {str(e)}")
         
     return router
 

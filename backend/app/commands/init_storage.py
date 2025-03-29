@@ -14,6 +14,32 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, scoped_session
+from sqlalchemy.orm.session import sessionmaker
+
+engine = create_engine('postgresql://user:password@host:port/dbname')
+Base = declarative_base()
+
+class StorageProvider(Base):
+    __tablename__ = 'file_storage_providers'
+    id = Column(Integer, primary_key=True)
+    provider_type = Column(String)
+    is_default = Column(Boolean)
+    is_active = Column(Boolean)
+    bucket_name = Column(String)
+    region = Column(String)
+    endpoint_url = Column(String)
+    access_key = Column(String)
+    secret_key = Column(String)
+    config = Column(String)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+Base.metadata.create_all(engine)
+
+SessionLocal = sessionmaker(bind=engine)
+
 def create_sql_commands(
     endpoint_url: str,
     bucket_name: str,
@@ -21,18 +47,20 @@ def create_sql_commands(
     secret_key: str = "minioadmin",
     region: str = None,
     secure: bool = False,
+    public_endpoint_url: str = None,
     force: bool = False
 ) -> str:
     """
     Generate SQL commands to initialize MinIO provider
     
     Args:
-        endpoint_url: MinIO server endpoint
+        endpoint_url: MinIO server endpoint URL
         bucket_name: Bucket name
         access_key: MinIO access key
         secret_key: MinIO secret key
         region: Region (optional)
         secure: Whether to use HTTPS
+        public_endpoint_url: Public endpoint URL for direct access to files
         force: Whether to force recreation if exists
     
     Returns:
@@ -42,7 +70,10 @@ def create_sql_commands(
     now = datetime.utcnow().isoformat()
     
     # Config options as JSON string
-    config_options = json.dumps({"secure": secure})
+    config_options = json.dumps({
+        "secure": secure,
+        "public_endpoint_url": public_endpoint_url if public_endpoint_url else None
+    })
     
     # SQL to check if MinIO provider exists
     check_sql = "SELECT id, is_default FROM file_storage_providers WHERE provider_type = 'minio';"
@@ -134,36 +165,87 @@ def create_sql_commands(
     
     return combined_sql
 
+def update_storage_provider_public_url():
+    """Mettre à jour l'URL publique du fournisseur MinIO existant"""
+    db = SessionLocal()
+    try:
+        provider = db.query(StorageProvider).filter(
+            StorageProvider.provider_type == "minio",
+            StorageProvider.is_default == True
+        ).first()
+        
+        if not provider:
+            logger.error("Aucun fournisseur MinIO trouvé")
+            return
+        
+        # Charger la configuration existante
+        try:
+            config = json.loads(provider.config)
+        except:
+            config = {}
+        
+        # Ajouter ou mettre à jour l'URL publique
+        config["public_endpoint_url"] = "http://localhost:9000"
+        
+        # Sauvegarder la configuration mise à jour
+        provider.config = json.dumps(config)
+        db.commit()
+        
+        logger.info(f"URL publique mise à jour pour le fournisseur d'ID {provider.id}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erreur lors de la mise à jour de l'URL publique: {str(e)}")
+    finally:
+        db.close()
+
 def main():
-    parser = argparse.ArgumentParser(description="Initialize storage providers")
-    parser.add_argument("--endpoint", default="kaapi-minio:9000", help="MinIO server endpoint")
-    parser.add_argument("--bucket", default="files", help="Bucket name")
-    parser.add_argument("--access-key", default="minioadmin", help="MinIO access key")
-    parser.add_argument("--secret-key", default="minioadmin", help="MinIO secret key")
-    parser.add_argument("--region", default=None, help="Region (optional)")
-    parser.add_argument("--secure", action="store_true", help="Use HTTPS")
-    parser.add_argument("--force", action="store_true", help="Force recreation of provider")
+    """
+    Main function to execute the initialization
+    """
+    parser = argparse.ArgumentParser(description="Init Storage Provider")
+    
+    # Sous-commandes
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+    
+    # Commande init
+    init_parser = subparsers.add_parser("init", help="Initialize MinIO storage provider")
+    init_parser.add_argument("--endpoint", default="minio:9000", help="MinIO endpoint URL")
+    init_parser.add_argument("--bucket", default="files", help="MinIO bucket name")
+    init_parser.add_argument("--access-key", default="minioadmin", help="MinIO access key")
+    init_parser.add_argument("--secret-key", default="minioadmin", help="MinIO secret key")
+    init_parser.add_argument("--region", default="", help="MinIO region")
+    init_parser.add_argument("--secure", action="store_true", help="Use HTTPS for MinIO")
+    init_parser.add_argument("--public-endpoint", default="http://localhost:9000", help="Public URL for MinIO")
+    init_parser.add_argument("--force", action="store_true", help="Force recreate provider if exists")
+    
+    # Commande update-public-url
+    subparsers.add_parser("update-public-url", help="Update the public URL for MinIO provider")
     
     args = parser.parse_args()
     
-    # Generate SQL commands
-    sql_commands = create_sql_commands(
-        endpoint_url=args.endpoint,
-        bucket_name=args.bucket,
-        access_key=args.access_key,
-        secret_key=args.secret_key,
-        region=args.region,
-        secure=args.secure,
-        force=args.force
-    )
-    
-    # Write SQL to a file that can be executed by the calling script
-    with open('/tmp/init_minio.sql', 'w') as f:
-        f.write(sql_commands)
-    
-    logger.info("SQL commands generated and written to /tmp/init_minio.sql")
-    print("SUCCESS")
-    sys.exit(0)
+    if args.command == "init":
+        sql_commands = create_sql_commands(
+            endpoint_url=args.endpoint,
+            bucket_name=args.bucket,
+            access_key=args.access_key,
+            secret_key=args.secret_key,
+            region=args.region,
+            secure=args.secure,
+            public_endpoint_url=args.public_endpoint,
+            force=args.force
+        )
+        
+        # Write SQL to a file that can be executed by the calling script
+        with open('/tmp/init_minio.sql', 'w') as f:
+            f.write(sql_commands)
+        
+        logger.info("SQL commands generated and written to /tmp/init_minio.sql")
+        print("SUCCESS")
+        sys.exit(0)
+    elif args.command == "update-public-url":
+        update_storage_provider_public_url()
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

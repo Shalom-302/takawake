@@ -58,17 +58,18 @@ export default function FilesPage() {
         folder_id: currentFolder?.id,
         search: searchQuery
       });
-      console.log("hihihi", fileResponse.map((a) => a.file));
-      setFiles(fileResponse.map((a) => a.file));
+      console.log("fileResponse", fileResponse);
+      console.log("hihihi", fileResponse.items);
+      setFiles(fileResponse.items);
       
       // Get folders if we're in root or a specific folder
-      let folderResponse = await fileStorageService.getFolders();
-      console.log("folders--", folderResponse.map((a) => a.folder))
+      const folderResponse = await fileStorageService.getFolders();
+      console.log("folders--", folderResponse.items)
       
       // Logique de filtrage corrigée:
       // - Si on est à la racine (currentFolder est null), afficher les dossiers avec parent_id null
       // - Sinon, afficher les dossiers dont le parent_id correspond à l'ID du dossier courant
-      const foldersInCurrentParent = folderResponse.map((a) => a.folder).filter(folder => {
+      const foldersInCurrentParent = folderResponse.items.filter(folder => {
         if (currentFolder === null) {
           return folder.parent_id === null;
         } else {
