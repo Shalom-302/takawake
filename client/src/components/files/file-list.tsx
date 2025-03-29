@@ -176,10 +176,14 @@ const FileList: React.FC<FileListProps> = ({
     if (file.mime_type.startsWith('image/')) {
       return (
         <div className="flex justify-center p-4">
-          <img
+          <Image
             src={file.url}
             alt={file.original_filename}
-            style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }}
+            width={800}
+            height={600}
+            className="max-w-full max-h-[70vh] object-contain"
+            style={{ width: 'auto', height: 'auto' }}
+            unoptimized={true}
           />
         </div>
       );
@@ -190,9 +194,13 @@ const FileList: React.FC<FileListProps> = ({
             <video 
               src={file.url}
               controls
+              controlsList="nodownload"
+              preload="metadata"
               className="w-full h-auto"
               style={{ maxHeight: '70vh' }}
-              controlsList="nodownload"
+              crossOrigin="anonymous"
+              autoPlay={false}
+              playsInline
             >
               Votre navigateur ne prend pas en charge la lecture vidéo.
             </video>
@@ -226,10 +234,18 @@ const FileList: React.FC<FileListProps> = ({
         </div>
       );
     } else if (file.mime_type === 'application/pdf') {
+      // Pour les PDF, utilisons un iframe qui permet l'affichage direct
       return (
-        <div className="text-center py-10">
-          <p>Pour une meilleure expérience, ouvrez le PDF dans un nouvel onglet :</p>
-          <div className="mt-4 flex justify-center gap-4">
+        <div className="flex flex-col items-center">
+          <div className="w-full h-[70vh] mb-4 border border-gray-200 rounded overflow-hidden">
+            <iframe
+              src={file.url}
+              title={file.original_filename}
+              className="w-full h-full border-0"
+              sandbox="allow-same-origin allow-scripts"
+            />
+          </div>
+          <div className="flex justify-center gap-4">
             <Button
               onClick={() => window.open(file.url, '_blank')}
               className="flex items-center gap-2"

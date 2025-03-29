@@ -736,8 +736,28 @@ def get_public_router() -> APIRouter:
                 "Content-Type": db_file.mime_type,
                 "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
                 "Accept-Ranges": "bytes",
-                "Cache-Control": "max-age=86400"  # 24h de cache
+                "Cache-Control": "max-age=86400",  # 24h de cache
+                "Access-Control-Allow-Origin": "*",  # CORS pour permettre l'accès depuis le frontend
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Range, Content-Type, Accept"
             }
+            
+            # Cas spécial pour les PDF
+            if db_file.mime_type == "application/pdf":
+                # Les PDFs ont besoin de ces en-têtes spécifiques
+                headers["X-Content-Type-Options"] = "nosniff"
+                
+            # Cas spécial pour les vidéos
+            if db_file.mime_type.startswith("video/"):
+                # Ajouter des en-têtes spécifiques pour les vidéos
+                headers["X-Content-Type-Options"] = "nosniff"
+                # Forcer l'utilisation du content-type approprié
+                if db_file.mime_type == "video/mp4":
+                    headers["Content-Type"] = "video/mp4"
+                elif db_file.mime_type == "video/webm":
+                    headers["Content-Type"] = "video/webm"
+                elif db_file.mime_type == "video/ogg":
+                    headers["Content-Type"] = "video/ogg"
             
             # Si pas de Range header, retourner le fichier complet
             if not range_header:
@@ -784,6 +804,7 @@ def get_public_router() -> APIRouter:
             except (ValueError, IndexError) as e:
                 # En cas d'erreur de parsing du Range, retourner le fichier complet
                 logger.warning(f"Invalid Range header: {range_header}, error: {str(e)}")
+                headers["Content-Length"] = str(file_size)
                 return StreamingResponse(
                     io.BytesIO(file_bytes),
                     headers=headers,
