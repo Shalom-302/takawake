@@ -52,20 +52,49 @@ export default function FilesPage() {
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Retrieve files in the current folder
+      // Get folders once
+      const folderResponse = await fileStorageService.getFolders();
+      console.log("folders--", folderResponse);
+
+      // Get files with the desired filters
       const fileResponse = await fileStorageService.getFiles({
         page: currentPage,
         folder_id: currentFolder?.id,
         search: searchQuery
       });
       console.log("fileResponse", fileResponse);
-      setFiles(fileResponse.items);
       
-      // Get folders if we're in root or a specific folder
-      const folderResponse = await fileStorageService.getFolders();
-      console.log("folders--", folderResponse)
+      // Filter files based on the current folder
+      let filteredFiles = fileResponse.items;
       
-      // Logic for filtering:
+      // If we are in a specific folder, filter files that start with the folder path
+      if (currentFolder) {
+        filteredFiles = fileResponse.items.filter(file => {
+          // Check if storage_path starts with the folder name (with or without space)
+          return file.storage_path.startsWith(currentFolder.name + '/') || 
+                 file.storage_path.startsWith(currentFolder.name + ' /') ||
+                 // Check also file_metadata.folder_id if available
+                 (file.metadata?.folder_id === currentFolder.id);
+        });
+      } else {
+        // If we are at the root, display only files that do not have a "/"
+        // in their storage_path, meaning they are not in a folder
+        filteredFiles = fileResponse.items.filter(file => {
+          // A file is at the root if:
+          
+          // 1. It does not have a folder_id in its metadata
+          if (file.metadata?.folder_id) return false;
+          
+          // 2. Its storage_path does not exist or does not contain a "/"
+          if (!file.storage_path) return true;
+          return file.storage_path.indexOf('/') === -1;
+        });
+      }
+      
+      // Update status with filtered files
+      setFiles(filteredFiles);
+      
+      // Logic for filtering folders:
       // - If we're at the root (currentFolder is null), display folders with parent_id null
       // - Otherwise, display folders whose parent_id matches the current folder ID
       const foldersInCurrentParent = folderResponse.map((a) => a.folder).filter(folder => {
@@ -76,7 +105,7 @@ export default function FilesPage() {
         }
       });
       
-      console.log("folders^^^", foldersInCurrentParent)
+      console.log("folders^^^", foldersInCurrentParent);
       
       setFolders(foldersInCurrentParent);
     } catch (error: unknown) {

@@ -320,11 +320,31 @@ def get_router() -> APIRouter:
         if folder_id is not None:
             folder = db.query(FileFolder).filter(FileFolder.id == folder_id).first()
             if folder:
+                # Amélioration: Gérer les cas où le chemin peut avoir un espace après le nom du dossier
                 # Filtrer par le chemin de stockage qui commence par le nom du dossier suivi de "/"
-                query = query.filter(StoredFile.storage_path.like(f"{folder.name}/%"))
+                # On utilise deux conditions OR pour prendre en compte les deux formats possibles
+                query = query.filter(
+                    or_(
+                        StoredFile.storage_path.like(f"{folder.name}/%"),  # Cas sans espace
+                        StoredFile.storage_path.like(f"{folder.name} /%")  # Cas avec espace
+                    )
+                )
+                # Vérifier aussi les métadonnées pour le folder_id
+                query = query.filter(
+                    or_(
+                        StoredFile.file_metadata['folder_id'].astext == str(folder_id),
+                        StoredFile.storage_path.like(f"{folder.name}/%"),
+                        StoredFile.storage_path.like(f"{folder.name} /%")
+                    )
+                )
         elif folder_path:
-            # Filtrage par chemin (comme avant)
-            query = query.filter(StoredFile.storage_path.like(f"{folder_path}/%"))
+            # Filtrage par chemin avec la même amélioration pour les espaces
+            query = query.filter(
+                or_(
+                    StoredFile.storage_path.like(f"{folder_path}/%"),
+                    StoredFile.storage_path.like(f"{folder_path} /%")
+                )
+            )
         else:
             # Si on est à la racine (ni folder_id ni folder_path spécifiés),
             # on exclut les fichiers qui sont dans des dossiers
@@ -335,7 +355,19 @@ def get_router() -> APIRouter:
             
             # 2. Exclure les fichiers dont le chemin commence par un nom de dossier suivi de "/"
             for folder_name in folder_names:
-                query = query.filter(~StoredFile.storage_path.like(f"{folder_name}/%"))
+                query = query.filter(
+                    and_(
+                        ~StoredFile.storage_path.like(f"{folder_name}/%"),
+                        ~StoredFile.storage_path.like(f"{folder_name} /%")
+                    )
+                )
+                # Vérifier aussi si le fichier n'a pas de référence de dossier dans ses métadonnées
+                query = query.filter(
+                    or_(
+                        StoredFile.file_metadata['folder_id'] == None,
+                        StoredFile.file_metadata['folder_id'].astext == 'null'
+                    )
+                )
         
         if content_type:
             query = query.filter(StoredFile.mime_type.like(f"{content_type}%"))

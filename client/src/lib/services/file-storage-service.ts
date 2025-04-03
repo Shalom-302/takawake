@@ -28,6 +28,7 @@ export interface StoredFile {
   filename: string;
   original_filename: string;
   file_path: string;
+  storage_path: string;
   file_size: number;
   mime_type: string;
   provider_id: number;
