@@ -862,10 +862,61 @@ def get_public_router() -> APIRouter:
         }
         
     @router.get("/files/{file_id}/download")
-    async def public_download_file(file_id: int, attachment: bool = True, db: Session = Depends(get_db)):
+    async def public_download_file(
+        file_id: int, 
+        attachment: bool = True, 
+        db: Session = Depends(get_db),
+        request: Request = None
+    ):
         """Télécharger un fichier publiquement"""
-        return await download_file(file_id=file_id, attachment=attachment, db=db)
+        db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
         
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Download the file from storage
+            file_data = provider.download_file(db_file.storage_path)
+            
+            # Encoder le nom de fichier pour éviter les problèmes d'encodage
+            import urllib.parse
+            encoded_filename = urllib.parse.quote(db_file.original_filename)
+            
+            # Set Content-Disposition header based on attachment parameter
+            if attachment:
+                content_disposition = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
+            else:
+                content_disposition = f'inline; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
+                
+            headers = {
+                "Content-Disposition": content_disposition,
+                "Access-Control-Allow-Origin": "*",  # CORS for allowing access from the frontend
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Content-Type": db_file.mime_type,
+                "Accept-Ranges": "bytes"
+            }
+            
+            # Retourner le contenu du fichier
+            return StreamingResponse(
+                iter([file_data.getvalue()]), 
+                headers=headers,
+                media_type=db_file.mime_type
+            )
+            
+        except StorageException as e:
+            logger.error(f"Storage error during file download: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Unexpected error during file download: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during file download: {str(e)}")
+
     @router.get("/files/{file_id}/preview")
     async def public_preview_file(
         file_id: int,
@@ -902,7 +953,7 @@ def get_public_router() -> APIRouter:
                 "Cache-Control": "max-age=86400",  # 24h cache
                 "Access-Control-Allow-Origin": "*",  # CORS for allowing access from the frontend
                 "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-                "Access-Control-Allow-Headers": "Range, Content-Type, Accept, Origin, Authorization",
+                "Access-Control-Allow-Headers": "Range, Content-Type, Accept, Origin, Authorization, Content-Range",
                 "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges"
             }
             
@@ -920,6 +971,13 @@ def get_public_router() -> APIRouter:
             if db_file.mime_type.startswith("video/"):
                 # Add specific headers for videos
                 headers["X-Content-Type-Options"] = "nosniff"
+                
+                # Enable Cross-Origin Resource Sharing specifically for videos
+                headers["Access-Control-Allow-Origin"] = "*"
+                headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+                headers["Access-Control-Allow-Headers"] = "Range, Content-Type, Accept, Origin, Authorization, Content-Range"
+                headers["Access-Control-Expose-Headers"] = "Content-Range, Content-Length, Accept-Ranges"
+                
                 # Force the use of the appropriate content-type
                 if db_file.mime_type == "video/mp4":
                     headers["Content-Type"] = "video/mp4"
@@ -927,6 +985,8 @@ def get_public_router() -> APIRouter:
                     headers["Content-Type"] = "video/webm"
                 elif db_file.mime_type == "video/ogg":
                     headers["Content-Type"] = "video/ogg"
+                elif db_file.mime_type == "video/quicktime":
+                    headers["Content-Type"] = "video/mp4"  # Convertir QuickTime en MP4 pour compatibilité
             
             # If no Range header, return the complete file
             if not range_header:
@@ -939,6 +999,9 @@ def get_public_router() -> APIRouter:
             
             # Handle Range requests for streaming
             try:
+                # Log the range header for debugging
+                logger.info(f"Range header received: {range_header}")
+                
                 range_header = range_header.replace("bytes=", "")
                 ranges = range_header.split("-")
                 
@@ -958,6 +1021,9 @@ def get_public_router() -> APIRouter:
                 # Prepare headers for partial response
                 headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
                 headers["Content-Length"] = str(chunk_size)
+                
+                # Log the response range for debugging
+                logger.info(f"Serving range: bytes {start}-{end}/{file_size}")
                 
                 # Extract the requested chunk
                 chunk = file_bytes[start:end+1]
