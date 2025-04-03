@@ -316,20 +316,20 @@ def get_router() -> APIRouter:
         if provider_id:
             query = query.filter(StoredFile.provider_id == provider_id)
         
-        # Si folder_id est spécifié, on récupère d'abord le nom du dossier
+        # If folder_id is specified, first get the folder name
         if folder_id is not None:
             folder = db.query(FileFolder).filter(FileFolder.id == folder_id).first()
             if folder:
-                # Amélioration: Gérer les cas où le chemin peut avoir un espace après le nom du dossier
-                # Filtrer par le chemin de stockage qui commence par le nom du dossier suivi de "/"
-                # On utilise deux conditions OR pour prendre en compte les deux formats possibles
+                # Improvement: Handle cases where the path may have an extra space after the folder name
+                # Filter by the storage path that starts with the folder name followed by "/"
+                # Use two OR conditions to account for both formats
                 query = query.filter(
                     or_(
-                        StoredFile.storage_path.like(f"{folder.name}/%"),  # Cas sans espace
-                        StoredFile.storage_path.like(f"{folder.name} /%")  # Cas avec espace
+                        StoredFile.storage_path.like(f"{folder.name}/%"),  # Case without space
+                        StoredFile.storage_path.like(f"{folder.name} /%")  # Case with space
                     )
                 )
-                # Vérifier aussi les métadonnées pour le folder_id
+                # Check also the metadata for folder_id
                 query = query.filter(
                     or_(
                         StoredFile.file_metadata['folder_id'].astext == str(folder_id),
@@ -338,7 +338,7 @@ def get_router() -> APIRouter:
                     )
                 )
         elif folder_path:
-            # Filtrage par chemin avec la même amélioration pour les espaces
+            # Filter by path with the same improvement for spaces
             query = query.filter(
                 or_(
                     StoredFile.storage_path.like(f"{folder_path}/%"),
@@ -346,14 +346,14 @@ def get_router() -> APIRouter:
                 )
             )
         else:
-            # Si on est à la racine (ni folder_id ni folder_path spécifiés),
-            # on exclut les fichiers qui sont dans des dossiers
+            # If we are at the root (neither folder_id nor folder_path specified),
+            # exclude files that are in folders
             
-            # 1. Récupérer tous les noms de dossiers
+            # 1. Get all folder names
             folders = db.query(FileFolder).all()
             folder_names = [folder.name for folder in folders]
             
-            # 2. Exclure les fichiers dont le chemin commence par un nom de dossier suivi de "/"
+            # 2. Exclude files whose path starts with a folder name followed by "/"
             for folder_name in folder_names:
                 query = query.filter(
                     and_(
@@ -361,7 +361,7 @@ def get_router() -> APIRouter:
                         ~StoredFile.storage_path.like(f"{folder_name} /%")
                     )
                 )
-                # Vérifier aussi si le fichier n'a pas de référence de dossier dans ses métadonnées
+                # Check also if the file does not have a folder reference in its metadata
                 query = query.filter(
                     or_(
                         StoredFile.file_metadata['folder_id'] == None,
@@ -380,10 +380,10 @@ def get_router() -> APIRouter:
         # Execute the query with pagination
         files = query.order_by(StoredFile.uploaded_at.desc()).offset(skip).limit(limit).all()
         
-        # Utiliser notre fonction de sérialisation pour chaque fichier
+        # Use our serialization function for each file
         serialized_files = [serialize_sqlalchemy_model(file) for file in files]
         
-        # Retourner les fichiers au format attendu par le schéma
+        # Return files in the format expected by the schema
         return [{"file": file, "message": "File retrieved successfully"} for file in serialized_files]
 
     @router.get("/files/{file_id}", response_model=StoredFileDetailResponse)
@@ -414,21 +414,21 @@ def get_router() -> APIRouter:
             preview_url = provider.get_file_url(db_file.storage_path, expires=86400, is_public=True, request=request)
         except Exception as e:
             logger.warning(f"Error generating URLs via provider: {str(e)}")
-            # Fallback: générer des URLs directes via l'API
+            # Fallback: generate URLs directly via API
             base_url = str(request.base_url).rstrip('/')
             download_url = f"{base_url}/api/public/file-storage/files/{file_id}/download"
             preview_url = f"{base_url}/api/public/file-storage/files/{file_id}/preview"
         
-        # Si les URLs sont toujours vides, forcer l'utilisation des URLs de l'API
+        # If the URLs are still empty, force the use of API URLs
         if not download_url or not preview_url:
             base_url = str(request.base_url).rstrip('/')
             download_url = f"{base_url}/api/public/file-storage/files/{file_id}/download"
             preview_url = f"{base_url}/api/public/file-storage/files/{file_id}/preview"
         
-        # Convertir en objet dict pour la réponse
+        # Convert to dict for response
         file_dict = serialize_sqlalchemy_model(db_file)
         
-        # Ajouter les URLs
+        # Add URLs
         file_dict["url"] = preview_url
         file_dict["download_url"] = download_url
         
@@ -868,7 +868,7 @@ def get_public_router() -> APIRouter:
         db: Session = Depends(get_db),
         request: Request = None
     ):
-        """Télécharger un fichier publiquement"""
+        """Download a file publicly"""
         db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
         if not db_file:
             raise HTTPException(status_code=404, detail="File not found")
@@ -925,7 +925,7 @@ def get_public_router() -> APIRouter:
         range_header: Optional[str] = Header(None, alias="Range")
     ):
         """
-        Endpoint public pour prévisualiser un fichier avec support de streaming et des requêtes Range
+        Endpoint public to preview a file with streaming and Range requests support
         """
         db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
         if not db_file:
@@ -1104,9 +1104,9 @@ def get_public_router() -> APIRouter:
             
             # Upload the file to storage - correction de l'ordre des paramètres
             file_url = provider.upload_file(
-                file_data,  # 1er paramètre: l'objet fichier avec méthode seek()
-                storage_path,  # 2ème paramètre: le chemin de destination
-                file.content_type  # 3ème paramètre: le type de contenu
+                file_data,  # 1st parameter: file object with seek() method
+                storage_path,  # 2nd parameter: destination path
+                file.content_type  # 3rd parameter: content type
             )
             
             # Parse tags if provided
@@ -1125,8 +1125,8 @@ def get_public_router() -> APIRouter:
                 file_metadata={
                     "description": description,
                     "tags": tag_list,
-                    "url": file_url,  # Stocker l'URL dans les métadonnées
-                    "folder_id": folder.id if folder else None  # Stocker l'ID du dossier dans les métadonnées
+                    "url": file_url,  # Store the URL in the metadata
+                    "folder_id": folder.id if folder else None  # Store the folder ID in the metadata
                 }
             )
             

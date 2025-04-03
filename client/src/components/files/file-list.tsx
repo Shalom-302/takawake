@@ -263,12 +263,6 @@ const FileList: React.FC<FileListProps> = ({
               Your browser does not support video playback.
             </video>
           </div>
-          <div className="mt-2 flex justify-center">
-            <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Download
-            </Button>
-          </div>
         </div>
       );
     } else if (file.mime_type.startsWith('audio/')) {
@@ -285,10 +279,6 @@ const FileList: React.FC<FileListProps> = ({
               Your browser does not support audio playback.
             </audio>
           </div>
-          <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download
-          </Button>
         </div>
       );
     } else if (file.mime_type === 'application/pdf') {
@@ -322,13 +312,6 @@ const FileList: React.FC<FileListProps> = ({
             >
               <ExternalLink className="h-4 w-4" />
               Open in new tab
-            </Button>
-            <Button
-              onClick={() => handleDownload(file.id, file.original_filename)}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download
             </Button>
           </div>
         </div>
