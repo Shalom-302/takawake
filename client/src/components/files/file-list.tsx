@@ -11,14 +11,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
-  FileIcon,
-  FolderIcon,
-  ArrowUp,
-  Download,
-  Trash2,
-  Eye,
-  ExternalLink,
   Copy,
+  Download,
+  ExternalLink,
+  FileIcon,
+  Loader2,
+  Eye,
+  Trash2,
+  FolderIcon,
+  ArrowUp
 } from 'lucide-react';
 import Image from 'next/image';
 import { StoredFile, FileFolder } from '@/lib/services/file-storage-service';
@@ -30,6 +31,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import fileStorageService from '@/lib/services/file-storage-service';
+import { toast } from 'sonner';
 
 interface FileListProps {
   files: StoredFile[];
@@ -113,14 +116,36 @@ const FileList: React.FC<FileListProps> = ({
   // States for preview modal
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<StoredFile | null>(null);
-  
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
   // State for copy link notification
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
   // Handle preview click
-  const handlePreviewClick = (file: StoredFile) => {
+  const handlePreviewClick = async (file: StoredFile) => {
     setPreviewFile(file);
     setPreviewModalOpen(true);
+    
+    // Clear previous preview URL
+    setPreviewUrl(null);
+    
+    // Only fetch preview URL for files that need it
+    if (canPreview(file.mime_type)) {
+      setIsLoadingPreview(true);
+      try {
+        // Get optimized preview URL for streaming media
+        const url = await fileStorageService.getPreviewUrl(file.id);
+        setPreviewUrl(url);
+      } catch (error) {
+        console.error('Error getting preview URL:', error);
+        toast.error('Failed to load preview');
+        // Fallback to regular URL if available
+        setPreviewUrl(file.url || null);
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    }
   };
 
   // Handle copy link to clipboard
@@ -155,19 +180,32 @@ const FileList: React.FC<FileListProps> = ({
     );
   };
 
-  // Render preview content based on file type - version ultra simplifiée
+  // Render preview content based on file type
   const renderPreview = (file: StoredFile) => {
     if (!file) return null;
     
-    // S'assurer que nous avons une URL valide
-    if (!file.url) {
+    // Show loading indicator while fetching preview URL
+    if (isLoadingPreview) {
+      return (
+        <div className="flex justify-center items-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading preview...</span>
+        </div>
+      );
+    }
+    
+    // Use the optimized preview URL if available, fallback to file.url
+    const displayUrl = previewUrl || file.url;
+    
+    // If no URL is available
+    if (!displayUrl) {
       return (
         <div className="p-8 text-center">
-          <p className="text-gray-500 mb-4">URL de prévisualisation non disponible pour ce fichier.</p>
+          <p className="text-gray-500 mb-4">Preview URL not available for this file.</p>
           <Button
             onClick={() => handleDownload(file.id, file.original_filename)}
           >
-            Télécharger le fichier
+            Download File
           </Button>
         </div>
       );
@@ -177,7 +215,7 @@ const FileList: React.FC<FileListProps> = ({
       return (
         <div className="flex justify-center p-4">
           <Image
-            src={file.url}
+            src={displayUrl}
             alt={file.original_filename}
             width={800}
             height={600}
@@ -192,7 +230,7 @@ const FileList: React.FC<FileListProps> = ({
         <div className="flex flex-col items-center">
           <div className="w-full max-w-4xl my-2">
             <video 
-              src={file.url}
+              src={displayUrl}
               controls
               controlsList="nodownload"
               preload="metadata"
@@ -202,13 +240,13 @@ const FileList: React.FC<FileListProps> = ({
               autoPlay={false}
               playsInline
             >
-              Votre navigateur ne prend pas en charge la lecture vidéo.
+              Your browser does not support video playback.
             </video>
           </div>
           <div className="mt-2 flex justify-center">
             <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
-              Télécharger
+              Download
             </Button>
           </div>
         </div>
@@ -219,27 +257,27 @@ const FileList: React.FC<FileListProps> = ({
           <h3 className="text-lg font-medium mb-4">{file.original_filename}</h3>
           <div className="w-full max-w-xl mb-4">
             <audio 
-              src={file.url}
+              src={displayUrl}
               controls
               className="w-full"
               controlsList="nodownload"
             >
-              Votre navigateur ne prend pas en charge la lecture audio.
+              Your browser does not support audio playback.
             </audio>
           </div>
           <Button onClick={() => handleDownload(file.id, file.original_filename)} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Télécharger
+            Download
           </Button>
         </div>
       );
     } else if (file.mime_type === 'application/pdf') {
-      // Pour les PDF, utilisons un iframe qui permet l'affichage direct
+      // For PDFs, use an iframe for direct display
       return (
         <div className="flex flex-col items-center">
           <div className="w-full h-[70vh] mb-4 border border-gray-200 rounded overflow-hidden">
             <iframe
-              src={file.url}
+              src={displayUrl}
               title={file.original_filename}
               className="w-full h-full border-0"
               sandbox="allow-same-origin allow-scripts"
@@ -247,18 +285,18 @@ const FileList: React.FC<FileListProps> = ({
           </div>
           <div className="flex justify-center gap-4">
             <Button
-              onClick={() => window.open(file.url, '_blank')}
+              onClick={() => window.open(displayUrl, '_blank')}
               className="flex items-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
-              Ouvrir dans un nouvel onglet
+              Open in new tab
             </Button>
             <Button
               onClick={() => handleDownload(file.id, file.original_filename)}
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
-              Télécharger
+              Download
             </Button>
           </div>
         </div>
@@ -267,12 +305,12 @@ const FileList: React.FC<FileListProps> = ({
     
     return (
       <div className="text-center py-10">
-        <p>Prévisualisation non disponible pour ce type de fichier.</p>
+        <p>Preview not available for this file type.</p>
         <Button
           className="mt-4"
           onClick={() => handleDownload(file.id, file.original_filename)}
         >
-          Télécharger le fichier
+          Download File
         </Button>
       </div>
     );

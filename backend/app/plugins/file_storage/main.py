@@ -708,7 +708,56 @@ def get_public_router() -> APIRouter:
             "status": "ok",
             "message": "File storage service is running"
         }
-    
+        
+    @router.get("/files/{file_id}/preview-url", response_model=Dict[str, str])
+    async def get_preview_url(
+        file_id: int,
+        db: Session = Depends(get_db),
+        request: Request = None
+    ):
+        """
+        Generate a presigned URL optimized for streaming media and inline viewing
+        Returns a URL that can be used to access the file directly
+        No authentication required for public access
+        """
+        try:
+            # Get the file from the database
+            db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+            if not db_file:
+                raise HTTPException(status_code=404, detail="File not found")
+                
+            # Get the provider
+            provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+            if not provider_db:
+                raise HTTPException(status_code=404, detail="Storage provider not found")
+                
+            # Create a provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Generate a presigned URL with response-content-disposition=inline
+            # and other headers optimized for streaming
+            url_params = {
+                "ResponseContentDisposition": f"inline; filename=\"{db_file.original_filename}\"",
+                "ResponseContentType": db_file.mime_type,
+                "ResponseCacheControl": "public, max-age=3600",  # Cache for 1 hour
+            }
+            
+            # Generate the URL with a 1 hour expiry by default
+            url = provider.generate_presigned_url(
+                db_file.storage_path, 
+                expiry=3600,
+                extra_params=url_params
+            )
+            
+            return {"url": url}
+            
+        except StorageException as e:
+            logger.error(f"Storage error generating preview URL: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Unexpected error generating preview URL: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error generating preview URL: {str(e)}")
+
     @router.get("/files", response_model=Dict[str, Any])
     async def list_public_files(
         page: int = Query(1, ge=1),

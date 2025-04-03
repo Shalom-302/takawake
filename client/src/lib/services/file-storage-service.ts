@@ -338,6 +338,54 @@ const fileStorageService = {
       console.error(`Error generating presigned URL for file ${id}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Get preview URL for a file optimized for streaming media and inline viewing
+   * Uses cached URLs when available
+   */
+  async getPreviewUrl(id: number): Promise<string> {
+    try {
+      // Cache key for preview URLs
+      const cacheKey = `file-preview-url-${id}`;
+      
+      // Check if we have a cached URL
+      const cachedUrl = sessionStorage.getItem(cacheKey);
+      if (cachedUrl) {
+        return cachedUrl;
+      }
+      
+      // If no cached URL, request a new one
+      const response: AxiosResponse<{ url: string }> = await axiosClient.get(
+        `/public/file-storage/files/${id}/preview-url`
+      );
+      
+      // Cache the URL for future use
+      sessionStorage.setItem(cacheKey, response.data.url);
+      
+      return response.data.url;
+    } catch (error) {
+      console.error(`Error getting preview URL for file ${id}:`, error);
+      // Fallback to direct preview endpoint if preview URL fails
+      const baseUrl = axiosClient.defaults.baseURL || '';
+      return `${baseUrl}/public/file-storage/files/${id}/preview`;
+    }
+  },
+
+  /**
+   * Preview a file directly
+   */
+  async previewFile(id: number): Promise<Blob> {
+    try {
+      const response: AxiosResponse<Blob> = await axiosClient.get(
+        `/public/file-storage/files/${id}/preview`,
+        { responseType: 'blob' }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error previewing file ${id}:`, error);
+      throw error;
+    }
   }
 };
 

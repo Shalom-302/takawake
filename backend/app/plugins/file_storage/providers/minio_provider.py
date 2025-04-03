@@ -251,7 +251,7 @@ class MinioStorageProvider(StorageProviderInterface):
             storage_path: Path of the file in MinIO
             
         Returns:
-            Dictionary containing the file metadata
+            Dictionary containing the metadata
         """
         try:
             stat = self.client.stat_object(
@@ -260,15 +260,86 @@ class MinioStorageProvider(StorageProviderInterface):
             )
             
             return {
-                'size': stat.size,
-                'last_modified': stat.last_modified,
-                'etag': stat.etag,
-                'metadata': stat.metadata,
-                'content_type': stat.content_type
+                "size": stat.size,
+                "last_modified": stat.last_modified,
+                "etag": stat.etag,
+                "metadata": stat.metadata
             }
             
         except Exception as e:
-            error_msg = f"Error retrieving metadata: {str(e)}"
+            error_msg = f"Error getting file metadata from MinIO: {str(e)}"
+            self.logger.error(error_msg)
+            raise StorageException(error_msg)
+    
+    def generate_presigned_url(self, storage_path: str, expiry: int = 3600, extra_params: Dict[str, str] = None) -> str:
+        """
+        Generate a presigned URL with custom response parameters for streaming and preview
+        
+        Args:
+            storage_path: Path of the file in MinIO
+            expiry: Expiry time in seconds
+            extra_params: Additional response parameters for the S3 GetObject operation
+                - ResponseContentDisposition: Content-Disposition header
+                - ResponseContentType: Content-Type header
+                - ResponseCacheControl: Cache-Control header
+                
+        Returns:
+            Presigned URL with custom response parameters
+        """
+        try:
+            # Default to empty dict if extra_params is None
+            params = extra_params or {}
+            
+            # Check if we should use the public endpoint
+            if self.public_endpoint_url and len(params) == 0:
+                # For browser access, we need to use localhost or a public URL
+                # instead of 'minio' which is the service name in the Docker network
+                public_url = f"{self.public_endpoint_url.rstrip('/')}/{storage_path}"
+                
+                # Replace 'minio:9000' with 'localhost:9000' if the URL contains minio
+                if 'minio:9000' in public_url:
+                    public_url = public_url.replace('minio:9000', 'localhost:9000')
+                
+                return public_url
+            
+            # Convert expiry from seconds (int) to timedelta
+            expiry_delta = timedelta(seconds=expiry)
+            
+            # Generate a presigned URL with custom response parameters
+            return self.client.presigned_get_object(
+                bucket_name=self.bucket,
+                object_name=storage_path,
+                expires=expiry_delta,
+                response_headers=params
+            )
+        except Exception as e:
+            error_msg = f"Error generating presigned URL: {str(e)}"
+            self.logger.error(error_msg)
+            raise StorageException(error_msg)
+    
+    def get_file_content(self, storage_path: str) -> bytes:
+        """
+        Download the content of a file from MinIO
+        
+        Args:
+            storage_path: Path of the file in MinIO
+            
+        Returns:
+            File content as bytes
+        """
+        try:
+            response = self.client.get_object(
+                bucket_name=self.bucket,
+                object_name=storage_path
+            )
+            
+            # Read the data from the response
+            data = response.read()
+            
+            return data
+            
+        except Exception as e:
+            error_msg = f"Error downloading file content from MinIO: {str(e)}"
             self.logger.error(error_msg)
             raise StorageException(error_msg)
     
