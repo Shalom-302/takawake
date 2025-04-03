@@ -9,17 +9,34 @@ from app.core.security import get_current_user
 from app.casbin_enforcer import require_casbin_permission
 from urllib.parse import parse_qs
 from sqlalchemy import or_, and_
+from uuid import UUID
 
 
 # Import the AuditLog model from the advanced_audit plugin
 from app.plugins.advanced_audit.models import AuditLog
 
 
-def log_audit_event(db: Session, user_id: int, action: str, resource: str, details: Optional[str] = None) -> None:
+def log_audit_event(db: Session, user_id: Union[int, str, UUID], action: str, resource: str, details: Optional[str] = None) -> None:
     """
     Creates an audit log entry in the database.
+    
+    Args:
+        db: Database session
+        user_id: User ID (can be int, UUID, or str representation of UUID)
+        action: Action performed (e.g., "create", "update", "delete")
+        resource: Resource type (e.g., "user", "file")
+        details: Additional details about the action
     """
-    log = AuditLog(user_id=user_id, action=action, resource=resource, details=details)
+    # Si user_id est un UUID ou une chaîne, on utilise NULL pour user_id
+    # car la colonne user_id est définie comme Integer dans le modèle AuditLog
+    if isinstance(user_id, (UUID, str)):
+        # On met user_id à NULL et on stocke l'identifiant UUID dans details
+        user_details = f"User ID: {user_id}, " + (details or "")
+        log = AuditLog(user_id=None, action=action, resource=resource, details=user_details)
+    else:
+        # Si c'est un entier, on utilise la valeur directement
+        log = AuditLog(user_id=user_id, action=action, resource=resource, details=details)
+    
     db.add(log)
     db.commit()
 

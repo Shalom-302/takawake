@@ -6,7 +6,6 @@
 import axiosClient from '@/lib/api/axios-client';
 import { AxiosResponse, AxiosRequestConfig } from 'axios';
 
-// Types pour le service de stockage de fichiers
 export enum StorageProviderType {
   LOCAL = 'local',
   S3 = 's3',
@@ -18,7 +17,7 @@ export interface StorageProvider {
   id: number;
   name: string;
   type: StorageProviderType;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   is_default: boolean;
   created_at: string;
   updated_at: string;
@@ -34,7 +33,7 @@ export interface StoredFile {
   provider_id: number;
   folder_id?: number;
   is_public: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   url?: string;
@@ -80,58 +79,59 @@ export interface PaginatedResponse<T> {
 
 const fileStorageService = {
   /**
-   * Récupérer tous les fournisseurs de stockage
+   * Get all storage providers
    */
   async getProviders(): Promise<StorageProvider[]> {
     try {
       const response: AxiosResponse<StorageProvider[]> = await axiosClient.get('/public/file-storage/providers');
+      console.log('Providers:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des fournisseurs de stockage:', error);
+      console.error('Error fetching providers:', error);
       throw error;
     }
   },
 
   /**
-   * Récupérer un fournisseur de stockage par ID
+   * Get a storage provider by ID
    */
   async getProviderById(id: number): Promise<StorageProvider> {
     try {
       const response: AxiosResponse<StorageProvider> = await axiosClient.get(`/public/file-storage/providers/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors de la récupération du fournisseur de stockage ${id}:`, error);
+      console.error(`Error fetching provider ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Récupérer le fournisseur de stockage par défaut
+   * Get the default storage provider
    */
   async getDefaultProvider(): Promise<StorageProvider> {
     try {
       const response: AxiosResponse<StorageProvider> = await axiosClient.get('/public/file-storage/providers/default');
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération du fournisseur de stockage par défaut:', error);
+      console.error('Error fetching default provider:', error);
       throw error;
     }
   },
 
   /**
-   * Supprimer un fournisseur de stockage
+   * Delete a storage provider
    */
   async deleteProvider(id: number): Promise<void> {
     try {
       await axiosClient.delete(`/public/file-storage/providers/${id}`);
     } catch (error) {
-      console.error(`Erreur lors de la suppression du fournisseur ${id}:`, error);
+      console.error(`Error deleting provider ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Récupérer tous les dossiers
+   * Get all folders
    */
   async getFolders(parentId?: number): Promise<FileFolder[]> {
     try {
@@ -139,38 +139,38 @@ const fileStorageService = {
       const response: AxiosResponse<FileFolder[]> = await axiosClient.get('/public/file-storage/folders', { params });
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des dossiers:', error);
+      console.error('Error fetching folders:', error);
       throw error;
     }
   },
 
   /**
-   * Créer un nouveau dossier
+   * Create a new folder
    */
   async createFolder(folderData: CreateFolderRequest): Promise<FileFolder> {
     try {
       const response: AxiosResponse<FileFolder> = await axiosClient.post('/public/file-storage/folders', folderData);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la création du dossier:', error);
+      console.error('Error creating folder:', error);
       throw error;
     }
   },
 
   /**
-   * Supprimer un dossier
+   * Delete a folder
    */
   async deleteFolder(id: number): Promise<void> {
     try {
       await axiosClient.delete(`/public/file-storage/folders/${id}`);
     } catch (error) {
-      console.error(`Erreur lors de la suppression du dossier ${id}:`, error);
+      console.error(`Error deleting folder ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Récupérer les fichiers avec pagination
+   * Get files with pagination
    */
   async getFiles(params: FilesListParams = {}): Promise<PaginatedResponse<StoredFile>> {
     try {
@@ -180,26 +180,26 @@ const fileStorageService = {
       );
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des fichiers:', error);
+      console.error('Error fetching files:', error);
       throw error;
     }
   },
 
   /**
-   * Récupérer un fichier par ID
+   * Get a file by ID
    */
   async getFileById(id: number): Promise<StoredFile> {
     try {
       const response: AxiosResponse<StoredFile> = await axiosClient.get(`/public/file-storage/files/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors de la récupération du fichier ${id}:`, error);
+      console.error(`Error fetching file ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Uploader un fichier
+   * Upload a file
    */
   async uploadFile(
     file: File,
@@ -207,27 +207,58 @@ const fileStorageService = {
     folderId?: number,
     isPublic: boolean = false,
     customFilename?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<FileUploadResponse> {
     try {
       const formData = new FormData();
       formData.append('file', file);
       
-      // Ajouter le provider_id obligatoire
+      // Add mandatory provider_id
       formData.append('provider_id', providerId.toString());
       
       if (folderId !== undefined) {
         formData.append('folder_id', folderId.toString());
       }
       
-      formData.append('is_public', isPublic.toString());
-      
-      if (customFilename) {
-        formData.append('custom_filename', customFilename);
+      // Add description from metadata if available
+      if (metadata?.description) {
+        const description = typeof metadata.description === 'string' 
+          ? metadata.description 
+          : String(metadata.description);
+        formData.append('description', description);
       }
       
-      if (metadata) {
-        formData.append('metadata', JSON.stringify(metadata));
+      // Add tags from metadata if available
+      if (metadata?.tags) {
+        const tagsString = Array.isArray(metadata.tags) 
+          ? metadata.tags.join(',')
+          : String(metadata.tags);
+        formData.append('tags', tagsString);
+      }
+      
+      // Convert is_public to the format expected by the backend
+      formData.append('is_public', isPublic.toString());
+      
+      // Add custom filename as filename override
+      if (customFilename) {
+        formData.append('override_filename', customFilename);
+      }
+      
+      // These fields are expected by the backend with default values
+      formData.append('generate_thumbnails', 'true');
+      formData.append('optimize_images', 'false');
+      
+      // Convert any remaining metadata to a JSON string
+      if (metadata && Object.keys(metadata).length > 0) {
+        const filteredMetadata = { ...metadata };
+        
+        // Remove fields that are sent separately
+        delete filteredMetadata.description;
+        delete filteredMetadata.tags;
+        
+        if (Object.keys(filteredMetadata).length > 0) {
+          formData.append('extra_data', JSON.stringify(filteredMetadata));
+        }
       }
       
       const config: AxiosRequestConfig = {
@@ -244,40 +275,40 @@ const fileStorageService = {
       
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de l\'upload du fichier:', error);
+      console.error('Error uploading file:', error);
       throw error;
     }
   },
 
   /**
-   * Supprimer un fichier
+   * Delete a file
    */
   async deleteFile(id: number): Promise<void> {
     try {
       await axiosClient.delete(`/public/file-storage/files/${id}`);
     } catch (error) {
-      console.error(`Erreur lors de la suppression du fichier ${id}:`, error);
+      console.error(`Error deleting file ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Obtenir l'URL de téléchargement d'un fichier
+   * Get the download URL of a file
    */
   async getFileDownloadUrl(id: number): Promise<string> {
     try {
-      // Au lieu de demander une URL présignée qui pourrait contenir des hôtes internes,
-      // nous retournons directement l'URL de notre API pour télécharger le fichier
+      // Instead of requesting a signed URL which might contain internal hosts,
+      // we return directly the API URL to download the file
       const baseUrl = axiosClient.defaults.baseURL || '';
       return `${baseUrl}/public/file-storage/files/${id}/download`;
     } catch (error) {
-      console.error(`Erreur lors de la récupération de l'URL de téléchargement pour le fichier ${id}:`, error);
+      console.error(`Error getting download URL for file ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Télécharger un fichier directement
+   * Download a file directly
    */
   async downloadFile(id: number): Promise<Blob> {
     try {
@@ -287,13 +318,13 @@ const fileStorageService = {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors du téléchargement du fichier ${id}:`, error);
+      console.error(`Error downloading file ${id}:`, error);
       throw error;
     }
   },
 
   /**
-   * Générer une URL présiginée pour un fichier (utile pour les fichiers privés)
+   * Generate a presigned URL for a file (useful for private files)
    */
   async generatePreSignedUrl(id: number, expiryMinutes: number = 60): Promise<string> {
     try {
@@ -303,7 +334,7 @@ const fileStorageService = {
       );
       return response.data.url;
     } catch (error) {
-      console.error(`Erreur lors de la génération de l'URL présiginée pour le fichier ${id}:`, error);
+      console.error(`Error generating presigned URL for file ${id}:`, error);
       throw error;
     }
   }

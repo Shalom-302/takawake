@@ -52,24 +52,23 @@ export default function FilesPage() {
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Récupérer les fichiers dans le dossier actuel
+      // Retrieve files in the current folder
       const fileResponse = await fileStorageService.getFiles({
         page: currentPage,
         folder_id: currentFolder?.id,
         search: searchQuery
       });
       console.log("fileResponse", fileResponse);
-      console.log("hihihi", fileResponse.items);
       setFiles(fileResponse.items);
       
       // Get folders if we're in root or a specific folder
       const folderResponse = await fileStorageService.getFolders();
-      console.log("folders--", folderResponse.items)
+      console.log("folders--", folderResponse)
       
-      // Logique de filtrage corrigée:
-      // - Si on est à la racine (currentFolder est null), afficher les dossiers avec parent_id null
-      // - Sinon, afficher les dossiers dont le parent_id correspond à l'ID du dossier courant
-      const foldersInCurrentParent = folderResponse.items.filter(folder => {
+      // Logic for filtering:
+      // - If we're at the root (currentFolder is null), display folders with parent_id null
+      // - Otherwise, display folders whose parent_id matches the current folder ID
+      const foldersInCurrentParent = folderResponse.map((a) => a.folder).filter(folder => {
         if (currentFolder === null) {
           return folder.parent_id === null;
         } else {
@@ -127,16 +126,17 @@ export default function FilesPage() {
     customFilename?: string
   ) => {
     try {
-      // Récupérer les fournisseurs
+      // Retrieve providers
       const providers = await fetchProviders();
       
-      // Vérifier si au moins un fournisseur est disponible
+      // Check if at least one provider is available
       if (providers.length === 0) {
         toast.error("No storage provider configured. Please contact your administrator.");
         return;
       }
+      console.log("providers", providers);
 
-      // Trouver le fournisseur par défaut ou utiliser le premier disponible
+      // Find the default provider or use the first available
       const defaultProvider = providers.find(p => p.is_default) || providers[0];
       
       await fileStorageService.uploadFile(
@@ -164,7 +164,7 @@ export default function FilesPage() {
     } catch (error: unknown) {
       console.error('Error deleting file:', error);
       
-      // Vérifier si c'est une erreur de l'API avec un message
+      // Check if it's an API error with a message
       if (axios.isAxiosError(error)) {
         const apiResponse = error.response?.data as { detail?: string };
         const apiError = apiResponse?.detail || "Failed to delete file";

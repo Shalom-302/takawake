@@ -33,6 +33,7 @@ from .providers import StorageProviderType, StorageException
 
 from .routes.folders import router as folders_router
 from .routes.images import router as images_router
+from app.crud_base import log_audit_event  # Ajout de l'import pour l'audit
 
 def serialize_sqlalchemy_model(model, exclude=None):
     """
@@ -86,7 +87,7 @@ def get_router() -> APIRouter:
     async def create_provider(
         provider_data: StorageProviderCreate,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         Create a new storage provider configuration
@@ -103,7 +104,7 @@ def get_router() -> APIRouter:
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         List available storage provider configurations
@@ -115,7 +116,7 @@ def get_router() -> APIRouter:
     async def get_provider(
         provider_id: int,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         Get details of a storage provider
@@ -130,7 +131,7 @@ def get_router() -> APIRouter:
         provider_id: int,
         provider_data: StorageProviderUpdate,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         Update a storage provider configuration
@@ -156,7 +157,7 @@ def get_router() -> APIRouter:
     async def delete_provider(
         provider_id: int,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         Delete a storage provider configuration
@@ -194,7 +195,7 @@ def get_router() -> APIRouter:
         generate_thumbnails: bool = Form(False),
         optimize_images: bool = Form(False),
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         request: Request = None
     ):
         """
@@ -272,6 +273,15 @@ def get_router() -> APIRouter:
             # Utiliser notre fonction de sérialisation pour le modèle
             file_data = serialize_sqlalchemy_model(db_file)
             
+            # Log audit event for file upload
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="upload_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.original_filename}"
+            )
+            
             # Retourner la réponse au format attendu par le schéma
             return {"file": file_data, "message": "File uploaded successfully"}
             
@@ -295,7 +305,7 @@ def get_router() -> APIRouter:
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
     ):
         """
         List stored files with optional filtering
@@ -397,7 +407,7 @@ def get_router() -> APIRouter:
         file_id: int,
         attachment: bool = True,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         request: Request = None
     ):
         """
@@ -424,6 +434,15 @@ def get_router() -> APIRouter:
             if attachment:
                 headers["Content-Disposition"] = f'attachment; filename="{db_file.original_filename}"'
             
+            # Log audit event for file download
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="download_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.title}"
+            )
+            
             # Return the file data streaming
             return StreamingResponse(
                 iter([file_data.getvalue()]), 
@@ -443,7 +462,7 @@ def get_router() -> APIRouter:
         file_id: int,
         expires: int = 3600,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         request: Request = None
     ):
         """
@@ -464,6 +483,15 @@ def get_router() -> APIRouter:
             
             # Generate a pre-signed URL for the file
             download_url = provider.get_file_url(db_file.storage_path, expires=expires, is_public=False, request=request)
+            
+            # Log audit event for file download URL generation
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="generate_download_url", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.title}"
+            )
             
             return {"url": download_url, "filename": db_file.original_filename}
             
@@ -506,11 +534,37 @@ def get_router() -> APIRouter:
                 "Accept-Ranges": "bytes"  # Enable seeking in media files
             }
             
+            # Special case for PDFs
+            if db_file.mime_type == "application/pdf":
+                # PDFs need these specific headers
+                headers["X-Content-Type-Options"] = "nosniff"
+                
+            # Special case for videos
+            if db_file.mime_type.startswith("video/"):
+                # Add specific headers for videos
+                headers["X-Content-Type-Options"] = "nosniff"
+                # Force the use of the appropriate content-type
+                if db_file.mime_type == "video/mp4":
+                    headers["Content-Type"] = "video/mp4"
+                elif db_file.mime_type == "video/webm":
+                    headers["Content-Type"] = "video/webm"
+                elif db_file.mime_type == "video/ogg":
+                    headers["Content-Type"] = "video/ogg"
+            
+            # Log audit event for file preview
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="preview_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.title}"
+            )
+            
             # Return the file data for browser rendering
             return StreamingResponse(
                 iter([file_data.getvalue()]), 
-                media_type=db_file.mime_type,
-                headers=headers
+                headers=headers,
+                media_type=db_file.mime_type
             )
             
         except StorageException as e:
@@ -524,7 +578,7 @@ def get_router() -> APIRouter:
     async def delete_file(
         file_id: int,
         db: Session = Depends(get_db),
-        # current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
         request: Request = None
     ):
         """
@@ -562,6 +616,15 @@ def get_router() -> APIRouter:
             db.delete(db_file)
             db.commit()
             
+            # Log audit event for file deletion
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="delete_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.original_filename}"
+            )
+            
             return {"message": "File deleted successfully"}
             
         except StorageException as e:
@@ -583,7 +646,26 @@ def get_router() -> APIRouter:
 
 def get_public_router() -> APIRouter:
     router = APIRouter()
+
+    router.include_router(folders_router)
+    router.include_router(images_router)
+
+    logger = logging.getLogger(__name__)
     
+
+    @router.get("/providers", response_model=List[StorageProviderDetail])
+    async def list_providers(
+        skip: int = 0,
+        limit: int = 100,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+    ):
+        """
+        List available storage provider configurations
+        """
+        providers = db.query(StorageProvider).offset(skip).limit(limit).all()
+        return providers
+
     @router.get("/status", include_in_schema=True)
     async def check_storage_status():
         """
@@ -609,14 +691,14 @@ def get_public_router() -> APIRouter:
         """
         Liste les fichiers publics
         """
-        # Créer la requête de base
+        # Creating the basic query
         query = db.query(StoredFile)
         
-        # Filtrer par type de fichier
+        # Filter by file type
         if file_type:
             query = query.filter(StoredFile.mime_type.ilike(f"{file_type}%"))
         
-        # Chercher
+        # Search
         if search:
             query = query.filter(
                 or_(
@@ -626,7 +708,7 @@ def get_public_router() -> APIRouter:
                 )
             )
         
-        # Tri
+        # Sorting
         if sort_order.lower() not in ["asc", "desc"]:
             sort_order = "desc"
         
@@ -638,16 +720,16 @@ def get_public_router() -> APIRouter:
         
         query = query.order_by(sort_column)
         
-        # Compter le nombre total
+        # Count total
         total = query.count()
         
         # Pagination
         query = query.offset((page - 1) * page_size).limit(page_size)
         
-        # Exécuter la requête
+        # Execute the query
         files = query.all()
         
-        # Récupérer les fournisseurs pour ces fichiers
+        # Retrieve providers for these files
         provider_ids = [file.provider_id for file in files]
         providers = {
             provider.id: provider 
@@ -656,19 +738,19 @@ def get_public_router() -> APIRouter:
             ).all()
         }
         
-        # Préparer les résultats
+        # Prepare the results
         results = []
         base_url = str(request.base_url).rstrip('/') if request else ""
         
         for file in files:
-            # Récupérer l'instance du fournisseur
+            # Retrieve the provider instance
             provider_db = providers.get(file.provider_id)
             if not provider_db:
                 continue
                 
             provider = get_provider_instance(provider_db, request)
             
-            # Essayer de générer une URL via le provider
+            # Try to generate a URL via the provider
             try:
                 preview_url = provider.get_file_url(file.storage_path, expires=86400, is_public=True, request=request)
                 download_url = provider.get_file_url(file.storage_path, expires=3600, is_public=False, request=request)
@@ -677,7 +759,7 @@ def get_public_router() -> APIRouter:
                 preview_url = ""
                 download_url = ""
             
-            # Si l'URL est vide, générer une URL directe via l'API
+            # If the URL is empty, generate a direct URL via the API
             if not preview_url:
                 preview_url = f"{base_url}/api/public/file-storage/files/{file.id}/preview"
                 
@@ -731,27 +813,27 @@ def get_public_router() -> APIRouter:
             file_bytes = file_data.getvalue()
             file_size = len(file_bytes)
             
-            # En-têtes de base optimisés pour la prévisualisation
+            # Base headers optimized for preview
             headers = {
                 "Content-Type": db_file.mime_type,
                 "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
                 "Accept-Ranges": "bytes",
-                "Cache-Control": "max-age=86400",  # 24h de cache
-                "Access-Control-Allow-Origin": "*",  # CORS pour permettre l'accès depuis le frontend
+                "Cache-Control": "max-age=86400",  # 24h cache
+                "Access-Control-Allow-Origin": "*",  # CORS for allowing access from the frontend
                 "Access-Control-Allow-Methods": "GET, OPTIONS",
                 "Access-Control-Allow-Headers": "Range, Content-Type, Accept"
             }
             
-            # Cas spécial pour les PDF
+            # Special case for PDFs
             if db_file.mime_type == "application/pdf":
-                # Les PDFs ont besoin de ces en-têtes spécifiques
+                # PDFs need these specific headers
                 headers["X-Content-Type-Options"] = "nosniff"
                 
-            # Cas spécial pour les vidéos
+            # Special case for videos
             if db_file.mime_type.startswith("video/"):
-                # Ajouter des en-têtes spécifiques pour les vidéos
+                # Add specific headers for videos
                 headers["X-Content-Type-Options"] = "nosniff"
-                # Forcer l'utilisation du content-type approprié
+                # Force the use of the appropriate content-type
                 if db_file.mime_type == "video/mp4":
                     headers["Content-Type"] = "video/mp4"
                 elif db_file.mime_type == "video/webm":
@@ -759,7 +841,7 @@ def get_public_router() -> APIRouter:
                 elif db_file.mime_type == "video/ogg":
                     headers["Content-Type"] = "video/ogg"
             
-            # Si pas de Range header, retourner le fichier complet
+            # If no Range header, return the complete file
             if not range_header:
                 headers["Content-Length"] = str(file_size)
                 return StreamingResponse(
@@ -768,32 +850,32 @@ def get_public_router() -> APIRouter:
                     media_type=db_file.mime_type
                 )
             
-            # Traitement des requêtes Range pour le streaming
+            # Handle Range requests for streaming
             try:
                 range_header = range_header.replace("bytes=", "")
                 ranges = range_header.split("-")
                 
-                # Extraire début et fin
+                # Extract start and end
                 start = int(ranges[0]) if ranges[0] else 0
                 end = int(ranges[1]) if len(ranges) > 1 and ranges[1] else file_size - 1
                 
-                # Vérifier les limites
+                # Verify limits
                 if start < 0:
                     start = 0
                 if end >= file_size:
                     end = file_size - 1
                 
-                # Calculer la taille du segment
+                # Calculate the chunk size
                 chunk_size = end - start + 1
                 
-                # Préparer les en-têtes pour la réponse partielle
+                # Prepare headers for partial response
                 headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
                 headers["Content-Length"] = str(chunk_size)
                 
-                # Extraire le segment demandé
+                # Extract the requested chunk
                 chunk = file_bytes[start:end+1]
                 
-                # Retourner une réponse 206 (Partial Content)
+                # Return a 206 (Partial Content) response
                 return StreamingResponse(
                     io.BytesIO(chunk),
                     status_code=206,
@@ -802,7 +884,7 @@ def get_public_router() -> APIRouter:
                 )
             
             except (ValueError, IndexError) as e:
-                # En cas d'erreur de parsing du Range, retourner le fichier complet
+                # In case of Range parsing error, return the complete file
                 logger.warning(f"Invalid Range header: {range_header}, error: {str(e)}")
                 headers["Content-Length"] = str(file_size)
                 return StreamingResponse(
@@ -814,7 +896,184 @@ def get_public_router() -> APIRouter:
         except Exception as e:
             logger.error(f"Error previewing file: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error during file preview: {str(e)}")
+
+    @router.post("/files/upload", response_model=StoredFileResponse)
+    async def upload_file(
+        file: UploadFile = File(...),
+        provider_id: int = Form(...),
+        folder_id: Optional[int] = Form(None),
+        folder_path: Optional[str] = Form(None),
+        description: str = Form(None),
+        tags: str = Form(None),
+        generate_thumbnails: bool = Form(False),
+        optimize_images: bool = Form(False),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+        request: Request = None
+    ):
+        """
+        Upload a file to the configured storage
+        """
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
         
+        # Optionally get the folder
+        folder = None
+        folder_prefix = ""
+        if folder_id:
+            folder = db.query(FileFolder).filter(FileFolder.id == folder_id).first()
+            if not folder:
+                raise HTTPException(status_code=404, detail=f"Folder with ID {folder_id} not found")
+            folder_prefix = folder.name + "/"
+        elif folder_path:
+            folder_prefix = folder_path.strip("/") + "/"
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Prepare file content
+            file_content = await file.read()
+            
+            # Sanitize the filename and add a unique identifier
+            original_filename = file.filename
+            sanitized_filename = re.sub(r'[^\w\-\.]', '_', original_filename)
+            unique_id = uuid.uuid4().hex[:8]
+            filename = f"{unique_id}_{sanitized_filename}"
+            
+            # Complete storage path including folder prefix
+            storage_path = f"{folder_prefix}{filename}"
+            
+            # Create a BytesIO to store the file data (pour avoir un objet avec la méthode seek())
+            file_data = io.BytesIO(file_content)
+            
+            # Upload the file to storage - correction de l'ordre des paramètres
+            file_url = provider.upload_file(
+                file_data,  # 1er paramètre: l'objet fichier avec méthode seek()
+                storage_path,  # 2ème paramètre: le chemin de destination
+                file.content_type  # 3ème paramètre: le type de contenu
+            )
+            
+            # Parse tags if provided
+            tag_list = []
+            if tags:
+                tag_list = [tag.strip() for tag in tags.split(',')]
+            
+            # Create the file record
+            db_file = StoredFile(
+                provider_id=provider_id,
+                filename=filename,
+                original_filename=original_filename,
+                storage_path=storage_path,
+                file_size=len(file_content),
+                mime_type=file.content_type or "application/octet-stream",
+                file_metadata={
+                    "description": description,
+                    "tags": tag_list,
+                    "url": file_url,  # Stocker l'URL dans les métadonnées
+                    "folder_id": folder.id if folder else None  # Stocker l'ID du dossier dans les métadonnées
+                }
+            )
+            
+            db.add(db_file)
+            db.commit()
+            db.refresh(db_file)
+            
+            # TODO: Add asynchronous thumbnail processing and optimization if necessary
+            
+            # Use our serialization function for the model
+            file_data = serialize_sqlalchemy_model(db_file)
+            
+            # Log audit event for file upload
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="upload_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.original_filename}"
+            )
+            
+            # Return the response in the expected format by the schema
+            return {"file": file_data, "message": "File uploaded successfully"}
+            
+        except StorageException as e:
+            logger.error(f"Error during storage upload: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error during storage upload: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during storage upload: {str(e)}")
+        finally:
+            # Close the file
+            await file.close()
+
+    @router.delete("/files/{file_id}", response_model=dict)
+    async def delete_file(
+        file_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+        request: Request = None
+    ):
+        """
+        Delete a stored file and its metadata
+        """
+        db_file = db.query(StoredFile).filter(StoredFile.id == file_id).first()
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get the provider
+        provider_db = db.query(StorageProvider).filter(StorageProvider.id == db_file.provider_id).first()
+        if not provider_db:
+            raise HTTPException(status_code=404, detail="Storage provider not found")
+        
+        try:
+            # Get the provider instance
+            provider = get_provider_instance(provider_db, request)
+            
+            # Delete all thumbnails
+            thumbnails = db.query(FileThumbnail).filter(FileThumbnail.original_file_id == file_id).all()
+            for thumbnail in thumbnails:
+                # Delete the thumbnail file from storage
+                try:
+                    provider.delete_file(thumbnail.storage_path)
+                except Exception as e:
+                    logger.warning(f"Unable to delete thumbnail {thumbnail.id}: {str(e)}")
+                
+                # Delete the thumbnail record
+                db.delete(thumbnail)
+            
+            # Delete the file from storage
+            provider.delete_file(db_file.storage_path)
+            
+            # Delete the file record
+            db.delete(db_file)
+            db.commit()
+            
+            # Log audit event for file deletion
+            log_audit_event(
+                db=db, 
+                user_id=current_user.id, 
+                action="delete_file", 
+                resource="file", 
+                details=f"File ID: {db_file.id}, Name: {db_file.original_filename}"
+            )
+            
+            return {"message": "File deleted successfully"}
+            
+        except StorageException as e:
+            db.rollback()
+            logger.error(f"Storage error during file deletion: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Unexpected error during file deletion: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during file deletion: {str(e)}")
+
+    # Implementations for folders, thumbnails, and image processing
+    # will be added in separate modules to maintain code readability.
+
+
     return router
 
 file_storage_router = get_router()
