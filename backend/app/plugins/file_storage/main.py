@@ -901,14 +901,20 @@ def get_public_router() -> APIRouter:
                 "Accept-Ranges": "bytes",
                 "Cache-Control": "max-age=86400",  # 24h cache
                 "Access-Control-Allow-Origin": "*",  # CORS for allowing access from the frontend
-                "Access-Control-Allow-Methods": "GET, OPTIONS",
-                "Access-Control-Allow-Headers": "Range, Content-Type, Accept"
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "Range, Content-Type, Accept, Origin, Authorization",
+                "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges"
             }
             
             # Special case for PDFs
             if db_file.mime_type == "application/pdf":
                 # PDFs need these specific headers
                 headers["X-Content-Type-Options"] = "nosniff"
+                
+            # Special case for images
+            if db_file.mime_type.startswith("image/"):
+                # Make sure the image is properly cached
+                headers["Cache-Control"] = "public, max-age=604800"  # 7 days
                 
             # Special case for videos
             if db_file.mime_type.startswith("video/"):

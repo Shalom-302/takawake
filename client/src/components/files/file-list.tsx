@@ -9,18 +9,19 @@ import {
   TableBody, 
   TableCell 
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
-  Copy,
   Download,
   ExternalLink,
-  FileIcon,
-  Loader2,
-  Eye,
   Trash2,
+  Copy,
+  Loader2,
+  FileIcon,
+  Eye,
   FolderIcon,
   ArrowUp
 } from 'lucide-react';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import { StoredFile, FileFolder } from '@/lib/services/file-storage-service';
 import {
@@ -32,7 +33,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import fileStorageService from '@/lib/services/file-storage-service';
-import { toast } from 'sonner';
 
 interface FileListProps {
   files: StoredFile[];
@@ -140,8 +140,8 @@ const FileList: React.FC<FileListProps> = ({
       } catch (error) {
         console.error('Error getting preview URL:', error);
         toast.error('Failed to load preview');
-        // Fallback to regular URL if available
-        setPreviewUrl(file.url || null);
+        // No fallback to file.url as those URLs might point to inaccessible resources
+        setPreviewUrl(null);
       } finally {
         setIsLoadingPreview(false);
       }
@@ -194,8 +194,8 @@ const FileList: React.FC<FileListProps> = ({
       );
     }
     
-    // Use the optimized preview URL if available, fallback to file.url
-    const displayUrl = previewUrl || file.url;
+    // Always use the preview URL from our service, never fallback to file.url
+    const displayUrl = previewUrl;
     
     // If no URL is available
     if (!displayUrl) {
@@ -221,7 +221,18 @@ const FileList: React.FC<FileListProps> = ({
             height={600}
             className="max-w-full max-h-[70vh] object-contain"
             style={{ width: 'auto', height: 'auto' }}
-            unoptimized={true}
+            onError={(e) => {
+              console.error('Error loading image:', e);
+              // Replace with error message
+              const target = e.currentTarget;
+              if (target.parentNode) {
+                const errorDiv = document.createElement('div');
+                errorDiv.innerHTML = `<p class="text-red-500 p-4 text-center">Image loading failed. Try downloading instead.</p>`;
+                target.parentNode.appendChild(errorDiv);
+                target.style.display = 'none';
+              }
+            }}
+            unoptimized={true} // Bypass Next.js optimization for external URLs
           />
         </div>
       );
@@ -239,6 +250,15 @@ const FileList: React.FC<FileListProps> = ({
               crossOrigin="anonymous"
               autoPlay={false}
               playsInline
+              onError={(e) => {
+                console.error('Error loading video:', e);
+                // Add visible error message on video error
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.innerHTML = `<p class="text-red-500 p-4 text-center">Video playback error. Try downloading instead.</p>`;
+                target.parentNode?.appendChild(errorDiv);
+              }}
             >
               Your browser does not support video playback.
             </video>
@@ -272,16 +292,28 @@ const FileList: React.FC<FileListProps> = ({
         </div>
       );
     } else if (file.mime_type === 'application/pdf') {
-      // For PDFs, use an iframe for direct display
+      // For PDFs, use a direct link approach since iframe may have security restrictions
       return (
         <div className="flex flex-col items-center">
           <div className="w-full h-[70vh] mb-4 border border-gray-200 rounded overflow-hidden">
-            <iframe
-              src={displayUrl}
-              title={file.original_filename}
+            <object
+              data={displayUrl}
+              type="application/pdf"
               className="w-full h-full border-0"
-              sandbox="allow-same-origin allow-scripts"
-            />
+            >
+              <div className="flex justify-center items-center h-full bg-gray-100">
+                <div className="text-center p-4">
+                  <p className="text-gray-600 mb-2">Unable to display PDF directly.</p>
+                  <Button
+                    onClick={() => window.open(displayUrl, '_blank')}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open PDF in new tab
+                  </Button>
+                </div>
+              </div>
+            </object>
           </div>
           <div className="flex justify-center gap-4">
             <Button

@@ -213,12 +213,22 @@ class MinioStorageProvider(StorageProviderInterface):
                 
                 return public_url
             
+            # Convert expiry from seconds (int) to timedelta
+            expiry_delta = timedelta(seconds=expires)
+            
             # Sinon, générer une URL présignée
-            return self.client.presigned_get_object(
+            url = self.client.presigned_get_object(
                 bucket_name=self.bucket,
                 object_name=storage_path,
-                expires=expires
+                expires=expiry_delta
             )
+            
+            # Always replace minio:9000 with localhost:9000 for browser access
+            if 'minio:9000' in url:
+                url = url.replace('minio:9000', 'localhost:9000')
+                
+            return url
+            
         except Exception as e:
             self.logger.error(f"Error generating file URL: {str(e)}")
             return ""
@@ -306,12 +316,19 @@ class MinioStorageProvider(StorageProviderInterface):
             expiry_delta = timedelta(seconds=expiry)
             
             # Generate a presigned URL with custom response parameters
-            return self.client.presigned_get_object(
+            url = self.client.presigned_get_object(
                 bucket_name=self.bucket,
                 object_name=storage_path,
                 expires=expiry_delta,
                 response_headers=params
             )
+            
+            # Always replace minio:9000 with localhost:9000 for browser access
+            if 'minio:9000' in url:
+                url = url.replace('minio:9000', 'localhost:9000')
+                
+            return url
+            
         except Exception as e:
             error_msg = f"Error generating presigned URL: {str(e)}"
             self.logger.error(error_msg)

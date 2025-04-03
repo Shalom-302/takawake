@@ -355,20 +355,19 @@ const fileStorageService = {
         return cachedUrl;
       }
       
-      // If no cached URL, request a new one
-      const response: AxiosResponse<{ url: string }> = await axiosClient.get(
-        `/public/file-storage/files/${id}/preview-url`
-      );
+      // Build URL for direct preview endpoint
+      const baseUrl = axiosClient.defaults.baseURL || '';
+      const url = `${baseUrl}/public/file-storage/files/${id}/preview`;
       
       // Cache the URL for future use
-      sessionStorage.setItem(cacheKey, response.data.url);
+      sessionStorage.setItem(cacheKey, url);
       
-      return response.data.url;
+      return url;
     } catch (error) {
       console.error(`Error getting preview URL for file ${id}:`, error);
-      // Fallback to direct preview endpoint if preview URL fails
+      // Fallback to download endpoint if preview fails
       const baseUrl = axiosClient.defaults.baseURL || '';
-      return `${baseUrl}/public/file-storage/files/${id}/preview`;
+      return `${baseUrl}/public/file-storage/files/${id}/download`;
     }
   },
 
