@@ -140,15 +140,15 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         current_time = datetime.now()
                         message = {
                             "id": message_id,
-                            "sender_id": temp_user_id,  # Le frontend attend sender_id et non user_id
+                            "sender_id": temp_user_id,  # The frontend expects sender_id and not user_id
                             "content": data.get("content", ""),
-                            "timestamp": current_time.isoformat(),  # Forme ISO standard pour éviter les problèmes de sérialisation
-                            "created_at": current_time.isoformat(),  # Ajouter created_at que le frontend attend probablement
+                            "timestamp": current_time.isoformat(),  # Standard ISO format to avoid serialization issues
+                            "created_at": current_time.isoformat(),  # Add created_at that the frontend probably expects
                             "conversation_id": conversation_id,
-                            "username": "Utilisateur temporaire", # Pour l'affichage
-                            "message_type": "text",  # Type de message attendu par le frontend
-                            "status": "sent",  # Statut initial du message
-                            "is_edited": False,  # Champs supplémentaires qui peuvent être attendus par le frontend
+                            "username": "Utilisateur temporaire", # For display
+                            "message_type": "text",  # Type of message expected by the frontend
+                            "status": "sent",  # Initial message status
+                            "is_edited": False,  # Additional fields that the frontend may expect
                             "is_deleted": False,
                             "is_read": False
                         }
@@ -156,9 +156,6 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         # Broadcast the message to all clients connected to this conversation
                         # using the format expected by the frontend (WebSocketMessageType.MESSAGE)
                         try:
-                            print(f"[WS-ROOT] Tentative de diffusion du message: {message_id} à la conversation: {conversation_id}")
-                            print(f"[WS-ROOT] Utilisateurs dans la conversation selon WebSocket manager: {websocket_manager.conversation_users.get(conversation_id, set())}")
-                            print(f"[WS-ROOT] Expéditeur à exclure: {temp_user_id}")
                             
                             await websocket_manager.broadcast_to_conversation(
                                 conversation_id,
@@ -170,7 +167,7 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                             )
                             print(f"[WS-ROOT] Message diffusé: {message_id}")
                             
-                            # Confirmer la réception du message
+                            # Confirm message receipt
                             await websocket.send_json({
                                 "type": "message_received",
                                 "data": {
@@ -178,10 +175,10 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                                 }
                             })
                         except Exception as broadcast_error:
-                            print(f"[WS-ROOT] Erreur lors de la diffusion du message: {str(broadcast_error)}")
+                            print(f"[WS-ROOT] Error broadcasting message: {str(broadcast_error)}")
                             
                     elif data["type"] == "typing":
-                        # Diffuser l'indication de frappe
+                        # Broadcast typing indicator
                         try:
                             is_typing = data.get("is_typing", False)
                             await websocket_manager.broadcast_to_conversation(
@@ -190,30 +187,28 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                                     "type": "typing_indicator", 
                                     "data": {
                                         "user_id": temp_user_id,
-                                        "username": "Utilisateur temporaire",
+                                        "username": "Temporary user",
                                         "is_typing": is_typing,
                                         "conversation_id": conversation_id
                                     }
                                 },
-                                exclude_user_id=temp_user_id  # Ne pas envoyer à soi-même
+                                exclude_user_id=temp_user_id  # Do not send to yourself
                             )
-                            print(f"[WS-ROOT] Indicateur de frappe diffusé: {is_typing}")
+                            print(f"[WS-ROOT] Typing indicator broadcasted: {is_typing}")
                         except Exception as typing_error:
-                            print(f"[WS-ROOT] Erreur lors de la diffusion de l'indicateur de frappe: {str(typing_error)}")
+                            print(f"[WS-ROOT] Error broadcasting typing indicator: {str(typing_error)}")
                     
                     elif data["type"] == "read_receipt":
-                        # Traiter et diffuser l'accusé de lecture
+                        # Processing and distributing read receipts
                         try:
-                            # Extraire les données du message lu
+                            # Extract read receipt data
                             receipt_data = data.get("data", {})
                             message_id = receipt_data.get("message_id")
                             reader_id = receipt_data.get("reader_id")
                             reader_name = receipt_data.get("reader_name", "Utilisateur")
-                            
-                            print(f"[WS-ROOT] Accusé de lecture reçu: message {message_id} lu par {reader_id} ({reader_name})")
-                            
-                            # Diffuser l'accusé de lecture dans la conversation
-                            # Ne pas l'envoyer au lecteur lui-même (il sait déjà qu'il a lu le message)
+          
+                            # Broadcast read receipt in the conversation
+                            # Do not send to reader himself (he already knows he read the message)
                             await websocket_manager.broadcast_to_conversation(
                                 conversation_id,
                                 {
@@ -226,21 +221,21 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                                         "timestamp": datetime.now().isoformat()
                                     }
                                 },
-                                exclude_user_id=reader_id  # Ne pas renvoyer au lecteur
+                                exclude_user_id=reader_id  # Do not send to reader himself
                             )
-                            print(f"[WS-ROOT] Accusé de lecture diffusé pour le message: {message_id}")
+                            print(f"[WS-ROOT] Read receipt broadcasted for message: {message_id}")
                         except Exception as read_receipt_error:
-                            print(f"[WS-ROOT] Erreur lors de la diffusion de l'accusé de lecture: {str(read_receipt_error)}")
+                            print(f"[WS-ROOT] Error broadcasting read receipt: {str(read_receipt_error)}")
                     
                     elif data["type"] == "ping":
-                        # Renvoyer un pong pour maintenir la connexion active
+                        # Send a pong to maintain active connection
                         await websocket.send_json({
                             "type": "pong",
                             "timestamp": time.time()
                         })
                         
                     else:
-                        # Pour les autres types de messages, simplement les renvoyer en écho
+                        # For other message types, simply echo them back
                         await websocket.send_json({
                             "type": "echo",
                             "original": data,
@@ -248,10 +243,10 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         })
             
             except WebSocketDisconnect:
-                print(f"[WS-ROOT] WebSocket déconnecté pour l'utilisateur {temp_user_id} dans la conversation {conversation_id}")
-                # Nettoyer la connexion et sortir de la boucle
+                print(f"[WS-ROOT] WebSocket disconnected for user {temp_user_id} in conversation {conversation_id}")
+                # Clean up the connection and exit the loop
                 websocket_manager.disconnect(temp_user_id, conversation_id)
-                # Informer les autres utilisateurs de la déconnexion
+                # Inform other users of the disconnection
                 try:
                     await websocket_manager.broadcast_to_conversation(
                         conversation_id,
@@ -266,28 +261,28 @@ async def websocket_root(websocket: WebSocket, conversation_id: str):
                         exclude_user_id=temp_user_id
                     )
                 except Exception as e:
-                    print(f"[WS-ROOT] Erreur lors de la notification de déconnexion: {str(e)}")
-                break  # Sortir de la boucle while
+                    print(f"[WS-ROOT] Error notifying disconnection: {str(e)}")
+                break  # Exit the while loop
 
             except Exception as e:
-                print(f"[WS-ROOT] Erreur lors de la réception ou du traitement du message: {str(e)}")
-                # En cas d'erreur grave, on sort de la boucle pour éviter les boucles infinies
+                print(f"[WS-ROOT] Error receiving or processing message: {str(e)}")
+                # In case of a serious error, exit the loop to avoid infinite loops
                 if "disconnect message has been received" in str(e):
-                    print(f"[WS-ROOT] Déconnexion détectée, fin de la boucle de réception")
-                    # Nettoyer proprement
+                    print(f"[WS-ROOT] Disconnection detected, end of reception loop")
+                    # Clean up properly
                     websocket_manager.disconnect(temp_user_id, conversation_id)
                     break
                 
     except WebSocketDisconnect:
-        print(f"[WS-ROOT] WebSocket déconnecté pour la conversation {conversation_id}")
-        # Nettoyer la connexion
+        print(f"[WS-ROOT] WebSocket disconnected for conversation {conversation_id}")
+        # Clean up the connection
         if hasattr(messaging_service, 'websocket_manager'):
             messaging_service.websocket_manager.disconnect(temp_user_id, conversation_id)
-            print(f"[WS-ROOT] Client déconnecté du gestionnaire: {temp_user_id}")
+            print(f"[WS-ROOT] Client disconnected from manager: {temp_user_id}")
     
     except Exception as e:
-        print(f"[WS-ROOT] Erreur générale: {str(e)}")
-        # Essayer de nettoyer la connexion en cas d'erreur
+        print(f"[WS-ROOT] General error: {str(e)}")
+        # Try to clean up the connection in case of an error
         try:
             if hasattr(messaging_service, 'websocket_manager'):
                 messaging_service.websocket_manager.disconnect(temp_user_id, conversation_id)
@@ -441,10 +436,10 @@ api_router.include_router(social_subscriptions_router, prefix="/social-subscript
 api_router.include_router(health_check_router, tags=["system"])
 api_router.include_router(push_router, tags=["push"])
 
-# Inclure le router API principal dans l'application
+# Include the main API router in the application
 app.include_router(api_router)
 
-# Ajouter le router public de stockage de fichiers directement à l'application
+# Add the public file storage router directly to the application
 app.include_router(file_storage_public_router, prefix=f"{settings.API_PREFIX}/public/file-storage", tags=["File Storage Public"])
 
 # (5) Optionally mount the plugin manager endpoints
@@ -453,12 +448,12 @@ app.include_router(plugin_manager_router, prefix=f"{settings.API_PREFIX}/admin")
 
 @app.get("/debug/env", tags=["debug"])
 async def debug_env():
-    """DEBUG ONLY: Affiche des informations sur les variables d'environnement"""
+    """DEBUG ONLY: Display information about environment variables"""
     facebook_id = os.getenv("FACEBOOK_CLIENT_ID")
     facebook_secret = os.getenv("FACEBOOK_CLIENT_SECRET")
     redirect_uri = os.getenv("FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI")
     
-    # Ne pas exposer les valeurs complètes, seulement leur présence
+    # Do not expose complete values, only their presence
     return {
         "FACEBOOK_CLIENT_ID": bool(facebook_id),
         "FACEBOOK_CLIENT_ID_LENGTH": len(facebook_id) if facebook_id else 0,

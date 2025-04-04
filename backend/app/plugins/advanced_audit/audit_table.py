@@ -10,16 +10,16 @@ import json
 
 class TableAuditor:
     """
-    Classe utilitaire pour faciliter l'audit des modifications sur des tables spécifiques.
-    Elle permet de tracer automatiquement les opérations CREATE, UPDATE et DELETE sur les tables configurées.
+    Utility class to facilitate auditing of table modifications.
+    It allows automatically tracing CREATE, UPDATE and DELETE operations on configured tables.
     """
     
     def __init__(self, db_session_factory: Callable[[], Session]):
         """
-        Initialise l'auditeur de table avec une fonction de création de session de base de données.
+        Initialize the table auditor with a function to create database session.
         
         Args:
-            db_session_factory: Fonction qui retourne une nouvelle session de base de données
+            db_session_factory: Callable that returns a new database session
         """
         self.db_session_factory = db_session_factory
         self.registered_models = {}
@@ -28,19 +28,19 @@ class TableAuditor:
                       excluded_columns: List[str] = None, included_columns: List[str] = None,
                       resource_name: str = None):
         """
-        Enregistre un modèle pour l'audit.
+        Register a model for auditing.
         
         Args:
-            model: Le modèle SQLAlchemy à auditer
-            primary_key: Le nom de la colonne de clé primaire (par défaut 'id')
-            excluded_columns: Colonnes à exclure de l'audit
-            included_columns: Si fourni, seules ces colonnes seront auditées
-            resource_name: Nom personnalisé pour la ressource dans les logs d'audit
+            model: The SQLAlchemy model to audit
+            primary_key: The name of the primary key column (default 'id')
+            excluded_columns: Columns to exclude from the audit
+            included_columns: If provided, only these columns will be audited
+            resource_name: Custom name for the resource in audit logs
         """
         if excluded_columns is None:
             excluded_columns = []
             
-        # Exclure les colonnes sensibles par défaut
+        # Exclude sensitive columns by default
         for col in ['password', 'password_hash', 'token', 'secret', 'key']:
             if col not in excluded_columns:
                 excluded_columns.append(col)
@@ -55,34 +55,34 @@ class TableAuditor:
             'resource_name': model_name
         }
         
-        # Enregistrer les événements SQLAlchemy pour ce modèle
+        # Register SQLAlchemy events for this model
         self._register_events(model)
         
         print(f"Audit enabled for model: {model.__name__} as resource '{model_name}'")
         
     def _register_events(self, model: Type[DeclarativeMeta]):
         """
-        Enregistre les événements SQLAlchemy pour un modèle.
+        Register SQLAlchemy events for a model.
         """
-        # Événement après insertion (CREATE)
+        # Event after insertion (CREATE)
         event.listen(model, 'after_insert', self._after_insert)
         
-        # Événement après mise à jour (UPDATE)
+        # Event after update (UPDATE)
         event.listen(model, 'after_update', self._after_update)
         
-        # Événement après suppression (DELETE)
+        # Event after deletion (DELETE)
         event.listen(model, 'after_delete', self._after_delete)
         
     def _create_audit_log(self, action: str, resource: str, details: Optional[str] = None,
                          user_id: Optional[int] = None):
         """
-        Crée une entrée de journal d'audit.
+        Create an audit log entry.
         """
         try:
-            # Créer une nouvelle session
+            # Create a new session
             db = self.db_session_factory()
             
-            # Créer l'entrée d'audit
+            # Create audit log entry
             audit_data = AuditLogCreate(
                 user_id=user_id,
                 action=action,
@@ -101,7 +101,7 @@ class TableAuditor:
             db.commit()
             
         except Exception as e:
-            print(f"Erreur lors de la création du log d'audit: {str(e)}")
+            print(f"Error creating audit log: {str(e)}")
             if db:
                 db.rollback()
         finally:
@@ -110,37 +110,37 @@ class TableAuditor:
     
     def _get_model_config(self, model_instance):
         """
-        Récupère la configuration d'audit pour une instance de modèle.
+        Get the audit configuration for a model instance.
         """
         model_name = model_instance.__class__.__name__
         return self.registered_models.get(model_name)
     
     def _get_object_data(self, obj, config: Dict):
         """
-        Extrait les données pertinentes d'un objet en fonction de la configuration.
+        Extract relevant object data based on the configuration.
         """
         data = {}
         
-        # Si included_columns est spécifié, n'inclure que ces colonnes
+        # If included_columns is specified, only include these columns
         include_list = config.get('included_columns')
         exclude_list = config.get('excluded_columns', [])
         
         for column in obj.__table__.columns:
             column_name = column.name
             
-            # Vérifier si la colonne doit être incluse
+            # Check if the column should be included
             if include_list is not None and column_name not in include_list:
                 continue
                 
-            # Vérifier si la colonne doit être exclue
+            # Check if the column should be excluded
             if column_name in exclude_list:
                 continue
                 
-            # Ajouter la valeur à l'objet de données
+            # Add the value to the data object
             try:
                 value = getattr(obj, column_name)
                 
-                # Conversion des types complexes en chaînes
+                # Convert complex types to strings
                 if hasattr(value, '__dict__'):
                     data[column_name] = str(value)
                 else:
@@ -152,26 +152,26 @@ class TableAuditor:
     
     def _after_insert(self, mapper, connection, target):
         """
-        Gestionnaire d'événement après insertion.
+        Event handler after insertion.
         """
         config = self._get_model_config(target)
         if not config:
             return
             
-        # Extraire l'ID de l'objet
+        # Extract the object ID
         primary_key = config['primary_key']
         object_id = getattr(target, primary_key)
         
-        # Récupérer les données de l'objet
+        # Get the object data
         data = self._get_object_data(target, config)
         
-        # Créer le détail du journal d'audit
+        # Create the audit log details
         details = json.dumps({
             'id': object_id,
             'data': data
         })
         
-        # Créer le journal d'audit
+        # Create the audit log
         self._create_audit_log(
             action='CREATE',
             resource=config['resource_name'],
@@ -180,17 +180,17 @@ class TableAuditor:
     
     def _after_update(self, mapper, connection, target):
         """
-        Gestionnaire d'événement après mise à jour.
+        Event handler after update.
         """
         config = self._get_model_config(target)
         if not config:
             return
             
-        # Extraire l'ID de l'objet
+        # Extract the object ID
         primary_key = config['primary_key']
         object_id = getattr(target, primary_key)
         
-        # Récupérer les changements de l'objet (si disponible via SQLAlchemy history)
+        # Get the object changes (if available via SQLAlchemy history)
         changes = {}
         for attr in target.__mapper__.attrs:
             if hasattr(attr.history, 'has_changes') and attr.history.has_changes():
@@ -199,17 +199,17 @@ class TableAuditor:
                     'new': attr.history.added[0] if attr.history.added else None
                 }
         
-        # Si aucun changement n'est détecté, récupérer toutes les données
+        # If no changes are detected, get all object data
         if not changes:
             changes = self._get_object_data(target, config)
         
-        # Créer le détail du journal d'audit
+        # Create the audit log details
         details = json.dumps({
             'id': object_id,
             'changes': changes
         })
         
-        # Créer le journal d'audit
+        # Create the audit log
         self._create_audit_log(
             action='UPDATE',
             resource=config['resource_name'],
@@ -218,26 +218,26 @@ class TableAuditor:
     
     def _after_delete(self, mapper, connection, target):
         """
-        Gestionnaire d'événement après suppression.
+        Event handler after deletion.
         """
         config = self._get_model_config(target)
         if not config:
             return
             
-        # Extraire l'ID de l'objet
+        # Extract the object ID
         primary_key = config['primary_key']
         object_id = getattr(target, primary_key)
         
-        # Récupérer les données de l'objet avant suppression
+        # Get the object data before deletion
         data = self._get_object_data(target, config)
         
-        # Créer le détail du journal d'audit
+        # Create the audit log details
         details = json.dumps({
             'id': object_id,
             'data': data
         })
         
-        # Créer le journal d'audit
+        # Create the audit log
         self._create_audit_log(
             action='DELETE',
             resource=config['resource_name'],
@@ -247,14 +247,14 @@ class TableAuditor:
     def manually_log(self, action: str, resource: str, object_id: Any, data: Dict = None, 
                     user_id: Optional[int] = None):
         """
-        Fonction utilitaire pour créer manuellement un journal d'audit.
+        Utility function to manually create an audit log.
         
         Args:
-            action: Action effectuée (ex: 'VIEW', 'EXPORT', 'CUSTOM_ACTION')
-            resource: Nom de la ressource
-            object_id: ID de l'objet concerné
-            data: Données supplémentaires à journaliser
-            user_id: ID de l'utilisateur qui a effectué l'action
+            action: Action performed (e.g., 'VIEW', 'EXPORT', 'CUSTOM_ACTION')
+            resource: Resource type (e.g., 'user', 'file')
+            object_id: ID of the object concerned
+            data: Additional data to log
+            user_id: ID of the user who performed the action
         """
         details = json.dumps({
             'id': object_id,

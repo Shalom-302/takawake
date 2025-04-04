@@ -166,7 +166,7 @@ def create_sql_commands(
     return combined_sql
 
 def update_storage_provider_public_url():
-    """Mettre à jour l'URL publique du fournisseur MinIO existant"""
+    """Update the public URL for the existing MinIO provider"""
     db = SessionLocal()
     try:
         provider = db.query(StorageProvider).filter(
@@ -175,26 +175,26 @@ def update_storage_provider_public_url():
         ).first()
         
         if not provider:
-            logger.error("Aucun fournisseur MinIO trouvé")
+            logger.error("No MinIO provider found")
             return
         
-        # Charger la configuration existante
+        # Load existing configuration
         try:
             config = json.loads(provider.config)
         except:
             config = {}
         
-        # Ajouter ou mettre à jour l'URL publique
+        # Add or update the public URL
         config["public_endpoint_url"] = "http://localhost:9000"
         
-        # Sauvegarder la configuration mise à jour
+        # Save the updated configuration
         provider.config = json.dumps(config)
         db.commit()
         
-        logger.info(f"URL publique mise à jour pour le fournisseur d'ID {provider.id}")
+        logger.info(f"Public URL updated for provider ID {provider.id}")
     except Exception as e:
         db.rollback()
-        logger.error(f"Erreur lors de la mise à jour de l'URL publique: {str(e)}")
+        logger.error(f"Error updating public URL: {str(e)}")
     finally:
         db.close()
 
@@ -204,7 +204,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Init Storage Provider")
     
-    # Sous-commandes
+    # Subcommands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     
     # Commande init

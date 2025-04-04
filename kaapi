@@ -1,47 +1,47 @@
 #!/bin/bash
 
-# Script utilitaire pour faciliter l'utilisation de kaapi_cli.py
-# Usage: ./kaapi <commande>
+# Script utility to facilitate the use of kaapi_cli.py
+# Usage: ./kaapi <command>
 
-# Configuration des couleurs
+# Color configuration
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Détection du répertoire racine du projet
+# Detect root directory of the project
 BASE_DIR="$(dirname "$0")"
 
-# Fonction pour vérifier si Docker est en cours d'exécution
+# Function to check if Docker is running
 check_docker() {
     if ! docker ps >/dev/null 2>&1; then
-        echo -e "${RED}⚠️ Docker n'est pas en cours d'exécution. Veuillez démarrer Docker et réessayer.${NC}"
+        echo -e "${RED}⚠️ Docker is not running. Please start Docker and try again.${NC}"
         exit 1
     fi
 }
 
-# Fonction pour vérifier si le container kaapi-api est en cours d'exécution
+# Function to check if the kaapi-api container is running
 check_kaapi_container() {
     if ! docker ps | grep kaapi-api >/dev/null 2>&1; then
-        echo -e "${YELLOW}Le container kaapi-api n'est pas en cours d'exécution. Démarrage des containers...${NC}"
+        echo -e "${YELLOW}The kaapi-api container is not running. Starting containers...${NC}"
         cd "$BASE_DIR/backend" && docker-compose up -d
-        echo -e "${GREEN}Containers démarrés avec succès.${NC}"
+        echo -e "${GREEN}Containers started successfully.${NC}"
     fi
 }
 
-# Fonction pour exécuter une commande dans un container Docker
+# Function to run a command in a Docker container
 run_in_container() {
     local container="$1"
     shift
     local cmd="$@"
     
-    echo -e "${BLUE}Exécution de la commande dans $container: $cmd${NC}"
+    echo -e "${BLUE}Executing command in $container: $cmd${NC}"
     docker exec "$container" bash -c "$cmd"
     local exit_code=$?
     
     if [ $exit_code -ne 0 ]; then
-        echo -e "${RED}⚠️ La commande a échoué avec le code de sortie $exit_code${NC}"
+        echo -e "${RED}⚠️ Command failed with exit code $exit_code${NC}"
         return $exit_code
     fi
     
@@ -49,72 +49,72 @@ run_in_container() {
 }
 
 
-# Afficher l'usage si aucun argument n'est fourni
+# Display usage if no arguments are provided
 if [ $# -eq 0 ]; then
-    echo -e "${YELLOW}Usage: ./kaapi <commande>${NC}"
-    echo -e "${BLUE}Commandes disponibles:${NC}"
-    echo -e "  db generate ${GREEN}# Générer une nouvelle migration (optionnel: message)${NC}"
-    echo -e "  db apply    ${GREEN}# Appliquer les migrations${NC}"
-    echo -e "  db preview  ${GREEN}# Prévisualiser les changements de migration${NC}"
-    echo -e "  auth init   ${GREEN}# Initialiser l'authentification (créer un user test, configurer les providers)${NC}"
-    echo -e "  auth init-simple ${GREEN}# Version simplifiée de l'initialisation d'authentification${NC}"
+    echo -e "${YELLOW}Usage: ./kaapi <command>${NC}"
+    echo -e "${BLUE}Available commands:${NC}"
+    echo -e "  db generate ${GREEN}# Generate a new migration (optional: message)${NC}"
+    echo -e "  db apply    ${GREEN}# Apply migrations${NC}"
+    echo -e "  db preview  ${GREEN}# Preview migration changes${NC}"
+    echo -e "  auth init   ${GREEN}# Initialize authentication (create a test user, configure providers)${NC}"
+    echo -e "  auth init-simple ${GREEN}# Simple version of authentication initialization${NC}"
     echo -e "  storage init ${GREEN}# Initialize the MinIO storage provider and set it as default${NC}"
-    echo -e "  [...]      ${GREEN}# Autres commandes de kaapi_cli.py${NC}"
+    echo -e "  [...]      ${GREEN}# Other kaapi_cli.py commands${NC}"
     exit 0
 fi
 
-# Vérifier si Docker est en cours d'exécution
+# Check if Docker is running
 check_docker
 
 if [[ "$1" == "db" ]]; then
-    # Commandes de gestion de base de données
-    shift  # Supprime 'db' des arguments
+    # Database management commands
+    shift  # Remove 'db' from arguments
     CMD="$1"
-    shift  # Supprime la commande spécifique
+    shift  # Remove the specific command
     
-    # S'assurer que le container api est en cours d'exécution
+    # Ensure the container api is running
     check_kaapi_container
 
     case "$CMD" in
         "generate")
-            # Joindre tous les arguments restants comme un seul message
+            # Attach all remaining arguments as a single message
             MESSAGE="$*"
             if [ -z "$MESSAGE" ]; then
                 MESSAGE="Kaapi changes"
             fi
-            echo -e "${BLUE}Génération d'une migration avec le message: $MESSAGE${NC}"
-            # Utiliser des guillemets simples pour éviter les problèmes d'échappement
+            echo -e "${BLUE}Generating a migration with message: $MESSAGE${NC}"
+            # Use single quotes to avoid escape issues
             run_in_container kaapi-api "cd /app && alembic revision --autogenerate -m \"$MESSAGE\""
             ;;
         "apply")
-            echo -e "${BLUE}Application des migrations...${NC}"
+            echo -e "${BLUE}Applying migrations...${NC}"
             run_in_container kaapi-api alembic upgrade head
             
-            # La génération des schémas est maintenant intégrée au processus de migration
-            echo -e "${GREEN}Migrations appliquées et schémas générés avec succès dans le répertoire docs/${NC}"
+            # Schema generation is now integrated into the migration process
+            echo -e "${GREEN}Migrations applied and schemas generated successfully in the docs directory/${NC}"
             ;;
         "preview")
-            echo -e "${BLUE}Prévisualisation des changements...${NC}"
+            echo -e "${BLUE}Previewing changes...${NC}"
             run_in_container kaapi-api python -m app.commands.preview_migration
             ;;
         *)
-            echo -e "${RED}Commande db inconnue: $CMD${NC}"
-            echo -e "${YELLOW}Commandes disponibles: generate, apply, preview${NC}"
+            echo -e "${RED}Unknown db command: $CMD${NC}"
+            echo -e "${YELLOW}Available commands: generate, apply, preview${NC}"
             exit 1
             ;;
     esac
 elif [[ "$1" == "auth" ]]; then
-    # Commandes de gestion de l'authentification
-    shift  # Supprime 'auth' des arguments
+    # Authentication management commands
+    shift  # Remove 'auth' from arguments
     CMD="$1"
-    shift  # Supprime la commande spécifique
+    shift  # Remove the specific command
     
-    # S'assurer que le container api est en cours d'exécution
+    # Ensure the container api is running
     check_kaapi_container
 
     case "$CMD" in
         "init")
-            echo -e "${BLUE}Initialisation de l'authentification...${NC}"
+            echo -e "${BLUE}Initializing authentication...${NC}"
             if [[ "$1" == "--force" ]]; then
                 run_in_container kaapi-api python -m app.commands.init_auth --force
             else
@@ -122,7 +122,7 @@ elif [[ "$1" == "auth" ]]; then
             fi
             ;;
         "init-simple")
-            echo -e "${BLUE}Initialisation simplifiée de l'authentification...${NC}"
+            echo -e "${BLUE}Initializing authentication simplifiée...${NC}"
             if [[ "$1" == "--force" ]]; then
                 run_in_container kaapi-api python -m app.commands.init_auth_simple --force
             else
@@ -130,8 +130,8 @@ elif [[ "$1" == "auth" ]]; then
             fi
             ;;
         *)
-            echo -e "${RED}Commande auth inconnue: $CMD${NC}"
-            echo -e "${YELLOW}Commandes disponibles: init, init-simple${NC}"
+            echo -e "${RED}Unknown auth command: $CMD${NC}"
+            echo -e "${YELLOW}Available commands: init, init-simple${NC}"
             exit 1
             ;;
     esac
@@ -183,27 +183,27 @@ elif [[ "$1" == "storage" ]]; then
             
             # First, generate the SQL script
             if run_in_container kaapi-api python -m app.commands.init_storage $EXTRA_ARGS; then
-                # Copier le fichier SQL du conteneur API vers l'hôte
+                # Copy the SQL script from the API container to the host
                 echo -e "${BLUE}Copying SQL script from API container...${NC}"
                 docker cp kaapi-api:/tmp/init_minio.sql ./init_minio.sql
                 
-                # Exécuter le script SQL directement dans le conteneur de base de données
+                # Run SQL commands to set up MinIO provider
                 echo -e "${BLUE}Running SQL commands to set up MinIO provider...${NC}"
                 
-                # Exécuter des commandes simples pour voir les variables d'environnement disponibles
+                # Check database environment variables
                 echo -e "${BLUE}Checking database environment variables...${NC}"
                 run_in_container kaapi-db env | grep POSTGRES
                 
-                # Exécuter le script SQL avec une commande plus robuste
+                # Run SQL commands to set up MinIO provider
                 docker cp ./init_minio.sql kaapi-db:/tmp/init_minio.sql
                 docker exec kaapi-db sh -c 'psql -U postgres -d kaapi -f /tmp/init_minio.sql'
                 
-                # Nettoyage du fichier temporaire sur l'hôte
+                # Clean up temporary file on host
                 rm ./init_minio.sql
                 
                 echo -e "${GREEN}MinIO storage provider initialized successfully.${NC}"
                 
-                # Vérifier que le fournisseur a bien été créé
+                # Verify that the provider has been created
                 echo -e "${BLUE}Verifying provider creation...${NC}"
                 docker exec kaapi-db sh -c 'psql -U postgres -d kaapi -c "SELECT * FROM file_storage_providers;"'
             else
@@ -218,7 +218,7 @@ elif [[ "$1" == "storage" ]]; then
             ;;
     esac
 else
-    # Autres commandes, exécution dans le container
+    # Other commands, execution in container
     check_kaapi_container
     run_in_container kaapi-api python kaapi_cli.py "$@"
 fi

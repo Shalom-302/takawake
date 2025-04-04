@@ -260,39 +260,56 @@ const DocumentService = {
   },
 
   /**
-   * Créer un nouveau document
-   * Utilise le plugin digital-signature pour créer le document et le plugin workflow pour gérer son cycle de vie
+   * Creates a new document
+   * Uses the digital-signature plugin to create the document and the workflow plugin to manage its lifecycle
    */
   async createDocument(request: CreateDocumentRequest): Promise<DocumentCreateResponse> {
     try {
       console.log('Creating document with request:', request);
       
-      // 1. Créer le document physique via digital-signature
+      // 1. Create physical document via digital-signature
       const formData = new FormData();
-      formData.append('document', request.file);
-      formData.append('description', request.description || '');
-      formData.append('signature_type', request.signature_type);
       
-      // Log détaillé des informations du formulaire pour le débogage
+      // Ensure the file is attached with the exact name "document" as expected by the backend
+      formData.append('document', request.file, request.file.name);
+      
+      // Add necessary metadata
+      if (request.description) {
+        formData.append('description', request.description);
+      }
+      
+      // Use "qualified" as default signature type if not specified
+      formData.append('signature_type', request.signature_type || 'qualified');
+      
+      // Log detailed form data for debugging
       console.log('Form data details:', {
         fileName: request.file.name,
         fileSize: request.file.size,
         fileType: request.file.type,
         description: request.description,
-        signatureType: request.signature_type
+        signatureType: request.signature_type || 'qualified'
       });
       
+      // Debugging FormData content
+      console.log('FormData entries:');
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1] instanceof File ? `File (${pair[1].name}, ${pair[1].type}, ${pair[1].size} bytes)` : pair[1]}`);
+      }
+      
       console.log('Uploading document to digital-signature service...');
+      // The axiosClient instance already adds the /api prefix
       const signResponse = await axiosClient.post('/digital-signature/sign/document', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data'
+        }
       });
       console.log('Document upload API response:', signResponse.data);
       
-      // 2. Créer le workflow pour ce document
+      // 2. Create workflow for this document
       const workflowData = {
-        workflow_id: parseInt(request.workflow_type), // ID du workflow approprié
+        workflow_id: parseInt(request.workflow_type), // ID of the appropriate workflow
         target_type: "document",
-        target_id: signResponse.data.id, // ID du document créé
+        target_id: signResponse.data.id, // ID of the created document
         metadata: {
           name: request.name,
           description: request.description,
@@ -306,7 +323,7 @@ const DocumentService = {
       const workflowResponse = await axiosClient.post<WorkflowInstance>('/workflow/instances', workflowData);
       console.log('Workflow creation API response:', workflowResponse.data);
       
-      // 3. Retourner les données combinées
+      // 3. Return combined data
       return {
         id: signResponse.data.id,
         name: request.name,
@@ -322,14 +339,14 @@ const DocumentService = {
   },
 
   /**
-   * Mettre à jour un document
-   * Met à jour à la fois les métadonnées du workflow et le document si nécessaire
+   * Update a document
+   * Updates both workflow metadata and document metadata if necessary
    */
   async updateDocument(id: string, data: Partial<Document>): Promise<Document> {
     try {
       console.log('Updating document with data:', data);
       
-      // 1. Mettre à jour l'instance de workflow
+      // 1. Update workflow instance
       const workflowData = {
         metadata: {
           ...(data.metadata || {}),
@@ -342,7 +359,7 @@ const DocumentService = {
       const workflowResponse = await axiosClient.patch(`/workflow/instances/${data.workflow_instance_id}`, workflowData);
       console.log('Workflow update API response:', workflowResponse.data);
       
-      // 2. Récupérer le document mis à jour
+      // 2. Get updated document
       return this.getDocument(id);
     } catch (error) {
       console.error(`Error updating document ${id}:`, error);
@@ -351,8 +368,8 @@ const DocumentService = {
   },
 
   /**
-   * Télécharger un document
-   * Utilise le plugin digital-signature pour récupérer le contenu du document
+   * Download a document
+   * Uses the digital-signature plugin to retrieve the document content
    */
   async downloadDocument(id: string): Promise<Blob> {
     try {
@@ -369,8 +386,8 @@ const DocumentService = {
   },
 
   /**
-   * Signer un document
-   * Utilise le plugin digital-signature pour la signature et met à jour le workflow
+   * Sign a document
+   * Uses the digital-signature plugin for the signature and updates the workflow
    */
   async signDocument(documentId: string, signatureData: {
     signature_type: SignatureType;
@@ -381,27 +398,27 @@ const DocumentService = {
     try {
       console.log('Signing document with signature data:', signatureData);
       
-      // 1. Signer le document via digital-signature
+      // 1. Sign the document via digital-signature
       const response = await axiosClient.post<Signature>(`/digital-signature/sign/document/${documentId}/signature`, signatureData);
       console.log('Document signing API response:', response.data);
       
-      // 2. Faire avancer le workflow si nécessaire
-      // Récupérer d'abord les informations du workflow
+      // 2. Advance the workflow if necessary
+      // First get workflow information
       const document = await this.getDocument(documentId);
       if (document.workflow_instance_id) {
         try {
-          // Essayer de faire progresser le workflow vers l'état "signé"
-          // Nous devons d'abord vérifier les transitions possibles
+          // Try to progress the workflow to the "signed" state
+          // We must first check possible transitions
           const transitionsResponse = await axiosClient.get<WorkflowTransition[]>(`/workflow/instances/${document.workflow_instance_id}/transitions`);
           console.log('Workflow transitions API response:', transitionsResponse.data);
           
-          // Trouver une transition qui mène à l'état "signé"
+          // Find a transition that leads to the "signed" state
           const signedTransition = transitionsResponse.data.find(
             (transition) => transition.target_state?.name?.toLowerCase() === 'signed'
           );
           
           if (signedTransition) {
-            // Effectuer la transition
+            // Perform the transition
             const transitionResponse = await axiosClient.post(`/workflow/instances/${document.workflow_instance_id}/transition`, {
               transition_id: signedTransition.id
             });
@@ -411,11 +428,11 @@ const DocumentService = {
           }
         } catch (workflowError) {
           console.error('Error updating workflow state:', workflowError);
-          // Ne pas faire échouer l'opération de signature si la mise à jour du workflow échoue
+          // Do not fail the signature operation if workflow update fails
         }
       }
       
-      // Enregistrer l'action de signature dans le système d'audit
+      // Register signature action in audit system
       await auditService.createAuditLog({
         action: 'SIGN',
         resource: 'document',
@@ -430,8 +447,8 @@ const DocumentService = {
   },
 
   /**
-   * Ajouter un signataire à un document
-   * Met à jour les métadonnées du workflow
+   * Add a signatory to a document
+   * Updates workflow metadata
    */
   async addSignatory(documentId: string, signatoryData: {
     email: string;
@@ -441,10 +458,10 @@ const DocumentService = {
     try {
       console.log('Adding signatory to document with signatory data:', signatoryData);
       
-      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      // 1. Get the document to get the workflow instance ID
       const document = await this.getDocument(documentId);
       
-      // 2. Mettre à jour les métadonnées de l'instance workflow
+      // 2. Update workflow instance metadata
       const signatories = [...(document.metadata?.signatories || []), signatoryData];
       
       const workflowData = {
@@ -458,18 +475,18 @@ const DocumentService = {
       await axiosClient.patch(`/workflow/instances/${document.workflow_instance_id}`, workflowData);
       console.log('Workflow update API response received');
       
-      // Créer un nouvel objet Signatory avec les champs requis
+      // Create a new Signatory object with required fields
       const newSignatory: Signatory = {
-        id: `temp-${Date.now()}`, // Identifiant temporaire
+        id: `temp-${Date.now()}`, // Temporary ID
         document_id: documentId,
-        user_id: '', // À remplir par le backend
+        user_id: '', // To be filled by the backend
         user_name: signatoryData.name,
         email: signatoryData.email,
         order: signatoryData.order,
-        status: SignatoryStatus.PENDING // Statut par défaut
+        status: SignatoryStatus.PENDING // Default status
       };
       
-      // Enregistrer l'action d'ajout de signataire dans le système d'audit
+      // Register add signatory action in audit system
       await auditService.createAuditLog({
         action: 'ADD_SIGNATORY',
         resource: 'document',
@@ -484,8 +501,8 @@ const DocumentService = {
   },
 
   /**
-   * Obtenir le statut du workflow d'un document
-   * Interroge directement le plugin workflow
+   * Get the workflow status of a document
+   * Queries the workflow plugin directly
    */
   async getWorkflowStatus(documentId: string): Promise<{
     current_step: WorkflowStep;
@@ -495,21 +512,21 @@ const DocumentService = {
     try {
       console.log('Getting workflow status for document...');
       
-      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      // 1. Get the document to get the workflow instance ID
       const document = await this.getDocument(documentId);
       
-      // 2. Récupérer l'état du workflow
+      // 2. Get workflow status
       const workflowResponse = await axiosClient.get<WorkflowInstance>(`/workflow/instances/${document.workflow_instance_id}`);
       console.log('Workflow status API response:', workflowResponse.data);
       
-      // 3. Récupérer les étapes suivantes possibles (transitions)
+      // 3. Get possible next steps (transitions)
       const transitionsResponse = await axiosClient.get<WorkflowTransition[]>(`/workflow/instances/${document.workflow_instance_id}/transitions`);
       console.log('Workflow transitions API response:', transitionsResponse.data);
       
-      // Déterminer l'étape suivante, s'il y en a une
-      const nextTransition = transitionsResponse.data[0]; // Prendre la première transition disponible
+      // Determine next step, if any
+      const nextTransition = transitionsResponse.data[0]; // Take the first available transition
       
-      // Mapper l'état du workflow à une étape de workflow
+      // Map workflow state to workflow step
       const mapStateToStep = (state: WorkflowState): WorkflowStep => {
         const name = state.name.toLowerCase();
         if (name.includes('preparation') || name.includes('draft')) {
@@ -538,21 +555,21 @@ const DocumentService = {
   },
 
   /**
-   * Supprimer un document
-   * Annule l'instance de workflow et supprime le document
+   * Delete a document
+   * Cancels the workflow instance and deletes the document
    */
   async deleteDocument(id: string): Promise<void> {
     try {
       console.log('Deleting document...');
       
-      // 1. Récupérer le document pour obtenir l'ID de l'instance workflow
+      // 1. Get the document to get the workflow instance ID
       const document = await this.getDocument(id);
       
-      // 2. Annuler l'instance de workflow
+      // 2. Cancel the workflow instance
       await axiosClient.post(`/workflow/instances/${document.workflow_instance_id}/cancel`);
       console.log('Workflow cancellation API response received');
       
-      // 3. Supprimer le document si nécessaire
+      // 3. Delete the document if necessary
       try {
         await axiosClient.delete(`/digital-signature/sign/document/${id}`);
         console.log('Document deletion API response received');
@@ -560,7 +577,7 @@ const DocumentService = {
         console.warn('Could not delete document from digital-signature service:', deleteError);
       }
       
-      // Enregistrer l'action de suppression dans le système d'audit
+      // Register delete action in audit system
       await auditService.createAuditLog({
         action: 'DELETE',
         resource: 'document',

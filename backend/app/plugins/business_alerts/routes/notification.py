@@ -31,7 +31,7 @@ def get_notification_router():
     Returns:
         APIRouter: FastAPI router with notification endpoints
     """
-    # Modifier le router pour inclure le préfixe /api
+    # Modify the router to include the /api prefix
     router = APIRouter(prefix="/api")
     
     # Active WebSocket connections by user ID

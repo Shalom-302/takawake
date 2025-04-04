@@ -27,14 +27,14 @@ def log_audit_event(db: Session, user_id: Union[int, str, UUID], action: str, re
         resource: Resource type (e.g., "user", "file")
         details: Additional details about the action
     """
-    # Si user_id est un UUID ou une chaîne, on utilise NULL pour user_id
-    # car la colonne user_id est définie comme Integer dans le modèle AuditLog
+    # If user_id is a UUID or string, use NULL for user_id
+    # because the user_id column is defined as Integer in the AuditLog model
     if isinstance(user_id, (UUID, str)):
-        # On met user_id à NULL et on stocke l'identifiant UUID dans details
+        # Set user_id to NULL and store the UUID in details
         user_details = f"User ID: {user_id}, " + (details or "")
         log = AuditLog(user_id=None, action=action, resource=resource, details=user_details)
     else:
-        # Si c'est un entier, on utilise la valeur directement
+        # If it's an integer, use the value directly
         log = AuditLog(user_id=user_id, action=action, resource=resource, details=details)
     
     db.add(log)

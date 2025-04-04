@@ -238,9 +238,9 @@ def get_router() -> APIRouter:
             
             # Upload the file to storage - correction de l'ordre des paramètres
             file_url = provider.upload_file(
-                file_data,  # 1er paramètre: l'objet fichier avec méthode seek()
-                storage_path,  # 2ème paramètre: le chemin de destination
-                file.content_type  # 3ème paramètre: le type de contenu
+                file_data,  # 1st parameter: file object with seek() method
+                storage_path,  # 2nd parameter: destination path
+                file.content_type  # 3rd parameter: content type
             )
             
             # Parse tags if provided
@@ -259,8 +259,8 @@ def get_router() -> APIRouter:
                 file_metadata={
                     "description": description,
                     "tags": tag_list,
-                    "url": file_url,  # Stocker l'URL dans les métadonnées
-                    "folder_id": folder.id if folder else None  # Stocker l'ID du dossier dans les métadonnées
+                    "url": file_url,  # Store the URL in metadata
+                    "folder_id": folder.id if folder else None  # Store the folder ID in metadata
                 }
             )
             
@@ -270,7 +270,7 @@ def get_router() -> APIRouter:
             
             # TODO: Add asynchronous thumbnail processing and optimization if necessary
             
-            # Utiliser notre fonction de sérialisation pour le modèle
+            # Use our serialization function for the model
             file_data = serialize_sqlalchemy_model(db_file)
             
             # Log audit event for file upload
@@ -282,7 +282,7 @@ def get_router() -> APIRouter:
                 details=f"File ID: {db_file.id}, Name: {db_file.original_filename}"
             )
             
-            # Retourner la réponse au format attendu par le schéma
+            # Return the response in the expected schema format
             return {"file": file_data, "message": "File uploaded successfully"}
             
         except StorageException as e:
@@ -409,7 +409,7 @@ def get_router() -> APIRouter:
         
         # Generate URLS
         try:
-            # Essayez d'obtenir des URLs via le provider
+            # Try to obtain URLs via the provider
             download_url = provider.get_file_url(db_file.storage_path, expires=3600, is_public=False, request=request)
             preview_url = provider.get_file_url(db_file.storage_path, expires=86400, is_public=True, request=request)
         except Exception as e:
@@ -770,7 +770,7 @@ def get_public_router() -> APIRouter:
         request: Request = None
     ):
         """
-        Liste les fichiers publics
+        List public files
         """
         # Creating the basic query
         query = db.query(StoredFile)
