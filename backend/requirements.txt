@@ -69,6 +69,10 @@ pyyaml==6.0.2
 dicttoxml==1.7.16
 jinja2>=3.1.2
 typer==0.15.2
+
+matplotlib
+sqlalchemy_schemadisplay
+
 # Plugin Dependencies
 # ------------------
 # To install all plugin dependencies:
