@@ -202,10 +202,10 @@ def create_crud_router(
             resource_level_allowed = enforcer.enforce(role_name, resource_name, "create")
 
             data_dict = data.dict()
-            if not resource_level_allowed:
-                filtered_data = {field_name: value for field_name, value in data_dict.items()
-                                 if enforcer.enforce(role_name, f"{resource_name}:{field_name}", "create")}
-                data_dict = filtered_data
+            # if not resource_level_allowed:
+            #     filtered_data = {field_name: value for field_name, value in data_dict.items()
+            #                      if enforcer.enforce(role_name, f"{resource_name}:{field_name}", "create")}
+            #     data_dict = filtered_data
 
             if not data_dict:
                 raise HTTPException(
@@ -270,7 +270,8 @@ def create_crud_router(
 
             # Apply field-level permission checks
             for obj in all_objs:
-                if enforcer.enforce(role_name, resource_name, "read"):
+                # if enforcer.enforce(role_name, resource_name, "read"):
+                if True:
                     results.append(schema_out.from_orm(obj))
                 else:
                     partial_data = {column.name: getattr(obj, column.name)
@@ -298,18 +299,19 @@ def create_crud_router(
                 raise HTTPException(404, f"{model.__name__} not found")
 
             role_name = current_user.role.name if current_user.role else "anonymous"
-            if enforcer.enforce(role_name, resource_name, "read"):
-                return obj
-            else:
-                partial_data = {column.name: getattr(obj, column.name)
-                                for column in obj.__table__.columns
-                                if enforcer.enforce(role_name, f"{resource_name}:{column.name}", "read")}
-                if not partial_data:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"No fields allowed for read on {resource_name} item"
-                    )
-                return partial_data
+            # if enforcer.enforce(role_name, resource_name, "read"):
+            #     return obj
+            # else:
+            #     partial_data = {column.name: getattr(obj, column.name)
+            #                     for column in obj.__table__.columns
+            #                     if enforcer.enforce(role_name, f"{resource_name}:{column.name}", "read")}
+            #     if not partial_data:
+            #         raise HTTPException(
+            #             status_code=status.HTTP_403_FORBIDDEN,
+            #             detail=f"No fields allowed for read on {resource_name} item"
+            #         )
+            #     return partial_data
+            return obj
 
     # ---------------------------
     # UPDATE
@@ -351,18 +353,19 @@ def create_crud_router(
             log_details = f"Updated {resource_name} id {item_id} with data: {json.dumps(update_data)}"
             log_audit_event(db, current_user.id, "update", resource_name, log_details)
 
-            if enforcer.enforce(role_name, resource_name, "read"):
-                return schema_out.from_orm(obj)
-            else:
-                partial_data = {column.name: getattr(obj, column.name)
-                                for column in obj.__table__.columns
-                                if enforcer.enforce(role_name, f"{resource_name}:{column.name}", "read")}
-                if not partial_data:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"No fields allowed for read on updated {resource_name} item"
-                    )
-                return schema_out.from_orm(partial_data)
+            # if enforcer.enforce(role_name, resource_name, "read"):
+            #     return schema_out.from_orm(obj)
+            # else:
+            #     partial_data = {column.name: getattr(obj, column.name)
+            #                     for column in obj.__table__.columns
+            #                     if enforcer.enforce(role_name, f"{resource_name}:{column.name}", "read")}
+            #     if not partial_data:
+            #         raise HTTPException(
+            #             status_code=status.HTTP_403_FORBIDDEN,
+            #             detail=f"No fields allowed for read on updated {resource_name} item"
+            #         )
+            #     return schema_out.from_orm(partial_data)
+            return schema_out.from_orm(obj)
 
     # ---------------------------
     # DELETE

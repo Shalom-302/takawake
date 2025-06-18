@@ -51,9 +51,9 @@ TEST_USER = {
 # Authentication providers to configure
 AUTH_PROVIDERS = [
     {"provider": "google", "is_active": True, "name": "Google"},
-    {"provider": "github", "is_active": True, "name": "GitHub"},
-    {"provider": "facebook", "is_active": True, "name": "Facebook"},
-    {"provider": "email", "is_active": True, "name": "Email"}
+    # {"provider": "github", "is_active": True, "name": "GitHub"},
+    # {"provider": "facebook", "is_active": True, "name": "Facebook"},
+    # {"provider": "email", "is_active": True, "name": "Email"}
 ]
 
 

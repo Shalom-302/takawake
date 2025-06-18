@@ -21,21 +21,6 @@ from sqlalchemy.orm.session import sessionmaker
 engine = create_engine('postgresql://user:password@host:port/dbname')
 Base = declarative_base()
 
-class StorageProvider(Base):
-    __tablename__ = 'file_storage_providers'
-    id = Column(Integer, primary_key=True)
-    provider_type = Column(String)
-    is_default = Column(Boolean)
-    is_active = Column(Boolean)
-    bucket_name = Column(String)
-    region = Column(String)
-    endpoint_url = Column(String)
-    access_key = Column(String)
-    secret_key = Column(String)
-    config = Column(String)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
-
 Base.metadata.create_all(engine)
 
 SessionLocal = sessionmaker(bind=engine)

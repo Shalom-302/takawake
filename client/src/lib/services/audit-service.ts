@@ -45,7 +45,7 @@ const auditService = {
   /**
    * Récupère les logs d'audit filtrés par ressource
    */
-  async getAuditLogsByResource(resource: string): Promise<AuditLog[]> {
+  async getAuditLogsByResource(resource: string): Promise<AuditLog[]> { 
     try {
       const allLogs = await this.getAuditLogs();
       return allLogs.filter(log => log.resource === resource);

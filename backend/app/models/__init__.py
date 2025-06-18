@@ -75,4 +75,7 @@ from app.plugins.webhooks.models import WebhookSubscription
 from app.plugins.workflow.models import Workflow, WorkflowStep, WorkflowState, WorkflowTransition, WorkflowInstance, StepApproval, WorkflowHistory
 
 # User analytics models
-from app.plugins.user_analytics.models import AnalyticsUserSession, AnalyticsUserEvent
+from app.plugins.matomo_integration.models import MatomoSettings, MatomoUserMapping, MatomoEmbedConfig
+
+## Specif Models
+from .test import Test

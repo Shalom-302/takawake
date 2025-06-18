@@ -59,6 +59,7 @@ class UserBase(BaseModel):
     email: EmailStr
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    birth_country: Optional[str] = None
     is_active: bool = True
 
 

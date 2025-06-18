@@ -206,20 +206,6 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/messages" className="cursor-pointer flex w-full relative">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>Messages</span>
-                  {unreadMessagesCount > 0 && (
-                    <Badge 
-                      variant="default" 
-                      className="ml-auto h-4 px-1 text-[10px] -mt-4"
-                    >
-                      {unreadMessagesCount}
-                    </Badge>
-                  )}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <Link href="/settings" className="cursor-pointer flex w-full">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>

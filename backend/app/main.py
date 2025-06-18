@@ -16,7 +16,6 @@ from .core.config import settings
 from app.casbin_setup import get_casbin_enforcer
 
 
-
 # Middleware imports
 from app.plugins.security.middleware import SecurityMiddlewareEnhanced
 from app.plugins.security.intrusion_detection import IntrusionDetector
@@ -57,10 +56,12 @@ from app.plugins.security.security_config import load_security_config
 
 from app.api.push import router as push_router
 from app.api.health_check import health_check_router
-from app.plugins.user_analytics import user_analytics_router
+from app.plugins.matomo_integration import matomo_router
 # Add Prometheus metrics
 from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_TYPE_LATEST, CollectorRegistry, REGISTRY as DEFAULT_REGISTRY
 import psutil
+
+from app.routers.test import test_site_router
 
 # Define simple metrics with unique prefixes to avoid conflicts
 MAIN_REQUEST_COUNT = Counter('kaapi_http_requests_total', 'Total count of requests', ['method', 'endpoint', 'status'])
@@ -431,10 +432,13 @@ api_router.include_router(business_alerts_router, prefix="/business-alerts", tag
 api_router.include_router(digital_signature_router, prefix="/digital-signature", tags=["Digital Signature"])
 api_router.include_router(recommendation_router, prefix="/recommendation", tags=["Recommendation"])
 api_router.include_router(social_subscriptions_router, prefix="/social-subscriptions", tags=["Social Subscriptions"])
-api_router.include_router(user_analytics_router, prefix="/user-analytics", tags=["User Analytics"])
+api_router.include_router(matomo_router, prefix="/matomo", tags=["Matomo Analytics"])
 # API Routes
 api_router.include_router(health_check_router, tags=["system"])
 api_router.include_router(push_router, tags=["push"])
+
+# Business Routes
+api_router.include_router(test_site_router, prefix='/tests')
 
 # Include the main API router in the application
 app.include_router(api_router)

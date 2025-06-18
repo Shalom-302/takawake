@@ -1,8 +1,8 @@
-"""initial migration
+"""Initial migration
 
-Revision ID: 37bd12db07ec
+Revision ID: b3410f65ad70
 Revises: 
-Create Date: 2025-03-19 22:36:39.996925
+Create Date: 2025-06-18 10:28:18.491791
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '37bd12db07ec'
+revision: str = 'b3410f65ad70'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -283,6 +283,32 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_kyc_regions_country_code'), ['country_code'], unique=False)
         batch_op.create_index(batch_op.f('ix_kyc_regions_name'), ['name'], unique=True)
 
+    op.create_table('matomo_embed_configs',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False, comment='User-friendly name for this embed'),
+    sa.Column('embed_type', sa.String(), nullable=False, comment='Type of embed (dashboard, report)'),
+    sa.Column('embed_id', sa.String(), nullable=True, comment='ID of the dashboard or report in Matomo'),
+    sa.Column('date_range', sa.String(), nullable=True, comment='Default date range for this embed'),
+    sa.Column('filters', sa.JSON(), nullable=True, comment='Default filters as JSON'),
+    sa.Column('position', sa.Integer(), nullable=True, comment='Order position in UI'),
+    sa.Column('visible', sa.Boolean(), nullable=True, comment='Whether this embed is visible in UI'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True, comment='Creation timestamp'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True, comment='Last update timestamp'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('matomo_settings',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('matomo_url', sa.String(), nullable=False, comment='URL of the Matomo instance'),
+    sa.Column('site_id', sa.Integer(), nullable=False, comment='Matomo site ID for this Kaapi instance'),
+    sa.Column('auth_token', sa.String(), nullable=True, comment='Authentication token for Matomo API'),
+    sa.Column('enabled', sa.Boolean(), nullable=True, comment='Whether Matomo tracking is enabled'),
+    sa.Column('track_admin_users', sa.Boolean(), nullable=True, comment='Whether to track admin users'),
+    sa.Column('heartbeat_timer', sa.Integer(), nullable=True, comment='Heartbeat timer in seconds for tracking activity'),
+    sa.Column('additional_settings', sa.JSON(), nullable=True, comment='Additional Matomo settings as JSON'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True, comment='Creation timestamp'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True, comment='Last update timestamp'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('messaging_conversations',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('conversation_type', sa.String(length=20), nullable=False),
@@ -1176,6 +1202,18 @@ def upgrade() -> None:
     with op.batch_alter_table('kyc_verifications', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_kyc_verifications_user_id'), ['user_id'], unique=False)
 
+    op.create_table('matomo_user_mappings',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('kaapi_user_id', sa.UUID(), nullable=False, comment='User ID in Kaapi'),
+    sa.Column('matomo_user_id', sa.String(), nullable=False, comment='User ID in Matomo'),
+    sa.Column('matomo_login', sa.String(), nullable=True, comment='Login username in Matomo'),
+    sa.Column('access_level', sa.String(), nullable=False, comment='Access level in Matomo'),
+    sa.Column('last_sync', sa.DateTime(timezone=True), nullable=True, comment='Last synchronization timestamp'),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True, comment='Creation timestamp'),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True, comment='Last update timestamp'),
+    sa.ForeignKeyConstraint(['kaapi_user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('messaging_attachments',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('message_id', sa.String(length=36), nullable=False),
@@ -1246,10 +1284,12 @@ def upgrade() -> None:
     sa.Column('is_muted', sa.Boolean(), nullable=True),
     sa.Column('is_pinned', sa.Boolean(), nullable=True),
     sa.Column('is_archived', sa.Boolean(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.Column('custom_name', sa.String(length=255), nullable=True),
     sa.Column('theme_color', sa.String(length=20), nullable=True),
     sa.Column('notification_level', sa.String(length=20), nullable=True),
     sa.Column('last_read_message_id', sa.String(length=36), nullable=True),
+    sa.Column('unread_count', sa.Integer(), nullable=True),
     sa.Column('role', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -1818,6 +1858,7 @@ def downgrade() -> None:
     op.drop_table('messaging_reactions')
     op.drop_table('messaging_message_delivery_status')
     op.drop_table('messaging_attachments')
+    op.drop_table('matomo_user_mappings')
     with op.batch_alter_table('kyc_verifications', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_kyc_verifications_user_id'))
 
@@ -2019,6 +2060,8 @@ def downgrade() -> None:
 
     op.drop_table('notification_segments')
     op.drop_table('messaging_conversations')
+    op.drop_table('matomo_settings')
+    op.drop_table('matomo_embed_configs')
     with op.batch_alter_table('kyc_regions', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_kyc_regions_name'))
         batch_op.drop_index(batch_op.f('ix_kyc_regions_country_code'))

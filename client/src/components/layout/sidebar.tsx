@@ -14,7 +14,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  Folder
+  Folder,
+  TestTube
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -91,6 +93,11 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
       name: 'Settings',
       href: '/settings',
       icon: Settings
+    },
+     {
+      name: 'Tests',
+      href: '/tests',
+      icon: TestTube
     }
   ];
 

@@ -7,6 +7,10 @@ The backend Kaapi is a RESTful API built with FastAPI, designed to be extensible
 ## Quick Start
 
 ```bash
+
+# Build all my services
+./docker-run.sh build
+
 # Start all services (without monitoring)
 ./docker-run.sh up
 
@@ -17,28 +21,47 @@ The backend Kaapi is a RESTful API built with FastAPI, designed to be extensible
 ./docker-run.sh dev --monitoring
 ```
 
+## 🗃️ Database Initialisation
+
+```bash
+# View alembic migrations preview
+./kaapi db preview 
+
+# Generate the initialisation migration
+./kaapi db generate --message "Initial migration"
+
+# Apply
+./kaapi db apply
+
+# Create first admin user
+./kaapi auth init-simple
+
+# Init storage
+./kaapi storage init
+```
+
 ## 🗃️ Database Migrations
 
 Kaapi includes a dedicated CLI tool for managing database migrations:
 
 ```bash
 # View available commands
-./kaapi_cli.py --help
+./kaapi -help
 
-# Database migration commands
-./kaapi_cli.py db --help
+# Database preview
+./kaapi db preview
 
 # Generate a new migration
-./kaapi_cli.py db generate --message "Add new tables"
+./kaapi db generate --message "Add new tables"
 
 # Apply pending migrations
-./kaapi_cli.py db apply
+./kaapi db apply
 
 # Preview changes before generating a migration
-./kaapi_cli.py db preview
+./kaapi db preview
 
 # Check pending migrations
-./kaapi_cli.py db pending
+./kaapi db pending
 ```
 
 Migrations are automatically applied at application startup, but you can manually control them with these commands.
