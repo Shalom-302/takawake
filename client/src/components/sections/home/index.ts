@@ -5,11 +5,4 @@ import Stats from "./stats";
 import Testimonials from "./testimonials";
 import CTA from "./cta";
 
-export {
-  Hero,
-  Features,
-  HowItWorks,
-  Stats,
-  Testimonials,
-  CTA
-}
+export { Hero, Features, HowItWorks, Stats, Testimonials, CTA };

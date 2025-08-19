@@ -1,16 +1,8 @@
-"use client"
+"use client";
 
-import React from 'react';
-import { LayoutWithSidebar } from '@/components/layout/layout-with-sidebar';
+import React from "react";
+import { LayoutWithSidebar } from "@/components/layout/layout-with-sidebar";
 
-export default function DocumentsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-      <LayoutWithSidebar>
-        {children}
-      </LayoutWithSidebar>
-  );
+export default function DocumentsLayout({ children }: { children: React.ReactNode }) {
+    return <LayoutWithSidebar>{children}</LayoutWithSidebar>;
 }

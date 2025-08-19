@@ -3,14 +3,14 @@
  */
 
 export interface User {
-  id: string | number;
-  email?: string;
-  name?: string;
-  image?: string;
-  role?: string;
+    id: string | number;
+    email?: string;
+    name?: string;
+    image?: string;
+    role?: string;
 }
 
 export interface Session {
-  user?: User;
-  expires: string;
+    user?: User;
+    expires: string;
 }

@@ -1,0 +1,12 @@
+input {
+    outline: none !important;
+}
+
+.PhoneInputCountrySelectArrow {
+    /* display: none !important; */
+    margin-left: 10px !important;
+}
+
+.PhoneInputCountry {
+    @apply pr-1;
+}
