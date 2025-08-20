@@ -23,7 +23,7 @@ export default function AnalyticsExample() {
     }, [consent, consentGiven]);
 
     return (
-        <div className="p-4 border rounded-md bg-gray-50">
+        <div className="p-4 border rounded-md">
             <h3 className="text-lg font-medium mb-2">Analytics Status</h3>
             <p className="mb-4">{analyticsStatus}</p>
 

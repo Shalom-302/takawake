@@ -11,6 +11,7 @@ import Script from "next/script";
 import "./globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -40,7 +41,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="fr" suppressHydrationWarning>
+        <html lang="fr" suppressHydrationWarning className="scroll-smooth">
             <head>
                 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -49,21 +50,23 @@ export default function RootLayout({
                 <Script src="/pwa-register.js" strategy="afterInteractive" />
             </head>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-                <AuthProvider>
-                    <Toaster position="top-right" richColors />
-                    <PWAProvider>
-                        <MessagingProvider>
-                            <CookieProvider>
-                                <CookieManager />
-                                <PWAWrapper>
-                                    <DocumentProvider>
-                                        <AuditProvider>{children}</AuditProvider>
-                                    </DocumentProvider>
-                                </PWAWrapper>
-                            </CookieProvider>
-                        </MessagingProvider>
-                    </PWAProvider>
-                </AuthProvider>
+                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                    <AuthProvider>
+                        <Toaster position="top-right" richColors />
+                        <PWAProvider>
+                            <MessagingProvider>
+                                <CookieProvider>
+                                    <CookieManager />
+                                    {/* <PWAWrapper> */}
+                                    {/* <DocumentProvider> */}
+                                    <AuditProvider>{children}</AuditProvider>
+                                    {/* </DocumentProvider> */}
+                                    {/* </PWAWrapper> */}
+                                </CookieProvider>
+                            </MessagingProvider>
+                        </PWAProvider>
+                    </AuthProvider>
+                </ThemeProvider>
             </body>
         </html>
     );
