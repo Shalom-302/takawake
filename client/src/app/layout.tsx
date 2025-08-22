@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/contexts/auth-context";
 import { MessagingProvider } from "@/lib/contexts/messaging-context";
@@ -8,19 +8,16 @@ import { PWAProvider } from "@/lib/contexts/pwa-context";
 import CookieManager from "@/components/cookie/cookie-manager";
 import { PWAWrapper } from "@/components/layouts/pwa-wrapper";
 import Script from "next/script";
-import "./globals.css";
+import "../styles/globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
 import { ThemeProvider } from "next-themes";
+import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const inter = Inter({
     subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -49,7 +46,7 @@ export default function RootLayout({
                 <meta name="theme-color" content="#4F46E5" />
                 <Script src="/pwa-register.js" strategy="afterInteractive" />
             </head>
-            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+            <body className={cn(inter.variable, "bg-primary antialiased ")}>
                 <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                     <AuthProvider>
                         <Toaster position="top-right" richColors />

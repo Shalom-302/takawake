@@ -1,11 +1,3 @@
-"use client";
-
-import Typography from "@/components/starter_ui/typography";
-
-// import { Avatar, AvatarImage } from "@/components/ui/avatar";
-// import AvatarGroup from "@/components/ui/avatar-group";
-// import Typography from "@/components/ui/typography";
-
 export default function ViewTypography() {
     return (
         <>
@@ -14,40 +6,17 @@ export default function ViewTypography() {
                     <span>{"Typography"}</span>
                 </div>
                 <div className="px-4 py-6 ">
-                    <Typography variant={"display-2xl"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"display-xl"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"display-lg"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"display-md"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"display-sm"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"display-xs"} as={"h1"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-
-                    <Typography variant={"text-xl"} as={"p"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"text-lg"} as={"p"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"text-md"} as={"p"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"text-sm"} as={"p"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
-                    <Typography variant={"text-xs"} as={"p"} className="">
-                        {"Mon texte ici"}
-                    </Typography>
+                    <h1 className="text-display-2xl">{"Mon texte ici"}</h1>
+                    <h1 className="text-display-xl">{"Mon texte ici"}</h1>
+                    <h1 className="text-display-lg">{"Mon texte ici"}</h1>
+                    <h1 className="text-display-md">{"Mon texte ici"}</h1>
+                    <h1 className="text-display-sm">{"Mon texte ici"}</h1>
+                    <h1 className="text-display-xs">{"Mon texte ici"}</h1>
+                    <p className="text-xl">{"Mon texte ici"}</p>
+                    <p className="text-lg">{"Mon texte ici"}</p>
+                    <p className="text-md">{"Mon texte ici"}</p>
+                    <p className="text-sm">{"Mon texte ici"}</p>
+                    <p className="text-xs">{"Mon texte ici"}</p>
                 </div>
             </section>
         </>

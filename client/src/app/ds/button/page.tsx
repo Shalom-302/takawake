@@ -42,9 +42,9 @@ export default function ButtonPage() {
                                 <Button variant={variant.name as any}>Button {variant.name}</Button>
                             </div>
                             <p className="text-sm text-muted-foreground">{variant.description}</p>
-                            <CodeBlock 
+                            <CodeBlock
                                 className="mt-2"
-                                code={`<Button variant="${variant.name}">Button ${variant.name}</Button>`} 
+                                code={`<Button variant="${variant.name}">Button ${variant.name}</Button>`}
                             />
                         </div>
                     ))}
@@ -66,9 +66,9 @@ export default function ButtonPage() {
                         <span className="h-4 w-4">+</span>
                     </Button>
                 </div>
-                <CodeBlock 
+                <CodeBlock
                     className="mt-2"
-                    code={`<Button size="xs|sm|default|lg|xl|icon">Button text</Button>`} 
+                    code={`<Button size="xs|sm|default|lg|xl|icon">Button text</Button>`}
                 />
             </div>
 
@@ -82,9 +82,9 @@ export default function ButtonPage() {
                         </Button>
                     ))}
                 </div>
-                <CodeBlock 
+                <CodeBlock
                     className="mt-2"
-                    code={`<Button rounded="default|full|none">Button text</Button>`} 
+                    code={`<Button rounded="default|full|none">Button text</Button>`}
                 />
             </div>
 
@@ -105,9 +105,9 @@ export default function ButtonPage() {
                         Special action
                     </Button>
                 </div>
-                <CodeBlock 
+                <CodeBlock
                     className="mt-2"
-                    code={`<Button variant={"success" as any} size="lg" rounded="full">Confirm</Button>`} 
+                    code={`<Button variant={"success" as any} size="lg" rounded="full">Confirm</Button>`}
                 />
             </div>
         </div>
