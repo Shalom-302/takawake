@@ -1,11 +1,17 @@
+"use client"
+
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 
 interface DesignSystemLayoutProps {
     children: React.ReactNode;
 }
 
 export default function DesignSystemLayout({ children }: DesignSystemLayoutProps) {
+    const pathname = usePathname()
+    console.log("pathname======>", pathname)
     // List of all components in the design system
     const components = [
         { name: "Accordion", href: "/ds/accordion" },
@@ -36,7 +42,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
     ].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
-        <div className="flex min-h-screen bg-background">
+        <div className="flex h-screen bg-background">
             {/* Sidebar */}
             <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card">
                 <div className="p-4 border-b border-border">
@@ -44,7 +50,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
                         <span className="font-bold text-xl">Kaapi UI</span>
                     </Link>
                 </div>
-                <div className="flex-1 overflow-y-auto py-2">
+                <div className="py-2 h-[calc(100vh-10px)] overflow-x-hidden">
                     <div className="px-3 py-2">
                         <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
                             Components
@@ -54,7 +60,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
                                 <Link
                                     key={component.name}
                                     href={component.href}
-                                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground ${pathname === component.href ? 'bg-accent text-accent-foreground' : ''}`}
                                 >
                                     {component.name}
                                 </Link>
@@ -70,7 +76,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
                                 <Link
                                     key={component.name}
                                     href={component.href}
-                                    className="flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground ${pathname === component.href ? 'bg-accent text-accent-foreground' : ''}`}
                                 >
                                     {component.name}
                                 </Link>
@@ -81,7 +87,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
             </aside>
 
             {/* Mobile header */}
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1 h-screen">
                 <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:hidden">
                     <Link href="/ds" className="flex items-center space-x-2">
                         <span className="font-bold">Kaapi UI</span>
