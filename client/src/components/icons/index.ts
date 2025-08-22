@@ -62,6 +62,7 @@ import { CopyOneIcon } from "./copy-one-icon";
 import { FacebookIcon } from "./facebook-icon";
 import { LinkedinIcon } from "./linkedin-icon";
 import { InboxOneIcon } from "./inbox-one-icon";
+import { EmailIcon } from "./email-icon";
 
 export {
     LinkedinIcon,
@@ -128,4 +129,5 @@ export {
     MenuThreeIcon,
     ArrowRightIcon,
     InboxOneIcon,
+    EmailIcon
 };

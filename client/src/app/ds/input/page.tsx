@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import Link from "next/link";
 import { Input } from "@/ds/components/input";
 import { CodeBlock } from "@/ds/components/code-block";
+import { EmailIcon } from "@/components/icons";
 
 export default function InputPage() {
     const variants = [
@@ -29,6 +31,7 @@ export default function InputPage() {
 
     const sizes = ["sm", "default", "lg"];
     const roundedStyles = ["default", "full", "none"];
+
 
     return (
         <div className="container mx-auto py-10 px-4">
@@ -145,6 +148,93 @@ export default function InputPage() {
                             <Input type="date" className="w-full" />
                         </div>
                         <CodeBlock className="mt-2" code={`<Input type="date" />`} />
+                    </div>
+                </div>
+            </div>
+
+            {/* With Icons */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with icons</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="email" 
+                                placeholder="email" 
+                                icon={{ position: "left", icon: <EmailIcon size={18} /> }}  
+                                className="w-full" 
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="email" 
+    placeholder="email" 
+    icon={{ position: "left", icon: <EmailIcon size={18} /> }} 
+/>`
+                            }
+                        />
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input type="email" placeholder="email" icon={{ position: "right", icon: <EmailIcon size={18} /> }}  className="w-full" />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="email" 
+    placeholder="email" 
+    icon={{ position: "right", icon: <EmailIcon size={18} /> }} 
+/>`
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* With Tooltip */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with tooltip</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with tooltip left" 
+                                className="w-full" 
+                                info={{ position: "left", description: 'Input with tooltip left' }}
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="text" 
+    className="w-full" 
+    info={{ position: "left", description: 'Input with tooltip left' }}
+/>
+                            `}
+                        />
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with tooltip right" 
+                                className="w-full" 
+                                info={{ position: "right", description: 'Input with tooltip right' }}
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="text" 
+    className="w-full" 
+    info={{ position: "right", description: 'Input with tooltip right' }}
+/>
+                            `}
+                        />
                     </div>
                 </div>
             </div>
