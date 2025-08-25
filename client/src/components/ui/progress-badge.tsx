@@ -3,7 +3,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { CheckCircle } from "@untitledui/icons";
+import { CheckCircle } from "@untitled-ui/icons-react";
 
 const badgeVariants = cva(
     "inline-flex h-max items-center box-border border rounded-full justify-center font-medium w-fit whitespace-nowrap shrink-0 transition-[color,box-shadow] overflow-hidden",

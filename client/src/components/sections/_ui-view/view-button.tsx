@@ -1,4 +1,4 @@
-import { Circle } from "@untitledui/icons";
+import { Circle } from "@untitled-ui/icons-react";
 import { Button } from "@/components/ui/buton";
 import Link from "next/link";
 
