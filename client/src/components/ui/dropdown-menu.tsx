@@ -37,13 +37,12 @@ function DropdownMenuContent({
                 data-slot="dropdown-menu-content"
                 sideOffset={sideOffset}
                 className={cn(
-                    "w-64 h-min overflow-auto rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform border-0",
+                    "max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] z-50 py-1 px-1.5 select-none outline-hidden  origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-primary shadow-xl ring-1 ring-secondary_alt will-change-transform border-0",
                     "data-[state=open]:animate-in data-[state=closed]:animate-out",
                     "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
                     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
                     "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
                     "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-                    "z-50 min-w-[8rem] py-1 px-1.5 select-none outline-hidden",
                     className
                 )}
                 {...props}
@@ -242,13 +241,12 @@ function DropdownMenuSubContent({
         <DropdownMenuPrimitive.SubContent
             data-slot="dropdown-menu-sub-content"
             className={cn(
-                "w-64 overflow-auto rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt border-0",
+                "max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] z-50 py-1 px-1.5 select-none outline-hidden  origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt border-0",
                 "data-[state=open]:animate-in data-[state=closed]:animate-out",
                 "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
                 "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
                 "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
                 "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-                "z-50 min-w-[8rem] py-1 px-1.5 select-none outline-hidden",
                 className
             )}
             {...props}

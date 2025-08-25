@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDownIcon } from "@/components/icons";
-import { Button } from "@/components/ui/buton";
+import { Button } from "@/components/ui/button";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 

@@ -1,5 +1,5 @@
 import { Circle } from "@untitled-ui/icons-react";
-import { Button } from "@/components/ui/buton";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function ViewButton() {
