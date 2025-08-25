@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Variants pour DropdownMenuContent
-const dropdownContentVariants = cva("", {
+export const dropdownContentVariants = cva("", {
   variants: {
     size: {
       default: "w-56",

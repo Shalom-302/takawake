@@ -1,9 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+'use client';
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Input as ShadcnInput } from "@/components/ui/input";
 import { Tooltip } from "./tooltip";
 import { AlertCircleIcon } from "@/components/icons";
+import { Dropdown } from "./dropdown";
+import { CheckIcon, CopyIcon } from "lucide-react";
+import { useRef, useState } from "react";
+
+// --- util pour fusionner les refs (externe + interne) ---
+function composeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
+  return (node: T) => {
+    refs.forEach((ref) => {
+      if (!ref) return;
+      if (typeof ref === "function") ref(node);
+      else (ref as React.MutableRefObject<T | null>).current = node;
+    });
+  };
+}
 
 const inputVariants = cva(
   "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-input flex items-center min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
@@ -40,63 +57,132 @@ export interface InputProps
     VariantProps<typeof inputVariants> {
       icon?: null | { position: "left" | "right"; icon: React.ReactNode };
       info?: null | { position: "left" | "right"; description?: string };
+      dropdownInfo?: null | { position: "left" | "right"; trigger?: React.ReactNode; items: any[] };
+      clipboard?: boolean
     }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, variant, size, rounded, icon, info, ...props }, ref) => {
+  ({ className, variant, size, rounded, icon, info, dropdownInfo, clipboard, ...props }, ref) => {
+
+    const [copied, setCopied] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null); // <-- ref interne
+
+    const handleCopy = async () => {
+      if (props.disabled) return; // respect du disabled
+      const text = inputRef.current?.value ?? ""; // <-- valeur courante
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error("Clipboard error:", e);
+      }
+    };
+
     return (
       <div className={cn(
-        inputVariants({ variant, size, rounded }),
-        {
-          "flex-row-reverse": ((icon && icon.position === "right") || (info && info.position === "left")),
-        },
-        className
-      )}
+        clipboard ? "flex items-stretch" : "")}
       >
-        {/* Simple Icon */}
-        {icon && (
-          <div
-            className={cn(
-              "h-full text-muted-foreground flex items-center justify-center shrink-0",
-              {
-                "mr-[8px]": icon.position === "left",
-                "ml-[8px]": icon.position === "right",
-              }
-            )}
-          >
-            {icon?.icon}
-          </div>
+        <div className={cn(
+          inputVariants({ variant, size, rounded }),
+          {
+            "flex-row-reverse": ((icon && icon.position === "right") || (info && info.position === "left") || (dropdownInfo && dropdownInfo.position === "left")),
+          },
+          {
+            "!rounded-r-none shadow-none border-r": clipboard,
+          },
+          className
         )}
-
-        {/* input */}
-        <input
-          className={cn(
-            "h-full w-full focus:outline border-0",
+        >
+          {/* Simple Icon */}
+          {icon && (
+            <div
+              className={cn(
+                "h-full text-muted-foreground flex items-center justify-center shrink-0",
+                {
+                  "mr-[8px]": icon.position === "left",
+                  "ml-[8px]": icon.position === "right",
+                }
+              )}
+            >
+              {icon?.icon}
+            </div>
           )}
-          ref={ref}
-          data-slot="input"
-          {...props}
-        />
 
-        {/* Tooltip */}
-        {
-          info && (
-          <div
+          {/* input */}
+          <input
             className={cn(
-              'h-full flex items-center',
-              {
-                "mr-[8px]": info.position === "left",
-                "ml-[8px]": info.position === "right",
-              }
+              "h-full w-full focus:outline border-0",
             )}
-          >
-            <Tooltip content={info.description}>
-              <div className="text-muted-foreground">
-                <AlertCircleIcon size={16} />
-              </div>
-            </Tooltip>
-          </div>
-            
+            ref={composeRefs(ref, inputRef)} 
+            data-slot="input"
+            {...props}
+          />
+
+          {/* Tooltip */}
+          {
+            info && (
+            <div
+              className={cn(
+                'h-full flex items-center',
+                {
+                  "mr-[8px]": info.position === "left",
+                  "ml-[8px]": info.position === "right",
+                }
+              )}
+            >
+              <Tooltip content={info.description}>
+                <div className="text-muted-foreground">
+                  <AlertCircleIcon size={16} />
+                </div>
+              </Tooltip>
+            </div>
+              
+            )
+          }
+
+          {/* with selected options */}
+          {
+            dropdownInfo && (
+              <div
+                className={cn(
+                  'h-full flex items-center',
+                  {
+                    "mr-[8px]": dropdownInfo.position === "left",
+                    "ml-[8px]": dropdownInfo.position === "right",
+                  }
+                )}
+              >
+              <Dropdown
+                trigger={dropdownInfo.trigger}
+                items={dropdownInfo.items}
+                size="auto"
+                align={dropdownInfo.position === "left" ? "start" : "end"}
+              />
+            </div>
+              
+            )
+          }
+        </div>
+
+        {/* Clipboard action */}
+        {
+          clipboard && (
+            <div
+              className={cn(
+                inputVariants({ size, rounded }),
+                "!rounded-l-none shadow-none border !border-l-0 flex items-center gap-[4px] px-[14px] cursor-pointer shrink-0"
+              )}
+              onClick={handleCopy}
+            >
+              {copied ? (
+                    <CheckIcon className="h-4 w-4 text-green-500 shrink-0" />
+                ) : (
+                    <CopyIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
+              <h2 className="text-sm font-semibold">Copy</h2>
+            </div>
           )
         }
       </div>

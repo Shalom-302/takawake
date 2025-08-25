@@ -59,8 +59,8 @@ export default function DropdownPage() {
             <Dropdown
               trigger={<Button variant="outline">Menu <ChevronDown className="ml-2 h-4 w-4" /></Button>}
               items={[
-                { id: "edit", label: "Modifier", onClick: () => {} },
-                { id: "duplicate", label: "Dupliquer", onClick: () => {} },
+                { id: "edit", label: "Modifier", },
+                { id: "duplicate", label: "Dupliquer", },
                 { id: "delete", label: "Supprimer", variant: "destructive" }
               ]}
             />
@@ -92,21 +92,21 @@ export default function DropdownPage() {
                   label: "Mon profil", 
                   icon: <User className="h-4 w-4" />,
                   shortcut: "⇧⌘P",
-                  onClick: () => {} 
+                  // onClick: () => {console.log('hello')} 
                 },
                 { 
                   id: "settings", 
                   label: "Paramètres", 
                   icon: <Settings className="h-4 w-4" />,
                   shortcut: "⌘S",
-                  onClick: () => {} 
+                  // onClick: () => {console.log('hello')} 
                 },
                 { 
                   id: "logout", 
                   label: "Déconnexion", 
                   icon: <LogOut className="h-4 w-4" />,
                   variant: "destructive",
-                  onClick: () => {} 
+                  // onClick: () => {console.log('hello')} 
                 }
               ]}
             />
