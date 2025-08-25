@@ -1,9 +1,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 import { inputVariants } from "./input";
-import Badge from "./badge";
 import { XCloseIcon } from "../icons";
+import { Badge } from "../ui/badge";
 
 type InputAddTagProps = React.ComponentProps<"input"> &
     VariantProps<typeof inputVariants> & {

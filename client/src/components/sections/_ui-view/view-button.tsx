@@ -1,5 +1,5 @@
 import { Circle } from "@untitledui/icons";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buton";
 import Link from "next/link";
 
 export default function ViewButton() {
@@ -10,137 +10,220 @@ export default function ViewButton() {
             </div>
             <div className="px-4 py-6 space-y-4 ">
                 <div className=" flex flex-wrap gap-4">
-                    <Button disabled>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
+                    <Button
+                        isDisabled
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"md"} isLoading>
-                        <span className="px-0.5">{"Button"}</span>
+                    <Button
+                        size="md"
+                        isLoading
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"lg"}>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
+                    <Button
+                        size="lg"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"xl"}>
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
-                    </Button>
-                </div>
-                <div className=" flex flex-wrap gap-4">
-                    <Button variant={"secondary"} disabled>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
-                    </Button>
-                    <Button variant={"secondary"} size={"md"} isLoading>
-                        <span className="px-0.5">{"Button"}</span>
-                    </Button>
-                    <Button variant={"secondary"} size={"lg"}>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                    </Button>
-                    <Button variant={"secondary"} size={"xl"}>
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
+                    <Button
+                        size="xl"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
                 </div>
                 <div className=" flex flex-wrap gap-4">
-                    <Button variant={"tertiary"} disabled>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
+                    <Button
+                        variant="secondary"
+                        isDisabled
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"tertiary"} size={"md"} isLoading>
-                        <span className="px-0.5">{"Button"}</span>
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        isLoading
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"tertiary"} size={"lg"}>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"tertiary"} size={"xl"}>
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
-                    </Button>
-                </div>
-                <div className=" flex flex-wrap gap-4">
-                    <Button variant={"primary-destructive"} disabled>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
-                    </Button>
-                    <Button variant={"primary-destructive"} size={"md"} isLoading>
-                        <span className="px-0.5">{"Button"}</span>
-                    </Button>
-                    <Button variant={"primary-destructive"} size={"lg"}>
-                        <Circle className="size-5" />
-                        <span className="px-0.5">{"Button"}</span>
-                    </Button>
-                    <Button variant={"primary-destructive"} size={"xl"}>
-                        <span className="px-0.5">{"Button"}</span>
-                        <Circle className="size-5" />
-                    </Button>
-                </div>
-                <div className=" flex flex-wrap gap-4">
-                    <Button variant={"link-gray"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
-                    </Button>
-                    <Button variant={"link-gray"} size={"md"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
-                    </Button>
-                    <Button variant={"link-gray"} size={"lg"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
-                    </Button>
-                    <Button variant={"link-gray"} size={"xl"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                            <Circle className="size-5" />
-                        </Link>
+                    <Button
+                        variant="secondary"
+                        size="xl"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
                 </div>
                 <div className=" flex flex-wrap gap-4">
-                    <Button variant={"link-color"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
+                    <Button
+                        variant="tertiary"
+                        isDisabled
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"link-color"} size={"md"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
+                    <Button
+                        variant="tertiary"
+                        size="md"
+                        isLoading
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"link-color"} size={"lg"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                        </Link>
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button variant={"link-color"} size={"xl"} asChild>
-                        <Link href="#">
-                            <span className="px-0.5">{"Link"}</span>
-                            <Circle className="size-5" />
-                        </Link>
+                    <Button
+                        variant="tertiary"
+                        size="xl"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
                 </div>
-
-                <div className="flex flex-wrap gap-4 size">
-                    <Button size={"icon-sm"} disabled>
-                        <Circle className="size-5" />
+                <div className=" flex flex-wrap gap-4">
+                    <Button
+                        variant="primary-destructive"
+                        isDisabled
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"icon-md"} isLoading>
-                        <Circle className="size-5" />
+                    <Button
+                        variant="primary-destructive"
+                        size="md"
+                        isLoading
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"icon-lg"}>
-                        <Circle className="size-5" />
+                    <Button
+                        variant="primary-destructive"
+                        size="lg"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
-                    <Button size={"icon-xl"}>
-                        <Circle className="size-5" />
+                    <Button
+                        variant="primary-destructive"
+                        size="xl"
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        Button
                     </Button>
+                </div>
+                <div className=" flex flex-wrap gap-4">
+                    <Button
+                        variant="link-gray"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-gray"
+                        size="md"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-gray"
+                        size="lg"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-gray"
+                        size="xl"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                </div>
+                <div className=" flex flex-wrap gap-4">
+                    <Button
+                        variant="link-color"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-color"
+                        size="md"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-color"
+                        size="lg"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                    <Button
+                        variant="link-color"
+                        size="xl"
+                        asChild
+                        iconLeft={<Circle className="size-5" />}
+                        iconRight={<Circle className="size-5" />}
+                    >
+                        <Link href="#">Button</Link>
+                    </Button>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                    <Button iconLeft={<Circle className="size-5" />} />
+                    <Button iconLeft={<Circle className="size-5" />} size={"md"} />
+                    <Button iconLeft={<Circle className="size-5" />} size={"lg"} />
+                    <Button iconLeft={<Circle className="size-5" />} size={"xl"} />
                 </div>
             </div>
         </section>

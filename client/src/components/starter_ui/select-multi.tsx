@@ -7,10 +7,10 @@ import clsx from "clsx";
 import { CheckIcon, ChevronDownIcon, XCloseIcon, SearchMdIcon } from "../icons";
 import { SelectProps } from "@/lib/types/definitions";
 import { DropdownItem } from "./dropdown";
-import Badge from "./badge";
 import { Checkbox } from "./checkbox";
 import { cn } from "@/lib/utils/cn";
 import Label from "./label";
+import { Badge } from "../ui/badge";
 
 type DropDownProps = {
     customSize?: "sm" | "md";
@@ -134,11 +134,7 @@ export const SelectMulti = React.forwardRef<HTMLDivElement, DropDownProps>(
                         <div className="flex flex-wrap gap-1 items-center flex-1">
                             {selectedForThisSelect.length > 0 ? (
                                 selectedForThisSelect.map(el => (
-                                    <Badge
-                                        key={el.value}
-                                        size={"md"}
-                                        className="px-2"
-                                    >
+                                    <Badge key={el.value} size={"md"} className="px-2">
                                         {el.label}
                                         <span
                                             role="button"
@@ -355,19 +351,12 @@ export const SelectMultiTwo = React.forwardRef<HTMLDivElement, DropDownProps>(
                                 {selectedForThisSelect.length > 0 && (
                                     <div className="px-3 border-l border-primary/30 flex flex-wrap gap-1">
                                         {selectedForThisSelect.length > 2 ? (
-                                            <Badge
-                                                size={"md"}
-                                                className="px-2"
-                                            >
+                                            <Badge size={"md"} className="px-2">
                                                 {`${selectedForThisSelect.length} sélections`}
                                             </Badge>
                                         ) : (
                                             selectedForThisSelect.map(el => (
-                                                <Badge
-                                                    key={el.value}
-                                                    size={"md"}
-                                                    className="px-2"
-                                                >
+                                                <Badge key={el.value} size={"md"} className="px-2">
                                                     {el.label}
                                                 </Badge>
                                             ))

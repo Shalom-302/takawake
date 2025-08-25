@@ -3,8 +3,9 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils/cn";
-import CircularProgress from "./circular-progress";
+
 import { CheckCircleIcon } from "../icons";
+import { ProgressCircle } from "./progress-circle";
 
 const badgeVariants = cva(
     "inline-flex items-center box-border border rounded-full justify-center font-medium w-fit whitespace-nowrap shrink-0  transition-[color,box-shadow] overflow-hidden",
@@ -94,7 +95,7 @@ function ProgressBadge({
             {progression >= 100 ? (
                 <CheckCircleIcon size={14} />
             ) : (
-                <CircularProgress
+                <ProgressCircle
                     progress={progression}
                     size={14}
                     strokeWidth={1.5}

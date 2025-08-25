@@ -11,7 +11,7 @@ type Props = {
     percentClassNames?: string;
 };
 
-export default function CircularProgress({
+export function ProgressCircle({
     progress,
     size = 48,
     strokeWidth = 4,
