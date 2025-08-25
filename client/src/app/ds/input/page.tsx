@@ -366,6 +366,33 @@ export default function InputPage() {
                 </div>
             </div>
 
+            {/* With Prefixed Input */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with prefixed input</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with prefixed input" 
+                                className="w-full" 
+                                prefixedInput="https://"
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="Input with prefixed input" 
+    className="w-full" 
+    PrefixedInput="https://"
+/>
+                            `}
+                        />
+                    </div>
+                </div>
+            </div>
+
             {/* Combinaisons */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Combinaisons</h2>

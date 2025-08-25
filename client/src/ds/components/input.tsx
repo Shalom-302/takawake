@@ -58,11 +58,12 @@ export interface InputProps
       icon?: null | { position: "left" | "right"; icon: React.ReactNode };
       info?: null | { position: "left" | "right"; description?: string };
       dropdownInfo?: null | { position: "left" | "right"; trigger?: React.ReactNode; items: any[] };
-      clipboard?: boolean
+      clipboard?: boolean;
+      prefixedInput?: string;
     }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, variant, size, rounded, icon, info, dropdownInfo, clipboard, ...props }, ref) => {
+  ({ className, variant, size, rounded, icon, info, dropdownInfo, clipboard, prefixedInput, ...props }, ref) => {
 
     const [copied, setCopied] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null); // <-- ref interne
@@ -82,8 +83,24 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className={cn(
-        clipboard ? "flex items-stretch" : "")}
+        (clipboard || prefixedInput) ? "flex items-stretch" : "")}
       >
+        {/* prefixedInput label */}
+        {
+          prefixedInput && (
+            <div
+              className={cn(
+                inputVariants({ size, rounded }),
+                "!rounded-r-none shadow-none !border-r-0 flex items-center gap-[4px] px-[14px] shrink-0"
+              )}
+            >
+              <span className="text-sm font-normal text-muted-foreground">
+                {prefixedInput}
+              </span>
+            </div>
+          )
+        }
+
         <div className={cn(
           inputVariants({ variant, size, rounded }),
           {
@@ -91,6 +108,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           },
           {
             "!rounded-r-none shadow-none border-r": clipboard,
+          },
+          {
+            "!rounded-l-none shadow-none border-l": prefixedInput,
           },
           className
         )}
