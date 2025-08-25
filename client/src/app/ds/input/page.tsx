@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Input } from "@/ds/components/input";
 import { CodeBlock } from "@/ds/components/code-block";
 import { EmailIcon } from "@/components/icons";
+import { ChevronDown } from "lucide-react";
 
 export default function InputPage() {
     const variants = [
@@ -232,6 +233,159 @@ export default function InputPage() {
     placeholder="text" 
     className="w-full" 
     info={{ position: "right", description: 'Input with tooltip right' }}
+/>
+                            `}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* With selected option */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with selected option</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with selected option left" 
+                                className="w-full" 
+                                dropdownInfo={{ 
+                                    position: "left", 
+                                    trigger: <div className="flex items-center gap-[4px] cursor-pointer text-sm">
+                                        <span>USD</span>
+                                        <span className="text-muted-foreground">
+                                            <ChevronDown size={16} />
+                                        </span>
+                                    </div>,
+                                    items: [
+                                        { id: 'usd', label: 'USD', variant: 'default',  },
+                                        { id: 'eur', label: 'EUR', variant: 'default',  },
+                                        { id: 'xof', label: 'XOF', variant: 'default', },  
+                                    ]
+                                }}
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="Input with selected option left" 
+    className="w-full" 
+    dropdownInfo={{ 
+        position: "left", 
+        trigger: <div className="flex items-center gap-[4px] cursor-pointer text-sm">
+            <span>USD</span>
+            <span className="text-muted-foreground">
+                <ChevronDown size={16} />
+            </span>
+        </div>,
+        items: [
+            { id: 'usd', label: 'USD', variant: 'default',  },
+            { id: 'eur', label: 'EUR', variant: 'default',  },
+            { id: 'xof', label: 'XOF', variant: 'default', },  
+        ]
+    }}
+/>
+                            `}
+                        />
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with selected option right" 
+                                className="w-full" 
+                                dropdownInfo={{ 
+                                    position: "right", 
+                                    trigger: <div className="flex items-center gap-[4px] cursor-pointer text-sm">
+                                        <span>USD</span>
+                                        <span className="text-muted-foreground">
+                                            <ChevronDown size={16} />
+                                        </span>
+                                    </div>,
+                                    items: [
+                                        { id: 'usd', label: 'USD', variant: 'default'},
+                                        { id: 'eur', label: 'EUR', variant: 'default'},
+                                        { id: 'xof', label: 'XOF', variant: 'default'}
+                                    ]
+                                }}
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="Input with selected option right" 
+    className="w-full" 
+    dropdownInfo={{ 
+        position: "right", 
+        trigger: <div className="flex items-center gap-[4px] cursor-pointer text-sm">
+            <span>USD</span>
+            <span className="text-muted-foreground">
+                <ChevronDown size={16} />
+            </span>
+        </div>,
+        items: [
+            { id: 'usd', label: 'USD', variant: 'default' },
+            { id: 'eur', label: 'EUR', variant: 'default'  },
+            { id: 'xof', label: 'XOF', variant: 'default' } 
+        ]
+    }}
+/>
+                            `}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* With clipboard */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with clipboard</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with clipboard" 
+                                className="w-full" 
+                                clipboard
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="Input with clipboard" 
+    className="w-full" 
+    clipboard
+/>
+                            `}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* With Prefixed Input */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Input with prefixed input</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                            <Input 
+                                type="text" 
+                                placeholder="Input with prefixed input" 
+                                className="w-full" 
+                                prefixedInput="https://"
+                            />
+                        </div>
+                        <CodeBlock
+                            className="mt-2"
+                            code={`<Input 
+    type="text" 
+    placeholder="Input with prefixed input" 
+    className="w-full" 
+    PrefixedInput="https://"
 />
                             `}
                         />

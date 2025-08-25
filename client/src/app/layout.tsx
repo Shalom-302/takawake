@@ -8,7 +8,7 @@ import { PWAProvider } from "@/lib/contexts/pwa-context";
 import CookieManager from "@/components/cookie/cookie-manager";
 import { PWAWrapper } from "@/components/layouts/pwa-wrapper";
 import Script from "next/script";
-import "../styles/globals.css";
+import "./globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
 import { ThemeProvider } from "next-themes";
