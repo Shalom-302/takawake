@@ -10,7 +10,7 @@ import {
     removeConversationMember,
 } from "@/lib/api/messaging-service";
 import { useSearchChatUsers } from "@/lib/services/messaging-service";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import {
     Dialog,
     DialogContent,

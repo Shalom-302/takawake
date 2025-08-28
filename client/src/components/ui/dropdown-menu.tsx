@@ -165,7 +165,7 @@ function DropdownMenuLabel({
             data-slot="dropdown-menu-label"
             data-inset={inset}
             className={cn(
-                "px-4 py-2 text-sm font-medium text-gray-900",
+                "px-4 py-2 text-sm font-medium text-secondary",
                 inset && "pl-8",
                 className
             )}
@@ -182,7 +182,7 @@ function DropdownMenuSeparator({
     return (
         <DropdownMenuPrimitive.Separator
             data-slot="dropdown-menu-separator"
-            className={cn("my-1 h-px w-full bg-gray-200", className)}
+            className={cn("my-1 h-px w-full bg-border-secondary", className)}
             {...props}
         />
     );
@@ -193,7 +193,10 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
     return (
         <span
             data-slot="dropdown-menu-shortcut"
-            className={cn("ml-auto text-xs tracking-widest text-gray-500", className)}
+            className={cn(
+                "ml-auto text-xs tracking-widest text-quaternary data-[disabled]:text-disabled",
+                className
+            )}
             {...props}
         />
     );
@@ -255,21 +258,18 @@ function DropdownMenuSubContent({
 }
 DropdownMenu.SubContent = DropdownMenuSubContent;
 
-// Composant DotsButton spécifique au style Untitled UI
 function DropdownDotsButton({ className, ...props }: React.ComponentProps<"button">) {
     return (
         <button
             aria-label="Open menu"
             className={cn(
-                "inline-flex items-center justify-center rounded-md p-2",
-                "text-gray-500 transition-colors duration-100",
-                "hover:text-gray-600 focus:text-gray-600",
-                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                "cursor-pointer rounded-md text-fg-quaternary hover:text-fg-quaternary_hover outline-focus-ring transition duration-100 ease-linear",
+                "focus-visible:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 ",
                 className
             )}
             {...props}
         >
-            <DotsVertical className="size-5" />
+            <DotsVertical className="size-5 transition-inherit-all" />
         </button>
     );
 }

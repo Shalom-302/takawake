@@ -8,7 +8,7 @@ import { PWAProvider } from "@/lib/contexts/pwa-context";
 import CookieManager from "@/components/cookie/cookie-manager";
 import { PWAWrapper } from "@/components/layouts/pwa-wrapper";
 import Script from "next/script";
-import "./globals.css";
+import "../styles/globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
 import { ThemeProvider } from "next-themes";
@@ -47,7 +47,7 @@ export default function RootLayout({
                 <Script src="/pwa-register.js" strategy="afterInteractive" />
             </head>
             <body className={cn(inter.variable, "bg-primary antialiased ")}>
-                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
                     <AuthProvider>
                         <Toaster position="top-right" richColors />
                         <PWAProvider>

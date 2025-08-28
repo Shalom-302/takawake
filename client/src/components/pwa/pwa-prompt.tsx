@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { usePWA } from "@/lib/contexts/pwa-context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { Bell, Download, WifiOff } from "lucide-react";
 import axiosClient from "@/lib/api/axios-client";
 import axios from "axios";

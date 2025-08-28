@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDownIcon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
@@ -20,7 +20,7 @@ export default function ViewDropdown() {
                                 {"Account"}
                             </Button>
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[220px]">
+                        <DropdownMenu.Content className="min-w-[120px]">
                             {[
                                 { id: 1, label: "My account" },
                                 { id: 2, label: "Profile" },
@@ -41,7 +41,7 @@ export default function ViewDropdown() {
                         <DropdownMenu.Trigger asChild>
                             <Button variant="secondary">{"Actions"}</Button>
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[220px]">
+                        <DropdownMenu.Content className="min-w-[120px]">
                             <DropdownMenu.Item>{"Edit"}</DropdownMenu.Item>
                             <DropdownMenu.Item>{"Duplicate"}</DropdownMenu.Item>
                             <DropdownMenu.Separator />
@@ -54,7 +54,7 @@ export default function ViewDropdown() {
                         <DropdownMenu.Trigger asChild>
                             <Button>{"Options"}</Button>
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[220px]">
+                        <DropdownMenu.Content className="min-w-[180px]">
                             <DropdownMenu.CheckboxItem checked>
                                 {"Show notifications"}
                             </DropdownMenu.CheckboxItem>
@@ -69,7 +69,7 @@ export default function ViewDropdown() {
                         <DropdownMenu.Trigger asChild>
                             <Button>{"Theme"}</Button>
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[220px]">
+                        <DropdownMenu.Content className="min-w-[120px]">
                             <DropdownMenu.RadioGroup value="system">
                                 <DropdownMenu.RadioItem value="light">
                                     {"Light"}
@@ -145,7 +145,7 @@ export default function ViewDropdown() {
                         <DropdownMenu.Trigger asChild>
                             <DropdownMenu.DotsButton />
                         </DropdownMenu.Trigger>
-                        <DropdownMenu.Content align="end" className="min-w-[180px]">
+                        <DropdownMenu.Content align="end" className="min-w-[100px]">
                             <DropdownMenu.Item>{"View details"}</DropdownMenu.Item>
                             <DropdownMenu.Item>{"Archive"}</DropdownMenu.Item>
                             <DropdownMenu.Item variant="destructive">{"Remove"}</DropdownMenu.Item>

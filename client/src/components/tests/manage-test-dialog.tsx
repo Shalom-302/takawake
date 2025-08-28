@@ -21,7 +21,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import testService from "@/lib/services/test-service";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Bell, User, Menu, X, MessageSquare, Settings, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,

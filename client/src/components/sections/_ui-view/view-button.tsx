@@ -1,6 +1,7 @@
+"use client";
 import { Circle } from "@untitled-ui/icons-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Button } from "@/components/ui/buttons/button";
+import { LinkButton } from "@/components/ui/buttons/link-button";
 
 export default function ViewButton() {
     return (
@@ -12,30 +13,21 @@ export default function ViewButton() {
                 <div className=" flex flex-wrap gap-4">
                     <Button
                         isDisabled
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
-                    <Button
-                        size="md"
-                        isLoading
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
-                    >
+                    <Button size="md" isLoading iconLeft={<Circle />} iconRight={<Circle />}>
                         Button
                     </Button>
-                    <Button
-                        size="lg"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
-                    >
+                    <Button size="lg" iconLeft={<Circle />} iconRight={<Circle />}>
                         Button
                     </Button>
                     <Button
                         size="xl"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -44,8 +36,8 @@ export default function ViewButton() {
                     <Button
                         variant="secondary"
                         isDisabled
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -53,24 +45,24 @@ export default function ViewButton() {
                         variant="secondary"
                         size="md"
                         isLoading
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="secondary"
                         size="lg"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="secondary"
                         size="xl"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -79,8 +71,8 @@ export default function ViewButton() {
                     <Button
                         variant="tertiary"
                         isDisabled
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -88,24 +80,24 @@ export default function ViewButton() {
                         variant="tertiary"
                         size="md"
                         isLoading
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="tertiary"
                         size="lg"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="tertiary"
                         size="xl"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -114,8 +106,8 @@ export default function ViewButton() {
                     <Button
                         variant="primary-destructive"
                         isDisabled
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -123,107 +115,110 @@ export default function ViewButton() {
                         variant="primary-destructive"
                         size="md"
                         isLoading
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="primary-destructive"
                         size="lg"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="primary-destructive"
                         size="xl"
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
                         Button
                     </Button>
                 </div>
                 <div className=" flex flex-wrap gap-4">
-                    <Button
+                    <LinkButton
                         variant="link-gray"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        href="#"
+                        isDisabled
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
+                        Lien
+                    </LinkButton>
+                    <LinkButton
                         variant="link-gray"
+                        href="#"
                         size="md"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
+                        Lien
+                    </LinkButton>
+                    <LinkButton
                         variant="link-gray"
+                        href="#"
                         size="lg"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
+                        Lien
+                    </LinkButton>
+                    <LinkButton
                         variant="link-gray"
+                        href="#"
                         size="xl"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
+                        Lien
+                    </LinkButton>
                 </div>
                 <div className=" flex flex-wrap gap-4">
-                    <Button
-                        variant="link-color"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                    <LinkButton
+                        variant="link-destructive"
+                        href="#"
+                        isDisabled
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
-                        variant="link-color"
+                        Lien
+                    </LinkButton>
+                    <LinkButton
+                        variant="link-destructive"
+                        href="#"
                         size="md"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
-                        variant="link-color"
+                        Lien
+                    </LinkButton>
+                    <LinkButton
+                        variant="link-destructive"
+                        href="#"
                         size="lg"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
-                    <Button
-                        variant="link-color"
+                        Lien
+                    </LinkButton>
+                    <LinkButton
+                        variant="link-destructive"
+                        href="#"
                         size="xl"
-                        asChild
-                        iconLeft={<Circle className="size-5" />}
-                        iconRight={<Circle className="size-5" />}
+                        iconLeft={<Circle data-icon />}
+                        iconRight={<Circle data-icon />}
                     >
-                        <Link href="#">Button</Link>
-                    </Button>
+                        Lien
+                    </LinkButton>
                 </div>
+
                 <div className="flex flex-wrap gap-4">
-                    <Button iconLeft={<Circle className="size-5" />} />
-                    <Button iconLeft={<Circle className="size-5" />} size={"md"} />
-                    <Button iconLeft={<Circle className="size-5" />} size={"lg"} />
-                    <Button iconLeft={<Circle className="size-5" />} size={"xl"} />
+                    <Button iconLeft={<Circle data-icon />} />
+                    <Button iconLeft={<Circle data-icon />} size={"md"} />
+                    <Button iconLeft={<Circle data-icon />} size={"lg"} />
+                    <Button iconLeft={<Circle data-icon />} size={"xl"} />
                 </div>
             </div>
         </section>

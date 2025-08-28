@@ -19,18 +19,20 @@ const badgeVariants = cva(
                 lg: "h-7 px-3 py-1 gap-1.5 text-sm",
             },
             color: {
-                gray: "bg-utility-neutral-100 border-utility-neutral-200 text-utility-neutral-700 ",
-                brand: "bg-utility-primary-200 border-utility-primary-300 text-utility-primary-700",
-                error: "bg-utility-error-200 border-utility-error-300 text-utility-error-700",
-                warning:
-                    "bg-utility-warning-200 border-utility-warning-300 text-utility-warning-700",
-                success:
-                    "bg-utility-success-200 border-utility-success-300 text-utility-success-700",
+                gray: "bg-utility-gray-50 text-utility-gray-700 ring-utility-gray-200 ",
+                brand: "bg-utility-brand-50 text-utility-brand-700 ring-utility-brand-200",
+                error: "bg-utility-error-50 text-utility-error-700 ring-utility-error-200",
+                warning: "bg-utility-warning-50 text-utility-warning-700 ring-utility-warning-200",
+                success: "bg-utility-success-50 text-utility-success-700 ring-utility-success-200",
                 "gray-blue":
-                    "bg-utility-shandy-200 border-utility-shandy-300 text-utility-shandy-700",
+                    "bg-utility-gray-blue-50 text-utility-gray-blue-700 ring-utility-gray-blue-200",
                 "blue-light":
-                    "bg-utility-deepmauve-200 border-utility-deepmauve-300 text-utility-deepmauve-700",
-                blue: "bg-utility-information-200 border-utility-information-300 text-utility-information-700",
+                    "bg-utility-blue-light-50 text-utility-blue-light-700 ring-utility-blue-light-200",
+                blue: "bg-utility-blue-50 text-utility-blue-700 ring-utility-blue-200",
+                indigo: "bg-utility-indigo-50 text-utility-indigo-700 ring-utility-indigo-200",
+                purple: "bg-utility-purple-50 text-utility-purple-700 ring-utility-purple-200",
+                pink: "bg-utility-pink-50 text-utility-pink-700 ring-utility-pink-200",
+                orange: "bg-utility-orange-50 text-utility-orange-700 ring-utility-orange-200",
             },
         },
         defaultVariants: {
@@ -66,5 +68,6 @@ function Badge({
         />
     );
 }
+export type BadgeVariants = VariantProps<typeof badgeVariants>;
 
-export { Badge };
+export { Badge, badgeVariants };

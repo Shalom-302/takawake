@@ -17,9 +17,9 @@ const buttonVariants = cva(
     [
         "group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2",
         // When button is used within `InputGroup`
-        "in-data-input-wrapper:shadow-xs in-data-input-wrapper:focus:!z-50 in-data-input-wrapper:in-data-leading:-mr-px in-data-input-wrapper:in-data-leading:rounded-r-none in-data-input-wrapper:in-data-leading:before:rounded-r-none in-data-input-wrapper:in-data-trailing:-ml-px in-data-input-wrapper:in-data-trailing:rounded-l-none in-data-input-wrapper:in-data-trailing:before:rounded-l-none",
+        "in-data-input-wrapper:shadow-xs in-data-input-wrapper:focus:!z-50 in-data-input-wrapper:in-data-left:-mr-px in-data-input-wrapper:in-data-left:rounded-r-none in-data-input-wrapper:in-data-left:before:rounded-r-none in-data-input-wrapper:in-data-right:-ml-px in-data-input-wrapper:in-data-right:rounded-l-none in-data-input-wrapper:in-data-right:before:rounded-l-none",
         // Disabled styles
-        "disabled:cursor-not-allowed disabled:text-fg-disabled disabled:pointer-events-none disabled:opacity-50",
+        "disabled:text-fg-disabled disabled:pointer-events-none",
         // Icon styles
         "disabled:*:data-icon:text-fg-disabled_subtle",
         "*:data-icon:pointer-events-none *:data-icon:size-5 *:data-icon:shrink-0 *:data-icon:transition-inherit-all",
@@ -45,13 +45,10 @@ const buttonVariants = cva(
                 ],
                 "link-gray": [
                     "justify-normal rounded p-0! text-tertiary hover:text-tertiary_hover",
-                    // Inner text underline
-                    "*:data-text:underline *:data-text:decoration-transparent *:data-text:underline-offset-2 hover:*:data-text:decoration-current",
                     "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
                 ],
                 "link-color": [
                     "justify-normal rounded p-0! text-brand-secondary hover:text-brand-secondary_hover",
-                    "*:data-text:underline *:data-text:decoration-transparent *:data-text:underline-offset-2 hover:*:data-text:decoration-current",
                     "*:data-icon:text-fg-brand-secondary_alt hover:*:data-icon:text-fg-brand-secondary_hover",
                 ],
                 "primary-destructive": [
@@ -71,7 +68,6 @@ const buttonVariants = cva(
                 ],
                 "link-destructive": [
                     "justify-normal rounded p-0! text-error-primary outline-error hover:text-error-primary_hover",
-                    "*:data-text:underline *:data-text:decoration-transparent *:data-text:underline-offset-2 hover:*:data-text:decoration-current",
                     "*:data-icon:text-fg-error-secondary hover:*:data-icon:text-fg-error-primary",
                 ],
             },
@@ -102,7 +98,7 @@ export interface CommonProps extends VariantProps<typeof buttonVariants> {
     iconLeft?: FC<{ className?: string }> | ReactNode;
     iconRight?: FC<{ className?: string }> | ReactNode;
     /** Removes horizontal padding from the text content */
-    noTextPadding?: boolean;
+    textPadding?: boolean;
     /** When true, keeps the text visible during loading state */
     showTextWhileLoading?: boolean;
     /** Use Slot for composition (Radix UI specific) */
@@ -132,11 +128,11 @@ function Button({
     effect,
     children,
     className,
-    noTextPadding,
     iconLeft: IconLeft,
     iconRight: IconRight,
     isDisabled: disabled,
     isLoading: loading,
+    textPadding = true,
     showTextWhileLoading = true,
     asChild = false,
     ...otherProps
@@ -145,9 +141,10 @@ function Button({
 
     const isIcon = (IconLeft || IconRight) && !children;
     const isLinkType =
-        typeof variant === "string" && ["link-gray", "link-destructive"].includes(variant);
+        typeof variant === "string" &&
+        ["link-gray", "link-color", "link-destructive"].includes(variant);
 
-    noTextPadding = isLinkType || noTextPadding;
+    // textPadding = !isLinkType || textPadding;
 
     let props = {};
     let Component: React.ElementType = "button";
@@ -158,21 +155,27 @@ function Button({
             ...otherProps,
             href: disabled ? undefined : href,
             // Since anchor elements do not support the `disabled` attribute and state,
-            // we need to specify data attributes to be able to use the `disabled:` selector
-            ...(disabled ? { "data-disabled": true } : {}),
+            // we need to specify `data-rac` and `data-disabled` in order to be able
+            // to use the `disabled:` selector in classes.
+            ...(disabled ? { "data-rac": true, "data-disabled": true } : {}),
         };
     } else {
         Component = "button";
         props = {
             ...otherProps,
             type: (otherProps as ButtonHTMLAttributes<HTMLButtonElement>).type || "button",
-            disabled: disabled || loading,
+            disabled: disabled,
         };
     }
 
     // If asChild is true, use Radix UI's Slot
     if (asChild) {
         Component = Slot;
+        props = {
+            ...otherProps,
+            type: (otherProps as ButtonHTMLAttributes<HTMLButtonElement>).type || "button",
+            disabled: disabled,
+        };
     }
 
     const iconStyle = "pointer-events-none size-5 shrink-0 transition-inherit-all";
@@ -193,9 +196,9 @@ function Button({
                 className
             )}
         >
-            {/* Leading icon */}
+            {/* left icon */}
             {isValidElement(IconLeft) && IconLeft}
-            {isReactComponent(IconLeft) && <IconLeft data-icon="leading" className={iconStyle} />}
+            {isReactComponent(IconLeft) && <IconLeft data-icon="left" className={iconStyle} />}
 
             {/* Loading spinner - Treated as a normal flex item */}
             {loading && (
@@ -230,27 +233,37 @@ function Button({
                 </span>
             )}
 
-            {/* Text content */}
-            <Slottable>
-                {children && (
-                    <span
-                        data-text
-                        className={cn("transition-inherit-all", !noTextPadding && "px-0.5")}
-                    >
-                        {children}
-                    </span>
-                )}
-            </Slottable>
-
-            {/* Trailing icon */}
-            {isValidElement(IconRight) && IconRight}
-            {isReactComponent(IconRight) && (
-                <IconRight data-icon="trailing" className={iconStyle} />
+            {isLinkType ? (
+                <Slottable>
+                    {children && (
+                        <button
+                            data-text
+                            className={`underline decoration-transparent underline-offset-2 hover:decoration-current`}
+                        >
+                            {children}
+                        </button>
+                    )}
+                </Slottable>
+            ) : (
+                <Slottable>
+                    {children && (
+                        <span
+                            data-text
+                            className={cn("transition-inherit-all", textPadding && "px-0.5")}
+                        >
+                            {children}
+                        </span>
+                    )}
+                </Slottable>
             )}
+
+            {/* Right icon */}
+            {isValidElement(IconRight) && IconRight}
+            {isReactComponent(IconRight) && <IconRight data-icon="right" className={iconStyle} />}
         </Component>
     );
 }
 
-Button.displayName = "Button";
+export type ButtonVariants = VariantProps<typeof buttonVariants>;
 
 export { Button, buttonVariants };

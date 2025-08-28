@@ -5,7 +5,7 @@
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+@custom-variant dark (&:is(.dark *));
 @custom-variant label (& [data-label]);
 @custom-variant focus-input-within (&:has(input:focus));
 
@@ -36,6 +36,8 @@ body {
     font-variant-ligatures: contextual;
     -webkit-font-kerning: normal;
     font-kerning: normal;
+    background-color: var(--color-alpha-white);
+    color: var(--color-alpha-black);
 }
 
 /* Hide the default expand arrow on Safari.  */

@@ -1,24 +1,25 @@
 import React from "react";
 import Link from "next/link";
-import { Button } from "@/ds/components/button";
+
 import { CodeBlock } from "@/ds/components/code-block";
+import { Button } from "@/components/ui/buttons/button";
+import { Circle } from "@untitled-ui/icons-react";
+import { LinkButton } from "@/components/ui/buttons/link-button";
 
 export default function ButtonPage() {
     const variants = [
-        { name: "default", description: "Default style" },
-        { name: "destructive", description: "For destructive or error actions" },
-        { name: "outline", description: "Outline style" },
+        { name: "primary", description: "Primary style" },
         { name: "secondary", description: "Secondary style" },
-        { name: "ghost", description: "Transparent style" },
-        { name: "link", description: "Link style" },
-        { name: "success", description: "For success or validations" },
-        { name: "warning", description: "For warnings" },
-        { name: "info", description: "For information" },
-        { name: "gradient", description: "Style with gradient" },
+        { name: "tertiary", description: "Tertiary style" },
+        { name: "link-gray", description: "Link gray style" },
+        { name: "link-color", description: "Link color style" },
+        { name: "primary-destructive", description: "For destructive or error actions" },
+        { name: "secondary-destructive", description: "For destructive or error actions" },
+        { name: "tertiary-destructive", description: "For destructive or error actions" },
+        { name: "link-destructive", description: "Link destructive " },
     ];
 
-    const sizes = ["xs", "sm", "default", "lg", "xl", "icon"];
-    const roundedStyles = ["default", "full", "none"];
+    const sizes = ["sm", "md", "lg", "xl"];
 
     return (
         <div className="container mx-auto py-10 px-4">
@@ -36,18 +37,43 @@ export default function ButtonPage() {
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Variants</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {variants.map(variant => (
-                        <div key={variant.name} className="p-4 border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Button variant={variant.name as any}>Button {variant.name}</Button>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{variant.description}</p>
-                            <CodeBlock
-                                className="mt-2"
-                                code={`<Button variant="${variant.name}">Button ${variant.name}</Button>`}
-                            />
-                        </div>
-                    ))}
+                    {variants.map(variant => {
+                        return (
+                            <>
+                                {!variant.name.includes("link") ? (
+                                    <div key={variant.name} className="p-4 border rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Button variant={variant.name as any}>
+                                                Button {variant.name}
+                                            </Button>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                            {variant.description}
+                                        </p>
+                                        <CodeBlock
+                                            className="mt-2"
+                                            code={`<Button variant="${variant.name}">Button ${variant.name}</Button>`}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div key={variant.name} className="p-4 border rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <LinkButton href={"#"} variant={variant.name as any}>
+                                                Button {variant.name}
+                                            </LinkButton>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                            {variant.description}
+                                        </p>
+                                        <CodeBlock
+                                            className="mt-2"
+                                            code={`<LinkButton variant="${variant.name}">${variant.name} Button</LinkButton>`}
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -55,59 +81,18 @@ export default function ButtonPage() {
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
                 <div className="flex flex-wrap items-center gap-4 p-4 border rounded-lg">
-                    {sizes
-                        .filter(size => size !== "icon")
-                        .map(size => (
-                            <Button key={size} variant="default" size={size as any}>
-                                Button {size}
-                            </Button>
-                        ))}
-                    <Button variant="default" size="icon">
-                        <span className="h-4 w-4">+</span>
-                    </Button>
-                </div>
-                <CodeBlock
-                    className="mt-2"
-                    code={`<Button size="xs|sm|default|lg|xl|icon">Button text</Button>`}
-                />
-            </div>
-
-            {/* Rounded styles */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Rounded styles</h2>
-                <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
-                    {roundedStyles.map(rounded => (
-                        <Button key={rounded} variant="default" rounded={rounded as any}>
-                            Button {rounded}
+                    {sizes.map(size => (
+                        <Button key={size} size={size as any}>
+                            Button {size}
                         </Button>
+                    ))}
+                    {sizes.map(size => (
+                        <Button key={size} iconLeft={<Circle data-icon />} size={size} />
                     ))}
                 </div>
                 <CodeBlock
                     className="mt-2"
-                    code={`<Button rounded="default|full|none">Button text</Button>`}
-                />
-            </div>
-
-            {/* Combinations */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Combinations</h2>
-                <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
-                    <Button variant={"success" as any} size="lg" rounded="full">
-                        Confirm
-                    </Button>
-                    <Button variant={"warning" as any} size="sm" rounded="none">
-                        Warning
-                    </Button>
-                    <Button variant={"info" as any} size="default" rounded="default">
-                        More info
-                    </Button>
-                    <Button variant={"gradient" as any} size={"xl" as any} rounded="full">
-                        Special action
-                    </Button>
-                </div>
-                <CodeBlock
-                    className="mt-2"
-                    code={`<Button variant={"success" as any} size="lg" rounded="full">Confirm</Button>`}
+                    code={`<Button size="sm|md|lg|xl">Button text</Button>`}
                 />
             </div>
         </div>

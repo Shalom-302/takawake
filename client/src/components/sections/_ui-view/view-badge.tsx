@@ -83,6 +83,42 @@ export default function ViewBadge() {
                         <Badge color="blue" size={"lg"}>
                             {"Label"}
                         </Badge>
+                        <Badge color="indigo" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="indigo" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="indigo" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="purple" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="purple" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="purple" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="pink" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="pink" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="pink" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="orange" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="orange" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge color="orange" size={"lg"}>
+                            {"Label"}
+                        </Badge>
                     </div>
 
                     <div className=" flex flex-wrap gap-2 ">
@@ -158,7 +194,44 @@ export default function ViewBadge() {
                         <Badge variant={"badge-color"} color="blue" size={"lg"}>
                             {"Label"}
                         </Badge>
+                        <Badge variant={"badge-color"} color="indigo" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="indigo" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="indigo" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="purple" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="purple" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="purple" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="pink" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="pink" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="pink" size={"lg"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="orange" size={"sm"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="orange" size={"md"}>
+                            {"Label"}
+                        </Badge>
+                        <Badge variant={"badge-color"} color="orange" size={"lg"}>
+                            {"Label"}
+                        </Badge>
                     </div>
+
                     <div className=" flex flex-wrap gap-2 ">
                         <Badge variant={"badge-modern"} size={"sm"}>
                             {"Label"}

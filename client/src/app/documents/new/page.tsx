@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DocumentProvider, useDocuments } from "@/lib/contexts/document-context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import {
     Card,
     CardContent,

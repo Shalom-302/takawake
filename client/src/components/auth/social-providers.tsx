@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/contexts/auth-context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 
 // Icons for different providers
 const providerIcons: Record<string, React.ReactNode> = {

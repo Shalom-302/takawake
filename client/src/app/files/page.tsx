@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Heading, HeadingDescription, HeadingTitle } from "@/components/heading";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { toast } from "sonner";
 import { FolderIcon, File as FileIcon, Upload, Search, SortAsc, Filter } from "lucide-react";
 import { Separator } from "@/components/ui/separator";

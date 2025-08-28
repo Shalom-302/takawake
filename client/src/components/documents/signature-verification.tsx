@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { Shield, CheckCircle, XCircle, Clock, Award, User, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import {
     Card,
     CardContent,

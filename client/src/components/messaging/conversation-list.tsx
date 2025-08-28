@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 import { ConversationType, Conversation } from "@/lib/types/messaging";
-import { Button } from "../ui/button";
+import { Button } from "../ui/buttons/button";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { ConversationAvatar } from "./conversation-avatar";
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useCookieConsent } from "@/lib/contexts/cookie-context";
 import CookieStatus from "../cookie/cookie-status";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CookieConsentSubmission } from "@/lib/types/cookies";
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Document as PDFDocument, Page, pdfjs } from "react-pdf";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     ZoomIn,

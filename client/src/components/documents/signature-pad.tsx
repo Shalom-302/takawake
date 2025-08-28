@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import SignaturePad from "react-signature-canvas";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import {
     Card,
     CardContent,

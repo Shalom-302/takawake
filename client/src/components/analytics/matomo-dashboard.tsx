@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons/button";
 import { Loader2, RefreshCw } from "lucide-react";
 import { DashboardTypeSelect } from "./dashboard-type-select";
 import { DateRangeSelect } from "./date-range-select";

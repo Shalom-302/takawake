@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { CheckCircle, Circle, Clock, FileText, FileSignature, Shield, Archive } from "lucide-react";
 import { WorkflowStep } from "@/lib/services/document-service";
 import { useDocuments } from "@/lib/contexts/document-context";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress-indicators/progress";
 import { cn } from "@/lib/utils";
 
 interface WorkflowStatusProps {

@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 import { useSearchChatUsers } from "@/lib/services/messaging-service";
-import { Button } from "../ui/button";
+import { Button } from "../ui/buttons/button";
 import { ConversationType } from "@/lib/types/messaging";
 
 // Interface pour les erreurs API
