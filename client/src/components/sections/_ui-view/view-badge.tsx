@@ -122,112 +122,112 @@ export default function ViewBadge() {
                     </div>
 
                     <div className=" flex flex-wrap gap-2 ">
-                        <Badge variant={"badge-color"} size={"sm"}>
+                        <Badge variant={"color"} size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} size={"md"}>
+                        <Badge variant={"color"} size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} size={"lg"}>
+                        <Badge variant={"color"} size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="brand" size={"sm"}>
+                        <Badge variant={"color"} color="brand" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="brand" size={"md"}>
+                        <Badge variant={"color"} color="brand" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="brand" size={"lg"}>
+                        <Badge variant={"color"} color="brand" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="error" size={"sm"}>
+                        <Badge variant={"color"} color="error" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="error" size={"md"}>
+                        <Badge variant={"color"} color="error" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="error" size={"lg"}>
+                        <Badge variant={"color"} color="error" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="warning" size={"sm"}>
+                        <Badge variant={"color"} color="warning" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="warning" size={"md"}>
+                        <Badge variant={"color"} color="warning" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="warning" size={"lg"}>
+                        <Badge variant={"color"} color="warning" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="success" size={"sm"}>
+                        <Badge variant={"color"} color="success" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="success" size={"md"}>
+                        <Badge variant={"color"} color="success" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="success" size={"lg"}>
+                        <Badge variant={"color"} color="success" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="gray-blue" size={"sm"}>
+                        <Badge variant={"color"} color="gray-blue" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="gray-blue" size={"md"}>
+                        <Badge variant={"color"} color="gray-blue" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="gray-blue" size={"lg"}>
+                        <Badge variant={"color"} color="gray-blue" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue-light" size={"sm"}>
+                        <Badge variant={"color"} color="blue-light" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue-light" size={"md"}>
+                        <Badge variant={"color"} color="blue-light" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue-light" size={"lg"}>
+                        <Badge variant={"color"} color="blue-light" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue" size={"sm"}>
+                        <Badge variant={"color"} color="blue" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue" size={"md"}>
+                        <Badge variant={"color"} color="blue" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="blue" size={"lg"}>
+                        <Badge variant={"color"} color="blue" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="indigo" size={"sm"}>
+                        <Badge variant={"color"} color="indigo" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="indigo" size={"md"}>
+                        <Badge variant={"color"} color="indigo" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="indigo" size={"lg"}>
+                        <Badge variant={"color"} color="indigo" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="purple" size={"sm"}>
+                        <Badge variant={"color"} color="purple" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="purple" size={"md"}>
+                        <Badge variant={"color"} color="purple" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="purple" size={"lg"}>
+                        <Badge variant={"color"} color="purple" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="pink" size={"sm"}>
+                        <Badge variant={"color"} color="pink" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="pink" size={"md"}>
+                        <Badge variant={"color"} color="pink" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="pink" size={"lg"}>
+                        <Badge variant={"color"} color="pink" size={"lg"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="orange" size={"sm"}>
+                        <Badge variant={"color"} color="orange" size={"sm"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="orange" size={"md"}>
+                        <Badge variant={"color"} color="orange" size={"md"}>
                             {"Label"}
                         </Badge>
-                        <Badge variant={"badge-color"} color="orange" size={"lg"}>
+                        <Badge variant={"color"} color="orange" size={"lg"}>
                             {"Label"}
                         </Badge>
                     </div>

@@ -8,7 +8,7 @@ import { LinkButton } from "@/components/ui/buttons/link-button";
 
 export default function ButtonPage() {
     const variants = [
-        { name: "primary", description: "Primary style" },
+        { name: "primary", description: "Primary and défault style" },
         { name: "secondary", description: "Secondary style" },
         { name: "tertiary", description: "Tertiary style" },
         { name: "link-color", description: "Link primarry color style" },

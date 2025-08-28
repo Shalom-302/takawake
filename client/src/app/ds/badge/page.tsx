@@ -1,21 +1,31 @@
 import React from "react";
 import Link from "next/link";
-import { Badge } from "@/ds/components/badge";
 import { CodeBlock } from "@/ds/components/code-block";
+import { Badge } from "@/components/ui/badge";
+import { Dot } from "@/components/icons/dot-icon";
+import { Plus } from "@untitled-ui/icons-react";
 
 export default function BadgePage() {
     const variants = [
-        { name: "default", description: "Default style" },
-        { name: "secondary", description: "Secondary style" },
-        { name: "destructive", description: "For destructive or error actions" },
-        { name: "outline", description: "Outline style" },
-        { name: "success", description: "For success or validations" },
-        { name: "warning", description: "For warnings" },
-        { name: "info", description: "For information" },
-        { name: "ghost", description: "Transparent style" },
+        { name: "pill-color", description: " Default variant" },
+        { name: "color", description: " color variant" },
+        { name: "modern", description: " modern variant" },
     ];
-
-    const sizes = ["default", "sm", "lg"];
+    const colors = [
+        { name: "gray" },
+        { name: "brand" },
+        { name: "error" },
+        { name: "warning" },
+        { name: "success" },
+        { name: "gray-blue" },
+        { name: "blue-light" },
+        { name: "blue" },
+        { name: "indigo" },
+        { name: "purple" },
+        { name: "pink" },
+        { name: "orange" },
+    ];
+    const sizes = ["sm", "md", "lg"];
     const roundedStyles = ["default", "full", "none"];
 
     return (
@@ -37,12 +47,49 @@ export default function BadgePage() {
                     {variants.map(variant => (
                         <div key={variant.name} className="p-4 border rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={variant.name as any}>Badge {variant.name}</Badge>
+                                <Badge variant={variant.name as any}>
+                                    <Dot size="sm" />
+                                    Badge {variant.name}
+                                </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">{variant.description}</p>
-                            <CodeBlock 
+                            <CodeBlock
                                 className="mt-2"
-                                code={`<Badge variant="${variant.name}">Badge ${variant.name}</Badge>`} 
+                                code={`<Badge variant="${variant.name}"><Dot size="sm"/>Badge ${variant.name}</Badge>`}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Colors */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Colors</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {colors.map(color => (
+                        <div key={color.name} className="p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Badge color={color.name as any}>
+                                    <Dot size="sm" />
+                                    Badge {color.name}
+                                </Badge>
+                            </div>
+                            <CodeBlock
+                                className="mt-2"
+                                code={`<Badge color="${color.name}"><Dot size="sm"/>Badge ${color.name}</Badge>`}
+                            />
+                        </div>
+                    ))}
+                    {colors.map(color => (
+                        <div key={color.name} className="p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Badge variant={"color"} color={color.name as any}>
+                                    Badge {color.name}
+                                </Badge>
+                            </div>
+                            <CodeBlock
+                                className="mt-2"
+                                code={`<Badge variant={'color'} color="${color.name}">Badge ${color.name}</Badge>`}
                             />
                         </div>
                     ))}
@@ -54,53 +101,34 @@ export default function BadgePage() {
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
                 <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
                     {sizes.map(size => (
-                        <Badge key={size} variant="default" size={size as any}>
+                        <Badge key={size} size={size as any}>
                             Badge {size}
                         </Badge>
                     ))}
                 </div>
-                <CodeBlock 
-                    className="mt-2"
-                    code={`<Badge size="default|sm|lg">Badge text</Badge>`} 
-                />
-            </div>
-
-            {/* Rounded styles */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Rounded styles</h2>
-                <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
-                    {roundedStyles.map(rounded => (
-                        <Badge key={rounded} variant="default" rounded={rounded as any}>
-                            Badge {rounded}
-                        </Badge>
-                    ))}
-                </div>
-                <CodeBlock 
-                    className="mt-2"
-                    code={`<Badge rounded="default|full|none">Badge text</Badge>`} 
-                />
+                <CodeBlock className="mt-2" code={`<Badge size="sm|md|lg">Badge</Badge>`} />
             </div>
 
             {/* Combinations */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Combinations</h2>
                 <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
-                    <Badge variant={"success" as any} size="lg" rounded="full">
+                    <Badge color={"success"} size="lg">
                         Success
                     </Badge>
-                    <Badge variant={"warning" as any} size="sm" rounded="none">
+                    <Badge variant="pill-color" color={"warning"} size="sm">
                         Warning
                     </Badge>
-                    <Badge variant={"info" as any} size="default" rounded="default">
+                    <Badge color={"blue"} size="md">
                         Information
                     </Badge>
-                    <Badge variant="destructive" size="lg" rounded="default">
+                    <Badge color="error" size="lg">
                         Error
                     </Badge>
                 </div>
-                <CodeBlock 
-                    className="mt-2"
-                    code={`<Badge variant={"success" as any} size="lg" rounded="full">Success</Badge>`} 
+                <CodeBlock
+                    className="mt-2 w-[500px]"
+                    code={`<Badge color={"success"} size="lg">Success</Badge>`}
                 />
             </div>
         </div>

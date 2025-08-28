@@ -9,9 +9,8 @@ const badgeVariants = cva(
         variants: {
             variant: {
                 "pill-color": "box-border border rounded-full",
-                "badge-color": "box-border border rounded-md",
-                "badge-modern":
-                    "box-border border rounded-md text-[var(--text-secondary)]! bg-primary! border-primary!",
+                color: "box-border border rounded-md",
+                modern: "box-border border rounded-md text-[var(--text-secondary)]! bg-primary! border-primary!",
             },
             size: {
                 sm: "h-5.5 px-2 py-0.5 gap-1 text-xs",
@@ -60,7 +59,7 @@ function Badge({
                 badgeVariants({
                     variant,
                     size,
-                    ...(variant !== "badge-modern" && { color }),
+                    ...(variant !== "modern" && { color }),
                 }),
                 className
             )}
