@@ -131,6 +131,57 @@ export default function BadgePage() {
                     code={`<Badge color={"success"} size="lg">Success</Badge>`}
                 />
             </div>
+
+            {/* API Reference */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">API Reference</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="py-2 px-4 text-left">Props</th>
+                                <th className="py-2 px-4 text-left">Type</th>
+                                <th className="py-2 px-4 text-left">Default</th>
+                                <th className="py-2 px-4 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">variant</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    'pill-color' | 'color' | 'modern'
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">'pill-color'</td>
+                                <td className="py-2 px-4">The visual style of the progress bar.</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">color</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    'gray' | 'brand' | 'eror' | 'warning' | 'success' | 'gray-blue'
+                                    | 'blue-light' | 'blue' | 'indigo' | 'purple' | 'pink' |
+                                    'orange'
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">'gray'</td>
+                                <td className="py-2 px-4">The badge color</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">size</td>
+                                <td className="py-2 px-4 font-mono text-sm">'sm' | 'md' | 'lg'</td>
+                                <td className="py-2 px-4 font-mono text-sm">'sm'</td>
+                                <td className="py-2 px-4">The badge size .</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">className</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    Additional CSS classes to apply to the progress bar.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }
