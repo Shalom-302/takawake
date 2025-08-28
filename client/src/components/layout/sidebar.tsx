@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/buttons/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges/badge";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 
 interface SidebarProps {

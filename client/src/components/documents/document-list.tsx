@@ -18,7 +18,7 @@ import {
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/buttons/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges/badge";
 import {
     Card,
     CardContent,

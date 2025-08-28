@@ -40,7 +40,7 @@ export function ProgressBar({
     //       ? "complete"
     //       : "loading";
 
-    const track = (
+    const ProgressBarBase = (
         <ProgressPrimitive.Root
             data-slot="progress"
             value={value}
@@ -66,7 +66,7 @@ export function ProgressBar({
     if (labelPosition === "right") {
         return (
             <div className="flex items-center gap-3">
-                {track}
+                {ProgressBarBase}
                 <span className="shrink-0 text-sm font-medium text-secondary tabular-nums">
                     {formattedValue}
                 </span>
@@ -77,7 +77,7 @@ export function ProgressBar({
     if (labelPosition === "bottom") {
         return (
             <div className="flex flex-col items-end gap-2">
-                {track}
+                {ProgressBarBase}
                 <span className="text-sm font-medium text-secondary tabular-nums">
                     {formattedValue}
                 </span>
@@ -86,10 +86,9 @@ export function ProgressBar({
     }
 
     if (labelPosition === "top-floating" || labelPosition === "bottom-floating") {
-        // wrapper relative pour positionner la bulle flottante
         return (
             <div className="relative flex flex-col items-end gap-2">
-                {track}
+                {ProgressBarBase}
                 {percentage !== undefined && (
                     <div
                         // left en pourcentage positionne la bulle au-dessus de l'indicateur
@@ -110,5 +109,5 @@ export function ProgressBar({
         );
     }
 
-    return track;
+    return ProgressBarBase;
 }

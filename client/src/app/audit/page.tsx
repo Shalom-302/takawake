@@ -15,7 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/buttons/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges/badge";
 import { toast } from "sonner";
 import {
     Clock,

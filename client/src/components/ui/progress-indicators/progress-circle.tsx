@@ -62,7 +62,7 @@ export const ProgressBarCircle = ({
     value,
     min = 0,
     max = 100,
-    size,
+    size = "xxs",
     label,
     valueFormatter,
 }: ProgressBarProps) => {

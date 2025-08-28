@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils/cn";
 import { type VariantProps } from "class-variance-authority";
 import { inputVariants } from "./input";
 import { XCloseIcon } from "../icons";
-import { Badge } from "../ui/badge";
+import { Badge } from "../ui/badges/badge";
 
 type InputAddTagProps = React.ComponentProps<"input"> &
     VariantProps<typeof inputVariants> & {

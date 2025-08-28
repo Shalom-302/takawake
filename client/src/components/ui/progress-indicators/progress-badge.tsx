@@ -3,7 +3,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 import { CheckCircle } from "@untitled-ui/icons-react";
-import { badgeVariants, type BadgeVariants } from "../badge";
+import { badgeVariants, type BadgeVariants } from "../badges/badge";
 
 const PROGRESSION_STATUS = [
     {

@@ -1,6 +1,6 @@
 // import ProgressBadge from "@/components/ui/progress-badge";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges/badge";
 
 export default function ViewBadge() {
     return (

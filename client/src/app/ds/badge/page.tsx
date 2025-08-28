@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges/badge";
 import { Dot } from "@/components/icons/dot-icon";
 import { Plus } from "@untitled-ui/icons-react";
 
@@ -152,7 +152,7 @@ export default function BadgePage() {
                                     'pill-color' | 'color' | 'modern'
                                 </td>
                                 <td className="py-2 px-4 font-mono text-sm">'pill-color'</td>
-                                <td className="py-2 px-4">The visual style of the progress bar.</td>
+                                <td className="py-2 px-4">Badge Variants.</td>
                             </tr>
                             <tr className="border-b">
                                 <td className="py-2 px-4 font-mono text-sm">color</td>

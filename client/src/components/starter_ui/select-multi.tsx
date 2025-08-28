@@ -10,7 +10,7 @@ import { DropdownItem } from "./dropdown";
 import { Checkbox } from "./checkbox";
 import { cn } from "@/lib/utils/cn";
 import Label from "./label";
-import { Badge } from "../ui/badge";
+import { Badge } from "../ui/badges/badge";
 
 type DropDownProps = {
     customSize?: "sm" | "md";
