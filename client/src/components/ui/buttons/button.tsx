@@ -173,7 +173,6 @@ function Button({
         Component = Slot;
         props = {
             ...otherProps,
-            type: (otherProps as ButtonHTMLAttributes<HTMLButtonElement>).type || "button",
             disabled: disabled,
         };
     }
@@ -236,12 +235,12 @@ function Button({
             {isLinkType ? (
                 <Slottable>
                     {children && (
-                        <button
+                        <span
                             data-text
                             className={`underline decoration-transparent underline-offset-2 hover:decoration-current`}
                         >
                             {children}
-                        </button>
+                        </span>
                     )}
                 </Slottable>
             ) : (

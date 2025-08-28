@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Calendar as CalendarIcon, User, Clock, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import AnalyticsService, { UserJourneyFilter } from "@/lib/services/analytics-service";
 
 interface UserJourneyViewerProps {

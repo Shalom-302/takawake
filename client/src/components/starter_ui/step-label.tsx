@@ -63,8 +63,7 @@ export const StepLabel = React.forwardRef<HTMLDivElement, StepProps>(
                                             idx + 1 < activeStep,
                                     },
                                     {
-                                        "bg-gray-100 text-primary/70":
-                                            idx + 1 > activeStep,
+                                        "bg-gray-100 text-primary/70": idx + 1 > activeStep,
                                     }
                                 )}
                             >

@@ -39,11 +39,11 @@ export default function ButtonPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {variants.map(variant => {
                         return (
-                            <>
+                            <div key={variant.name}>
                                 {!variant.name.includes("link") ? (
                                     <div
                                         key={variant.name}
-                                        className="p-4 border border-gray-200 rounded-lg"
+                                        className="p-4 border border-tertiary rounded-lg"
                                     >
                                         <div className="flex items-center gap-2 mb-2">
                                             <Button
@@ -64,7 +64,7 @@ export default function ButtonPage() {
                                 ) : (
                                     <div
                                         key={variant.name}
-                                        className="p-4 border border-gray-200 rounded-lg"
+                                        className="p-4 border border-tertiary rounded-lg"
                                     >
                                         <div className="flex items-center gap-2 mb-2">
                                             <LinkButton
@@ -84,10 +84,10 @@ export default function ButtonPage() {
                                         />
                                     </div>
                                 )}
-                            </>
+                            </div>
                         );
                     })}
-                    <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="p-4 border border-tertiary rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                             <Button iconLeft={<Placeholder data-icon />} />
                             <Button variant={"secondary"} iconLeft={<Placeholder data-icon />} />
@@ -105,7 +105,7 @@ export default function ButtonPage() {
             {/* Sizes */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="flex flex-wrap items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                <div className="flex flex-wrap items-center gap-4 p-4 border border-tertiary rounded-lg">
                     {sizes.map(size => (
                         <Button key={size} size={size as ButtonVariants["size"]}>
                             Button {size}
@@ -128,7 +128,7 @@ export default function ButtonPage() {
             {/* States */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">States</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="flex flex-wrap items-center gap-4">
                         {variants.map(variant => (
                             <Button
@@ -168,7 +168,7 @@ export default function ButtonPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <th className="py-2 px-4 text-left">Props</th>
                                 <th className="py-2 px-4 text-left">Type</th>
                                 <th className="py-2 px-4 text-left">Default</th>
@@ -176,7 +176,7 @@ export default function ButtonPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">variant?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {` 'primary' | 'secondary' | 'tertiary' | 'link-color' |
@@ -186,7 +186,7 @@ export default function ButtonPage() {
                                 <td className="py-2 px-4 font-mono text-sm">{"primary"}</td>
                                 <td className="py-2 px-4">Primary button.</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">size?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {` 'sm' | 'md' | 'lg' | 'xl'`}
@@ -194,31 +194,31 @@ export default function ButtonPage() {
                                 <td className="py-2 px-4 font-mono text-sm">{"sm"}</td>
                                 <td className="py-2 px-4">The button size .</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">iconLeft?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The left icon.</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">iconRight?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The right icon.</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">isLoading?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
                                 <td className="py-2 px-4">For loading state</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">isDisabled?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
                                 <td className="py-2 px-4">For disabled state</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>

@@ -5,23 +5,21 @@ type CardProps = {
     className?: string;
 } & React.ComponentPropsWithRef<"div">;
 
-const Card = React.forwardRef<HTMLDivElement, CardProps>(
-    ({ children, className, ...props }) => {
-        return (
-            <>
-                <div
-                    className={cn(
-                        "border border-primary/10 bg-white rounded-xl shadow-xs py-4 sm:py-5 px-4 sm:px-6",
-                        className
-                    )}
-                    {...props}
-                >
-                    {children}
-                </div>
-            </>
-        );
-    }
-);
+const Card = React.forwardRef<HTMLDivElement, CardProps>(({ children, className, ...props }) => {
+    return (
+        <>
+            <div
+                className={cn(
+                    "border border-primary/10 bg-white rounded-xl shadow-xs py-4 sm:py-5 px-4 sm:px-6",
+                    className
+                )}
+                {...props}
+            >
+                {children}
+            </div>
+        </>
+    );
+});
 Card.displayName = "Card";
 
 export { Card };

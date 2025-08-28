@@ -43,7 +43,7 @@ export default function BadgePage() {
                 <h2 className="text-xl font-semibold mb-4">Variants</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {variants.map(variant => (
-                        <div key={variant.name} className="p-4 border border-gray-200 rounded-lg">
+                        <div key={variant.name} className="p-4 border border-tertiary rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant={variant.name as BadgeVariants["variant"]}>
                                     <Dot size="sm" />
@@ -65,7 +65,7 @@ export default function BadgePage() {
                 <h2 className="text-xl font-semibold mb-4">Colors</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {colors.map(color => (
-                        <div key={color} className="p-4 border border-gray-200 rounded-lg">
+                        <div key={color} className="p-4 border border-tertiary rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge color={color as BadgeVariants["color"]}>
                                     <Dot size="sm" />
@@ -79,7 +79,7 @@ export default function BadgePage() {
                         </div>
                     ))}
                     {colors.map(color => (
-                        <div key={color} className="p-4 border border-gray-200 rounded-lg">
+                        <div key={color} className="p-4 border border-tertiary rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant={"color"} color={color as BadgeVariants["color"]}>
                                     Badge {color}
@@ -97,7 +97,7 @@ export default function BadgePage() {
             {/* Sizes */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="flex flex-wrap gap-4 p-4 border border-gray-200 rounded-lg">
+                <div className="flex flex-wrap gap-4 p-4 border border-tertiary rounded-lg">
                     {sizes.map(size => (
                         <Badge key={size} size={size as BadgeVariants["size"]}>
                             Badge {size}
@@ -136,7 +136,7 @@ export default function BadgePage() {
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <th className="py-2 px-4 text-left">Props</th>
                                 <th className="py-2 px-4 text-left">Type</th>
                                 <th className="py-2 px-4 text-left">Default</th>
@@ -144,7 +144,7 @@ export default function BadgePage() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">variant?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {`'pill-color' | 'color' | 'modern'`}
@@ -152,7 +152,7 @@ export default function BadgePage() {
                                 <td className="py-2 px-4 font-mono text-sm">{"pill-color"}</td>
                                 <td className="py-2 px-4">Badge Variants.</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">color?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {`'gray' | 'brand' | 'eror' | 'warning' | 'success' | 'gray-blue' 
@@ -161,13 +161,13 @@ export default function BadgePage() {
                                 <td className="py-2 px-4 font-mono text-sm">{"gray"}</td>
                                 <td className="py-2 px-4">The badge color</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">size?</td>
                                 <td className="py-2 px-4 font-mono text-sm">{`'sm' | 'md' | 'lg'`}</td>
                                 <td className="py-2 px-4 font-mono text-sm">{"sm"}</td>
                                 <td className="py-2 px-4">The badge size .</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">asChild?</td>
                                 <td className="py-2 px-4 font-mono text-sm">{`boolean`}</td>
                                 <td className="py-2 px-4 font-mono text-sm">{"false"}</td>
@@ -176,7 +176,7 @@ export default function BadgePage() {
                                     child, merging their props and behavior.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>

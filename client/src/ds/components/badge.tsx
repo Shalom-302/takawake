@@ -4,7 +4,7 @@ import {
     badgeVariants as shadcnBadgeVariants,
 } from "@/components/ui/badges/badge";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 // Extension des variants de badge de shadcn
 export const badgeVariants = cva(

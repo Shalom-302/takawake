@@ -20,7 +20,7 @@ export default function ProgressPage() {
             {/* Base Example */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Base Example</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="w-full max-w-md py-8">
                             <ProgressBar value={45} />
@@ -33,7 +33,7 @@ export default function ProgressPage() {
             {/* Text right */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Text right</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="w-full max-w-md py-8">
                             <ProgressBar value={45} labelPosition="right" />
@@ -48,7 +48,7 @@ export default function ProgressPage() {
             {/* Text bottom */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Text bottom</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="w-full max-w-md py-8">
                             <ProgressBar value={20} labelPosition="bottom" />
@@ -64,7 +64,7 @@ export default function ProgressPage() {
             {/* Text top floating */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Text top floating</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="w-full max-w-md py-8">
                             <ProgressBar value={20} labelPosition="top-floating" />
@@ -80,7 +80,7 @@ export default function ProgressPage() {
             {/* Text bottom floating */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Text bottom floating</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="w-full max-w-md py-8">
                             <ProgressBar value={80} labelPosition="bottom-floating" />
@@ -95,7 +95,7 @@ export default function ProgressPage() {
             {/* Circle progress bar */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Circle progress bar</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="flex flex-col items-start gap-10 md:flex-row">
                             <ProgressBarCircle size="xxs" value={40} />
@@ -123,7 +123,7 @@ export default function ProgressPage() {
             {/* Circle progress bar label */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Circle progress bar label</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="flex flex-col items-start gap-10 md:flex-row">
                             <ProgressBarCircle size="xxs" value={40} label="Progrès" />
@@ -151,7 +151,7 @@ export default function ProgressPage() {
             {/* Half circle progress bar */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Half circle progress bar</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="flex flex-col items-start gap-10 md:flex-row">
                             <ProgressBarHalfCircle size="xxs" value={60} />
@@ -178,7 +178,7 @@ export default function ProgressPage() {
             {/* Half circle progress bar label */}
             <div className="mb-10 ">
                 <h2 className="text-xl font-semibold mb-4">Half circle progress bar label</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <div className="flex flex-col items-start gap-10 md:flex-row">
                             <ProgressBarHalfCircle size="xxs" value={60} label="Objectif" />
@@ -207,9 +207,9 @@ export default function ProgressPage() {
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">API Reference</h2>
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border-gray-200">
+                    <table className="w-full border-collapse border-tertiary">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <th className="py-2 px-4 text-left">Props</th>
                                 <th className="py-2 px-4 text-left">Type</th>
                                 <th className="py-2 px-4 text-left">Default</th>
@@ -217,7 +217,7 @@ export default function ProgressPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">value</td>
                                 <td className="py-2 px-4 font-mono text-sm">number</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
@@ -225,7 +225,7 @@ export default function ProgressPage() {
                                     The current value of the progress indicator.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">min?</td>
                                 <td className="py-2 px-4 font-mono text-sm">number</td>
                                 <td className="py-2 px-4 font-mono text-sm">0</td>
@@ -233,7 +233,7 @@ export default function ProgressPage() {
                                     The minimum value of the progress indicator.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">max?</td>
                                 <td className="py-2 px-4 font-mono text-sm">number</td>
                                 <td className="py-2 px-4 font-mono text-sm">100</td>
@@ -241,7 +241,7 @@ export default function ProgressPage() {
                                     The maximum value of the progress indicator.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">labelPosition?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {`"right" | "bottom" | "top-floating" | "bottom-floating"`}
@@ -249,7 +249,7 @@ export default function ProgressPage() {
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">Label position for the progress bar.</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">getValueLabel?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {`function (value: number, max: number) => string`}
@@ -260,7 +260,7 @@ export default function ProgressPage() {
                                     current value in a human-readable format for the progress bar.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">size?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {`'xxs' | 'xs' | 'sm' | 'md' | 'lg'`}
@@ -269,7 +269,7 @@ export default function ProgressPage() {
                                 <td className="py-2 px-4">Size for circles progress indicators.</td>
                             </tr>
 
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">Label?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
@@ -277,7 +277,7 @@ export default function ProgressPage() {
                                     Accessible label for circles progress indicator.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>

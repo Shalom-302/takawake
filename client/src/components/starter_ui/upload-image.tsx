@@ -120,20 +120,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                                 "cursor-pointer shrink-0 relative h-16 w-16 flex items-center justify-center",
                                 "bg-primary text-white rounded-lg",
                                 {
-                                    "bg-primary/10 text-primary/60":
-                                        inputProps.disabled,
+                                    "bg-primary/10 text-primary/60": inputProps.disabled,
                                 }
                             )}
                         >
                             <ImagePlusIcon />
                         </div>
                         <div>
-                            <span className="text-sm text-primary font-medium ">
-                                {title}
-                            </span>
-                            <p className="text-sm text-primary/60 ">
-                                {subtitle}
-                            </p>
+                            <span className="text-sm text-primary font-medium ">{title}</span>
+                            <p className="text-sm text-primary/60 ">{subtitle}</p>
                         </div>
                     </label>
                 </>
@@ -164,13 +159,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     </div>
                     <label
                         htmlFor={`upload-${name}`}
-                        className={cn(
-                            "text-sm text-primary cursor-pointer font-medium",
-                            {
-                                "flex items-center gap-2 bg-primary text-white p-2 rounded-lg ":
-                                    multiple === true,
-                            }
-                        )}
+                        className={cn("text-sm text-primary cursor-pointer font-medium", {
+                            "flex items-center gap-2 bg-primary text-white p-2 rounded-lg ":
+                                multiple === true,
+                        })}
                     >
                         {multiple && <ImagePlusIcon size={18} />}
                         {multiple ? "Ajouter des images" : "Changer l'image"}

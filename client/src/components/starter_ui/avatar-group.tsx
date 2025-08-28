@@ -63,13 +63,9 @@ const AvatarGroup = ({ size = "md", maxVisible = 4, variant = "independant", dat
                     ) => (
                         <div
                             key={idx}
-                            className={clsx(
-                                avatarClass,
-                                "border border-primary-foreground",
-                                {
-                                    "ring-2 ring-primary ": variant === "independant",
-                                }
-                            )}
+                            className={clsx(avatarClass, "border border-primary-foreground", {
+                                "ring-2 ring-primary ": variant === "independant",
+                            })}
                         >
                             {item?.name ? (
                                 <Tooltip>

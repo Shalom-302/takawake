@@ -8,7 +8,6 @@ import AvatarGroup from "./avatar-group";
 import { CalendarDateIcon, InfoCircleIcon, RefreshCwOneIcon } from "../icons";
 import Button from "./button";
 
-
 type CardProps = {
     className?: string;
     tontine_name: string;
@@ -40,21 +39,19 @@ type CardProps = {
 } & React.ComponentPropsWithRef<"div">;
 
 const CardTontine = React.forwardRef<HTMLDivElement, CardProps>(
-    (
-        {
-            className,
-            tontine_name,
-            tontine_illustration,
-            progression,
-            manager,
-            members,
-            areAllMembersIdentified,
-            metric,
-            actionForDetails,
-            actionToContribute,
-            date,
-        }
-    ) => {
+    ({
+        className,
+        tontine_name,
+        tontine_illustration,
+        progression,
+        manager,
+        members,
+        areAllMembersIdentified,
+        metric,
+        actionForDetails,
+        actionToContribute,
+        date,
+    }) => {
         const allMembers = members.map(item => ({
             src: item.photo,
             avatarFallback: item.abreviation,
@@ -248,11 +245,7 @@ const CardTontine = React.forwardRef<HTMLDivElement, CardProps>(
                     </div>
 
                     <div className=" flex gap-3">
-                        <Button
-                            size={"sm"}
-                            className="flex-1"
-                            onClick={actionForDetails}
-                        >
+                        <Button size={"sm"} className="flex-1" onClick={actionForDetails}>
                             {"Voir les détails"}
                         </Button>
                         <Button size={"sm"} className="flex-1" onClick={actionToContribute}>

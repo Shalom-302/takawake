@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 interface CodeBlockProps {
     code: string;

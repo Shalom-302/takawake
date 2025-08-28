@@ -12,7 +12,7 @@ import "../styles/globals.css";
 import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
 import { ThemeProvider } from "next-themes";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const inter = Inter({
     subsets: ["latin"],

@@ -155,9 +155,7 @@ const TabsTrigger: React.FC<
             onClick={e => onTriggerClick?.(value, e.currentTarget)}
             className={cn(
                 "px-4 py-2 relative z-30 text-sm font-semibold transition-all cursor-pointer",
-                isActive
-                    ? "text-primary"
-                    : "duration-300 text-primary/60",
+                isActive ? "text-primary" : "duration-300 text-primary/60",
                 className
             )}
         >

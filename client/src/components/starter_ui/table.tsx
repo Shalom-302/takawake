@@ -72,8 +72,7 @@ export const Table: React.FC<TableProps> = ({
                                     className={cn(
                                         "inline-flex w-5 h-5 text-foreground bg-white border rounded-md items-center justify-center",
                                         {
-                                            "bg-primary border-primary":
-                                                isAllSelected,
+                                            "bg-primary border-primary": isAllSelected,
                                             "border-primary/30": !isAllSelected,
                                         }
                                     )}
@@ -110,20 +109,16 @@ export const Table: React.FC<TableProps> = ({
                         datas.map((row, rowIndex) => (
                             <tr
                                 key={rowIndex}
-                                className={cn(
-                                    "not-last:border-b border-b-primary/30",
-                                    {
-                                        "bg-gray-50": selectedRows.includes(rowIndex),
-                                    }
-                                )}
+                                className={cn("not-last:border-b border-b-primary/30", {
+                                    "bg-gray-50": selectedRows.includes(rowIndex),
+                                })}
                             >
                                 {selectable && (
                                     <td
                                         className={cn(
                                             "px-4 py-2 text-sm w-5",
                                             {
-                                                "bg-gray-50":
-                                                    selectedRows.includes(rowIndex),
+                                                "bg-gray-50": selectedRows.includes(rowIndex),
                                             },
                                             {
                                                 "rounded-bl-xl": rowIndex + 1 === datas.length,
@@ -163,8 +158,7 @@ export const Table: React.FC<TableProps> = ({
                                         className={cn(
                                             "px-4 py-2 text-sm text-primary",
                                             {
-                                                "bg-gray-50":
-                                                    selectedRows.includes(rowIndex),
+                                                "bg-gray-50": selectedRows.includes(rowIndex),
                                             },
                                             {
                                                 "rounded-br-xl":

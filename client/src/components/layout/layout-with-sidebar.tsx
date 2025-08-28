@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { AppHeader } from "@/components/layout/header";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 interface LayoutWithSidebarProps {
     children: ReactNode;

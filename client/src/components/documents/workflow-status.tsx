@@ -5,7 +5,7 @@ import { CheckCircle, Circle, Clock, FileText, FileSignature, Shield, Archive } 
 import { WorkflowStep } from "@/lib/services/document-service";
 import { useDocuments } from "@/lib/contexts/document-context";
 import { Progress } from "@/components/ui/progress-indicators/progress";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 interface WorkflowStatusProps {
     documentId: string;

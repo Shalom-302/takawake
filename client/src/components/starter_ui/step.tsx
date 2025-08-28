@@ -38,12 +38,10 @@ export const Step = React.forwardRef<HTMLDivElement, StepProps>(
                                 ring-2 ring-white
                             `,
                                 {
-                                    "bg-primary border-primary text-white":
-                                        idx + 1 < activeStep,
+                                    "bg-primary border-primary text-white": idx + 1 < activeStep,
                                 },
                                 {
-                                    "bg-gray-100 text-primary/70":
-                                        idx + 1 > activeStep,
+                                    "bg-gray-100 text-primary/70": idx + 1 > activeStep,
                                 }
                             )}
                         >

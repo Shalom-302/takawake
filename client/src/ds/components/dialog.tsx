@@ -14,7 +14,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "./button";
 
 // Extension des variants de dialog content
