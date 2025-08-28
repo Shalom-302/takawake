@@ -74,7 +74,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<LinkButton variant="${variant.name}" iconRight={<Placeholder data-icon />}>${variant.name} Button</LinkButton>`}
+                                            code={`<LinkButton href={"#"} variant="${variant.name}" iconRight={<Placeholder data-icon />}>${variant.name} Button</LinkButton>`}
                                         />
                                     </div>
                                 )}
@@ -143,6 +143,75 @@ export default function ButtonPage() {
                     className="mt-2  max-w-[300px]"
                     code={`<Button isDisabled>Button</Button>`}
                 />
+            </div>
+
+            {/* API Reference */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">API Reference</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="py-2 px-4 text-left">Props</th>
+                                <th className="py-2 px-4 text-left">Type</th>
+                                <th className="py-2 px-4 text-left">Default</th>
+                                <th className="py-2 px-4 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">variant</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    'primary' | 'secondary' | 'tertiary' | 'link-color' |
+                                    'link-gray' | 'primary-destructive' | 'secondary-destructive' |
+                                    'tertiary-destructive' | 'link-destructive'
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">'primary'</td>
+                                <td className="py-2 px-4">Primary button.</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">size</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    'sm' | 'md' | 'lg' | 'xl'
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">'sm'</td>
+                                <td className="py-2 px-4">The button size .</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">iconLeft</td>
+                                <td className="py-2 px-4 font-mono text-sm">Icon</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">The left icon.</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">iconRight</td>
+                                <td className="py-2 px-4 font-mono text-sm">Icon</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">The right icon.</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">isLoading</td>
+                                <td className="py-2 px-4 font-mono text-sm">boolean</td>
+                                <td className="py-2 px-4 font-mono text-sm">false</td>
+                                <td className="py-2 px-4">For loading state</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">isDisabled</td>
+                                <td className="py-2 px-4 font-mono text-sm">boolean</td>
+                                <td className="py-2 px-4 font-mono text-sm">false</td>
+                                <td className="py-2 px-4">For disabled state</td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">className</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    Additional CSS classes to apply to the progress bar.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
