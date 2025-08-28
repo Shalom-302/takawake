@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Button, LinkButton } from "@/components/ui/buttons";
 import { Placeholder } from "@untitled-ui/icons-react";
+import { ButtonVariants } from "@/components/ui/buttons/button";
 
 export default function ButtonPage() {
     const variants = [
@@ -43,7 +44,7 @@ export default function ButtonPage() {
                                     <div key={variant.name} className="p-4 border rounded-lg">
                                         <div className="flex items-center gap-2 mb-2">
                                             <Button
-                                                variant={variant.name as any}
+                                                variant={variant.name as ButtonVariants["variant"]}
                                                 iconLeft={<Placeholder data-icon />}
                                             >
                                                 Button {variant.name}
@@ -62,7 +63,7 @@ export default function ButtonPage() {
                                         <div className="flex items-center gap-2 mb-2">
                                             <LinkButton
                                                 href={"#"}
-                                                variant={variant.name as any}
+                                                variant={variant.name as ButtonVariants["variant"]}
                                                 iconRight={<Placeholder data-icon />}
                                             >
                                                 Button {variant.name}
@@ -100,12 +101,16 @@ export default function ButtonPage() {
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
                 <div className="flex flex-wrap items-center gap-4 p-4 border rounded-lg">
                     {sizes.map(size => (
-                        <Button key={size} size={size as any}>
+                        <Button key={size} size={size as ButtonVariants["size"]}>
                             Button {size}
                         </Button>
                     ))}
                     {sizes.map(size => (
-                        <Button key={size} iconLeft={<Placeholder data-icon />} size={size} />
+                        <Button
+                            key={size}
+                            iconLeft={<Placeholder data-icon />}
+                            size={size as ButtonVariants["size"]}
+                        />
                     ))}
                 </div>
                 <CodeBlock
@@ -119,16 +124,23 @@ export default function ButtonPage() {
                 <h2 className="text-xl font-semibold mb-4">States</h2>
                 <div className="p-4 border rounded-lg">
                     <div className="flex flex-wrap items-center gap-4">
-                        {" "}
                         {variants.map(variant => (
-                            <Button isLoading key={variant} variant={variant.name as any}>
+                            <Button
+                                isLoading
+                                key={variant.name}
+                                variant={variant.name as ButtonVariants["variant"]}
+                            >
                                 Button
                             </Button>
                         ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-4 mt-5">
                         {variants.map(variant => (
-                            <Button isDisabled key={variant} variant={variant.name as any}>
+                            <Button
+                                isDisabled
+                                key={variant.name}
+                                variant={variant.name as ButtonVariants["variant"]}
+                            >
                                 Button
                             </Button>
                         ))}
@@ -159,53 +171,53 @@ export default function ButtonPage() {
                         </thead>
                         <tbody>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">variant</td>
+                                <td className="py-2 px-4 font-mono text-sm">variant?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    'primary' | 'secondary' | 'tertiary' | 'link-color' |
+                                    {` 'primary' | 'secondary' | 'tertiary' | 'link-color' |
                                     'link-gray' | 'primary-destructive' | 'secondary-destructive' |
-                                    'tertiary-destructive' | 'link-destructive'
+                                    'tertiary-destructive' | 'link-destructive'`}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">'primary'</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"primary"}</td>
                                 <td className="py-2 px-4">Primary button.</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">size</td>
+                                <td className="py-2 px-4 font-mono text-sm">size?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    'sm' | 'md' | 'lg' | 'xl'
+                                    {` 'sm' | 'md' | 'lg' | 'xl'`}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">'sm'</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"sm"}</td>
                                 <td className="py-2 px-4">The button size .</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">iconLeft</td>
+                                <td className="py-2 px-4 font-mono text-sm">iconLeft?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The left icon.</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">iconRight</td>
+                                <td className="py-2 px-4 font-mono text-sm">iconRight?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The right icon.</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">isLoading</td>
+                                <td className="py-2 px-4 font-mono text-sm">isLoading?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
                                 <td className="py-2 px-4">For loading state</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">isDisabled</td>
+                                <td className="py-2 px-4 font-mono text-sm">isDisabled?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
                                 <td className="py-2 px-4">For disabled state</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">className</td>
+                                <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    Additional CSS classes to apply to the progress bar.
+                                    Additional CSS classes to apply to the button.
                                 </td>
                             </tr>
                         </tbody>

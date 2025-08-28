@@ -226,7 +226,7 @@ export default function ProgressPage() {
                                 </td>
                             </tr>
                             <tr className="border-b border-gray-200">
-                                <td className="py-2 px-4 font-mono text-sm">min</td>
+                                <td className="py-2 px-4 font-mono text-sm">min?</td>
                                 <td className="py-2 px-4 font-mono text-sm">number</td>
                                 <td className="py-2 px-4 font-mono text-sm">0</td>
                                 <td className="py-2 px-4">
@@ -234,7 +234,7 @@ export default function ProgressPage() {
                                 </td>
                             </tr>
                             <tr className="border-b border-gray-200">
-                                <td className="py-2 px-4 font-mono text-sm">max</td>
+                                <td className="py-2 px-4 font-mono text-sm">max?</td>
                                 <td className="py-2 px-4 font-mono text-sm">number</td>
                                 <td className="py-2 px-4 font-mono text-sm">100</td>
                                 <td className="py-2 px-4">
@@ -242,19 +242,47 @@ export default function ProgressPage() {
                                 </td>
                             </tr>
                             <tr className="border-b border-gray-200">
-                                <td className="py-2 px-4 font-mono text-sm">size</td>
+                                <td className="py-2 px-4 font-mono text-sm">labelPosition?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    'xxs' | 'xs' | 'sm' | 'md' | 'lg'
+                                    {`"right" | "bottom" | "top-floating" | "bottom-floating"`}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">'xxs'</td>
-                                <td className="py-2 px-4">Size for circles progress indicators.</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">Label position for the progress bar.</td>
                             </tr>
                             <tr className="border-b border-gray-200">
-                                <td className="py-2 px-4 font-mono text-sm">className</td>
+                                <td className="py-2 px-4 font-mono text-sm">getValueLabel?</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    {`function (value: number, max: number) => string`}
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    A function to get the accessible label text representing the
+                                    current value in a human-readable format for the progress bar.
+                                </td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                                <td className="py-2 px-4 font-mono text-sm">size?</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    {`'xxs' | 'xs' | 'sm' | 'md' | 'lg'`}
+                                </td>
+                                <td className="py-2 px-4 font-mono text-sm">{"xxs"}</td>
+                                <td className="py-2 px-4">Size for circles progress indicators.</td>
+                            </tr>
+
+                            <tr className="border-b border-gray-200">
+                                <td className="py-2 px-4 font-mono text-sm">Label?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    Additional CSS classes to apply to the progress bar.
+                                    Accessible label for circles progress indicator.
+                                </td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                                <td className="py-2 px-4 font-mono text-sm">className?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    Additional CSS classes to apply to the progress indicator.
                                 </td>
                             </tr>
                         </tbody>

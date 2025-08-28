@@ -4,18 +4,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-    "inline-flex items-center justify-center font-medium w-fit whitespace-nowrap shrink-0  transition-[color,box-shadow] overflow-hidden",
+    "size-max inline-flex items-center justify-center font-medium w-fit whitespace-nowrap shrink-0 transition-[color,box-shadow] overflow-hidden",
     {
         variants: {
             variant: {
-                "pill-color": "box-border border rounded-full",
-                color: "box-border border rounded-md",
-                modern: "box-border border rounded-md text-[var(--text-secondary)]! bg-primary! border-primary!",
+                "pill-color": "rounded-full ring-1 ring-inset",
+                color: " rounded-md ring-1 ring-inset",
+                modern: " rounded-md ring-1 ring-inset shadow-xs bg-primary! text-secondary! ring-primary!",
             },
             size: {
-                sm: "h-5.5 px-2 py-0.5 gap-1 text-xs",
-                md: "h-6 px-2.5 py-0.5 gap-1.5 text-sm",
-                lg: "h-7 px-3 py-1 gap-1.5 text-sm",
+                sm: "px-2 py-0.5 gap-1 text-xs",
+                md: "px-2.5 py-0.5 gap-1.5 text-sm",
+                lg: "px-3 py-1 gap-1.5 text-sm",
             },
             color: {
                 gray: "bg-utility-gray-50 text-utility-gray-700 ring-utility-gray-200 ",

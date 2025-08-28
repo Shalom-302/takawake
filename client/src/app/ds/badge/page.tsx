@@ -1,9 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Badge } from "@/components/ui/badges/badge";
+import { Badge, BadgeVariants } from "@/components/ui/badges/badge";
 import { Dot } from "@/components/icons/dot-icon";
-import { Plus } from "@untitled-ui/icons-react";
 
 export default function BadgePage() {
     const variants = [
@@ -12,21 +11,20 @@ export default function BadgePage() {
         { name: "modern", description: " modern variant" },
     ];
     const colors = [
-        { name: "gray" },
-        { name: "brand" },
-        { name: "error" },
-        { name: "warning" },
-        { name: "success" },
-        { name: "gray-blue" },
-        { name: "blue-light" },
-        { name: "blue" },
-        { name: "indigo" },
-        { name: "purple" },
-        { name: "pink" },
-        { name: "orange" },
+        "gray",
+        "brand",
+        "error",
+        "warning",
+        "success",
+        "gray-blue",
+        "blue-ligt",
+        "blue",
+        "indigo",
+        "purple",
+        "pink",
+        "orange",
     ];
     const sizes = ["sm", "md", "lg"];
-    const roundedStyles = ["default", "full", "none"];
 
     return (
         <div className="container mx-auto py-10 px-4">
@@ -47,7 +45,7 @@ export default function BadgePage() {
                     {variants.map(variant => (
                         <div key={variant.name} className="p-4 border rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={variant.name as any}>
+                                <Badge variant={variant.name as BadgeVariants["variant"]}>
                                     <Dot size="sm" />
                                     Badge {variant.name}
                                 </Badge>
@@ -67,29 +65,29 @@ export default function BadgePage() {
                 <h2 className="text-xl font-semibold mb-4">Colors</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {colors.map(color => (
-                        <div key={color.name} className="p-4 border rounded-lg">
+                        <div key={color} className="p-4 border rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                                <Badge color={color.name as any}>
+                                <Badge color={color as BadgeVariants["color"]}>
                                     <Dot size="sm" />
-                                    Badge {color.name}
+                                    Badge {color}
                                 </Badge>
                             </div>
                             <CodeBlock
                                 className="mt-2"
-                                code={`<Badge color="${color.name}"><Dot size="sm"/>Badge ${color.name}</Badge>`}
+                                code={`<Badge color="${color}"><Dot size="sm"/>Badge ${color}</Badge>`}
                             />
                         </div>
                     ))}
                     {colors.map(color => (
-                        <div key={color.name} className="p-4 border rounded-lg">
+                        <div key={color} className="p-4 border rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={"color"} color={color.name as any}>
-                                    Badge {color.name}
+                                <Badge variant={"color"} color={color as BadgeVariants["color"]}>
+                                    Badge {color}
                                 </Badge>
                             </div>
                             <CodeBlock
                                 className="mt-2"
-                                code={`<Badge variant={'color'} color="${color.name}">Badge ${color.name}</Badge>`}
+                                code={`<Badge variant={'color'} color="${color}">Badge ${color}</Badge>`}
                             />
                         </div>
                     ))}
@@ -101,7 +99,7 @@ export default function BadgePage() {
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
                 <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
                     {sizes.map(size => (
-                        <Badge key={size} size={size as any}>
+                        <Badge key={size} size={size as BadgeVariants["size"]}>
                             Badge {size}
                         </Badge>
                     ))}
@@ -110,7 +108,7 @@ export default function BadgePage() {
             </div>
 
             {/* Combinations */}
-            <div className="mb-10">
+            {/* <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Combinations</h2>
                 <div className="flex flex-wrap gap-4 p-4 border rounded-lg">
                     <Badge color={"success"} size="lg">
@@ -130,7 +128,7 @@ export default function BadgePage() {
                     className="mt-2 w-[500px]"
                     code={`<Badge color={"success"} size="lg">Success</Badge>`}
                 />
-            </div>
+            </div> */}
 
             {/* API Reference */}
             <div className="mb-10">
@@ -147,35 +145,43 @@ export default function BadgePage() {
                         </thead>
                         <tbody>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">variant</td>
+                                <td className="py-2 px-4 font-mono text-sm">variant?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    'pill-color' | 'color' | 'modern'
+                                    {`'pill-color' | 'color' | 'modern'`}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">'pill-color'</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"pill-color"}</td>
                                 <td className="py-2 px-4">Badge Variants.</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">color</td>
+                                <td className="py-2 px-4 font-mono text-sm">color?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    'gray' | 'brand' | 'eror' | 'warning' | 'success' | 'gray-blue'
-                                    | 'blue-light' | 'blue' | 'indigo' | 'purple' | 'pink' |
-                                    'orange'
+                                    {`'gray' | 'brand' | 'eror' | 'warning' | 'success' | 'gray-blue' 
+                                    | 'blue-light' | 'blue' | 'indigo' | 'purple' | 'pink' | 'orange'`}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">'gray'</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"gray"}</td>
                                 <td className="py-2 px-4">The badge color</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">size</td>
-                                <td className="py-2 px-4 font-mono text-sm">'sm' | 'md' | 'lg'</td>
-                                <td className="py-2 px-4 font-mono text-sm">'sm'</td>
+                                <td className="py-2 px-4 font-mono text-sm">size?</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`'sm' | 'md' | 'lg'`}</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"sm"}</td>
                                 <td className="py-2 px-4">The badge size .</td>
                             </tr>
                             <tr className="border-b">
-                                <td className="py-2 px-4 font-mono text-sm">className</td>
+                                <td className="py-2 px-4 font-mono text-sm">asChild?</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`boolean`}</td>
+                                <td className="py-2 px-4 font-mono text-sm">{"false"}</td>
+                                <td className="py-2 px-4">
+                                    Change the default rendered element for the one passed as a
+                                    child, merging their props and behavior.
+                                </td>
+                            </tr>
+                            <tr className="border-b">
+                                <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    Additional CSS classes to apply to the progress bar.
+                                    Additional CSS classes to apply to the badge.
                                 </td>
                             </tr>
                         </tbody>
