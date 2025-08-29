@@ -1,545 +1,667 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { 
-  Dropdown,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem
-} from "@/ds/components/dropdown";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ds/components/card";
-import { Button } from "@/ds/components/button";
-import { Check, ChevronDown, Copy, CreditCard, Github, LifeBuoy, LogOut, Mail, MessageSquare, Plus, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/buttons";
+import { DropdownDotsButton } from "@/components/ui/dropdown-menu";
 
 export default function DropdownPage() {
-  return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="mb-8">
-        <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
-          ← Retour au Design System
-        </Link>
-        <h1 className="text-3xl font-bold mt-2">Dropdown</h1>
-        <p className="text-muted-foreground mt-2">
-          Un menu déroulant qui s&apos;affiche au clic, avec une API simplifiée pour une utilisation plus facile.
-        </p>
-      </div>
+    const [theme, setTheme] = React.useState("light");
+    const [showNotifications, setShowNotifications] = React.useState(true);
+    const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
 
-      {/* Introduction */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Introduction</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>API simplifiée</CardTitle>
-            <CardDescription>
-              Le composant Dropdown offre une API simplifiée pour créer des menus déroulants sans avoir à définir séparément les sous-composants.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CodeBlock 
-              code={`// Exemple d'utilisation de Dropdown
-<Dropdown
-  trigger={<Button>Ouvrir le menu</Button>}
+    return (
+        <div className="container mx-auto py-10 px-4">
+            {/* Header */}
+            <div className="mb-8">
+                <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
+                    ← Retour au Design System
+                </Link>
+                <h1 className="text-3xl font-bold mt-2">Dropdown</h1>
+                <p className="text-muted-foreground mt-2">
+                    Un menu déroulant qui s&apos;affiche au clic, avec une API simplifiée pour une
+                    utilisation plus facile.
+                </p>
+            </div>
+
+            {/* Exemple de base */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Exemple de base</h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <div className="mb-4">
+                        <DropdownMenu
+                            trigger={<Button>Menu</Button>}
+                            items={[
+                                { id: "edit", label: "Modifier" },
+                                { id: "duplicate", label: "Dupliquer" },
+                            ]}
+                        />
+                    </div>
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+  trigger={<Button>Menu</Button>}
   items={[
-    { id: "edit", label: "Modifier", onClick: () => console.log("Modifier") },
-    { id: "duplicate", label: "Dupliquer", onClick: () => console.log("Dupliquer") },
-    { id: "delete", label: "Supprimer", variant: "destructive" }
+    { id: "edit", label: "Modifier" },
+    { id: "duplicate", label: "Dupliquer" },
   ]}
-/>`} 
-            />
-          </CardContent>
-        </Card>
-      </div>
+/>`}
+                    />
+                </div>
+            </div>
 
-      {/* Exemple de base */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Exemple de base</h2>
-        <div className="p-4 border rounded-lg">
-          <div className="mb-4 flex justify-center">
-            <Dropdown
-              trigger={<Button variant="outline">Menu <ChevronDown className="ml-2 h-4 w-4" /></Button>}
-              items={[
-                { id: "edit", label: "Modifier", },
-                { id: "duplicate", label: "Dupliquer", },
-                { id: "delete", label: "Supprimer", variant: "destructive" }
-              ]}
-            />
-          </div>
-          <CodeBlock 
-            className="mt-2"
-            code={`<Dropdown
-  trigger={<Button variant="outline">Menu <ChevronDown className="ml-2 h-4 w-4" /></Button>}
+            {/* Exemple avec séparateur */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">
+                    Avec séparateur et action destructive
+                </h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <DropdownMenu
+                        trigger={<Button variant="secondary">Actions</Button>}
+                        contentClassName="min-w-[120px]"
+                        items={[
+                            { id: "edit", label: "Edit", onClick: () => console.log("Edit") },
+                            {
+                                id: "duplicate",
+                                label: "Duplicate",
+                                onClick: () => console.log("Duplicate"),
+                            },
+                            { id: "sep1", type: "separator" },
+                            {
+                                id: "delete",
+                                label: "Delete",
+                                variant: "destructive",
+                                onClick: () => console.log("Delete"),
+                            },
+                        ]}
+                    />
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+    trigger={<Button variant="secondary">Actions</Button>}
+    contentClassName="min-w-[120px]"
+    items={[
+        { id: "edit", label: "Edit", onClick: () => console.log("Edit") },
+        { id: "duplicate", label: "Duplicate", onClick: () => console.log("Duplicate") },
+        { id: "sep1", type: "separator" },
+        { id: "delete", label: "Delete", variant: "destructive", onClick: () => console.log("Delete") },
+    ]}
+/>`}
+                    />
+                </div>
+            </div>
+
+            {/* Exemple radio group */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Avec radio group</h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <DropdownMenu
+                        trigger={<Button>Theme</Button>}
+                        contentClassName="min-w-[120px]"
+                        radioGroupValue={theme}
+                        onRadioValueChange={setTheme}
+                        items={[
+                            { id: "light", type: "radio", label: "Light", value: "light" },
+                            { id: "dark", type: "radio", label: "Dark", value: "dark" },
+                            { id: "system", type: "radio", label: "System", value: "system" },
+                        ]}
+                    />
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+  trigger={<Button>Theme</Button>}
+  contentClassName="min-w-[120px]"
+  radioGroupValue={theme}
+  onRadioValueChange={setTheme}
   items={[
-    { id: "edit", label: "Modifier", onClick: () => {} },
-    { id: "duplicate", label: "Dupliquer", onClick: () => {} },
-    { id: "delete", label: "Supprimer", variant: "destructive" }
+      { id: "light", type: "radio", label: "Light", value: "light" },
+      { id: "dark", type: "radio", label: "Dark", value: "dark" },
+      { id: "system", type: "radio", label: "System", value: "system" },
   ]}
-/>`} 
-          />
-        </div>
-      </div>
+/>`}
+                    />
+                </div>
+            </div>
 
-      {/* Avec icônes et raccourcis */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Avec icônes et raccourcis</h2>
-        <div className="p-4 border rounded-lg">
-          <div className="mb-4 flex justify-center">
-            <Dropdown
-              trigger={<Button>Profil <ChevronDown className="ml-2 h-4 w-4" /></Button>}
-              items={[
-                { 
-                  id: "profile", 
-                  label: "Mon profil", 
-                  icon: <User className="h-4 w-4" />,
-                  shortcut: "⇧⌘P",
-                  // onClick: () => {console.log('hello')} 
-                },
-                { 
-                  id: "settings", 
-                  label: "Paramètres", 
-                  icon: <Settings className="h-4 w-4" />,
-                  shortcut: "⌘S",
-                  // onClick: () => {console.log('hello')} 
-                },
-                { 
-                  id: "logout", 
-                  label: "Déconnexion", 
-                  icon: <LogOut className="h-4 w-4" />,
-                  variant: "destructive",
-                  // onClick: () => {console.log('hello')} 
-                }
-              ]}
-            />
-          </div>
-          <CodeBlock 
-            className="mt-2"
-            code={`<Dropdown
-  trigger={<Button>Profil <ChevronDown className="ml-2 h-4 w-4" /></Button>}
+            {/* Exemple checkboxes */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Avec checkboxes</h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <DropdownMenu
+                        trigger={<Button>Options</Button>}
+                        contentClassName="min-w-[180px]"
+                        items={[
+                            {
+                                id: "notifications",
+                                type: "checkbox",
+                                label: "Show notifications",
+                                checked: showNotifications,
+                                onClick: () => setShowNotifications(!showNotifications),
+                            },
+                            {
+                                id: "darkmode",
+                                type: "checkbox",
+                                label: "Enable dark mode",
+                                checked: darkModeEnabled,
+                                onClick: () => setDarkModeEnabled(!darkModeEnabled),
+                            },
+                        ]}
+                    />
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+  trigger={<Button>Options</Button>}
+  contentClassName="min-w-[180px]"
   items={[
-    { 
-      id: "profile", 
-      label: "Mon profil", 
-      icon: <User className="h-4 w-4" />,
-      shortcut: "⇧⌘P",
-      onClick: () => {} 
-    },
-    { 
-      id: "settings", 
-      label: "Paramètres", 
-      icon: <Settings className="h-4 w-4" />,
-      shortcut: "⌘S",
-      onClick: () => {} 
-    },
-    { 
-      id: "logout", 
-      label: "Déconnexion", 
-      icon: <LogOut className="h-4 w-4" />,
-      variant: "destructive",
-      onClick: () => {} 
-    }
+      {
+          id: "notifications",
+          type: "checkbox",
+          label: "Show notifications",
+          checked: showNotifications,
+          onClick: () => setShowNotifications(!showNotifications),
+      },
+      {
+          id: "darkmode",
+          type: "checkbox",
+          label: "Enable dark mode",
+          checked: darkModeEnabled,
+          onClick: () => setDarkModeEnabled(!darkModeEnabled),
+      },
   ]}
-/>`} 
-          />
-        </div>
-      </div>
+/>`}
+                    />
+                </div>
+            </div>
 
-      {/* Avec groupes */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Avec groupes</h2>
-        <div className="p-4 border rounded-lg">
-          <div className="mb-4 flex justify-center">
-            <Dropdown
-              trigger={<Button variant="outline">Options <ChevronDown className="ml-2 h-4 w-4" /></Button>}
-              groups={[
-                {
-                  id: "account",
-                  label: "Mon compte",
-                  items: [
-                    { id: "profile", label: "Profil", icon: <User className="h-4 w-4" /> },
-                    { id: "billing", label: "Facturation", icon: <CreditCard className="h-4 w-4" /> },
-                    { id: "settings", label: "Paramètres", icon: <Settings className="h-4 w-4" /> }
-                  ]
-                },
-                {
-                  id: "help",
-                  label: "Aide",
-                  items: [
-                    { id: "docs", label: "Documentation", icon: <MessageSquare className="h-4 w-4" /> },
-                    { id: "support", label: "Support", icon: <LifeBuoy className="h-4 w-4" /> }
-                  ]
-                },
-                {
-                  id: "actions",
-                  items: [
-                    { id: "logout", label: "Déconnexion", icon: <LogOut className="h-4 w-4" />, variant: "destructive" }
-                  ]
-                }
-              ]}
-            />
-          </div>
-          <CodeBlock 
-            className="mt-2"
-            code={`<Dropdown
-  trigger={<Button variant="outline">Options <ChevronDown className="ml-2 h-4 w-4" /></Button>}
+            {/* Exemple groupes et sous-menus */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Avec groupes et sous-menus</h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <DropdownMenu
+                        trigger={<Button variant="secondary">Open</Button>}
+                        contentClassName="w-56"
+                        align="start"
+                        contentLabel="My Account"
+                        groups={[
+                            {
+                                id: "account",
+                                items: [
+                                    { id: "profile", label: "Profile", shortcut: "⇧⌘P" },
+                                    { id: "billing", label: "Billing", shortcut: "⌘B" },
+                                    { id: "settings", label: "Settings", shortcut: "⌘S" },
+                                    {
+                                        id: "shortcuts",
+                                        label: "Keyboard shortcuts",
+                                        shortcut: "⌘K",
+                                    },
+                                ],
+                            },
+                            {
+                                id: "team",
+                                items: [
+                                    { id: "team", label: "Team" },
+                                    {
+                                        id: "invite",
+                                        type: "sub",
+                                        label: "Invite users",
+                                        items: [
+                                            { id: "email", label: "Email" },
+                                            { id: "message", label: "Message" },
+                                            { id: "sep2", type: "separator" },
+                                            { id: "more", label: "More..." },
+                                        ],
+                                    },
+                                    { id: "newteam", label: "New Team", shortcut: "⌘+T" },
+                                ],
+                            },
+                            {
+                                id: "external",
+                                items: [
+                                    { id: "github", label: "GitHub" },
+                                    { id: "support", label: "Support" },
+                                    { id: "api", label: "API", disabled: true },
+                                ],
+                            },
+                            {
+                                id: "logout",
+                                items: [{ id: "logout", label: "Log out", shortcut: "⇧⌘Q" }],
+                            },
+                        ]}
+                    />
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+  trigger={<Button variant="secondary">Open</Button>}
+  contentClassName="w-56"
+  align="start"
+  contentLabel="My Account"
   groups={[
-    {
-      id: "account",
-      label: "Mon compte",
-      items: [
-        { id: "profile", label: "Profil", icon: <User className="h-4 w-4" /> },
-        { id: "billing", label: "Facturation", icon: <CreditCard className="h-4 w-4" /> },
-        { id: "settings", label: "Paramètres", icon: <Settings className="h-4 w-4" /> }
-      ]
-    },
-    {
-      id: "help",
-      label: "Aide",
-      items: [
-        { id: "docs", label: "Documentation", icon: <MessageSquare className="h-4 w-4" /> },
-        { id: "support", label: "Support", icon: <LifeBuoy className="h-4 w-4" /> }
-      ]
-    },
-    {
-      id: "actions",
-      items: [
-        { id: "logout", label: "Déconnexion", icon: <LogOut className="h-4 w-4" />, variant: "destructive" }
-      ]
-    }
+      {
+          id: "account",
+          items: [
+              { id: "profile", label: "Profile", shortcut: "⇧⌘P" },
+              { id: "billing", label: "Billing", shortcut: "⌘B" },
+              { id: "settings", label: "Settings", shortcut: "⌘S" },
+              { id: "shortcuts", label: "Keyboard shortcuts", shortcut: "⌘K" },
+          ],
+      },
+      {
+          id: "team",
+          items: [
+              { id: "team", label: "Team" },
+              {
+                  id: "invite",
+                  type: "sub",
+                  label: "Invite users",
+                  items: [
+                      { id: "email", label: "Email" },
+                      { id: "message", label: "Message" },
+                      { id: "sep2", type: "separator" },
+                      { id: "more", label: "More..." },
+                  ],
+              },
+              { id: "newteam", label: "New Team", shortcut: "⌘+T" },
+          ],
+      },
+      {
+          id: "external",
+          items: [
+              { id: "github", label: "GitHub" },
+              { id: "support", label: "Support" },
+              { id: "api", label: "API", disabled: true },
+          ],
+      },
+      { id: "logout", items: [{ id: "logout", label: "Log out", shortcut: "⇧⌘Q" }] },
   ]}
-/>`} 
-          />
-        </div>
-      </div>
+/>`}
+                    />
+                </div>
+            </div>
 
-      {/* Variants */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Variants</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {["default", "bordered", "elevated"].map(variant => (
-            <div key={variant} className="p-4 border rounded-lg">
-              <h3 className="text-lg font-medium mb-3 capitalize">{variant}</h3>
-              <div className="flex justify-center mb-4">
-                <Dropdown
-                  trigger={<Button variant="outline">Variant {variant}</Button>}
-                  variant={variant as any}
-                  items={[
-                    { id: "item1", label: "Option 1" },
-                    { id: "item2", label: "Option 2" },
-                    { id: "item3", label: "Option 3" }
-                  ]}
-                />
-              </div>
-              <CodeBlock 
-                className="mt-2"
-                code={`<Dropdown
-  trigger={<Button variant="outline">Variant ${variant}</Button>}
-  variant="${variant}"
+            {/* Exemple dots button */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Avec bouton dots</h2>
+                <div className="p-4 border  border-tertiary rounded-lg">
+                    <DropdownMenu
+                        trigger={<DropdownDotsButton />}
+                        align="end"
+                        contentClassName="min-w-[100px]"
+                        items={[
+                            { id: "view", label: "View details" },
+                            { id: "archive", label: "Archive" },
+                            { id: "remove", label: "Remove", variant: "destructive" },
+                        ]}
+                    />
+                    <CodeBlock
+                        code={`
+<DropdownMenu
+  trigger={<DropdownDotsButton />}
+  align="end"
+  contentClassName="min-w-[100px]"
   items={[
-    { id: "item1", label: "Option 1" },
-    { id: "item2", label: "Option 2" },
-    { id: "item3", label: "Option 3" }
+      { id: "view", label: "View details" },
+      { id: "archive", label: "Archive" },
+      { id: "remove", label: "Remove", variant: "destructive" },
   ]}
-/>`} 
-              />
+/>`}
+                    />
+                </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Tailles */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Tailles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {["sm", "default", "lg"].map(size => (
-            <div key={size} className="p-4 border rounded-lg">
-              <h3 className="text-lg font-medium mb-3 capitalize">{size}</h3>
-              <div className="flex justify-center mb-4">
-                <Dropdown
-                  trigger={<Button variant="outline">Taille {size}</Button>}
-                  size={size as any}
-                  items={[
-                    { id: "item1", label: "Option 1" },
-                    { id: "item2", label: "Option 2" },
-                    { id: "item3", label: "Option 3" }
-                  ]}
-                />
-              </div>
-              <CodeBlock 
-                className="mt-2"
-                code={`<Dropdown
-  trigger={<Button variant="outline">Taille ${size}</Button>}
-  size="${size}"
-  items={[
-    { id: "item1", label: "Option 1" },
-    { id: "item2", label: "Option 2" },
-    { id: "item3", label: "Option 3" }
-  ]}
-/>`} 
-              />
+            {/* API Reference */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">API Reference</h2>
+                <div className="overflow-x-auto space-y-8">
+                    {/* --- DropdownMenu Props --- */}
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b  border-tertiary ">
+                                <th className="text-left py-2 px-4">Props</th>
+                                <th className="text-left py-2 px-4">Type</th>
+                                <th className="text-left py-2 px-4">Default</th>
+                                <th className="text-left py-2 px-4">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">trigger</td>
+                                <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Élément déclencheur du menu</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">items?</td>
+                                <td className="py-2 px-4 text-sm">DropdownMenuItemData[]</td>
+                                <td className="py-2 px-4 text-sm">[]</td>
+                                <td className="py-2 px-4 text-sm">Liste des éléments</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">groups?</td>
+                                <td className="py-2 px-4 text-sm">DropdownMenuGroupData[]</td>
+                                <td className="py-2 px-4 text-sm">[]</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Groupes d’éléments avec séparateur
+                                </td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">contentLabel?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Label global affiché en haut</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">contentClassName?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Classe appliquée au contenu</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">itemClassName?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Classe appliquée aux items</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">
+                                    radioGroupValue?(requis dans radiio group)
+                                </td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Valeur sélectionnée pour radio
+                                </td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">
+                                    onRadioValueChange?(requis dans radiio group)
+                                </td>
+                                <td className="py-2 px-4 text-sm">{`(value: string) => void`}</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Callback lors du changement radio
+                                </td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">side?</td>
+                                <td className="py-2 px-4 text-sm">{`"top" | "right" | "bottom" | "left"`}</td>
+                                <td className="py-2 px-4 text-sm">{"bottom"}</td>
+                                <td className="py-2 px-4 text-sm">Position du menu</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">sideOffset?</td>
+                                <td className="py-2 px-4 text-sm">number</td>
+                                <td className="py-2 px-4 text-sm">4</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Décalage entre trigger et menu
+                                </td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">align?</td>
+                                <td className="py-2 px-4 text-sm">{`"start" | "center" | "end"`}</td>
+                                <td className="py-2 px-4 text-sm">{"center"}</td>
+                                <td className="py-2 px-4 text-sm">Alignement horizontal</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">alignOffset?</td>
+                                <td className="py-2 px-4 text-sm">number</td>
+                                <td className="py-2 px-4 text-sm">0</td>
+                                <td className="py-2 px-4 text-sm">Décalage d’alignement</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">defaultOpen?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">false</td>
+                                <td className="py-2 px-4 text-sm">État initial ouvert/fermé</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">open?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Mode contrôlé (open/close)</td>
+                            </tr>
+                            <tr className="border-b  border-tertiary ">
+                                <td className="py-2 px-4 font-medium">onOpenChange?</td>
+                                <td className="py-2 px-4 text-sm">{`(open: boolean) => void`}</td>
+                                <td className="py-2 px-4 text-sm">—</td>
+                                <td className="py-2 px-4 text-sm">Callback ouverture/fermeture</td>
+                            </tr>
+                            <tr>
+                                <td className="py-2 px-4 font-medium">modal?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">true</td>
+                                <td className="py-2 px-4 text-sm">Capture le focus (mode modal)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {/* --- DropdownMenuItemData --- */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenuitemdata">
+                            DropdownMenuItemData
+                        </h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b  border-tertiary ">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>id</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">Identifiant unique de l’élément</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>type?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>{`"item" | "checkbox" | "radio" | "separator" | "label" | "sub"`}</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>{"item"}</code>
+                                    </td>
+                                    <td className="py-2 px-4">Type d’élément de menu</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>label</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>React.ReactNode</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">Contenu affiché de l’élément</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>shortcut?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">
+                                        Texte d’un raccourci clavier (ex: ⌘C)
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>onClick?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>{`() => void`}</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">Callback déclenché lors du clic</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>disabled?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>boolean</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>false</code>
+                                    </td>
+                                    <td className="py-2 px-4">Désactive l’élément</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>variant?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>{`"default" | "destructive"`}</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>{"default"}</code>
+                                    </td>
+                                    <td className="py-2 px-4">Style visuel de l’élément</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>checked?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>boolean</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>false</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        État pour les <code>checkbox</code>
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>value</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">
+                                        Valeur pour les <code>radio</code>
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>inset?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>boolean</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>false</code>
+                                    </td>
+                                    <td className="py-2 px-4">Ajoute une indentation visuelle</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>href?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">
+                                        Si présent, rend l’item cliquable comme un lien
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>asChild?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>boolean</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>false</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        Permet d’utiliser un autre composant via{" "}
+                                        <code>asChild</code>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 px-4">
+                                        <code>items?(requis pour les sous-menus)</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>DropdownMenuItemData[]</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">
+                                        Liste de sous-éléments (uniquement pour <code>sub</code>)
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* --- DropdownMenuGroupData --- */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenugroupdata">
+                            DropdownMenuGroupData
+                        </h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b  border-tertiary ">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>id</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">Identifiant unique du groupe</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary ">
+                                    <td className="py-2 px-4">
+                                        <code>label?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">-</td>
+                                    <td className="py-2 px-4">
+                                        Label affiché en en-tête du groupe
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 px-4">
+                                        <code>items</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>DropdownMenuItemData[]</code>
+                                    </td>
+                                    <td className="py-2 px-4">[]</td>
+                                    <td className="py-2 px-4">Liste des items du groupe</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-          ))}
         </div>
-      </div>
-
-      {/* Arrondi */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Arrondi</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {["sm", "default", "lg", "full"].map(rounded => (
-            <div key={rounded} className="p-4 border rounded-lg">
-              <h3 className="text-lg font-medium mb-3 capitalize">Arrondi {rounded}</h3>
-              <div className="flex justify-center mb-4">
-                <Dropdown
-                  trigger={<Button variant="outline">Arrondi {rounded}</Button>}
-                  rounded={rounded as any}
-                  items={[
-                    { id: "item1", label: "Option 1" },
-                    { id: "item2", label: "Option 2" },
-                    { id: "item3", label: "Option 3" }
-                  ]}
-                />
-              </div>
-              <CodeBlock 
-                className="mt-2"
-                code={`<Dropdown
-  trigger={<Button variant="outline">Arrondi ${rounded}</Button>}
-  rounded="${rounded}"
-  items={[
-    { id: "item1", label: "Option 1" },
-    { id: "item2", label: "Option 2" },
-    { id: "item3", label: "Option 3" }
-  ]}
-/>`} 
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Alignement */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Alignement</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {["start", "center", "end"].map(align => (
-            <div key={align} className="p-4 border rounded-lg">
-              <h3 className="text-lg font-medium mb-3 capitalize">Alignement {align}</h3>
-              <div className="flex justify-center mb-4">
-                <Dropdown
-                  trigger={<Button variant="outline">Alignement {align}</Button>}
-                  align={align as any}
-                  items={[
-                    { id: "item1", label: "Option 1" },
-                    { id: "item2", label: "Option 2" },
-                    { id: "item3", label: "Option 3" }
-                  ]}
-                />
-              </div>
-              <CodeBlock 
-                className="mt-2"
-                code={`<Dropdown
-  trigger={<Button variant="outline">Alignement ${align}</Button>}
-  align="${align}"
-  items={[
-    { id: "item1", label: "Option 1" },
-    { id: "item2", label: "Option 2" },
-    { id: "item3", label: "Option 3" }
-  ]}
-/>`} 
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Contrôlé */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Mode contrôlé</h2>
-        <div className="p-4 border rounded-lg">
-          <div className="mb-4">
-            <CodeBlock 
-              code={`import React from "react";
-import { Dropdown } from "@/ds/components/dropdown";
-import { Button } from "@/ds/components/button";
-
-export function ControlledDropdown() {
-  const [open, setOpen] = React.useState(false);
-  
-  return (
-    <div>
-      <div className="flex gap-4 mb-4">
-        <Button onClick={() => setOpen(true)}>Ouvrir le menu</Button>
-        <Button variant="outline" onClick={() => setOpen(false)}>Fermer le menu</Button>
-      </div>
-      
-      <Dropdown
-        trigger={<Button variant="outline">Menu contrôlé</Button>}
-        open={open}
-        onOpenChange={setOpen}
-        items={[
-          { id: "item1", label: "Option 1", onClick: () => console.log("Option 1") },
-          { id: "item2", label: "Option 2", onClick: () => console.log("Option 2") },
-          { id: "item3", label: "Option 3", onClick: () => console.log("Option 3") }
-        ]}
-      />
-    </div>
-  );
-}`} 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Utilisation avancée */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Utilisation avancée</h2>
-        <div className="p-4 border rounded-lg">
-          <div className="mb-4">
-            <CodeBlock 
-              code={`// Utilisation des composants de base pour des cas plus complexes
-<DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button variant="outline">Options avancées</Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent className="w-56">
-    <DropdownMenuItem>
-      <User className="mr-2 h-4 w-4" />
-      <span>Profil</span>
-      <span className="ml-auto">⇧⌘P</span>
-    </DropdownMenuItem>
-    <DropdownMenuItem>
-      <CreditCard className="mr-2 h-4 w-4" />
-      <span>Facturation</span>
-      <span className="ml-auto">⌘B</span>
-    </DropdownMenuItem>
-    <DropdownMenuItem>
-      <Settings className="mr-2 h-4 w-4" />
-      <span>Paramètres</span>
-      <span className="ml-auto">⌘S</span>
-    </DropdownMenuItem>
-    <DropdownMenuItem>
-      <LogOut className="mr-2 h-4 w-4" />
-      <span>Déconnexion</span>
-      <span className="ml-auto">⇧⌘Q</span>
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>`} 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* API Reference */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">API Reference</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>Dropdown Props</CardTitle>
-            <CardDescription>
-              Propriétés du composant Dropdown
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-4">Prop</th>
-                    <th className="text-left py-2 px-4">Type</th>
-                    <th className="text-left py-2 px-4">Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">trigger</td>
-                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
-                    <td className="py-2 px-4 text-sm">Élément déclencheur du menu déroulant</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">items</td>
-                    <td className="py-2 px-4 text-sm">DropdownItemData[]</td>
-                    <td className="py-2 px-4 text-sm">Liste des éléments du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">groups</td>
-                    <td className="py-2 px-4 text-sm">DropdownGroupData[]</td>
-                    <td className="py-2 px-4 text-sm">Liste des groupes d&apos;éléments</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">label</td>
-                    <td className="py-2 px-4 text-sm">string</td>
-                    <td className="py-2 px-4 text-sm">Libellé du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">size</td>
-                    <td className="py-2 px-4 text-sm">"default" | "sm" | "lg" | "auto"</td>
-                    <td className="py-2 px-4 text-sm">Taille du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">variant</td>
-                    <td className="py-2 px-4 text-sm">"default" | "bordered" | "elevated"</td>
-                    <td className="py-2 px-4 text-sm">Variante du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">rounded</td>
-                    <td className="py-2 px-4 text-sm">"default" | "sm" | "lg" | "full"</td>
-                    <td className="py-2 px-4 text-sm">Niveau d&apos;arrondi des coins</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">itemSize</td>
-                    <td className="py-2 px-4 text-sm">"default" | "sm" | "lg"</td>
-                    <td className="py-2 px-4 text-sm">Taille des éléments du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">align</td>
-                    <td className="py-2 px-4 text-sm">"start" | "center" | "end"</td>
-                    <td className="py-2 px-4 text-sm">Alignement horizontal du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">side</td>
-                    <td className="py-2 px-4 text-sm">"top" | "right" | "bottom" | "left"</td>
-                    <td className="py-2 px-4 text-sm">Côté d&apos;affichage du menu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">sideOffset</td>
-                    <td className="py-2 px-4 text-sm">number</td>
-                    <td className="py-2 px-4 text-sm">Décalage par rapport au côté</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">alignOffset</td>
-                    <td className="py-2 px-4 text-sm">number</td>
-                    <td className="py-2 px-4 text-sm">Décalage par rapport à l&apos;alignement</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">open</td>
-                    <td className="py-2 px-4 text-sm">boolean</td>
-                    <td className="py-2 px-4 text-sm">État d&apos;ouverture du menu (mode contrôlé)</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">onOpenChange</td>
-                    <td className="py-2 px-4 text-sm">(open: boolean) => void</td>
-                    <td className="py-2 px-4 text-sm">Fonction appelée lors du changement d&apos;état</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">className</td>
-                    <td className="py-2 px-4 text-sm">string</td>
-                    <td className="py-2 px-4 text-sm">Classe CSS pour le déclencheur</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">contentClassName</td>
-                    <td className="py-2 px-4 text-sm">string</td>
-                    <td className="py-2 px-4 text-sm">Classe CSS pour le contenu</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">itemClassName</td>
-                    <td className="py-2 px-4 text-sm">string</td>
-                    <td className="py-2 px-4 text-sm">Classe CSS pour les éléments</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+    );
 }

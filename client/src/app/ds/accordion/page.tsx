@@ -532,6 +532,54 @@ export default function AccordionPage() {
                     </table>
                 </div>
             </div>
+            {/* AccordionItem API Reference */}
+            <div className="mb-10">
+                <h3 className="text-md font-semibold mb-4">AccordionItem</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-tertiary">
+                                <th className="text-left py-2 px-4">Props</th>
+                                <th className="text-left py-2 px-4">Type</th>
+                                <th className="text-left py-2 px-4">Default</th>
+                                <th className="text-left py-2 px-4">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">value</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Unique identifier of the item</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">trigger</td>
+                                <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Content displayed as the item header
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">content</td>
+                                <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Content displayed when the item is expanded
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">disabled?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">false</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Disables opening/interaction for this item
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }

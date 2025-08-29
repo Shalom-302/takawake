@@ -1,11 +1,17 @@
 "use client";
 
-import { ChevronDownIcon } from "@/components/icons";
+// import { ChevronDownIcon } from "@/components/icons";
 import { Button } from "@/components/ui/buttons/button";
-import { DropdownMenu } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+import { DropdownDotsButton, DropdownMenu } from "@/components/ui/dropdown-menu";
+// import Link from "next/link";
+
+import { useState } from "react";
 
 export default function ViewDropdown() {
+    const [theme, setTheme] = useState("light");
+    const [showNotifications, setShowNotifications] = useState(true);
+    const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+
     return (
         <section className="border border-neutral-200 rounded-lg">
             <div className="px-4 py-2 border-b border-neutral-200">
@@ -13,144 +19,126 @@ export default function ViewDropdown() {
             </div>
             <div className="px-4 py-6 space-y-4">
                 <div className="flex flex-wrap gap-2">
-                    {/* Menu simple */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <Button variant="secondary" iconRight={<ChevronDownIcon size={16} />}>
-                                {"Account"}
-                            </Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[120px]">
-                            {[
-                                { id: 1, label: "My account" },
-                                { id: 2, label: "Profile" },
-                                { id: 3, label: "Settings" },
-                                { id: 4, label: "Keyboard shortcuts" },
-                            ].map(el => (
-                                <DropdownMenu.Item key={el.id} asChild>
-                                    <Link href="#">
-                                        <span className="text-sm">{el.label}</span>
-                                    </Link>
-                                </DropdownMenu.Item>
-                            ))}
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
-
-                    {/* Menu avec séparateurs + destructive action */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <Button variant="secondary">{"Actions"}</Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[120px]">
-                            <DropdownMenu.Item>{"Edit"}</DropdownMenu.Item>
-                            <DropdownMenu.Item>{"Duplicate"}</DropdownMenu.Item>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Item variant="destructive">{"Delete"}</DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
-
-                    {/* Menu avec checkboxes */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <Button>{"Options"}</Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[180px]">
-                            <DropdownMenu.CheckboxItem checked>
-                                {"Show notifications"}
-                            </DropdownMenu.CheckboxItem>
-                            <DropdownMenu.CheckboxItem>
-                                {"Enable dark mode"}
-                            </DropdownMenu.CheckboxItem>
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
+                    {/* Menu avec séparateur et action destructive */}
+                    <DropdownMenu
+                        trigger={<Button variant="secondary">{"Actions"}</Button>}
+                        contentClassName="min-w-[120px]"
+                        items={[
+                            { id: "edit", label: "Edit", onClick: () => console.log("Edit") },
+                            {
+                                id: "duplicate",
+                                label: "Duplicate",
+                                onClick: () => console.log("Duplicate"),
+                            },
+                            { id: "sep1", type: "separator" },
+                            {
+                                id: "delete",
+                                label: "Delete",
+                                variant: "destructive",
+                                onClick: () => console.log("Delete"),
+                            },
+                        ]}
+                    />
 
                     {/* Menu avec radio group */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <Button>{"Theme"}</Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="min-w-[120px]">
-                            <DropdownMenu.RadioGroup value="system">
-                                <DropdownMenu.RadioItem value="light">
-                                    {"Light"}
-                                </DropdownMenu.RadioItem>
-                                <DropdownMenu.RadioItem value="dark">
-                                    {"Dark"}
-                                </DropdownMenu.RadioItem>
-                                <DropdownMenu.RadioItem value="system">
-                                    {"System"}
-                                </DropdownMenu.RadioItem>
-                            </DropdownMenu.RadioGroup>
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
+                    <DropdownMenu
+                        trigger={<Button>{"Theme"}</Button>}
+                        contentClassName="min-w-[120px]"
+                        radioGroupValue={theme}
+                        onRadioValueChange={setTheme}
+                        items={[
+                            { id: "light", type: "radio", label: "Light", value: "light" },
+                            { id: "dark", type: "radio", label: "Dark", value: "dark" },
+                            { id: "system", type: "radio", label: "System", value: "system" },
+                        ]}
+                    />
 
-                    {/* Menu avec sous-menu */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <Button variant="secondary">Open</Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content className="w-56" align="start">
-                            <DropdownMenu.Label>My Account</DropdownMenu.Label>
-                            <DropdownMenu.Group>
-                                <DropdownMenu.Item>
-                                    Profile
-                                    <DropdownMenu.Shortcut>⇧⌘P</DropdownMenu.Shortcut>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item>
-                                    Billing
-                                    <DropdownMenu.Shortcut>⌘B</DropdownMenu.Shortcut>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item>
-                                    Settings
-                                    <DropdownMenu.Shortcut>⌘S</DropdownMenu.Shortcut>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item>
-                                    Keyboard shortcuts
-                                    <DropdownMenu.Shortcut>⌘K</DropdownMenu.Shortcut>
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Group>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Group>
-                                <DropdownMenu.Item>Team</DropdownMenu.Item>
-                                <DropdownMenu.Sub>
-                                    <DropdownMenu.SubTrigger>Invite users</DropdownMenu.SubTrigger>
-                                    <DropdownMenu.Portal>
-                                        <DropdownMenu.SubContent>
-                                            <DropdownMenu.Item>Email</DropdownMenu.Item>
-                                            <DropdownMenu.Item>Message</DropdownMenu.Item>
-                                            <DropdownMenu.Separator />
-                                            <DropdownMenu.Item>More...</DropdownMenu.Item>
-                                        </DropdownMenu.SubContent>
-                                    </DropdownMenu.Portal>
-                                </DropdownMenu.Sub>
-                                <DropdownMenu.Item>
-                                    New Team
-                                    <DropdownMenu.Shortcut>⌘+T</DropdownMenu.Shortcut>
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Group>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Item>GitHub</DropdownMenu.Item>
-                            <DropdownMenu.Item>Support</DropdownMenu.Item>
-                            <DropdownMenu.Item disabled>API</DropdownMenu.Item>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Item>
-                                Log out
-                                <DropdownMenu.Shortcut>⇧⌘Q</DropdownMenu.Shortcut>
-                            </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
+                    {/* Menu avec checkboxes */}
+                    <DropdownMenu
+                        trigger={<Button>{"Options"}</Button>}
+                        contentClassName="min-w-[180px]"
+                        items={[
+                            {
+                                id: "notifications",
+                                type: "checkbox",
+                                label: "Show notifications",
+                                checked: showNotifications,
+                                onClick: () => setShowNotifications(!showNotifications),
+                            },
+                            {
+                                id: "darkmode",
+                                type: "checkbox",
+                                label: "Enable dark mode",
+                                checked: darkModeEnabled,
+                                onClick: () => setDarkModeEnabled(!darkModeEnabled),
+                            },
+                        ]}
+                    />
 
-                    {/* Menu icône seule (DotsButton) */}
-                    <DropdownMenu>
-                        <DropdownMenu.Trigger asChild>
-                            <DropdownMenu.DotsButton />
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content align="end" className="min-w-[100px]">
-                            <DropdownMenu.Item>{"View details"}</DropdownMenu.Item>
-                            <DropdownMenu.Item>{"Archive"}</DropdownMenu.Item>
-                            <DropdownMenu.Item variant="destructive">{"Remove"}</DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu>
+                    {/* Menu avec groupes et sous-menus */}
+                    <DropdownMenu
+                        trigger={<Button variant="secondary">Open</Button>}
+                        contentClassName="w-56"
+                        align="start"
+                        contentLabel="My Account"
+                        groups={[
+                            {
+                                id: "account",
+                                items: [
+                                    { id: "profile", label: "Profile", shortcut: "⇧⌘P" },
+                                    { id: "billing", label: "Billing", shortcut: "⌘B" },
+                                    { id: "settings", label: "Settings", shortcut: "⌘S" },
+                                    {
+                                        id: "shortcuts",
+                                        label: "Keyboard shortcuts",
+                                        shortcut: "⌘K",
+                                    },
+                                ],
+                            },
+                            {
+                                id: "team",
+                                items: [
+                                    { id: "team", label: "Team" },
+                                    {
+                                        id: "invite",
+                                        type: "sub",
+                                        label: "Invite users",
+                                        items: [
+                                            { id: "email", label: "Email" },
+                                            { id: "message", label: "Message" },
+                                            { id: "sep2", type: "separator" },
+                                            { id: "more", label: "More..." },
+                                        ],
+                                    },
+                                    { id: "newteam", label: "New Team", shortcut: "⌘+T" },
+                                ],
+                            },
+                            {
+                                id: "external",
+                                items: [
+                                    { id: "github", label: "GitHub" },
+                                    { id: "support", label: "Support" },
+                                    { id: "api", label: "API", disabled: true },
+                                ],
+                            },
+                            {
+                                id: "logout",
+                                items: [{ id: "logout", label: "Log out", shortcut: "⇧⌘Q" }],
+                            },
+                        ]}
+                    />
+
+                    {/* Menu avec bouton dots */}
+                    <DropdownMenu
+                        trigger={<DropdownDotsButton />}
+                        align="end"
+                        contentClassName="min-w-[100px]"
+                        items={[
+                            { id: "view", label: "View details" },
+                            { id: "archive", label: "Archive" },
+                            { id: "remove", label: "Remove", variant: "destructive" },
+                        ]}
+                    />
                 </div>
             </div>
         </section>

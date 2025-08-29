@@ -45,7 +45,7 @@ function Accordion(props: AccordionProps) {
 
     if (type === "multiple") {
         return (
-            <ShadcnAccordion
+            <AccordionRoot
                 type={type}
                 className={className}
                 defaultValue={defaultValue as string[]}
@@ -75,12 +75,12 @@ function Accordion(props: AccordionProps) {
                         </AccordionContent>
                     </AccordionItem>
                 ))}
-            </ShadcnAccordion>
+            </AccordionRoot>
         );
     } else {
         const { collapsible = true } = props;
         return (
-            <ShadcnAccordion
+            <AccordionRoot
                 type={type}
                 className={className}
                 defaultValue={defaultValue as string}
@@ -111,12 +111,12 @@ function Accordion(props: AccordionProps) {
                         </AccordionContent>
                     </AccordionItem>
                 ))}
-            </ShadcnAccordion>
+            </AccordionRoot>
         );
     }
 }
 
-function ShadcnAccordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
+function AccordionRoot({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
     return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }
 
@@ -231,4 +231,4 @@ function AccordionContent({
     );
 }
 
-export { Accordion, ShadcnAccordion, AccordionItem, AccordionTrigger, AccordionContent };
+export { Accordion, AccordionRoot, AccordionItem, AccordionTrigger, AccordionContent };

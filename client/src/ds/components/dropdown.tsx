@@ -3,24 +3,9 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-    DropdownMenuGroup,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuCheckboxItem,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 
-// Variants pour DropdownMenuContent
+// Variants pour DropdownMenu.Content
 export const dropdownContentVariants = cva("", {
     variants: {
         size: {
@@ -48,7 +33,7 @@ export const dropdownContentVariants = cva("", {
     },
 });
 
-// Variants pour DropdownMenuItem
+// Variants pour DropdownMenu.Item
 const dropdownItemVariants = cva("", {
     variants: {
         variant: {
@@ -70,19 +55,19 @@ const dropdownItemVariants = cva("", {
 
 // Interfaces pour les props
 export interface DropdownContentProps
-    extends React.ComponentPropsWithoutRef<typeof DropdownMenuContent>,
+    extends React.ComponentPropsWithoutRef<typeof DropdownMenu.Content>,
         VariantProps<typeof dropdownContentVariants> {}
 
 export interface DropdownItemProps
-    extends React.ComponentPropsWithoutRef<typeof DropdownMenuItem>,
+    extends React.ComponentPropsWithoutRef<typeof DropdownMenu.Item>,
         VariantProps<typeof dropdownItemVariants> {}
 
 // Composants avec variants
 const DropdownContent = React.forwardRef<
-    React.ElementRef<typeof DropdownMenuContent>,
+    React.ElementRef<typeof DropdownMenu.Content>,
     DropdownContentProps
 >(({ className, size, variant, rounded, ...props }, ref) => (
-    <DropdownMenuContent
+    <DropdownMenu.Content
         ref={ref}
         className={cn(dropdownContentVariants({ size, variant, rounded }), className)}
         {...props}
@@ -90,15 +75,16 @@ const DropdownContent = React.forwardRef<
 ));
 DropdownContent.displayName = "DropdownContent";
 
-const DropdownItem = React.forwardRef<React.ElementRef<typeof DropdownMenuItem>, DropdownItemProps>(
-    ({ className, variant, size, ...props }, ref) => (
-        <DropdownMenuItem
-            ref={ref}
-            className={cn(dropdownItemVariants({ variant, size }), className)}
-            {...props}
-        />
-    )
-);
+const DropdownItem = React.forwardRef<
+    React.ElementRef<typeof DropdownMenu.Item>,
+    DropdownItemProps
+>(({ className, variant, size, ...props }, ref) => (
+    <DropdownMenu.Item
+        ref={ref}
+        className={cn(dropdownItemVariants({ variant, size }), className)}
+        {...props}
+    />
+));
 DropdownItem.displayName = "DropdownItem";
 
 // Type pour les éléments du dropdown
@@ -160,10 +146,10 @@ export function Dropdown({
     itemClassName,
 }: DropdownProps) {
     return (
-        <DropdownMenu open={open} onOpenChange={onOpenChange}>
-            <DropdownMenuTrigger asChild className={className}>
+        <DropdownMenu.Root open={open} onOpenChange={onOpenChange}>
+            <DropdownMenu.Trigger asChild className={className}>
                 {trigger}
-            </DropdownMenuTrigger>
+            </DropdownMenu.Trigger>
             <DropdownContent
                 size={size}
                 variant={variant}
@@ -174,7 +160,7 @@ export function Dropdown({
                 alignOffset={alignOffset}
                 className={contentClassName}
             >
-                {label && <DropdownMenuLabel>{label}</DropdownMenuLabel>}
+                {label && <DropdownMenu.Label>{label}</DropdownMenu.Label>}
 
                 {/* Rendu des items simples */}
                 {items && items.length > 0 && (
@@ -209,10 +195,10 @@ export function Dropdown({
                     <>
                         {groups.map((group, index) => (
                             <React.Fragment key={group.id}>
-                                {index > 0 && <DropdownMenuSeparator />}
-                                <DropdownMenuGroup>
+                                {index > 0 && <DropdownMenu.Separator />}
+                                <DropdownMenu.Group>
                                     {group.label && (
-                                        <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                                        <DropdownMenu.Label>{group.label}</DropdownMenu.Label>
                                     )}
                                     {group.items.map(item => (
                                         <DropdownItem
@@ -236,32 +222,32 @@ export function Dropdown({
                                             )}
                                         </DropdownItem>
                                     ))}
-                                </DropdownMenuGroup>
+                                </DropdownMenu.Group>
                             </React.Fragment>
                         ))}
                     </>
                 )}
             </DropdownContent>
-        </DropdownMenu>
+        </DropdownMenu.Root>
     );
 }
 
 // Export des composants
 export {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-    DropdownMenuGroup,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuCheckboxItem,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuPortal,
+    // DropdownMenu,
+    // DropdownMenu.Content,
+    // DropdownMenu.Item,
+    // DropdownMenu.Label,
+    // DropdownMenu.Separator,
+    // DropdownMenu.Trigger,
+    // DropdownMenu.Group,
+    // DropdownMenu.Sub,
+    // DropdownMenu.SubContent,
+    // DropdownMenu.SubTrigger,
+    // DropdownMenu.CheckboxItem,
+    // DropdownMenu.RadioGroup,
+    // DropdownMenu.RadioItem,
+    // DropdownMenu.Portal,
     DropdownContent,
     DropdownItem,
 };

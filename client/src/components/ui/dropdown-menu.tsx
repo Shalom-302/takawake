@@ -6,9 +6,232 @@ import { Check, ChevronRight, Circle, DotsVertical } from "@untitled-ui/icons-re
 
 import { cn } from "@/lib/utils/cn";
 
-export function DropdownMenu({
+// Types pour les éléments du menu
+interface DropdownMenuItemData {
+    id: string;
+    type?: "item" | "checkbox" | "radio" | "separator" | "label" | "sub";
+    label?: React.ReactNode;
+    shortcut?: string;
+    onClick?: () => void;
+    disabled?: boolean;
+    variant?: "default" | "destructive";
+    checked?: boolean;
+    value?: string;
+    inset?: boolean;
+    href?: string;
+    asChild?: boolean;
+    // Pour les sous-menus
+    items?: DropdownMenuItemData[];
+}
+
+interface DropdownMenuGroupData {
+    id: string;
+    label?: string;
+    items: DropdownMenuItemData[];
+}
+
+interface DropdownMenuNewProps
+    extends React.ComponentProps<typeof DropdownMenuPrimitive.Root>,
+        Omit<React.ComponentProps<typeof DropdownMenuPrimitive.Content>, "children"> {
+    trigger: React.ReactNode;
+    items?: DropdownMenuItemData[];
+    groups?: DropdownMenuGroupData[];
+    contentLabel?: string;
+    contentClassName?: string;
+    itemClassName?: string;
+    radioGroupValue?: string;
+    onRadioValueChange?: (value: string) => void;
+}
+
+// Composant pour rendre un élément individuel
+function renderMenuItem(
+    item: DropdownMenuItemData,
+    radioGroupValue?: string,
+    onRadioValueChange?: (value: string) => void
+): React.ReactNode {
+    const key = item.id;
+
+    switch (item.type) {
+        case "separator":
+            return <DropdownMenuSeparator key={key} />;
+
+        case "label":
+            return (
+                <DropdownMenuLabel key={key} inset={item.inset}>
+                    {item.label}
+                </DropdownMenuLabel>
+            );
+
+        case "checkbox":
+            return (
+                <DropdownMenuCheckboxItem
+                    key={key}
+                    checked={item.checked}
+                    onCheckedChange={item.onClick}
+                    disabled={item.disabled}
+                >
+                    {item.label}
+                </DropdownMenuCheckboxItem>
+            );
+
+        case "radio":
+            return (
+                <DropdownMenuRadioItem
+                    key={key}
+                    value={item.value || item.id}
+                    disabled={item.disabled}
+                >
+                    {item.label}
+                </DropdownMenuRadioItem>
+            );
+
+        case "sub":
+            return (
+                <DropdownMenuSub key={key}>
+                    <DropdownMenuSubTrigger inset={item.inset} disabled={item.disabled}>
+                        {item.label}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            {item.items?.map(subItem =>
+                                renderMenuItem(subItem, radioGroupValue, onRadioValueChange)
+                            )}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+            );
+
+        case "item":
+        default:
+            const ItemComponent = (
+                <DropdownMenuItem
+                    key={key}
+                    onClick={item.onClick}
+                    disabled={item.disabled}
+                    variant={item.variant}
+                    inset={item.inset}
+                    asChild={item.asChild || !!item.href}
+                >
+                    {item.href ? (
+                        <a href={item.href}>
+                            {item.label}
+                            {item.shortcut && (
+                                <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
+                            )}
+                        </a>
+                    ) : (
+                        <>
+                            {item.label}
+                            {item.shortcut && (
+                                <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
+                            )}
+                        </>
+                    )}
+                </DropdownMenuItem>
+            );
+            return ItemComponent;
+    }
+}
+
+function DropdownMenu({
+    // Props du Root
+    defaultOpen,
+    open,
+    onOpenChange,
+    modal,
+    // Props du Content
+    side,
+    sideOffset = 4,
+    align,
+    alignOffset,
+    contentClassName,
+    // Props spécifiques
+    trigger,
+    items = [],
+    groups = [],
+    contentLabel,
+    radioGroupValue,
+    onRadioValueChange,
     ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+}: DropdownMenuNewProps) {
+    // Détermine si on a des éléments radio pour wrapper dans RadioGroup
+    const hasRadioItems = [...items, ...groups.flatMap(g => g.items)].some(
+        item => item.type === "radio"
+    );
+
+    return (
+        <DropdownMenuRoot
+            defaultOpen={defaultOpen}
+            open={open}
+            onOpenChange={onOpenChange}
+            modal={modal}
+            {...props}
+        >
+            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+            <DropdownMenuContent
+                side={side}
+                sideOffset={sideOffset}
+                align={align}
+                alignOffset={alignOffset}
+                className={contentClassName}
+            >
+                {contentLabel && <DropdownMenuLabel>{contentLabel}</DropdownMenuLabel>}
+
+                {/* Rendu des éléments directs */}
+                {items.length > 0 &&
+                    (hasRadioItems && radioGroupValue !== undefined ? (
+                        <DropdownMenuRadioGroup
+                            value={radioGroupValue}
+                            onValueChange={onRadioValueChange}
+                        >
+                            {items.map(item =>
+                                renderMenuItem(item, radioGroupValue, onRadioValueChange)
+                            )}
+                        </DropdownMenuRadioGroup>
+                    ) : (
+                        items.map(item => renderMenuItem(item, radioGroupValue, onRadioValueChange))
+                    ))}
+
+                {/* Rendu des groupes */}
+                {groups.map((group, groupIndex) => {
+                    const groupHasRadioItems = group.items.some(item => item.type === "radio");
+
+                    return (
+                        <React.Fragment key={group.id}>
+                            {(groupIndex > 0 || items.length > 0) && <DropdownMenuSeparator />}
+                            <DropdownMenuGroup>
+                                {group.label && (
+                                    <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                                )}
+                                {groupHasRadioItems && radioGroupValue !== undefined ? (
+                                    <DropdownMenuRadioGroup
+                                        value={radioGroupValue}
+                                        onValueChange={onRadioValueChange}
+                                    >
+                                        {group.items.map(item =>
+                                            renderMenuItem(
+                                                item,
+                                                radioGroupValue,
+                                                onRadioValueChange
+                                            )
+                                        )}
+                                    </DropdownMenuRadioGroup>
+                                ) : (
+                                    group.items.map(item =>
+                                        renderMenuItem(item, radioGroupValue, onRadioValueChange)
+                                    )
+                                )}
+                            </DropdownMenuGroup>
+                        </React.Fragment>
+                    );
+                })}
+            </DropdownMenuContent>
+        </DropdownMenuRoot>
+    );
+}
+
+// Réexport des composants de base pour les cas où on veut plus de contrôle
+function DropdownMenuRoot({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
     return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 
@@ -17,25 +240,21 @@ function DropdownMenuPortal({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
     return <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
-DropdownMenu.Portal = DropdownMenuPortal;
 
 function DropdownMenuTrigger({
     ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
     return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
-DropdownMenu.Trigger = DropdownMenuTrigger;
 
 function DropdownMenuContent({
     className,
-    sideOffset = 4,
     ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
     return (
         <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.Content
                 data-slot="dropdown-menu-content"
-                sideOffset={sideOffset}
                 className={cn(
                     "max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] z-50 py-1 px-1.5 select-none outline-hidden  origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-primary shadow-xl ring-1 ring-secondary_alt will-change-transform border-0",
                     "data-[state=open]:animate-in data-[state=closed]:animate-out",
@@ -50,12 +269,10 @@ function DropdownMenuContent({
         </DropdownMenuPrimitive.Portal>
     );
 }
-DropdownMenu.Content = DropdownMenuContent;
 
 function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
     return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
-DropdownMenu.Group = DropdownMenuGroup;
 
 interface DropdownMenuItemProps extends React.ComponentProps<typeof DropdownMenuPrimitive.Item> {
     inset?: boolean;
@@ -84,7 +301,6 @@ function DropdownMenuItem({
         />
     );
 }
-DropdownMenu.Item = DropdownMenuItem;
 
 function DropdownMenuCheckboxItem({
     className,
@@ -115,14 +331,12 @@ function DropdownMenuCheckboxItem({
         </DropdownMenuPrimitive.CheckboxItem>
     );
 }
-DropdownMenu.CheckboxItem = DropdownMenuCheckboxItem;
 
 function DropdownMenuRadioGroup({
     ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
     return <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
-DropdownMenu.RadioGroup = DropdownMenuRadioGroup;
 
 function DropdownMenuRadioItem({
     className,
@@ -151,7 +365,6 @@ function DropdownMenuRadioItem({
         </DropdownMenuPrimitive.RadioItem>
     );
 }
-DropdownMenu.RadioItem = DropdownMenuRadioItem;
 
 function DropdownMenuLabel({
     className,
@@ -173,7 +386,6 @@ function DropdownMenuLabel({
         />
     );
 }
-DropdownMenu.Label = DropdownMenuLabel;
 
 function DropdownMenuSeparator({
     className,
@@ -187,7 +399,6 @@ function DropdownMenuSeparator({
         />
     );
 }
-DropdownMenu.Separator = DropdownMenuSeparator;
 
 function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
     return (
@@ -201,12 +412,10 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
         />
     );
 }
-DropdownMenu.Shortcut = DropdownMenuShortcut;
 
 function DropdownMenuSub({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
     return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
 }
-DropdownMenu.Sub = DropdownMenuSub;
 
 function DropdownMenuSubTrigger({
     className,
@@ -234,7 +443,6 @@ function DropdownMenuSubTrigger({
         </DropdownMenuPrimitive.SubTrigger>
     );
 }
-DropdownMenu.SubTrigger = DropdownMenuSubTrigger;
 
 function DropdownMenuSubContent({
     className,
@@ -256,9 +464,8 @@ function DropdownMenuSubContent({
         />
     );
 }
-DropdownMenu.SubContent = DropdownMenuSubContent;
 
-function DropdownDotsButton({ className, ...props }: React.ComponentProps<"button">) {
+export function DropdownDotsButton({ className, ...props }: React.ComponentProps<"button">) {
     return (
         <button
             aria-label="Open menu"
@@ -273,4 +480,22 @@ function DropdownDotsButton({ className, ...props }: React.ComponentProps<"butto
         </button>
     );
 }
-DropdownMenu.DotsButton = DropdownDotsButton;
+
+export {
+    DropdownMenu,
+    DropdownMenuRoot,
+    DropdownMenuPortal,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuShortcut,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+};

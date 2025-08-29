@@ -1,17 +1,16 @@
-"use client"
+"use client";
 
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 
 interface DesignSystemLayoutProps {
     children: React.ReactNode;
 }
 
 export default function DesignSystemLayout({ children }: DesignSystemLayoutProps) {
-    const pathname = usePathname()
-    console.log("pathname======>", pathname)
+    const pathname = usePathname();
+    console.log("pathname======>", pathname);
     // List of all components in the design system
     const components = [
         { name: "Accordion", href: "/ds/accordion" },
@@ -44,8 +43,8 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
     return (
         <div className="flex h-screen bg-background">
             {/* Sidebar */}
-            <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card">
-                <div className="p-4 border-b border-border">
+            <aside className="hidden md:flex flex-col w-64 border-r border-tertiary">
+                <div className="p-4 border-b border-tertiary">
                     <Link href="/ds" className="flex items-center space-x-2">
                         <span className="font-bold text-xl">Kaapi UI</span>
                     </Link>
@@ -60,7 +59,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
                                 <Link
                                     key={component.name}
                                     href={component.href}
-                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground ${pathname === component.href ? 'bg-accent text-accent-foreground' : ''}`}
+                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-primary_hover hover:text-secondary_hover ${pathname == component.href ? "bg-primary_hover text-secondary_hover" : ""}`}
                                 >
                                     {component.name}
                                 </Link>
@@ -76,7 +75,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
                                 <Link
                                     key={component.name}
                                     href={component.href}
-                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground ${pathname === component.href ? 'bg-accent text-accent-foreground' : ''}`}
+                                    className={`flex items-center px-4 py-2 text-sm rounded-md hover:bg-primary_hover hover:text-secondary_hover ${pathname === component.href ? "bg-primary_hover text-secondary_hover" : ""}`}
                                 >
                                     {component.name}
                                 </Link>
@@ -88,7 +87,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
 
             {/* Mobile header */}
             <div className="flex flex-col flex-1 h-screen">
-                <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:hidden">
+                <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b border-tertiary bg-background md:hidden">
                     <Link href="/ds" className="flex items-center space-x-2">
                         <span className="font-bold">Kaapi UI</span>
                     </Link>
