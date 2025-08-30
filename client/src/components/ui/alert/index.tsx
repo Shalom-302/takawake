@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { XClose } from "@untitled-ui/icons-react";
 import { Button } from "../buttons";
 
-export type AlertVariants = "default" | "destructive";
+export type AlertVariants = "default" | "brand" | "gray" | "error" | "warning" | "success";
 export type AlertSizes = "floating" | "with-full";
 interface AlertProps extends React.ComponentProps<"div"> {
     icon: React.ReactElement;
@@ -46,17 +46,22 @@ function Alert({
             data-slot="alert"
             role="alert"
             className={cn(
-                "relative bg-primary_alt p-4 rounded-xl border border-primary shadow-xs text-sm flex flex-col md:flex-row items-start gap-y-4 md:gap-x-4 [&_svg]:size-4",
-                size === "floating" && "max-w-[calc(100vw-8rem)]",
-                size === "with-full" && "w-full",
+                "relative bg-primary_alt p-4 rounded-xl border border-primary shadow-xs text-sm flex flex-col md:flex-row  gap-y-4 md:gap-x-4 [&_svg]:size-5",
+                size === "floating" && "items-start max-w-[calc(100vw-8rem)]",
+                size === "with-full" &&
+                    "w-full items-center border-none border-y md:border-b border-b-primary rounded-none",
                 className
             )}
             {...props}
         >
             <AlertIcon variant={variant} icon={icon} />
-            <div className="flex-1">
-                <AlertTitle>{title}</AlertTitle>
-                <AlertDescription>{description}</AlertDescription>
+            <div
+                className={`${size === "floating" && "flex-1"} ${size === "with-full" && "flex flex-1 items-center justify-between"} `}
+            >
+                <div className={` ${size === "with-full" && "flex items-center gap-[6px]"}`}>
+                    <AlertTitle>{title}</AlertTitle>
+                    <AlertDescription>{description}</AlertDescription>
+                </div>
                 {(firstActionLabel || secondActionLabel) && (
                     <Actions
                         size={size}
@@ -67,13 +72,12 @@ function Alert({
                     />
                 )}
             </div>
-
             {dismissible && (
                 <Button
                     aria-label="Close alert"
                     variant={"tertiary"}
                     onClick={handleClose}
-                    className="absolute right-2 top-2 rounded-lg inline-flex justify-center items-center text-fg-quaternary"
+                    className={`${size === "floating" && "absolute right-2 top-2"} rounded-lg inline-flex justify-center items-center text-fg-quaternary`}
                     iconLeft={<XClose />}
                 />
             )}
@@ -120,15 +124,55 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
                     {React.isValidElement(Icon) && Icon}
                 </div>
             );
-
-        case "destructive":
+        case "brand":
             return (
-                <div
-                    data-slot="alert-icon"
-                    className="size-[38px] flex items-center justify-center rounded-md bg-destructive/10 text-destructive"
-                >
-                    {React.isValidElement(Icon) && Icon}
-                </div>
+                <>
+                    <div data-slot="alert-icon" className="[&>svg]:text-fg-brand-primary ">
+                        {React.isValidElement(Icon) && Icon}
+                    </div>
+                    <div className="size-[38px] border-2 border-fg-brand-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
+                    <div className="size-[28px] border-2 border-fg-brand-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
+                </>
+            );
+        case "gray":
+            return (
+                <>
+                    <div data-slot="alert-icon" className="[&>svg]:text-fg-tertiary ">
+                        {React.isValidElement(Icon) && Icon}
+                    </div>
+                    <div className="size-[38px] border-2 border-fg-tertiary/10 rounded-3xl absolute top-[7px] left-[7px]" />
+                    <div className="size-[28px] border-2 border-fg-tertiary/30 rounded-3xl absolute top-[12px] left-[12px]" />
+                </>
+            );
+        case "error":
+            return (
+                <>
+                    <div data-slot="alert-icon" className="[&>svg]:text-fg-error-primary ">
+                        {React.isValidElement(Icon) && Icon}
+                    </div>
+                    <div className="size-[38px] border-2 border-fg-error-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
+                    <div className="size-[28px] border-2 border-fg-error-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
+                </>
+            );
+        case "warning":
+            return (
+                <>
+                    <div data-slot="alert-icon" className="[&>svg]:text-fg-warning-primary ">
+                        {React.isValidElement(Icon) && Icon}
+                    </div>
+                    <div className="size-[38px] border-2 border-fg-warning-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
+                    <div className="size-[28px] border-2 border-fg-warning-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
+                </>
+            );
+        case "success":
+            return (
+                <>
+                    <div data-slot="alert-icon" className="[&>svg]:text-fg-success-primary ">
+                        {React.isValidElement(Icon) && Icon}
+                    </div>
+                    <div className="size-[38px] border-2 border-fg-success-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
+                    <div className="size-[28px] border-2 border-fg-success-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
+                </>
             );
     }
 }
@@ -165,7 +209,7 @@ function Actions({
 
         case "with-full":
             return (
-                <div data-slot="alert-actions" className="flex items-center gap-2 mt-3">
+                <div data-slot="alert-actions" className="flex items-center gap-2 mt-3 md:mt-0">
                     <Button variant={"secondary"}>{firstActionLabel}</Button>
                     <Button>{secondActionLabel}</Button>
                 </div>

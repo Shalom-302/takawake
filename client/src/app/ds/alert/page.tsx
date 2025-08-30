@@ -71,7 +71,7 @@ export default function AlertPage() {
     // const sizes = ["sm", "default", "lg"];
 
     return (
-        <div className="container mx-auto py-10 px-4">
+        <div className="container mx-auto py-10 px-4 space-y-8">
             <div className="mb-8">
                 <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
                     ← Back to Design System
@@ -84,11 +84,79 @@ export default function AlertPage() {
 
             <Alert
                 icon={<InfoCircle />}
+                title="Default! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                size="with-full"
+                icon={<InfoCircle />}
+                title="Default! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                variant="brand"
+                icon={<InfoCircle />}
+                title="Brand! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                size="with-full"
+                variant="brand"
+                icon={<InfoCircle />}
+                title="Brand! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                variant="gray"
+                icon={<InfoCircle />}
+                title="Gray! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                size="with-full"
+                variant="gray"
+                icon={<InfoCircle />}
+                title="Gray! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                variant="error"
+                icon={<InfoCircle />}
+                title="Error! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                size="with-full"
+                variant="error"
+                icon={<InfoCircle />}
+                title="Error! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                variant="warning"
+                icon={<InfoCircle />}
+                title="Warning! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                size="with-full"
+                variant="warning"
+                icon={<InfoCircle />}
+                title="Warning! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
+            />
+            <Alert
+                variant="success"
+                icon={<InfoCircle />}
                 title="Success! Your changes have been saved"
                 description=" This is an alert with icon, title and description."
-                firstActionLabel="Undo"
-                secondActionLabel="Dismiss"
-                dismissible
+            />
+            <Alert
+                size="with-full"
+                variant="success"
+                icon={<InfoCircle />}
+                title="Success! Your changes have been saved"
+                description=" This is an alert with icon, title and description."
             />
 
             {/* Variants */}
