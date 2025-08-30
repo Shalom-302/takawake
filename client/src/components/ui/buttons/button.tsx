@@ -237,7 +237,7 @@ function Button({
                     {children && (
                         <span
                             data-text
-                            className={`underline decoration-transparent underline-offset-2 hover:decoration-current`}
+                            className={`${href ? "underline decoration-transparent underline-offset-2 hover:decoration-current" : ""}`}
                         >
                             {children}
                         </span>
