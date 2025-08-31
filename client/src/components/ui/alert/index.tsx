@@ -3,13 +3,13 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils/cn";
-import { XClose } from "@untitled-ui/icons-react";
+import { CheckCircle, InfoCircle, XClose } from "@untitled-ui/icons-react";
 import { Button } from "../buttons";
 
 export type AlertVariants = "default" | "brand" | "gray" | "error" | "warning" | "success";
 export type AlertSizes = "floating" | "with-full";
 interface AlertProps extends React.ComponentProps<"div"> {
-    icon: React.ReactElement;
+    icon?: React.ReactElement;
     title: string;
     description?: React.ReactNode;
     variant?: AlertVariants;
@@ -46,10 +46,11 @@ function Alert({
             data-slot="alert"
             role="alert"
             className={cn(
-                "relative bg-primary_alt p-4 rounded-xl border border-primary shadow-xs text-sm flex flex-col md:flex-row  gap-y-4 md:gap-x-4 [&_svg]:size-5",
-                size === "floating" && "items-start max-w-[calc(100vw-8rem)]",
+                "relative bg-primary_alt p-4 rounded-xl border-primary text-sm flex flex-col md:flex-row  gap-y-4 md:gap-x-4 [&_svg]:size-5",
+                size === "floating" &&
+                    "items-start max-w-[calc(100%-4rem)] max-w-[calc(100%-8rem)] border shadow-xs",
                 size === "with-full" &&
-                    "w-full items-center border-none border-y md:border-b border-b-primary rounded-none",
+                    "w-full items-center border-t md:border-t-0 md:border-b rounded-none ",
                 className
             )}
             {...props}
@@ -111,11 +112,18 @@ function AlertDescription({ className, ...props }: React.ComponentProps<"div">) 
     );
 }
 
-function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: React.ReactElement }) {
-    if (!Icon) return null;
-
+function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon?: React.ReactElement }) {
     switch (variant) {
         case "default":
+            if (!Icon)
+                return (
+                    <div
+                        data-slot="alert-icon"
+                        className="size-10 flex items-center justify-center p-2.5 border border-primary bg-primary rounded-md shadow-xs-skeuomorphic [&>svg]:text-fg-secondary"
+                    >
+                        <InfoCircle />
+                    </div>
+                );
             return (
                 <div
                     data-slot="alert-icon"
@@ -127,8 +135,8 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
         case "brand":
             return (
                 <>
-                    <div data-slot="alert-icon" className="[&>svg]:text-fg-brand-primary ">
-                        {React.isValidElement(Icon) && Icon}
+                    <div data-slot="alert-icon" className="text-fg-brand-primary ">
+                        <InfoCircle />
                     </div>
                     <div className="size-[38px] border-2 border-fg-brand-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
                     <div className="size-[28px] border-2 border-fg-brand-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
@@ -137,8 +145,8 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
         case "gray":
             return (
                 <>
-                    <div data-slot="alert-icon" className="[&>svg]:text-fg-tertiary ">
-                        {React.isValidElement(Icon) && Icon}
+                    <div data-slot="alert-icon" className="text-fg-tertiary ">
+                        <InfoCircle />
                     </div>
                     <div className="size-[38px] border-2 border-fg-tertiary/10 rounded-3xl absolute top-[7px] left-[7px]" />
                     <div className="size-[28px] border-2 border-fg-tertiary/30 rounded-3xl absolute top-[12px] left-[12px]" />
@@ -147,8 +155,8 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
         case "error":
             return (
                 <>
-                    <div data-slot="alert-icon" className="[&>svg]:text-fg-error-primary ">
-                        {React.isValidElement(Icon) && Icon}
+                    <div data-slot="alert-icon" className="text-fg-error-primary ">
+                        <InfoCircle />
                     </div>
                     <div className="size-[38px] border-2 border-fg-error-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
                     <div className="size-[28px] border-2 border-fg-error-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
@@ -157,8 +165,8 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
         case "warning":
             return (
                 <>
-                    <div data-slot="alert-icon" className="[&>svg]:text-fg-warning-primary ">
-                        {React.isValidElement(Icon) && Icon}
+                    <div data-slot="alert-icon" className="text-fg-warning-primary ">
+                        <InfoCircle />
                     </div>
                     <div className="size-[38px] border-2 border-fg-warning-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
                     <div className="size-[28px] border-2 border-fg-warning-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
@@ -167,8 +175,8 @@ function AlertIcon({ variant, icon: Icon }: { variant: AlertVariants; icon: Reac
         case "success":
             return (
                 <>
-                    <div data-slot="alert-icon" className="[&>svg]:text-fg-success-primary ">
-                        {React.isValidElement(Icon) && Icon}
+                    <div data-slot="alert-icon" className="text-fg-success-primary ">
+                        <CheckCircle />
                     </div>
                     <div className="size-[38px] border-2 border-fg-success-primary/10 rounded-3xl absolute top-[7px] left-[7px]" />
                     <div className="size-[28px] border-2 border-fg-success-primary/30 rounded-3xl absolute top-[12px] left-[12px]" />
