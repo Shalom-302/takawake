@@ -11,7 +11,6 @@ import React, { isValidElement } from "react";
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
-import { isReactComponent } from "@/lib/utils/is-react-component";
 
 const buttonVariants = cva(
     [
@@ -21,8 +20,8 @@ const buttonVariants = cva(
         // Disabled styles
         "disabled:text-fg-disabled disabled:pointer-events-none",
         // Icon styles
-        "disabled:*:data-icon:text-fg-disabled_subtle",
-        "*:data-icon:pointer-events-none *:data-icon:size-5 *:data-icon:shrink-0 *:data-icon:transition-inherit-all",
+        "disabled:[&_svg]:text-fg-disabled_subtle",
+        "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5 [&_svg]:shrink-0 [&_svg]:transition-inherit-all",
     ],
     {
         variants: {
@@ -32,43 +31,43 @@ const buttonVariants = cva(
                     // Inner border gradient
                     "before:absolute before:inset-px before:border before:border-white/12 before:mask-b-from-0%",
                     "disabled:bg-disabled disabled:shadow-xs disabled:ring-disabled_subtle",
-                    "*:data-icon:text-button-primary-icon hover:*:data-icon:text-button-primary-icon_hover",
+                    "[&_svg]:text-button-primary-icon hover:[&_svg]:text-button-primary-icon_hover",
                 ],
                 secondary: [
                     "bg-primary text-secondary shadow-xs-skeumorphic ring-1 ring-primary ring-inset hover:bg-primary_hover hover:text-secondary_hover data-loading:bg-primary_hover",
                     "disabled:shadow-xs disabled:ring-disabled_subtle",
-                    "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
+                    "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
                 ],
                 tertiary: [
                     "text-tertiary hover:bg-primary_hover hover:text-tertiary_hover data-loading:bg-primary_hover",
-                    "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
+                    "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
                 ],
                 "link-gray": [
                     "justify-normal rounded p-0! text-tertiary hover:text-tertiary_hover",
-                    "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
+                    "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
                 ],
                 "link-color": [
                     "justify-normal rounded p-0! text-brand-secondary hover:text-brand-secondary_hover",
-                    "*:data-icon:text-fg-brand-secondary_alt hover:*:data-icon:text-fg-brand-secondary_hover",
+                    "[&_svg]:text-fg-brand-secondary_alt hover:[&_svg]:text-fg-brand-secondary_hover",
                 ],
                 "primary-destructive": [
                     "bg-error-solid text-white shadow-xs-skeumorphic ring-1 ring-transparent outline-error ring-inset",
                     "before:absolute before:inset-px before:border before:border-white/12 before:mask-b-from-0%",
                     "disabled:bg-disabled disabled:shadow-xs disabled:ring-disabled_subtle",
-                    "*:data-icon:text-button-destructive-primary-icon hover:*:data-icon:text-button-destructive-primary-icon_hover",
+                    "[&_svg]:text-button-destructive-primary-icon hover:[&_svg]:text-button-destructive-primary-icon_hover",
                 ],
                 "secondary-destructive": [
                     "bg-primary text-error-primary shadow-xs-skeumorphic ring-1 ring-error_subtle outline-error ring-inset hover:bg-error-primary hover:text-error-primary_hover data-loading:bg-error-primary",
                     "disabled:bg-primary disabled:shadow-xs disabled:ring-disabled_subtle",
-                    "*:data-icon:text-fg-error-secondary hover:*:data-icon:text-fg-error-primary",
+                    "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
                 "tertiary-destructive": [
                     "text-error-primary outline-error hover:bg-error-primary hover:text-error-primary_hover data-loading:bg-error-primary",
-                    "*:data-icon:text-fg-error-secondary hover:*:data-icon:text-fg-error-primary",
+                    "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
                 "link-destructive": [
                     "justify-normal rounded p-0! text-error-primary outline-error hover:text-error-primary_hover",
-                    "*:data-icon:text-fg-error-secondary hover:*:data-icon:text-fg-error-primary",
+                    "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
             },
             size: {
@@ -115,7 +114,7 @@ export interface ButtonProps
 /**
  * Props for the link variant (anchor tag)
  */
-interface LinkProps
+export interface LinkProps
     extends CommonProps,
         DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement> {}
 
@@ -197,7 +196,6 @@ function Button({
         >
             {/* left icon */}
             {isValidElement(IconLeft) && IconLeft}
-            {isReactComponent(IconLeft) && <IconLeft data-icon="left" className={iconStyle} />}
 
             {/* Loading spinner - Treated as a normal flex item */}
             {loading && (
@@ -237,7 +235,7 @@ function Button({
                     {children && (
                         <span
                             data-text
-                            className={`${href ? "underline decoration-transparent underline-offset-2 hover:decoration-current" : ""}`}
+                            className={`${asChild ? "underline decoration-transparent underline-offset-2 hover:decoration-current" : ""}`}
                         >
                             {children}
                         </span>
@@ -258,7 +256,6 @@ function Button({
 
             {/* Right icon */}
             {isValidElement(IconRight) && IconRight}
-            {isReactComponent(IconRight) && <IconRight data-icon="right" className={iconStyle} />}
         </Component>
     );
 }

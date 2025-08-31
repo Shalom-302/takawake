@@ -1,7 +1,7 @@
 import Link, { LinkProps } from "next/link";
-import { Button, ButtonProps } from "./button";
+import { Button, LinkProps as ButtonLinkProps } from "./button";
 
-type LinkButtonProps = LinkProps & ButtonProps & { children: React.ReactNode };
+type LinkButtonProps = LinkProps & ButtonLinkProps;
 
 export function LinkButton({ href, children, ...props }: LinkButtonProps) {
     return (

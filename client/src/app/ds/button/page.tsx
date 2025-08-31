@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 
@@ -48,7 +49,7 @@ export default function ButtonPage() {
                                         <div className="flex items-center gap-2 mb-2">
                                             <Button
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                iconLeft={<Placeholder data-icon />}
+                                                iconLeft={<Placeholder />}
                                             >
                                                 Button {variant.name}
                                             </Button>
@@ -58,7 +59,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<Button variant="${variant.name}" iconLeft={<Placeholder data-icon/>}>Button ${variant.name}</Button>`}
+                                            code={`<Button variant="${variant.name}" iconLeft={<Placeholder />}>Button ${variant.name}</Button>`}
                                         />
                                     </div>
                                 ) : (
@@ -70,7 +71,7 @@ export default function ButtonPage() {
                                             <LinkButton
                                                 href={"#"}
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                iconRight={<Placeholder data-icon />}
+                                                iconRight={<Placeholder />}
                                             >
                                                 Button {variant.name}
                                             </LinkButton>
@@ -80,7 +81,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<LinkButton href={"#"} variant="${variant.name}" iconRight={<Placeholder data-icon />}>${variant.name} Button</LinkButton>`}
+                                            code={`<LinkButton href={"#"} variant="${variant.name}" iconRight={<Placeholder  />}>${variant.name} Button</LinkButton>`}
                                         />
                                     </div>
                                 )}
@@ -89,15 +90,12 @@ export default function ButtonPage() {
                     })}
                     <div className="p-4 border border-tertiary rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                            <Button iconLeft={<Placeholder data-icon />} />
-                            <Button variant={"secondary"} iconLeft={<Placeholder data-icon />} />
-                            <Button variant={"tertiary"} iconLeft={<Placeholder data-icon />} />
+                            <Button iconLeft={<Placeholder />} />
+                            <Button variant={"secondary"} iconLeft={<Placeholder />} />
+                            <Button variant={"tertiary"} iconLeft={<Placeholder />} />
                         </div>
                         <p className="text-sm text-secondary">{"Icon Only Button"}</p>
-                        <CodeBlock
-                            className="mt-2"
-                            code={`<Button iconLeft={<Placeholder data-icon/>}/>`}
-                        />
+                        <CodeBlock className="mt-2" code={`<Button iconLeft={<Placeholder />}/>`} />
                     </div>
                 </div>
             </div>
@@ -114,7 +112,7 @@ export default function ButtonPage() {
                     {sizes.map(size => (
                         <Button
                             key={size}
-                            iconLeft={<Placeholder data-icon />}
+                            iconLeft={<Placeholder />}
                             size={size as ButtonVariants["size"]}
                         />
                     ))}

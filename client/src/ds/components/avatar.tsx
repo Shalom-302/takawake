@@ -7,7 +7,7 @@ import {
     Avatar as ShadcnAvatar,
     AvatarImage as ShadcnAvatarImage,
     AvatarFallback as ShadcnAvatarFallback,
-} from "@/components/ui/avatar";
+} from "@/components/ui/avatar/avatar";
 
 const avatarVariants = cva("relative flex shrink-0 overflow-hidden", {
     variants: {
