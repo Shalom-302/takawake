@@ -3,9 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { 
-  Dialog,
-  DialogContent,
-  DialogClose
+  Dialog
 } from "@/ds/components/dialog";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ds/components/card";

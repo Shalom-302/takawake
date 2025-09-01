@@ -18,29 +18,18 @@ export default function ViewCheckbox() {
 
                     <div className="flex flex-wrap gap-2 ">
                         <Label
-                            htmlFor="toggle"
                             className={cn(
-                                "flex items-start gap-2 bg-white rounded-xl p-4 cursor-pointer transition-all",
+                                "bg-white rounded-xl p-4 cursor-pointer transition-all",
                                 "has-[[aria-checked=true]]:ring-2 has-[[aria-checked=true]]:ring-primary",
-                                "has-[:disabled]:bg-muted has-[:disabled]:cursor-not-allowed has-[:disabled]:text-gray-400 ",
-                                "has-[[aria-checked=true][disabled]]:ring-muted"
+                                "has-[:disabled]:bg-disabled has-[:disabled]:cursor-not-allowed has-[:disabled]:text-gray-400 ",
+                                "has-[[aria-checked=true][disabled]]:ring-disabled"
                             )}
                         >
                             <Checkbox
-                                id="toggle"
                                 defaultChecked
-                                className=" ring-transparent! size-4.5 rounded-sm [&_svg]:scale-90"
+                                label="Enable notifications"
+                                hint="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
                             />
-                            <div className="grid gap-1.5 font-normal">
-                                <p className="text-sm leading-none font-medium">
-                                    {"Enable sdf notifications"}
-                                </p>
-                                <p className="text-sm">
-                                    {
-                                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-                                    }
-                                </p>
-                            </div>
                         </Label>
                     </div>
 

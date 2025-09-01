@@ -122,8 +122,8 @@ export interface LinkProps
 export type Props = ButtonProps | LinkProps;
 
 function Button({
-    size = "sm",
-    variant = "primary",
+    size,
+    variant,
     effect,
     children,
     className,
