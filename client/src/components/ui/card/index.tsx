@@ -2,12 +2,60 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+type CardProps = React.ComponentProps<"div"> & {
+    title?: string;
+    description?: string;
+    action?: React.ReactNode;
+    content: React.ReactNode;
+    footer?: React.ReactNode;
+    headerClassName?: string;
+    titleClassName?: string;
+    descriptionClassName?: string;
+    actionClassName?: string;
+    contentClassName?: string;
+    footerClassName?: string;
+};
+
+function Card({
+    title,
+    description,
+    action,
+    content,
+    footer,
+    className,
+    headerClassName,
+    titleClassName,
+    descriptionClassName,
+    actionClassName,
+    contentClassName,
+    footerClassName,
+}: CardProps) {
+    return (
+        <CardRoot className={className}>
+            {title && (
+                <CardHeader className={headerClassName}>
+                    <CardTitle className={titleClassName}>{title}</CardTitle>
+                    {description && (
+                        <CardDescription className={descriptionClassName}>
+                            {description}
+                        </CardDescription>
+                    )}
+                    {action && <CardAction className={actionClassName}>{action}</CardAction>}
+                </CardHeader>
+            )}
+
+            <CardContent className={contentClassName}>{content}</CardContent>
+            {footer && <CardFooter className={footerClassName}>{footer}</CardFooter>}
+        </CardRoot>
+    );
+}
+
+function CardRoot({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="card"
             className={cn(
-                "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+                "overflow-hidden bg-primary text-card-foreground ring-1 ring-secondary flex flex-col gap-6 rounded-xl py-6 shadow-sm",
                 className
             )}
             {...props}
@@ -32,7 +80,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="card-title"
-            className={cn("leading-none font-semibold", className)}
+            className={cn("text-primary leading-none font-semibold", className)}
             {...props}
         />
     );
@@ -42,7 +90,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="card-description"
-            className={cn("text-muted-foreground text-sm", className)}
+            className={cn("text-tertiary text-sm", className)}
             {...props}
         />
     );

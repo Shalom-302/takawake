@@ -17,7 +17,7 @@ const verifiedTickVariants = cva("z-10 text-utility-blue-500", {
         },
     },
     defaultVariants: {
-        size: "md",
+        size: "xs",
     },
 });
 

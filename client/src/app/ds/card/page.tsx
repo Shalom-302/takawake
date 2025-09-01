@@ -1,322 +1,234 @@
-import React from "react";
+"use client";
+
 import Link from "next/link";
-import { 
-  Card, 
-  CardHeader, 
-  CardFooter, 
-  CardTitle, 
-  CardDescription, 
-  CardContent 
-} from "@/ds/components/card";
-import { Button } from "@/ds/components/button";
 import { CodeBlock } from "@/ds/components/code-block";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/buttons";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
-export default function CardPage() {
-  const variants = [
-    {
-      name: "default",
-      description: "Default style",
-    },
-    {
-      name: "outline",
-      description: "Outline style",
-    },
-    {
-      name: "ghost",
-      description: "Transparent without shadow",
-    },
-    {
-      name: "glass",
-      description: "Glass effect with background blur",
-    },
-    {
-      name: "accent",
-      description: "Accent color",
-    },
-    {
-      name: "destructive",
-      description: "Destructive color",
-    },
-    {
-      name: "success",
-      description: "Success color",
-    },
-    {
-      name: "warning",
-      description: "Warning color",
-    },
-    {
-      name: "info",
-      description: "Info color",
-    },
-    {
-      name: "neutral",
-      description: "Neutral color",
-    },
-  ];
+export default function CardDocs() {
+    return (
+        <div className="max-w-4xl mx-auto py-12 space-y-16">
+            {/* Header */}
+            <header className="space-y-4">
+                <h1 className="text-3xl font-bold tracking-tight">Card</h1>
+                <p className="text-muted-foreground text-lg">
+                    The Card component is a flexible container for grouping content with an optional
+                    header, footer, and actions.
+                </p>
+                <Link href="/docs/components">← Back to components</Link>
+            </header>
 
-  const sizes = ["xs", "sm", "default", "md", "lg", "xl"];
-  const hoverEffects = ["default", "lift", "glow", "scale", "border"];
-  const roundedStyles = ["none", "sm", "default", "md", "lg", "full"];
-  const shadowStyles = ["none", "sm", "default", "md", "lg", "xl"];
+            {/* Base Example */}
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold tracking-tight">Example</h2>
+                <Card
+                    className="w-full max-w-md"
+                    title="Card Title"
+                    description="This is the card description."
+                    action={<Button>Action</Button>}
+                    content={<div>This is the main content of the card.</div>}
+                    footer={<span>Footer text</span>}
+                />
 
-  return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="mb-8">
-        <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
-          ← Back to Design System
-        </Link>
-        <h1 className="text-3xl font-bold mt-2">Card</h1>
-        <p className="text-muted-foreground mt-2">
-          Card component with different variants, sizes, and hover effects.
-        </p>
-      </div>
+                <CodeBlock
+                    code={`
+<Card
+    className="w-full max-w-md"
+    title="Card Title"
+    description="This is the card description."
+    action={<Button>Action</Button>}
+    content={<p>This is the main content of the card.</p>}
+    footer={<span className="text-sm text-muted-foreground">Footer text</span>}
+  />`}
+                />
+            </section>
+            {/* Login Card*/}
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold tracking-tight">Login Card</h2>
+                <Card
+                    className="w-full max-w-sm"
+                    title="Login to your account"
+                    description="Enter your email below to login to your account"
+                    action={<Button variant="link-color">Sign Up</Button>}
+                    content={
+                        <form>
+                            <div className="flex flex-col gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="m@example.com"
+                                        required
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <div className="flex items-center">
+                                        <Label htmlFor="password">Password</Label>
+                                        <a
+                                            href="#"
+                                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                                        >
+                                            Forgot your password?
+                                        </a>
+                                    </div>
+                                    <Input id="password" type="password" required />
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    footer={
+                        <div className="flex flex-col gap-2 w-full">
+                            <Button type="submit" className="w-full">
+                                Login
+                            </Button>
+                            <Button variant="secondary" className="w-full">
+                                Login with Google
+                            </Button>
+                        </div>
+                    }
+                />
 
-      {/* Variants */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Variants</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {variants.map(variant => (
-            <div key={variant.name} className="p-4 border rounded-lg">
-              <Card variant={variant.name as any} className="w-full">
-                <CardHeader>
-                  <CardTitle>Card {variant.name}</CardTitle>
-                  <CardDescription>Card description</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Card content with variant {variant.name}.</p>
-                </CardContent>
-                <CardFooter>
-                  <Button size="sm">Action</Button>
-                </CardFooter>
-              </Card>
-              <p className="text-sm text-muted-foreground mt-4">
-                {variant.description}
-              </p>
-              <CodeBlock 
-                className="mt-2"
-                code={`<Card variant="${variant.name}">
-  <CardHeader>
-    <CardTitle>Card ${variant.name}</CardTitle>
-    <CardDescription>Card description</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <p>Card content with variant ${variant.name}.</p>
-  </CardContent>
-  <CardFooter>
-    <Button size="sm">Action</Button>
-  </CardFooter>
-</Card>`} 
-              />
+                <CodeBlock
+                    code={`
+<Card
+    className="w-full max-w-sm"
+    title="Login to your account"
+    description="Enter your email below to login to your account"
+    action={<Button variant="link-color">Sign Up</Button>}
+    content={
+        <form>
+            <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
+                        required
+                    />
+                </div>
+                <div className="grid gap-2">
+                    <div className="flex items-center">
+                        <Label htmlFor="password">Password</Label>
+                        <a
+                            href="#"
+                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                        >
+                            Forgot your password?
+                        </a>
+                    </div>
+                    <Input id="password" type="password" required />
+                </div>
             </div>
-          ))}
+        </form>
+    }
+    footer={
+        <div className="flex flex-col gap-2 w-full">
+            <Button type="submit" className="w-full">
+                Login
+            </Button>
+            <Button variant="secondary" className="w-full">
+                Login with Google
+            </Button>
         </div>
-      </div>
+    }
+/>`}
+                />
+            </section>
 
-      {/* Sizes */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sizes.map(size => (
-            <div key={size} className="p-4 border rounded-lg">
-              <Card size={size as any} className="w-full">
-                <CardHeader>
-                  <CardTitle>Size {size}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Card with size {size}.</p>
-                </CardContent>
-              </Card>
-              <CodeBlock 
-                className="mt-4"
-                code={`<Card size="${size}">
-  <CardHeader>
-    <CardTitle>Size ${size}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p>Card with size ${size}.</p>
-  </CardContent>
-</Card>`} 
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+            {/* API Reference */}
+            <section className="space-y-6">
+                <h2 className="text-xl font-semibold tracking-tight">API Reference</h2>
 
-      {/* Hover Effects */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Hover Effects</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {hoverEffects.map(hover => (
-            <div key={hover} className="p-4 border rounded-lg">
-              <Card hover={hover as any} className="w-full">
-                <CardHeader>
-                  <CardTitle>Hover effect {hover}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Card with hover effect {hover}.</p>
-                </CardContent>
-              </Card>
-              <CodeBlock 
-                className="mt-4"
-                code={`<Card hover="${hover}">
-  <CardHeader>
-    <CardTitle>Hover effect ${hover}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p>Card with hover effect ${hover}.</p>
-  </CardContent>
-</Card>`} 
-              />
-            </div>
-          ))}
+                <h3 className="text-lg font-semibold">Card</h3>
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="text-left py-2 px-3">Props</th>
+                            <th className="text-left py-2 px-3">Type</th>
+                            <th className="text-left py-2 px-3">Default</th>
+                            <th className="text-left py-2 px-3">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">title?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Card title text</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">description?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Card description text</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">action?</td>
+                            <td className="py-2 px-3">React.ReactNode</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Optional action element (e.g. button)</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">content</td>
+                            <td className="py-2 px-3">React.ReactNode</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Main card content</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">footer?</td>
+                            <td className="py-2 px-3">React.ReactNode</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Footer content</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">className?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Additional styles for the card</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">headerClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for header</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">titleClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for title</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">descriptionClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for description</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">actionClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for action slot</td>
+                        </tr>
+                        <tr className="border-b">
+                            <td className="py-2 px-3 font-mono">contentClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for content</td>
+                        </tr>
+                        <tr>
+                            <td className="py-2 px-3 font-mono">footerClassName?</td>
+                            <td className="py-2 px-3">string</td>
+                            <td className="py-2 px-3">—</td>
+                            <td className="py-2 px-3">Custom class for footer</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
         </div>
-      </div>
-
-      {/* Rounded styles */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Rounded styles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {roundedStyles.map(rounded => (
-            <div key={rounded} className="p-4 border rounded-lg">
-              <Card 
-                rounded={rounded as "none" | "sm" | "default" | "md" | "lg" | "full"} 
-                className="w-full"
-              >
-                <CardHeader>
-                  <CardTitle>Rounded style {rounded}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Card with rounded style {rounded}.</p>
-                </CardContent>
-              </Card>
-              <CodeBlock 
-                className="mt-4"
-                code={`<Card rounded="${rounded}">
-  <CardHeader>
-    <CardTitle>Rounded style ${rounded}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p>Card with rounded style ${rounded}.</p>
-  </CardContent>
-</Card>`} 
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Shadow styles */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Shadow styles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {shadowStyles.map(shadow => (
-            <div key={shadow} className="p-4 border rounded-lg">
-              <Card 
-                shadow={shadow as "none" | "sm" | "default" | "md" | "lg" | "xl"} 
-                className="w-full"
-              >
-                <CardHeader>
-                  <CardTitle>Shadow style {shadow}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Card with shadow style {shadow}.</p>
-                </CardContent>
-              </Card>
-              <CodeBlock 
-                className="mt-4"
-                code={`<Card shadow="${shadow}">
-  <CardHeader>
-    <CardTitle>Shadow style ${shadow}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p>Card with shadow style ${shadow}.</p>
-  </CardContent>
-</Card>`} 
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Combinations */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Combinations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-4 border rounded-lg">
-            <Card 
-              variant={"glass" as "glass"} 
-              size={"lg" as "lg"} 
-              hover={"scale" as "scale"} 
-              rounded={"lg" as "lg"}
-              shadow={"xl" as "xl"}
-              className="w-full"
-            >
-              <CardHeader>
-                <CardTitle>Card glass effect</CardTitle>
-                <CardDescription>With large size, scale hover effect, rounded corners and XL shadow</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>This card combines several custom properties.</p>
-              </CardContent>
-              <CardFooter>
-                <Button variant={"default"}>Action</Button>
-              </CardFooter>
-            </Card>
-            <CodeBlock 
-              className="mt-4"
-              code={`<Card variant="glass" size="lg" hover="scale" rounded="lg" shadow="xl">
-  <CardHeader>
-    <CardTitle>Card glass effect</CardTitle>
-    <CardDescription>With large size, scale hover effect, rounded corners and XL shadow</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <p>This card combines several custom properties.</p>
-  </CardContent>
-  <CardFooter>
-    <Button variant="default">Action</Button>
-  </CardFooter>
-</Card>`} 
-            />
-          </div>
-          <div className="p-4 border rounded-lg">
-            <Card 
-              variant={"outline" as "outline"} 
-              size={"md" as "md"} 
-              hover={"border" as "border"} 
-              rounded={"full" as "full"}
-              shadow={"none" as "none"}
-              className="w-full"
-            >
-              <CardHeader>
-                <CardTitle>Card with outline</CardTitle>
-                <CardDescription>With medium size, border hover effect and fully rounded corners</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>Another combination of custom properties.</p>
-              </CardContent>
-              <CardFooter>
-                <Button>More info</Button>
-              </CardFooter>
-            </Card>
-            <CodeBlock 
-              className="mt-4"
-              code={`<Card variant="outline" size="md" hover="border" rounded="full" shadow="none">
-  <CardHeader>
-    <CardTitle>Card with outline</CardTitle>
-    <CardDescription>With medium size, border hover effect and fully rounded corners</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <p>Another combination of custom properties.</p>
-  </CardContent>
-  <CardFooter>
-    <Button>More info</Button>
-  </CardFooter>
-</Card>`} 
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

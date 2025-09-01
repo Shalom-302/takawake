@@ -1,381 +1,260 @@
-import React from "react";
+"use client";
+
 import Link from "next/link";
-import { Avatar, AvatarImage, AvatarFallback } from "@/ds/components/avatar";
 import { CodeBlock } from "@/ds/components/code-block";
+import { Avatar } from "@/components/ui/avatar";
 
-export default function AvatarPage() {
-    const variants = [
-        {
-            name: "default",
-            description: "Circular shape by default",
-        },
-        {
-            name: "rounded",
-            description: "Slightly rounded corners",
-        },
-        {
-            name: "square",
-            description: "Square shape without rounded corners",
-        },
-        {
-            name: "soft",
-            description: "Very rounded corners",
-        },
-    ];
-
-    const sizes = [
-        {
-            name: "xs",
-            description: "Extra small (24px)",
-        },
-        {
-            name: "sm",
-            description: "Small (32px)",
-        },
-        {
-            name: "default",
-            description: "Medium (40px)",
-        },
-        {
-            name: "lg",
-            description: "Large (48px)",
-        },
-        {
-            name: "xl",
-            description: "Extra large (64px)",
-        },
-        {
-            name: "2xl",
-            description: "Double extra large (80px)",
-        },
-    ];
-
-    const borders = [
-        {
-            name: "none",
-            description: "No border",
-        },
-        {
-            name: "default",
-            description: "Standard border",
-        },
-        {
-            name: "primary",
-            description: "Primary color border",
-        },
-        {
-            name: "secondary",
-            description: "Secondary color border",
-        },
-        {
-            name: "accent",
-            description: "Accent color border",
-        },
-    ];
-
-    const statuses = [
-        {
-            name: "none",
-            description: "No status indicator",
-        },
-        {
-            name: "online",
-            description: "Online status indicator (green)",
-        },
-        {
-            name: "offline",
-            description: "Offline status indicator (gray)",
-        },
-        {
-            name: "busy",
-            description: "Busy status indicator (red)",
-        },
-        {
-            name: "away",
-            description: "Away status indicator (yellow)",
-        },
-    ];
-
-    const fallbackVariants = [
-        {
-            name: "default",
-            description: "Neutral background",
-        },
-        {
-            name: "primary",
-            description: "Primary color background",
-        },
-        {
-            name: "secondary",
-            description: "Secondary color background",
-        },
-        {
-            name: "accent",
-            description: "Accent color background",
-        },
-        {
-            name: "gradient",
-            description: "Gradient background",
-        },
-    ];
-
+export default function AvatarDocs() {
     return (
-        <div className="container mx-auto py-10 px-4">
-            <div className="mb-8">
-                <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
-                    ← Back to Design System
-                </Link>
-                <h1 className="text-3xl font-bold mt-2">Avatar</h1>
-                <p className="text-muted-foreground mt-2">
-                    Avatar component with different shapes, sizes, borders, and status indicators.
+        <div className="space-y-16">
+            {/* Header */}
+            <div>
+                <h1 className="text-3xl font-bold mb-4">Avatar</h1>
+                <p className="text-muted-foreground mb-4">
+                    Avatar component with different shapes, sizes, borders, statuses, fallbacks, and
+                    groups.
                 </p>
+                <Link href="/docs/components" className="text-primary hover:underline">
+                    ← Back to components
+                </Link>
             </div>
 
-            {/* Variants */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Shapes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {variants.map(variant => (
-                        <div
-                            key={variant.name}
-                            className="p-4 border rounded-lg flex flex-col items-center"
-                        >
-                            <Avatar variant={variant.name as any} className="mb-4">
-                                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium">{variant.name}</p>
-                            <p className="text-xs text-muted-foreground text-center">
-                                {variant.description}
-                            </p>
-                            <CodeBlock
-                                className="mt-2 w-full"
-                                code={`<Avatar variant="${variant.name}">
-  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-  <AvatarFallback>CN</AvatarFallback>
-</Avatar>`}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Examples */}
+            <section>
+                <h2 className="text-xl font-semibold mb-4">Examples</h2>
 
-            {/* Sizes */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sizes.map(size => (
-                        <div
-                            key={size.name}
-                            className="p-4 border rounded-lg flex flex-col items-center"
-                        >
-                            <Avatar size={size.name as any} className="mb-4">
-                                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium">{size.name}</p>
-                            <p className="text-xs text-muted-foreground text-center">
-                                {size.description}
-                            </p>
-                            <CodeBlock
-                                className="mt-2 w-full"
-                                code={`<Avatar size="${size.name}">
-  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-  <AvatarFallback>CN</AvatarFallback>
-</Avatar>`}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Borders */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Borders</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {borders.map(border => (
-                        <div
-                            key={border.name}
-                            className="p-4 border rounded-lg flex flex-col items-center"
-                        >
-                            <Avatar border={border.name as any} className="mb-4">
-                                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium">{border.name}</p>
-                            <p className="text-xs text-muted-foreground text-center">
-                                {border.description}
-                            </p>
-                            <CodeBlock
-                                className="mt-2 w-full"
-                                code={`<Avatar border="${border.name}">
-  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-  <AvatarFallback>CN</AvatarFallback>
-</Avatar>`}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Statuses */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Status indicators</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {statuses.map(status => (
-                        <div
-                            key={status.name}
-                            className="p-4 border rounded-lg flex flex-col items-center"
-                        >
-                            <Avatar status={status.name as any} className="mb-4">
-                                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium">{status.name}</p>
-                            <p className="text-xs text-muted-foreground text-center">
-                                {status.description}
-                            </p>
-                            <CodeBlock
-                                className="mt-2 w-full"
-                                code={`<Avatar status="${status.name}">
-  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-  <AvatarFallback>CN</AvatarFallback>
-</Avatar>`}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Fallback Variants */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Fallback variants</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {fallbackVariants.map(variant => (
-                        <div
-                            key={variant.name}
-                            className="p-4 border rounded-lg flex flex-col items-center"
-                        >
-                            <Avatar className="mb-4">
-                                <AvatarFallback variant={variant.name as any}>CN</AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium">{variant.name}</p>
-                            <p className="text-xs text-muted-foreground text-center">
-                                {variant.description}
-                            </p>
-                            <CodeBlock
-                                className="mt-2 w-full"
-                                code={`<Avatar>
-  <AvatarFallback variant="${variant.name}">CN</AvatarFallback>
-</Avatar>`}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Group */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Avatar group</h2>
-                <div className="p-4 border rounded-lg">
-                    <div className="flex mb-4">
-                        <Avatar group={true}>
-                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                            <AvatarFallback>CN</AvatarFallback>
-                        </Avatar>
-                        <Avatar group={true}>
-                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                            <AvatarFallback variant="primary">JD</AvatarFallback>
-                        </Avatar>
-                        <Avatar group={true}>
-                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                            <AvatarFallback variant="secondary">AB</AvatarFallback>
-                        </Avatar>
-                        <Avatar group={true}>
-                            <AvatarFallback variant="accent">+2</AvatarFallback>
-                        </Avatar>
+                {/* Basic */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Basic</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar src="/images/avatar-1.png" alt="John Doe" size="sm" />
+                        <Avatar src="/images/avatar-2.png" alt="Jane Smith" size="md" />
+                        <Avatar src="/images/avatar-3.png" alt="Mike Johnson" size="lg" />
                     </div>
                     <CodeBlock
-                        className="mt-2"
-                        code={`<div className="flex">
-  <Avatar group={true}>
-    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-    <AvatarFallback>CN</AvatarFallback>
-  </Avatar>
-  <Avatar group={true}>
-    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-    <AvatarFallback variant="primary">JD</AvatarFallback>
-  </Avatar>
-  <Avatar group={true}>
-    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-    <AvatarFallback variant="secondary">AB</AvatarFallback>
-  </Avatar>
-  <Avatar group={true}>
-    <AvatarFallback variant="accent">+2</AvatarFallback>
-  </Avatar>
-</div>`}
+                        code={`<Avatar src="/images/avatar-1.png" alt="John Doe" size="sm" />
+<Avatar src="/images/avatar-2.png" alt="Jane Smith" size="md" />
+<Avatar src="/images/avatar-3.png" alt="Mike Johnson" size="lg" />`}
                     />
                 </div>
-            </div>
 
-            {/* Combinations */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Combinations</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-4 border rounded-lg flex flex-col items-center">
-                        <Avatar
-                            variant={"soft" as any}
-                            size={"xl" as any}
-                            border={"primary" as any}
-                            status={"online" as any}
-                            className="mb-4"
-                        >
-                            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                            <AvatarFallback variant={"gradient" as any}>CN</AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm font-medium">Complete avatar</p>
-                        <p className="text-xs text-muted-foreground text-center">
-                            Combination of shape, size, border and status
-                        </p>
-                        <CodeBlock
-                            className="mt-2 w-full"
-                            code={`<Avatar 
-  variant="soft" 
-  size="xl" 
-  border="primary" 
-  status="online"
->
-  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-  <AvatarFallback variant="gradient">CN</AvatarFallback>
-</Avatar>`}
-                        />
+                {/* With initials */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">With initials</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar initials="JD" size="sm" />
+                        <Avatar initials="AS" size="md" />
+                        <Avatar initials="MJ" size="lg" />
                     </div>
-                    <div className="p-4 border rounded-lg flex flex-col items-center">
-                        <Avatar
-                            variant={"square" as any}
-                            size={"lg" as any}
-                            border={"accent" as any}
-                            className="mb-4"
-                        >
-                            <AvatarFallback variant={"secondary" as any}>JD</AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm font-medium">Square avatar with fallback</p>
-                        <p className="text-xs text-muted-foreground text-center">
-                            Usage without image with styled fallback
-                        </p>
-                        <CodeBlock
-                            className="mt-2 w-full"
-                            code={`<Avatar 
-  variant="square" 
-  size="lg" 
-  border="accent"
->
-  <AvatarFallback variant="secondary">JD</AvatarFallback>
-</Avatar>`}
-                        />
-                    </div>
+                    <CodeBlock
+                        code={`<Avatar initials="JD" size="sm" />
+<Avatar initials="AS" size="md" />
+<Avatar initials="MJ" size="lg" />`}
+                    />
                 </div>
-            </div>
+
+                {/* With status */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">With status</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar src="/images/avatar-4.png" status="online" size="md" />
+                        <Avatar initials="OF" status="offline" size="md" />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar src="/images/avatar-4.png" status="online" size="md" />
+<Avatar initials="OF" status="offline" size="md" />`}
+                    />
+                </div>
+
+                {/* Verified */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Verified</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar src="/images/avatar-3.png" verified size="md" />
+                        <Avatar initials="VU" verified size="lg" />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar src="/images/avatar-3.png" verified size="md" />
+<Avatar initials="VU" verified size="lg" />`}
+                    />
+                </div>
+
+                {/* Sizes */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Sizes</h3>
+                    <div className="flex gap-2 items-end mb-4">
+                        <Avatar initials="XS" size="xxs" />
+                        <Avatar initials="XS" size="xs" />
+                        <Avatar initials="SM" size="sm" />
+                        <Avatar initials="MD" size="md" />
+                        <Avatar initials="LG" size="lg" />
+                        <Avatar initials="XL" size="xl" />
+                        <Avatar initials="2X" size="2xl" />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar initials="XS" size="xxs" />
+<Avatar initials="XS" size="xs" />
+<Avatar initials="SM" size="sm" />
+<Avatar initials="MD" size="md" />
+<Avatar initials="LG" size="lg" />
+<Avatar initials="XL" size="xl" />
+<Avatar initials="2X" size="2xl" />`}
+                    />
+                </div>
+
+                {/* Focusable */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Focusable</h3>
+                    <a href="#" className="group inline-block">
+                        <Avatar
+                            src="/images/avatar-1.png"
+                            alt="Clickable avatar"
+                            focusable
+                            size="md"
+                        />
+                    </a>
+                    <CodeBlock
+                        code={`<a href="#">
+  <Avatar src="/images/avatar-1.png" alt="Clickable avatar" focusable size="md" />
+</a>`}
+                    />
+                </div>
+
+                {/* Contrast border off */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">No contrast border</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar src="/images/avatar-2.png" contrastBorder={false} size="md" />
+                        <Avatar initials="NC" contrastBorder={false} size="md" />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar src="/images/avatar-2.png" contrastBorder={false} size="md" />
+<Avatar initials="NC" contrastBorder={false} size="md" />`}
+                    />
+                </div>
+
+                {/* Custom badge */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">With custom badge</h3>
+                    <Avatar
+                        src="/images/avatar-4.png"
+                        alt="User with badge"
+                        size="md"
+                        customBadge={
+                            <div className="absolute -right-1 -bottom-1 size-4 rounded-full bg-utility-blue-500 flex items-center justify-center">
+                                <span className="text-white text-xs">+</span>
+                            </div>
+                        }
+                    />
+                    <CodeBlock
+                        code={`<Avatar
+  src="/images/avatar-4.png"
+  size="md"
+  customBadge={
+    <div className="absolute -right-1 -bottom-1 size-4 rounded-full bg-utility-blue-500 flex items-center justify-center">
+      <span className="text-white text-xs">+</span>
+    </div>
+  }
+/>`}
+                    />
+                </div>
+
+                {/* Fallback */}
+                <div>
+                    <h3 className="font-semibold mb-2">Fallback</h3>
+                    <div className="flex gap-4 mb-4">
+                        <Avatar src="https://broken-url.jpg" initials="BI" size="md" />
+                        <Avatar src="https://another-broken-url.jpg" size="md" />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar src="https://broken-url.jpg" initials="BI" size="md" />
+<Avatar src="https://another-broken-url.jpg" size="md" />`}
+                    />
+                </div>
+            </section>
+
+            {/* API Reference */}
+            <section>
+                <h2 className="text-xl font-semibold mb-4">API Reference</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-tertiary">
+                                <th className="text-left py-2 px-4">Props</th>
+                                <th className="text-left py-2 px-4">Type</th>
+                                <th className="text-left py-2 px-4">Default</th>
+                                <th className="text-left py-2 px-4">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">src?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Image source</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">alt?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Alternative text</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">initials?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Fallback initials</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">size?</td>
+                                <td className="py-2 px-4 text-sm">
+                                    {` "xxs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl"`}
+                                </td>
+                                <td className="py-2 px-4 text-sm">{`"md"`}</td>
+                                <td className="py-2 px-4 text-sm">Avatar size</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">status?</td>
+                                <td className="py-2 px-4 text-sm">{` "online" | "offline"`}</td>
+                                <td className="py-2 px-4 text-sm">{`"offline"`}</td>
+                                <td className="py-2 px-4 text-sm">Status indicator</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">verified?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">false</td>
+                                <td className="py-2 px-4 text-sm">Show verified check</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">focusable?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">false</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Focusable style on parent link
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">contrastBorder?</td>
+                                <td className="py-2 px-4 text-sm">boolean</td>
+                                <td className="py-2 px-4 text-sm">true</td>
+                                <td className="py-2 px-4 text-sm">Show contrast border</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">customBadge?</td>
+                                <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Custom badge element</td>
+                            </tr>
+                            <tr>
+                                <td className="py-2 px-4 font-medium">className?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">-</td>
+                                <td className="py-2 px-4 text-sm">Additional styles</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     );
 }
