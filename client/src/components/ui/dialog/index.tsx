@@ -6,7 +6,22 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
 
-function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+interface DialogRootProps extends React.ComponentProps<typeof DialogPrimitive.Root> {
+    trigger?: React.ReactNode;
+    content?: React.ReactNode;
+    showCloseButton?: boolean;
+}
+
+function Dialog({ trigger, content, showCloseButton, ...props }: DialogRootProps) {
+    return (
+        <DialogPrimitive.Root data-slot="dialog" {...props}>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogContent showCloseButton={showCloseButton}>{content}</DialogContent>
+        </DialogPrimitive.Root>
+    );
+}
+
+function DialogRoot({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
@@ -30,7 +45,7 @@ function DialogOverlay({
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
             className={cn(
-                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-overlay opacity-70 backdrop-blur-md",
                 className
             )}
             {...props}
@@ -38,14 +53,16 @@ function DialogOverlay({
     );
 }
 
+interface DialogContentProps extends React.ComponentProps<typeof DialogPrimitive.Content> {
+    showCloseButton?: boolean;
+}
+
 function DialogContent({
     className,
     children,
     showCloseButton = true,
     ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-    showCloseButton?: boolean;
-}) {
+}: DialogContentProps) {
     return (
         <DialogPortal data-slot="dialog-portal">
             <DialogOverlay />
@@ -117,6 +134,7 @@ function DialogDescription({
 
 export {
     Dialog,
+    DialogRoot,
     DialogClose,
     DialogContent,
     DialogDescription,

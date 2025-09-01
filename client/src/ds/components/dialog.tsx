@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {
-    Dialog as ShadcnDialog,
+    DialogRoot as ShadcnDialog,
     DialogPortal,
     DialogOverlay,
     DialogClose,
