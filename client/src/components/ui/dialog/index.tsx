@@ -8,15 +8,47 @@ import { cn } from "@/lib/utils/cn";
 
 interface DialogRootProps extends React.ComponentProps<typeof DialogPrimitive.Root> {
     trigger?: React.ReactNode;
+    title?: string;
+    description?: string;
     content?: React.ReactNode;
+    footer?: React.ReactNode;
     showCloseButton?: boolean;
+    headerClassName?: string;
+    titleClassName?: string;
+    descriptionClassName?: string;
+    footerClassName?: string;
 }
 
-function Dialog({ trigger, content, showCloseButton, ...props }: DialogRootProps) {
+function Dialog({
+    trigger,
+    title,
+    description,
+    content,
+    footer,
+    showCloseButton,
+    headerClassName,
+    titleClassName,
+    descriptionClassName,
+    footerClassName,
+    ...props
+}: DialogRootProps) {
     return (
         <DialogPrimitive.Root data-slot="dialog" {...props}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent showCloseButton={showCloseButton}>{content}</DialogContent>
+            <DialogContent showCloseButton={showCloseButton}>
+                {(title || description) && (
+                    <DialogHeader className={headerClassName}>
+                        {title && <DialogTitle className={titleClassName}>{title}</DialogTitle>}
+                        {description && (
+                            <DialogDescription className={descriptionClassName}>
+                                {description}
+                            </DialogDescription>
+                        )}
+                    </DialogHeader>
+                )}
+                {content}
+                {footer && <DialogFooter className={footerClassName}>{footer}</DialogFooter>}
+            </DialogContent>
         </DialogPrimitive.Root>
     );
 }
@@ -78,7 +110,7 @@ function DialogContent({
                 {showCloseButton && (
                     <DialogPrimitive.Close
                         data-slot="dialog-close"
-                        className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                        className="data-[state=open]:text-fg-quaternary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 ring-offset-background focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                     >
                         <XIcon />
                         <span className="sr-only">Close</span>
@@ -113,7 +145,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
     return (
         <DialogPrimitive.Title
             data-slot="dialog-title"
-            className={cn("text-lg leading-none font-semibold", className)}
+            className={cn("text-lg text-secondary leading-none font-semibold", className)}
             {...props}
         />
     );
@@ -126,7 +158,7 @@ function DialogDescription({
     return (
         <DialogPrimitive.Description
             data-slot="dialog-description"
-            className={cn("text-muted-foreground text-sm", className)}
+            className={cn("text-tertiary text-sm", className)}
             {...props}
         />
     );
