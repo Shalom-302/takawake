@@ -24,7 +24,7 @@ import {
     LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/buttons/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar/avatar";
 import {
     DropdownMenu,

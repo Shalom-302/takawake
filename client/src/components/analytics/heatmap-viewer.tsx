@@ -17,8 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input/input";
+import { Label } from "@/components/ui/label/label";
 import { Loader2, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";

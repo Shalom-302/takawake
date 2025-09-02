@@ -13,7 +13,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input/input";
 import { Button } from "@/components/ui/buttons/button";
 import { Badge } from "@/components/ui/badges/badge";
 import { toast } from "sonner";

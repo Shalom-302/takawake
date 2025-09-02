@@ -4,8 +4,8 @@ import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/buttons";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label/label";
+import { Input } from "@/components/ui/input/input";
 
 export default function CardDocs() {
     return (

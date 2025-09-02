@@ -9,8 +9,8 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/buttons/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input/input";
+import { Label } from "@/components/ui/label/label";
 import { Switch } from "@/components/ui/switch";
 import { Database } from "lucide-react";
 import { StorageProvider } from "@/lib/services/file-storage-service";

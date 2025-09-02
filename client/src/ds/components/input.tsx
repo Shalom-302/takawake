@@ -4,10 +4,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Input as ShadcnInput } from "@/components/ui/input";
+import { BaseInput as ShadcnInput } from "@/components/ui/input";
 import { Tooltip } from "./tooltip";
 import { AlertCircleIcon } from "@/components/icons";
-import { Dropdown } from "./dropdown";
+// import { Dropdown } from "./dropdown";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -178,12 +178,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                                 "ml-[8px]": dropdownInfo.position === "right",
                             })}
                         >
-                            <Dropdown
+                            {/* <Dropdown
                                 trigger={dropdownInfo.trigger}
                                 items={dropdownInfo.items}
                                 size="auto"
                                 align={dropdownInfo.position === "left" ? "start" : "end"}
-                            />
+                            /> */}
                         </div>
                     )}
                 </div>

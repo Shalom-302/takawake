@@ -22,7 +22,7 @@ import {
 import { ArrowLeft, ChevronRight, UserPlus, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input/input";
 import { toast } from "sonner";
 
 interface ConversationHeaderProps {

@@ -20,7 +20,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input/input";
 import { Button } from "@/components/ui/buttons/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";

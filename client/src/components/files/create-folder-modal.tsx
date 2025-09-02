@@ -9,8 +9,8 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/buttons/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input/input";
+import { Label } from "@/components/ui/label/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FolderIcon } from "lucide-react";
 import { FileFolder } from "@/lib/services/file-storage-service";

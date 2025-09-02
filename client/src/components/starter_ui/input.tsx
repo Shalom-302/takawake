@@ -13,7 +13,6 @@ const inputVariants = cva(
     has-[input[aria-invalid=true]]:focus-within:ring
     has-[input[aria-invalid=true]]:focus-within:ring-destructive/20
     has-[input[aria-invalid=true]]:focus-within:border-destructive
-
     shadow-xs
     `,
     {

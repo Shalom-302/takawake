@@ -7,7 +7,7 @@ import {
     RadioGroup as ShadcnRadioGroup,
     RadioGroupItem as ShadcnRadioGroupItem,
 } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label/label";
 
 // Variants pour RadioGroup
 const radioGroupVariants = cva("grid gap-3", {
