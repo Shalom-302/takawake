@@ -1,13 +1,40 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 import React from "react";
 import Link from "next/link";
 // import { Input } from "@/ds/components/input";
 import { CodeBlock } from "@/ds/components/code-block";
-import { BaseInputVariants, Input } from "@/components/ui/input";
+import { BaseInputVariants, Input, InputForm } from "@/components/ui/input";
 import { Mail01 } from "@untitled-ui/icons-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/buttons";
+import { InputGroup, InputPrefix } from "@/components/ui/input/input-group";
 
 export default function InputPage() {
     const sizes = ["sm", "md"];
+    const FormSchema = z.object({
+        username: z.string().min(2, {
+            message: "Username must be at least 2 characters.",
+        }),
+    });
+    const form = useForm<z.infer<typeof FormSchema>>({
+        resolver: zodResolver(FormSchema),
+        defaultValues: {
+            username: "",
+        },
+    });
+    function onSubmit(data: z.infer<typeof FormSchema>) {
+        toast("You submitted the following values", {
+            description: (
+                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                </pre>
+            ),
+        });
+    }
 
     return (
         <div className="container mx-auto py-10 px-4">
@@ -20,6 +47,29 @@ export default function InputPage() {
                     Inputs with different variants, sizes, and rounded styles.
                 </p>
             </div>
+
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 my-10">
+                    <InputForm
+                        control={form.control}
+                        name="username"
+                        label="Username"
+                        placeholder="shadcn"
+                        description="This is your public display name."
+                        iconLeft={Mail01}
+                        tooltip="this a tooltip"
+                        isRequired
+                    />
+                    <Button type="submit">Submit</Button>
+                </form>
+            </Form>
+            <InputGroup
+                type="tel"
+                placeholder="+1 (555) 000-0000"
+                // leftAddon={<InputPrefix>https://</InputPrefix>}
+                prefix="$"
+                tooltip="This is a tooltip"
+            />
 
             {/* Sizes */}
             <div className="mb-10">

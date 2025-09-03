@@ -9,12 +9,13 @@ import {
     useFormContext,
     useFormState,
     type ControllerProps,
+    type ControllerRenderProps,
     type FieldPath,
     type FieldValues,
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils/cn";
-import { Label } from "@/components/ui/label/label";
+import { Label } from "@/components/ui/label";
 
 const Form = FormProvider;
 
@@ -27,12 +28,17 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
+export type FormFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = ControllerProps<TFieldValues, TName>;
+
 const FormField = <
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
     ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: FormFieldProps<TFieldValues, TName>) => {
     return (
         <FormFieldContext.Provider value={{ name: props.name }}>
             <Controller {...props} />
@@ -79,14 +85,18 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
     );
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
-    const { error, formItemId } = useFormField();
+function FormLabel({
+    className,
+    isRequired,
+    ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root> & { isRequired?: boolean }) {
+    const { formItemId } = useFormField();
 
     return (
         <Label
             data-slot="form-label"
-            data-error={!!error}
-            className={cn("data-[error=true]:text-destructive", className)}
+            isRequired={isRequired}
+            className={className}
             htmlFor={formItemId}
             {...props}
         />
@@ -116,7 +126,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
         <p
             data-slot="form-description"
             id={formDescriptionId}
-            className={cn("text-muted-foreground text-sm", className)}
+            className={cn("text-sm text-tertiary", className)}
             {...props}
         />
     );
@@ -134,7 +144,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
         <p
             data-slot="form-message"
             id={formMessageId}
-            className={cn("text-destructive text-sm", className)}
+            className={cn("text-error-primary text-sm", className)}
             {...props}
         >
             {body}
@@ -142,7 +152,51 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     );
 }
 
+// Props génériques pour n'importe quel champ
+export interface FormFieldWrapperProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<ControllerProps<TFieldValues, TName>, "render" | "name"> {
+    name: TName;
+    label?: string;
+    description?: string;
+    children: (field: ControllerRenderProps<TFieldValues, TName>) => React.ReactNode;
+    isRequired?: boolean;
+}
+
+function FormFieldWrapper<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+    name,
+    label,
+    description,
+    control,
+    rules,
+    defaultValue,
+    isRequired,
+    children,
+}: FormFieldWrapperProps<TFieldValues, TName>) {
+    // console.log("control", control);
+    return (
+        <FormField
+            name={name}
+            control={control}
+            rules={rules}
+            defaultValue={defaultValue}
+            render={({ field }) => {
+                return (
+                    <FormItem>
+                        {label && <FormLabel isRequired={isRequired}>{label}</FormLabel>}
+                        <FormControl>{children(field)}</FormControl>
+                        {description && <FormDescription>{description}</FormDescription>}
+                        <FormMessage />
+                    </FormItem>
+                );
+            }}
+        />
+    );
+}
+
 export {
+    FormFieldWrapper,
     useFormField,
     Form,
     FormItem,

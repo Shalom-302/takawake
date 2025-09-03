@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils/cn";
 import { cva, VariantProps } from "class-variance-authority";
 import { Tooltip } from "../tooltip";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";
+import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { type FieldPath, type FieldValues } from "react-hook-form";
 
 const baseInputVariants = cva(
     "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary",
@@ -71,7 +73,7 @@ function Input({
                 [
                     "relative flex w-full flex-row place-content-center place-items-center rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
                     "focus-within:ring-2 focus-within:ring-brand",
-                    "has-disabled:cursor-not-allowed has-disabled:text-has-disabled has-disabled:bg-disabled_subtle has-disabled:ring-disabled group-disabled:cursor-not-allowed group-disabled:bg-disabled_subtle group-disabled:ring-disabled",
+                    "has-disabled:cursor-not-allowed has-disabled:text-disabled has-disabled:bg-disabled_subtle has-disabled:ring-disabled group-disabled:cursor-not-allowed group-disabled:bg-disabled_subtle group-disabled:ring-disabled",
                     isInvalid &&
                         "ring-error_subtle group-invalid:ring-error_subtle focus-within:ring-2 focus-within:group-invalid:ring-2 focus-within:ring-error focus-within:group-invalid:ring-error",
                 ],
@@ -136,4 +138,23 @@ function Input({
     );
 }
 
-export { Input, BaseInput };
+export interface InputFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children" | "required">,
+        Omit<InputProps, "defaultValue" | "name"> {
+    isRequired?: boolean;
+}
+
+function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+    isRequired,
+    ...props
+}: InputFormProps<TFieldValues, TName>) {
+    return (
+        <FormFieldWrapper isRequired={isRequired} {...props}>
+            {field => <Input {...field} {...props} />}
+        </FormFieldWrapper>
+    );
+}
+
+export { InputForm, Input, BaseInput };
