@@ -17,8 +17,10 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { Label } from "@/components/ui/label";
 
+// === FORM PROVIDER ===
 const Form = FormProvider;
 
+// === FORM FIELD CONTEXT ===
 type FormFieldContextValue<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -28,6 +30,7 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
+// === FORM FIELD COMPONENT ===
 export type FormFieldProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -46,16 +49,18 @@ const FormField = <
     );
 };
 
+// === FORM FIELD HOOK ===
 const useFormField = () => {
     const fieldContext = React.useContext(FormFieldContext);
     const itemContext = React.useContext(FormItemContext);
     const { getFieldState } = useFormContext();
-    const formState = useFormState({ name: fieldContext.name });
-    const fieldState = getFieldState(fieldContext.name, formState);
 
     if (!fieldContext) {
         throw new Error("useFormField should be used within <FormField>");
     }
+
+    const formState = useFormState({ name: fieldContext.name });
+    const fieldState = getFieldState(fieldContext.name, formState);
 
     const { id } = itemContext;
 
@@ -69,11 +74,14 @@ const useFormField = () => {
     };
 };
 
+// === FORM ITEM CONTEXT ===
 type FormItemContextValue = {
     id: string;
 };
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+
+// === FORM ITEM COMPONENT ===
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
     const id = React.useId();
@@ -85,24 +93,35 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
     );
 }
 
+// === FORM LABEL COMPONENT ===
+interface FormLabelProps extends React.ComponentProps<typeof LabelPrimitive.Root> {
+    isRequired?: boolean;
+    hideRequiredIndicator?: boolean;
+}
+
 function FormLabel({
     className,
     isRequired,
+    hideRequiredIndicator,
+    children,
     ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root> & { isRequired?: boolean }) {
+}: FormLabelProps) {
     const { formItemId } = useFormField();
 
     return (
         <Label
             data-slot="form-label"
-            isRequired={isRequired}
+            isRequired={isRequired && !hideRequiredIndicator}
             className={className}
             htmlFor={formItemId}
             {...props}
-        />
+        >
+            {children}
+        </Label>
     );
 }
 
+// === FORM CONTROL COMPONENT ===
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
     const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
@@ -110,18 +129,17 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
         <Slot
             data-slot="form-control"
             id={formItemId}
-            aria-describedby={
-                !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
-            }
+            aria-describedby={!error ? formDescriptionId : `${formDescriptionId} ${formMessageId}`}
             aria-invalid={!!error}
             {...props}
         />
     );
 }
 
+// === FORM DESCRIPTION COMPONENT ===
+
 function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
     const { formDescriptionId } = useFormField();
-
     return (
         <p
             data-slot="form-description"
@@ -131,6 +149,8 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
         />
     );
 }
+
+// === FORM MESSAGE COMPONENT ===
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     const { error, formMessageId } = useFormField();
@@ -144,7 +164,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
         <p
             data-slot="form-message"
             id={formMessageId}
-            className={cn("text-error-primary text-sm", className)}
+            className={cn("text-sm text-error-primary", className)}
             {...props}
         >
             {body}
@@ -152,16 +172,16 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     );
 }
 
-// Props génériques pour n'importe quel champ
+// === FORM FIELD WRAPPER ===
 export interface FormFieldWrapperProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> extends Omit<ControllerProps<TFieldValues, TName>, "render" | "name"> {
-    name: TName;
+> extends Omit<ControllerProps<TFieldValues, TName>, "render"> {
     label?: string;
     description?: string;
-    children: (field: ControllerRenderProps<TFieldValues, TName>) => React.ReactNode;
     isRequired?: boolean;
+    hideRequiredIndicator?: boolean;
+    children: (field: ControllerRenderProps<TFieldValues, TName>) => React.ReactNode;
 }
 
 function FormFieldWrapper<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
@@ -172,29 +192,46 @@ function FormFieldWrapper<TFieldValues extends FieldValues, TName extends FieldP
     rules,
     defaultValue,
     isRequired,
+    hideRequiredIndicator,
     children,
 }: FormFieldWrapperProps<TFieldValues, TName>) {
-    // console.log("control", control);
+    // Merge isRequired into rules if provided
+    const mergedRules = React.useMemo(() => {
+        if (isRequired && rules) {
+            return { ...rules, required: rules.required || "Ce champ est requis" };
+        }
+        if (isRequired && !rules) {
+            return { required: "Ce champ est requis" };
+        }
+        return rules;
+    }, [isRequired, rules]);
+
     return (
         <FormField
             name={name}
             control={control}
-            rules={rules}
+            rules={mergedRules}
             defaultValue={defaultValue}
-            render={({ field }) => {
-                return (
-                    <FormItem>
-                        {label && <FormLabel isRequired={isRequired}>{label}</FormLabel>}
-                        <FormControl>{children(field)}</FormControl>
-                        {description && <FormDescription>{description}</FormDescription>}
-                        <FormMessage />
-                    </FormItem>
-                );
-            }}
+            render={({ field }) => (
+                <FormItem>
+                    {label && (
+                        <FormLabel
+                            isRequired={isRequired}
+                            hideRequiredIndicator={hideRequiredIndicator}
+                        >
+                            {label}
+                        </FormLabel>
+                    )}
+                    <FormControl>{children(field)}</FormControl>
+                    {description && <FormDescription>{description}</FormDescription>}
+                    <FormMessage />
+                </FormItem>
+            )}
         />
     );
 }
 
+// === EXPORTS ===
 export {
     FormFieldWrapper,
     useFormField,

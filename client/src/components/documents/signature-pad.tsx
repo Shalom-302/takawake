@@ -17,7 +17,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select/select";
 import { SignatureType } from "@/lib/services/document-service";
 import { AlertCircle, Check, Download, RefreshCw, Save, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

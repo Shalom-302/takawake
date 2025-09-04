@@ -14,7 +14,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select/select";
 import { Loader2, Users, Eye, MousePointer, Clock, BarChart } from "lucide-react";
 import AnalyticsService from "@/lib/services/analytics-service";
 

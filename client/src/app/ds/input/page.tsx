@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/buttons";
-import { InputGroup, InputPrefix } from "@/components/ui/input/input-group";
+import { InputGroup } from "@/components/ui/input/input-group";
+import { NativeSelect } from "@/components/ui/select";
 
 export default function InputPage() {
     const sizes = ["sm", "md"];
@@ -56,20 +57,53 @@ export default function InputPage() {
                         label="Username"
                         placeholder="shadcn"
                         description="This is your public display name."
-                        iconLeft={Mail01}
+                        // iconLeft={Mail01}
+                        prefix="$"
                         tooltip="this a tooltip"
                         isRequired
                     />
                     <Button type="submit">Submit</Button>
                 </form>
             </Form>
-            <InputGroup
-                type="tel"
-                placeholder="+1 (555) 000-0000"
-                // leftAddon={<InputPrefix>https://</InputPrefix>}
-                prefix="$"
-                tooltip="This is a tooltip"
-            />
+            <div className="space-y-6">
+                <InputGroup
+                    type="text"
+                    leftInputAffix={"https://"}
+                    rightInputAffix={".com"}
+                    tooltip="This is a tooltip"
+                    // prefix="$"
+                    size={"md"}
+                />
+                <InputGroup
+                    leftAddon={
+                        <NativeSelect
+                            aria-label="Country"
+                            options={[
+                                { value: "US", label: "US" },
+                                { value: "CA", label: "CA" },
+                                { value: "EU", label: "EU" },
+                            ]}
+                        />
+                    }
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                />
+                <InputGroup
+                    prefix="$"
+                    rightAddon={
+                        <NativeSelect
+                            aria-label="Country"
+                            options={[
+                                { value: "US", label: "US" },
+                                { value: "CA", label: "CA" },
+                                { value: "EU", label: "EU" },
+                            ]}
+                        />
+                    }
+                    type="tel"
+                    placeholder="1,000.00"
+                />
+            </div>
 
             {/* Sizes */}
             <div className="mb-10">

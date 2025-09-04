@@ -37,7 +37,54 @@ function BaseInput({ className, size, type, ...props }: BaseInputProps) {
     );
 }
 
+// === INPUT WRAPPER VARIANTS ===
+const inputWrapperVariants = cva(
+    "relative flex w-full flex-row place-content-center place-items-center rounded-lg bg-primary shadow-xs ring-1 ring-inset transition-shadow duration-100 ease-linear",
+    {
+        variants: {
+            state: {
+                default: "ring-primary focus-within:ring-2 focus-within:ring-brand",
+                error: "ring-error_subtle focus-within:ring-2 focus-within:ring-error",
+                disabled: "cursor-not-allowed bg-disabled_subtle ring-disabled",
+            },
+        },
+        defaultVariants: {
+            state: "default",
+        },
+    }
+);
+
+const getInputPadding = (
+    size: BaseInputVariants["size"],
+    hasPrefix: boolean,
+    hasLeftIcon: boolean,
+    hasRightIcon: boolean
+): string => {
+    const paddings = {
+        sm: {
+            prefix: "pl-7",
+            leftIcon: "pl-10",
+            rightIcon: "pr-9",
+        },
+        md: {
+            prefix: "pl-7.5",
+            leftIcon: "pl-10.5",
+            rightIcon: "pr-9.5",
+        },
+    };
+
+    const classes: string[] = [];
+
+    if (hasPrefix && size) classes.push(paddings[size].prefix);
+    if (hasLeftIcon && size) classes.push(paddings[size].leftIcon);
+    if (hasRightIcon && size) classes.push(paddings[size].rightIcon);
+
+    return classes.join(" ");
+};
+
 export interface InputProps extends BaseInputProps {
+    /** A prefix text that is displayed in the same box as the input */
+    prefix?: string;
     /** Tooltip message on hover. */
     tooltip?: string;
     /** Icon component to display on the left side of the input. */
@@ -46,6 +93,8 @@ export interface InputProps extends BaseInputProps {
     iconRight?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Class name for the input wrapper. */
     wrapperClassName?: string;
+    /** Class name for the input . */
+    inputClassName?: string;
     /** Class name for the icon. */
     iconClassName?: string;
     /** Class name for the tooltip. */
@@ -53,43 +102,45 @@ export interface InputProps extends BaseInputProps {
 }
 
 function Input({
-    size,
+    size = "sm",
     type = "text",
     iconLeft: IconLeft,
     iconRight: IconRight,
+    prefix,
     tooltip,
     wrapperClassName,
-    className: inputClassName,
+    inputClassName,
     iconClassName,
     tooltipClassName,
     ...props
 }: InputProps) {
     const isInvalid = props["aria-invalid"] === true;
-    const hasLeftIcon = IconLeft;
-    const hasRightIcon = IconRight || tooltip || isInvalid;
+    const disabled = props.disabled;
+    const wrapperState = disabled ? "disabled" : isInvalid ? "error" : "default";
+    const hasLeftIcon = !!IconLeft;
+    const hasRightIcon = !!IconRight || !!tooltip || !!isInvalid;
+    const hasPrefix = !!prefix;
     return (
-        <div
-            className={cn(
-                [
-                    "relative flex w-full flex-row place-content-center place-items-center rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
-                    "focus-within:ring-2 focus-within:ring-brand",
-                    "has-disabled:cursor-not-allowed has-disabled:text-disabled has-disabled:bg-disabled_subtle has-disabled:ring-disabled group-disabled:cursor-not-allowed group-disabled:bg-disabled_subtle group-disabled:ring-disabled",
-                    isInvalid &&
-                        "ring-error_subtle group-invalid:ring-error_subtle focus-within:ring-2 focus-within:group-invalid:ring-2 focus-within:ring-error focus-within:group-invalid:ring-error",
-                ],
-                wrapperClassName
-            )}
-        >
+        <div className={cn(inputWrapperVariants({ state: wrapperState }), wrapperClassName)}>
             <BaseInput
                 type={type}
                 size={size}
                 className={cn(
-                    size === "sm" ? hasLeftIcon && "pl-10" : hasLeftIcon && "pl-10.5",
-                    size === "sm" ? hasRightIcon && "pr-9" : hasRightIcon && "pr-9.5",
+                    getInputPadding(size, hasPrefix, hasLeftIcon, hasRightIcon),
                     inputClassName
                 )}
                 {...props}
             />
+            {prefix && (
+                <span
+                    className={cn(
+                        "pointer-events-none absolute inset-y-0 flex items-center text-md text-tertiary peer-disabled:text-disabled",
+                        size === "sm" ? "left-3" : "left-3.5"
+                    )}
+                >
+                    {prefix}
+                </span>
+            )}
 
             {IconLeft && (
                 <IconLeft
@@ -138,21 +189,32 @@ function Input({
     );
 }
 
+// === FORM INTEGRATION ===
 export interface InputFormProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children" | "required">,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
         Omit<InputProps, "defaultValue" | "name"> {
     isRequired?: boolean;
 }
 
 function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
     isRequired,
-    ...props
+    control,
+    name,
+    label,
+    description,
+    ...inputProps
 }: InputFormProps<TFieldValues, TName>) {
     return (
-        <FormFieldWrapper isRequired={isRequired} {...props}>
-            {field => <Input {...field} {...props} />}
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => <Input {...field} {...inputProps} />}
         </FormFieldWrapper>
     );
 }

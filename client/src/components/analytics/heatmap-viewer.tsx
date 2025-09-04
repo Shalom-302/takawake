@@ -16,7 +16,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select/select";
 import { Input } from "@/components/ui/input/input";
 import { Label } from "@/components/ui/label/label";
 import { Loader2, Calendar as CalendarIcon, Filter } from "lucide-react";

@@ -21,7 +21,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select/select";
 import { SignatureType } from "@/lib/services/document-service";
 import {
     UploadCloud,

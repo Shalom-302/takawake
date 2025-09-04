@@ -4,159 +4,167 @@ import * as React from "react";
 import { type ReactNode } from "react";
 import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
-import { type InputProps, Input } from "./input";
+import { type InputProps, BaseInputVariants, Input } from "./input";
 import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 
+// === INPUT GROUP WRAPPER VARIANTS ===
+const inputGroupVariants = cva(
+    "group relative flex h-max w-full flex-row justify-center rounded-lg bg-primary transition-all duration-100 ease-linear",
+    {
+        variants: {
+            state: {
+                default:
+                    "has-[select]:shadow-xs has-[select]:ring-1 has-[select]:ring-border-primary has-[select]:ring-inset has-[select]:has-[input:focus]:ring-2 has-[select]:has-[input:focus]:ring-border-brand",
+                disabled:
+                    "cursor-not-allowed has-[select]:bg-disabled_subtle has-[select]:ring-border-disabled",
+                error: "has-[select]:ring-border-error_subtle has-[select]:has-[input:focus]:ring-border-error",
+            },
+        },
+        defaultVariants: {
+            state: "default",
+        },
+    }
+);
+
+// === HELPER FUNCTIONS ===
+const getInputGroupPadding = (
+    size: BaseInputVariants["size"] = "sm",
+    hasLeftAddon: boolean,
+    hasRightAddon: boolean,
+    hasPrefix: boolean,
+    hasTooltip: boolean
+): string => {
+    const paddings = {
+        sm: {
+            withLeftAddon: "px-2.5 pl-2.5",
+            withRightAddon: hasPrefix ? "pr-9 pl-7" : "pr-9 pl-3",
+            normal: "px-3",
+        },
+        md: {
+            withLeftAddon: "px-3 pl-3",
+            withRightAddon: hasPrefix ? "pr-6 pl-7.5" : "pr-6 pl-3.5",
+            normal: "px-3.5",
+        },
+    };
+
+    if (hasLeftAddon && hasRightAddon) return "px-2";
+    if (hasLeftAddon) return paddings[size!].withLeftAddon;
+    if (hasRightAddon) return paddings[size!].withRightAddon;
+
+    return paddings[size!].normal;
+};
+
+const getInputWrapperClasses = (
+    hasLeftAddon: boolean,
+    hasRightAddon: boolean,
+    className?: string
+): string => {
+    return cn(
+        "z-10 flex-1",
+        hasLeftAddon && "rounded-l-none",
+        hasRightAddon && "rounded-r-none",
+        // Select-specific styles
+        "group-has-[select]:bg-transparent group-has-[select]:shadow-none group-has-[select]:ring-0 group-has-[select]:focus-within:ring-0",
+        "group-disabled:group-has-[select]:bg-transparent",
+        className
+    );
+};
+
+// === INPUT GROUP COMPONENT ===
 interface InputGroupProps extends Omit<InputProps, "iconLeft" | "iconRight"> {
-    /** A prefix text that is displayed in the same box as the input */
-    prefix?: string;
-    /** A leading addon that is displayed with visual separation from the input */
+    /** A leading addon (button, select, etc.) */
     leftAddon?: ReactNode;
-    /** A trailing addon that is displayed with visual separation from the input */
+    /** A trailing addon */
     rightAddon?: ReactNode;
-    /** Container class name */
+    /** Inline affix (ex: @, $) */
+    leftInputAffix?: ReactNode;
+    /** Inline suffix */
+    rightInputAffix?: ReactNode;
     containerClassName?: string;
-    /** Whether to hide required indicator from label */
-    hideRequiredIndicator?: boolean;
 }
 
-function InputGroup({ prefix, size, leftAddon, rightAddon, disabled, ...props }: InputGroupProps) {
-    const hasLeftAddon = !!leftAddon;
-    const hasRightAddon = !!rightAddon;
-    const hasPrefix = !!prefix;
-    const selectPaddingVariants = cva("", {
-        variants: {
-            size: {
-                sm: "",
-                md: "",
-            },
-            hasLeftAddon: {
-                true: "",
-                false: "",
-            },
-            hasRightAddon: {
-                true: "",
-                false: "",
-            },
-            hasPrefix: {
-                true: "",
-                false: "",
-            },
-        },
-        compoundVariants: [
-            {
-                size: "sm",
-                hasLeftAddon: true,
-                className: "group-has-[&>select]:px-2.5 group-has-[&>select]:pl-2.5",
-            },
-            {
-                size: "sm",
-                hasRightAddon: true,
-                hasPrefix: true,
-                className: "group-has-[&>select]:pr-6 group-has-[&>select]:pl-0",
-            },
-            {
-                size: "sm",
-                hasRightAddon: true,
-                hasPrefix: false,
-                className: "group-has-[&>select]:pr-6 group-has-[&>select]:pl-3",
-            },
-            {
-                size: "md",
-                hasLeftAddon: true,
-                className: "group-has-[&>select]:px-3 group-has-[&>select]:pl-3",
-            },
-            {
-                size: "md",
-                hasRightAddon: true,
-                hasPrefix: true,
-                className: "group-has-[&>select]:pr-6 group-has-[&>select]:pl-0",
-            },
-            {
-                size: "md",
-                hasRightAddon: true,
-                hasPrefix: false,
-                className: "group-has-[&>select]:pr-6 group-has-[&>select]:pl-3",
-            },
-        ],
-        defaultVariants: {
-            size: "md",
-            hasLeftAddon: false,
-            hasRightAddon: false,
-            hasPrefix: false,
-        },
-    });
-    const inputClass = cn(
-        selectPaddingVariants({ size: "sm", hasLeftAddon, hasRightAddon, hasPrefix })
-    );
+function InputGroup({
+    prefix,
+    size = "sm",
+    leftAddon,
+    rightAddon,
+    leftInputAffix,
+    rightInputAffix,
+    disabled,
+    wrapperClassName,
+    containerClassName,
+    ...props
+}: InputGroupProps) {
+    const isInvalid = props["aria-invalid"] === true;
 
-    const prefixClass = size === "sm" ? "pl-3" : "pl-3.5";
+    // Determine component state
+    const groupState = disabled ? "disabled" : isInvalid ? "error" : "default";
+    const hasLeftAddon = !!leftAddon || !!leftInputAffix;
+    const hasRightAddon = !!rightAddon || !!rightInputAffix || !!props.tooltip;
+
+    // Calculate padding for the input based on addons
+    const inputPadding = getInputGroupPadding(size, hasLeftAddon, hasRightAddon, !!prefix);
+
     return (
         <div
             data-input-size={size}
             data-input-wrapper
-            className={cn(
-                "group relative flex h-max w-full flex-row justify-center rounded-lg bg-primary transition-all duration-100 ease-linear",
-
-                // Only apply focus ring when child is select and input is focused
-                "has-[&>select]:shadow-xs has-[&>select]:ring-1 has-[&>select]:ring-border-primary has-[&>select]:ring-inset has-[&>select]:has-[input:focus]:ring-2 has-[&>select]:has-[input:focus]:ring-border-brand",
-                disabled &&
-                    "cursor-not-allowed has-[&>select]:bg-disabled_subtle has-[&>select]:ring-border-disabled",
-                props["aria-invalid"] &&
-                    "has-[&>select]:ring-border-error_subtle has-[&>select]:has-[input:focus]:ring-border-error"
-            )}
+            className={cn(inputGroupVariants({ state: groupState }), containerClassName)}
         >
             {/* Left Addon */}
-            {leftAddon && (
-                <section data-leftaddon={leftAddon ? true : undefined}>{leftAddon}</section>
+            {leftAddon && <section data-leftaddon>{leftAddon}</section>}
+
+            {/* Left Affix */}
+            {leftInputAffix && (
+                <InputAffix size={size} position="left" isDisabled={disabled}>
+                    {leftInputAffix}
+                </InputAffix>
             )}
 
-            {prefix && (
-                <span className={cn("my-auto grow pr-2", prefixClass)}>
-                    <p className={cn("text-md text-tertiary", disabled && "text-disabled")}>
-                        {prefix}
-                    </p>
-                </span>
-            )}
-
+            {/* Main Input */}
             <Input
                 size={size}
-                className={inputClass}
-                wrapperClassName={cn(
-                    "z-10",
-                    leftAddon && "rounded-l-none",
-                    rightAddon && "rounded-r-none",
-                    // When select element is passed as a child
-                    "group-has-[&>select]:bg-transparent group-has-[&>select]:shadow-none group-has-[&>select]:ring-0 group-has-[&>select]:focus-within:ring-0",
-                    // In `Input` component, there is "group-disabled" class so here we need to use "group-disabled:group-has-[&>select]" to avoid conflict
-                    "group-disabled:group-has-[&>select]:bg-transparent"
+                prefix={prefix}
+                disabled={disabled}
+                inputClassName={inputPadding}
+                wrapperClassName={getInputWrapperClasses(
+                    hasLeftAddon,
+                    hasRightAddon,
+                    wrapperClassName
                 )}
-                tooltipClassName={cn(rightAddon && !leftAddon && "group-has-[&>select]:right-0")}
+                tooltipClassName={cn(
+                    hasRightAddon && !hasLeftAddon && "group-has-[select]:right-0"
+                )}
                 {...props}
             />
 
-            {/* Right Addon */}
-            {rightAddon && (
-                <section data-rightaddon={rightAddon ? true : undefined}>{rightAddon}</section>
+            {/* Right Affix */}
+            {rightInputAffix && (
+                <InputAffix size={size} position="right" isDisabled={disabled}>
+                    {rightInputAffix}
+                </InputAffix>
             )}
+
+            {/* Right Addon */}
+            {rightAddon && <section data-rightaddon>{rightAddon}</section>}
         </div>
     );
 }
 
-const inputPrefixVariants = cva(
-    [
-        "flex text-md shadow-xs ring-1 ring-inset text-tertiary ring-border-primary",
-        "disabled:text-disabled disabled:ring-border-disabled disabled:bg-disabled_subtle",
-        // Styles basés sur la position dans le InputGroup
-        "in-data-input-wrapper:in-data-[leftaddon=true]:-mr-px in-data-input-wrapper:in-data-[left-addon=true]:rounded-l-lg",
-        "in-data-input-wrapper:in-data-[rightaddon=true]:-ml-px in-data-input-wrapper:in-data-[right-addon=true]:rounded-r-lg",
-    ],
+// === INPUT AFFIX COMPONENT ===
+
+const inputAffixVariants = cva(
+    "flex text-md shadow-xs ring-1 ring-inset text-tertiary ring-border-primary items-center justify-center",
     {
         variants: {
             size: {
                 sm: "px-3 py-2",
                 md: "px-3.5 py-2.5",
+            },
+            position: {
+                left: "rounded-l-lg -mr-px border-r-0",
+                right: "rounded-r-lg -ml-px border-l-0",
             },
         },
         defaultVariants: {
@@ -164,20 +172,29 @@ const inputPrefixVariants = cva(
         },
     }
 );
-
-interface InputPrefixProps
-    extends React.HTMLAttributes<HTMLSpanElement>,
-        VariantProps<typeof inputPrefixVariants> {
+type InputAffixVariants = VariantProps<typeof inputAffixVariants>;
+interface InputAffixProps extends React.HTMLAttributes<HTMLSpanElement>, InputAffixVariants {
     isDisabled?: boolean;
 }
 
-function InputPrefix({ className, size = "sm", children, ...props }: InputPrefixProps) {
+function InputAffix({
+    className,
+    size = "sm",
+    position,
+    isDisabled,
+    children,
+    ...props
+}: InputAffixProps) {
     return (
         <span
-            className={inputPrefixVariants({
-                size,
-                className,
-            })}
+            className={cn(
+                inputAffixVariants({
+                    size,
+                    position,
+                }),
+                isDisabled && "text-disabled ring-border-disabled bg-disabled_subtle",
+                className
+            )}
             {...props}
         >
             {children}
@@ -185,6 +202,7 @@ function InputPrefix({ className, size = "sm", children, ...props }: InputPrefix
     );
 }
 
+// === FORM INTEGRATION ===
 export interface InputGroupFormProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -201,8 +219,7 @@ function InputGroupForm<
     description,
     isRequired,
     containerClassName,
-    children,
-    ...props
+    ...inputGroupProps
 }: InputGroupFormProps<TFieldValues, TName>) {
     return (
         <div className={cn("w-full", containerClassName)}>
@@ -213,14 +230,10 @@ function InputGroupForm<
                 description={description}
                 isRequired={isRequired}
             >
-                {field => (
-                    <InputGroup {...field} {...props}>
-                        {children}
-                    </InputGroup>
-                )}
+                {field => <InputGroup {...field} {...inputGroupProps} />}
             </FormFieldWrapper>
         </div>
     );
 }
 
-export { InputGroupForm, InputGroup, InputPrefix };
+export { InputGroupForm, InputGroup, InputAffix };
