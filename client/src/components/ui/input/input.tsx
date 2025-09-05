@@ -54,7 +54,7 @@ const inputWrapperVariants = cva(
     }
 );
 
-export interface InputProps extends BaseInputProps {
+export interface InputProps extends Omit<BaseInputProps, "className"> {
     /** Tooltip message on hover. */
     tooltip?: string;
     /** Icon component to display on the left side of the input. */
@@ -62,7 +62,7 @@ export interface InputProps extends BaseInputProps {
     /** Icon component to display on the right side of the input. */
     rightIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Class name for the input wrapper. */
-    wrapperClassName?: string;
+    inputWrapperClassName?: string;
     /** Class name for the input . */
     inputClassName?: string;
     /** Class name for the icon. */
@@ -77,7 +77,7 @@ function Input({
     leftIcon: LeftIcon,
     rightIcon: RightIcon,
     tooltip,
-    wrapperClassName,
+    inputWrapperClassName,
     inputClassName,
     iconClassName,
     tooltipClassName,
@@ -89,7 +89,7 @@ function Input({
     const hasLeftIcon = !!LeftIcon;
     const hasRightIcon = !!RightIcon || !!tooltip || isInvalid;
     return (
-        <div className={cn(inputWrapperVariants({ state: wrapperState }), wrapperClassName)}>
+        <div className={cn(inputWrapperVariants({ state: wrapperState }), inputWrapperClassName)}>
             <BaseInput
                 type={type}
                 size={size}

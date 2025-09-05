@@ -92,7 +92,7 @@ interface InputGroupProps extends Omit<InputProps, "leftIcon" | "rightIcon"> {
     leftAddon?: ReactNode;
     /** A right addon that is displayed with visual separation from the input. */
     rightAddon?: ReactNode;
-    containerClassName?: string;
+    inputGroupClassName?: string;
 }
 
 function InputGroup({
@@ -101,8 +101,8 @@ function InputGroup({
     leftAddon,
     rightAddon,
     disabled,
-    wrapperClassName,
-    containerClassName,
+    inputWrapperClassName,
+    inputGroupClassName,
     ...props
 }: InputGroupProps) {
     const isInvalid = props["aria-invalid"] === true;
@@ -119,7 +119,7 @@ function InputGroup({
         <div
             data-input-size={size}
             data-input-wrapper
-            className={cn(inputGroupVariants({ state: groupState }), containerClassName)}
+            className={cn(inputGroupVariants({ state: groupState }), inputGroupClassName)}
         >
             {/* Leading Addon */}
             {leftAddon && <section data-leading={hasLeading || undefined}>{leftAddon}</section>}
@@ -138,7 +138,11 @@ function InputGroup({
                 size={size}
                 disabled={disabled}
                 inputClassName={inputPadding}
-                wrapperClassName={getInputWrapperClasses(hasLeading, hasTrailing, wrapperClassName)}
+                inputWrapperClassName={getInputWrapperClasses(
+                    hasLeading,
+                    hasTrailing,
+                    inputWrapperClassName
+                )}
                 tooltipClassName={cn(hasTrailing && !hasLeading && "group-has-[select]:right-0")}
                 {...props}
             />
@@ -190,11 +194,11 @@ function InputGroupForm<
     label,
     description,
     isRequired,
-    containerClassName,
+    inputGroupClassName,
     ...inputGroupProps
 }: InputGroupFormProps<TFieldValues, TName>) {
     return (
-        <div className={cn("w-full", containerClassName)}>
+        <div className={cn("w-full", inputGroupClassName)}>
             <FormFieldWrapper
                 control={control}
                 name={name}

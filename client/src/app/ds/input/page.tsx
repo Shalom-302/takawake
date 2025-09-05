@@ -60,14 +60,13 @@ export default function InputPage() {
          ========================= */}
             <section className="mb-10" id="sizes">
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {sizes.map(size => (
                         <div key={size} className="p-4 border border-tertiary rounded-lg">
                             <div className="mb-4">
                                 <Input
                                     size={size as BaseInputVariants["size"]}
                                     placeholder={`Size ${size}`}
-                                    className="w-full"
                                 />
                             </div>
                             <CodeBlock
@@ -85,12 +84,7 @@ export default function InputPage() {
                 <h2 className="text-xl font-semibold mb-4">Input with icons</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <Input
-                            type="email"
-                            placeholder="email"
-                            leftIcon={Mail01}
-                            className="w-full"
-                        />
+                        <Input type="email" placeholder="email" leftIcon={Mail01} />
                         <CodeBlock
                             code={`<Input 
   type="email" 
@@ -100,12 +94,7 @@ export default function InputPage() {
                         />
                     </div>
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <Input
-                            type="email"
-                            placeholder="email"
-                            rightIcon={Mail01}
-                            className="w-full"
-                        />
+                        <Input type="email" placeholder="email" rightIcon={Mail01} />
                         <CodeBlock
                             code={`<Input 
   type="email" 
@@ -128,7 +117,6 @@ export default function InputPage() {
                             type="text"
                             placeholder="Input with tooltip"
                             tooltip="Input with tooltip"
-                            className="w-full"
                         />
                         <CodeBlock
                             code={`<Input 
@@ -366,7 +354,7 @@ const form = useForm<z.infer<typeof FormSchema>>({
                                     <td className="px-4 py-2">Tooltip message on hover/focus.</td>
                                 </tr>
                                 <tr className="border-b  border-tertiary">
-                                    <td className="px-4 py-2 font-mono">wrapperClassName?</td>
+                                    <td className="px-4 py-2 font-mono">inputWrapperClassName?</td>
                                     <td className="px-4 py-2">string</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">Styles for the outer wrapper.</td>
@@ -432,13 +420,13 @@ const form = useForm<z.infer<typeof FormSchema>>({
                                     <td className="px-4 py-2">Addon after input.</td>
                                 </tr>
                                 <tr className="border-b  border-tertiary">
-                                    <td className="px-4 py-2 font-mono">containerClassName?</td>
+                                    <td className="px-4 py-2 font-mono">inputGroupClassName?</td>
                                     <td className="px-4 py-2">string</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">Styles for the group container.</td>
                                 </tr>
                                 <tr className="border-b  border-tertiary">
-                                    <td className="px-4 py-2 font-mono">wrapperClassName?</td>
+                                    <td className="px-4 py-2 font-mono">inputWrapperClassName?</td>
                                     <td className="px-4 py-2">string</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">
