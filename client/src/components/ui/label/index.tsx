@@ -3,15 +3,15 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "@/lib/utils/cn";
-import { Tooltip } from "../tooltip";
-import { HelpCircle } from "@untitled-ui/icons-react";
+// import { Tooltip } from "../tooltip";
+// import { HelpCircle } from "@untitled-ui/icons-react";
 
 interface LabelProps extends React.ComponentProps<typeof LabelPrimitive.Root> {
     isRequired?: boolean;
-    tooltip?: React.ReactNode;
+    // tooltip?: React.ReactNode;
 }
 
-function Label({ className, isRequired, tooltip, children, ...props }: LabelProps) {
+function Label({ className, isRequired, children, ...props }: LabelProps) {
     return (
         <LabelPrimitive.Root
             data-slot="label"
@@ -31,7 +31,7 @@ function Label({ className, isRequired, tooltip, children, ...props }: LabelProp
             >
                 *
             </span>
-            {tooltip && (
+            {/* {tooltip && (
                 <Tooltip
                     trigger={
                         <HelpCircle className="size-4 cursor-pointer text-fg-quaternary transition duration-200 hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover" />
@@ -39,7 +39,7 @@ function Label({ className, isRequired, tooltip, children, ...props }: LabelProp
                     content={tooltip}
                     side="top"
                 />
-            )}
+            )} */}
         </LabelPrimitive.Root>
     );
 }

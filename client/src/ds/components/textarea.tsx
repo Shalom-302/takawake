@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
+import { Textarea as ShadcnTextarea } from "@/components/ui/texarea/textarea";
 
 const textareaVariants = cva(
     "border-input placeholder:text-muted-foreground flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",

@@ -13,7 +13,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/texarea/textarea";
 import { Label } from "@/components/ui/label/label";
 import {
     Select,

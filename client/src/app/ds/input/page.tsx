@@ -317,200 +317,243 @@ const form = useForm<z.infer<typeof FormSchema>>({
             </section>
 
             {/* =========================
-           API REFERENCE
+                API REFERENCE
          ========================= */}
             <section className="my-16">
                 <h2 className="text-2xl font-bold mb-6">API Reference</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse rounded-lg text-left">
-                        <thead className="">
-                            <tr className="border-b  border-tertiary">
-                                <th className="px-4 py-2">Component</th>
-                                <th className="px-4 py-2">Props</th>
-                                <th className="px-4 py-2">Type</th>
-                                <th className="px-4 py-2">Default</th>
-                                <th className="px-4 py-2">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* INPUT */}
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">size?</td>
-                                <td className="px-4 py-2">{`"sm" | "md"`}</td>
-                                <td className="px-4 py-2">{`"sm"`}</td>
-                                <td className="px-4 py-2">Controls input padding.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">leftIcon?</td>
-                                <td className="px-4 py-2">React.ComponentType&lt;SVGProps&gt;</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Icon displayed on the left.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">rightIcon?</td>
-                                <td className="px-4 py-2">React.ComponentType&lt;SVGProps&gt;</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Icon displayed on the right.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">tooltip?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Tooltip message on hover/focus.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">wrapperClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Styles for the outer wrapper.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">inputClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Styles for the native input.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">iconClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Styles for icons.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">Input</td>
-                                <td className="px-4 py-2 font-mono">tooltipClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Styles for tooltip content.</td>
-                            </tr>
+                {/* INPUT */}
+                <div className="overflow-x-auto space-y-16">
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenugroupdata">
+                            INPUT
+                        </h3>
+                        <table className="w-full text-left">
+                            <thead className="">
+                                <tr className="border-b  border-tertiary">
+                                    <th className="px-4 py-2">Props</th>
+                                    <th className="px-4 py-2">Type</th>
+                                    <th className="px-4 py-2">Default</th>
+                                    <th className="px-4 py-2">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">size?</td>
+                                    <td className="px-4 py-2">{`"sm" | "md"`}</td>
+                                    <td className="px-4 py-2">{`"sm"`}</td>
+                                    <td className="px-4 py-2">Controls input padding.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">leftIcon?</td>
+                                    <td className="px-4 py-2">
+                                        React.ComponentType&lt;SVGProps&gt;
+                                    </td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Icon displayed on the left.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">rightIcon?</td>
+                                    <td className="px-4 py-2">
+                                        React.ComponentType&lt;SVGProps&gt;
+                                    </td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Icon displayed on the right.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">tooltip?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Tooltip message on hover/focus.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">wrapperClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Styles for the outer wrapper.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">inputClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Styles for the native input.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">iconClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Styles for icons.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">tooltipClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Styles for tooltip content.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            {/* INPUT GROUP */}
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">prefix?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Inline text prefix inside the input (e.g. {"$"}).
-                                </td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">leftAddon?</td>
-                                <td className="px-4 py-2">ReactNode</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Addon before input (e.g., <code>&lt;InputAffix/&gt;</code> or{" "}
-                                    <code>&lt;NativeSelect/&gt;</code>).
-                                </td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">rightAddon?</td>
-                                <td className="px-4 py-2">ReactNode</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Addon after input.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">containerClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Styles for the group container.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">wrapperClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Styles passed to the inner <code>Input</code> wrapper.
-                                </td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputGroup</td>
-                                <td className="px-4 py-2 font-mono">inputClassName?</td>
-                                <td className="px-4 py-2">string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Extra classes applied to the native input.
-                                </td>
-                            </tr>
+                    {/* INPUT GROUP */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenugroupdata">
+                            INPUT GROUP
+                        </h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b  border-tertiary ">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">prefix?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Inline text prefix inside the input (e.g. {"$"}).
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">leftAddon?</td>
+                                    <td className="px-4 py-2">ReactNode</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Addon before input (e.g., <code>&lt;InputAffix/&gt;</code>{" "}
+                                        or <code>&lt;NativeSelect/&gt;</code>).
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">rightAddon?</td>
+                                    <td className="px-4 py-2">ReactNode</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Addon after input.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">containerClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Styles for the group container.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">wrapperClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Styles passed to the inner <code>Input</code> wrapper.
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">inputClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Extra classes applied to the native input.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            {/* INPUT AFFIX */}
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputAffix</td>
-                                <td className="px-4 py-2 font-mono">isDisabled?</td>
-                                <td className="px-4 py-2">boolean</td>
-                                <td className="px-4 py-2">false</td>
-                                <td className="px-4 py-2">Visual disabled state for the addon.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputAffix</td>
-                                <td className="px-4 py-2 font-mono">children</td>
-                                <td className="px-4 py-2">ReactNode</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Addon content.</td>
-                            </tr>
+                    {/* INPUT AFFIX */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenugroupdata">
+                            INPUT AFFIX
+                        </h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b  border-tertiary ">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">isDisabled?</td>
+                                    <td className="px-4 py-2">boolean</td>
+                                    <td className="px-4 py-2">false</td>
+                                    <td className="px-4 py-2">
+                                        Visual disabled state for the addon.
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">children</td>
+                                    <td className="px-4 py-2">ReactNode</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Addon content.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            {/* INPUT FORM */}
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">control</td>
-                                <td className="px-4 py-2">Control&lt;TFieldValues&gt;</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">React Hook Form control instance.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">name</td>
-                                <td className="px-4 py-2">FieldPath&lt;TFieldValues&gt;</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Field name registered in the form schema.
-                                </td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">label?</td>
-                                <td className="px-4 py-2">ReactNode | string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Field label displayed above input.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">description?</td>
-                                <td className="px-4 py-2">ReactNode | string</td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">Helper text under the input.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">isRequired?</td>
-                                <td className="px-4 py-2">boolean</td>
-                                <td className="px-4 py-2">false</td>
-                                <td className="px-4 py-2">Adds “required” indicator on label.</td>
-                            </tr>
-                            <tr className="border-b  border-tertiary">
-                                <td className="px-4 py-2">InputForm</td>
-                                <td className="px-4 py-2 font-mono">…inputProps</td>
-                                <td className="px-4 py-2">
-                                    All <code>Input</code> props (except <code>name</code>)
-                                </td>
-                                <td className="px-4 py-2">—</td>
-                                <td className="px-4 py-2">
-                                    Pass-through to the inner <code>Input</code>.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    {/* INPUT FORM */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2" id="dropdownmenugroupdata">
+                            INPUT FORM
+                        </h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b  border-tertiary ">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">control</td>
+                                    <td className="px-4 py-2">Control&lt;TFieldValues&gt;</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">React Hook Form control instance.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">name</td>
+                                    <td className="px-4 py-2">FieldPath&lt;TFieldValues&gt;</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Field name registered in the form schema.
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">label?</td>
+                                    <td className="px-4 py-2">ReactNode | string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Field label displayed above input.
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">description?</td>
+                                    <td className="px-4 py-2">ReactNode | string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Helper text under the input.</td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">isRequired?</td>
+                                    <td className="px-4 py-2">boolean</td>
+                                    <td className="px-4 py-2">false</td>
+                                    <td className="px-4 py-2">
+                                        Adds “required” indicator on label.
+                                    </td>
+                                </tr>
+                                <tr className="border-b  border-tertiary">
+                                    <td className="px-4 py-2 font-mono">…inputProps</td>
+                                    <td className="px-4 py-2">
+                                        All <code>Input</code> props (except <code>name</code>)
+                                    </td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Pass-through to the inner <code>Input</code>.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </div>
