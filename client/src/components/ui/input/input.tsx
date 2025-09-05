@@ -8,7 +8,7 @@ import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 
 const baseInputVariants = cva(
-    "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary",
+    "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary ",
     {
         variants: {
             size: {
@@ -54,43 +54,13 @@ const inputWrapperVariants = cva(
     }
 );
 
-const getInputPadding = (
-    size: BaseInputVariants["size"],
-    hasPrefix: boolean,
-    hasLeftIcon: boolean,
-    hasRightIcon: boolean
-): string => {
-    const paddings = {
-        sm: {
-            prefix: "pl-7",
-            leftIcon: "pl-10",
-            rightIcon: "pr-9",
-        },
-        md: {
-            prefix: "pl-7.5",
-            leftIcon: "pl-10.5",
-            rightIcon: "pr-9.5",
-        },
-    };
-
-    const classes: string[] = [];
-
-    if (hasPrefix && size) classes.push(paddings[size].prefix);
-    if (hasLeftIcon && size) classes.push(paddings[size].leftIcon);
-    if (hasRightIcon && size) classes.push(paddings[size].rightIcon);
-
-    return classes.join(" ");
-};
-
 export interface InputProps extends BaseInputProps {
-    /** A prefix text that is displayed in the same box as the input */
-    prefix?: string;
     /** Tooltip message on hover. */
     tooltip?: string;
     /** Icon component to display on the left side of the input. */
-    iconLeft?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
+    leftIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Icon component to display on the right side of the input. */
-    iconRight?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
+    rightIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Class name for the input wrapper. */
     wrapperClassName?: string;
     /** Class name for the input . */
@@ -104,9 +74,8 @@ export interface InputProps extends BaseInputProps {
 function Input({
     size = "sm",
     type = "text",
-    iconLeft: IconLeft,
-    iconRight: IconRight,
-    prefix,
+    leftIcon: LeftIcon,
+    rightIcon: RightIcon,
     tooltip,
     wrapperClassName,
     inputClassName,
@@ -117,33 +86,23 @@ function Input({
     const isInvalid = props["aria-invalid"] === true;
     const disabled = props.disabled;
     const wrapperState = disabled ? "disabled" : isInvalid ? "error" : "default";
-    const hasLeftIcon = !!IconLeft;
-    const hasRightIcon = !!IconRight || !!tooltip || !!isInvalid;
-    const hasPrefix = !!prefix;
+    const hasLeftIcon = !!LeftIcon;
+    const hasRightIcon = !!RightIcon || !!tooltip || isInvalid;
     return (
         <div className={cn(inputWrapperVariants({ state: wrapperState }), wrapperClassName)}>
             <BaseInput
                 type={type}
                 size={size}
                 className={cn(
-                    getInputPadding(size, hasPrefix, hasLeftIcon, hasRightIcon),
+                    size === "sm" ? hasLeftIcon && "pl-10" : hasRightIcon && "pr-9",
+                    size === "md" ? hasLeftIcon && "pl-10.5" : hasRightIcon && "pr-9.5",
                     inputClassName
                 )}
                 {...props}
             />
-            {prefix && (
-                <span
-                    className={cn(
-                        "pointer-events-none absolute inset-y-0 flex items-center text-md text-tertiary peer-disabled:text-disabled",
-                        size === "sm" ? "left-3" : "left-3.5"
-                    )}
-                >
-                    {prefix}
-                </span>
-            )}
 
-            {IconLeft && (
-                <IconLeft
+            {LeftIcon && (
+                <LeftIcon
                     className={cn(
                         "pointer-events-none absolute size-5 text-fg-quaternary peer-disabled:text-fg-disabled",
                         size === "sm" ? "left-3" : "left-3.5",
@@ -174,9 +133,9 @@ function Input({
                     contentClassName={tooltipClassName}
                 />
             ) : (
-                IconRight &&
+                RightIcon &&
                 !isInvalid && (
-                    <IconRight
+                    <RightIcon
                         className={cn(
                             "pointer-events-none absolute size-5 text-fg-quaternary peer-disabled:text-fg-disabled",
                             size === "sm" ? "right-3" : "right-3.5",

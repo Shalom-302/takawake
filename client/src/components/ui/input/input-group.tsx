@@ -2,13 +2,12 @@
 
 import * as React from "react";
 import { type ReactNode } from "react";
-import { cva, VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { type InputProps, BaseInputVariants, Input } from "./input";
 import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 
-// === INPUT GROUP WRAPPER VARIANTS ===
 const inputGroupVariants = cva(
     "group relative flex h-max w-full flex-row justify-center rounded-lg bg-primary transition-all duration-100 ease-linear",
     {
@@ -27,43 +26,53 @@ const inputGroupVariants = cva(
     }
 );
 
-// === HELPER FUNCTIONS ===
 const getInputGroupPadding = (
     size: BaseInputVariants["size"] = "sm",
-    hasLeftAddon: boolean,
-    hasRightAddon: boolean,
-    hasPrefix: boolean,
-    hasTooltip: boolean
+    hasLeading: boolean,
+    hasTrailing: boolean,
+    hasPrefix: boolean
 ): string => {
     const paddings = {
         sm: {
-            withLeftAddon: "px-2.5 pl-2.5",
-            withRightAddon: hasPrefix ? "pr-9 pl-7" : "pr-9 pl-3",
+            withLeading: "group-has-[select]:px-2.5 group-has-[select]:pl-2.5",
+            withTrailing: hasPrefix
+                ? "group-has-[select]:pr-6 group-has-[select]:pl-0"
+                : "group-has-[select]:pr-6 group-has-[select]:pl-3",
             normal: "px-3",
         },
         md: {
-            withLeftAddon: "px-3 pl-3",
-            withRightAddon: hasPrefix ? "pr-6 pl-7.5" : "pr-6 pl-3.5",
+            withLeading: "group-has-[select]:px-3 group-has-[select]:pl-3",
+            withTrailing: hasPrefix
+                ? "group-has-[select]:pr-6 group-has-[select]:pl-0"
+                : "group-has-[select]:pr-6 group-has-[select]:pl-3.5",
             normal: "px-3.5",
         },
     };
 
-    if (hasLeftAddon && hasRightAddon) return "px-2";
-    if (hasLeftAddon) return paddings[size!].withLeftAddon;
-    if (hasRightAddon) return paddings[size!].withRightAddon;
+    const classes = [];
 
-    return paddings[size!].normal;
+    if (hasLeading) {
+        classes.push(paddings[size!].withLeading);
+    }
+    if (hasTrailing) {
+        classes.push(paddings[size!].withTrailing);
+    }
+    if (!hasLeading && !hasTrailing) {
+        classes.push(paddings[size!].normal);
+    }
+
+    return classes.join(" ");
 };
 
 const getInputWrapperClasses = (
-    hasLeftAddon: boolean,
-    hasRightAddon: boolean,
+    hasLeading: boolean,
+    hasTrailing: boolean,
     className?: string
 ): string => {
     return cn(
         "z-10 flex-1",
-        hasLeftAddon && "rounded-l-none",
-        hasRightAddon && "rounded-r-none",
+        hasLeading && "rounded-l-none",
+        hasTrailing && "rounded-r-none",
         // Select-specific styles
         "group-has-[select]:bg-transparent group-has-[select]:shadow-none group-has-[select]:ring-0 group-has-[select]:focus-within:ring-0",
         "group-disabled:group-has-[select]:bg-transparent",
@@ -71,16 +80,18 @@ const getInputWrapperClasses = (
     );
 };
 
+const getPrefixPadding = (size: BaseInputVariants["size"] = "sm") => {
+    return size === "md" ? "pl-3.5" : "pl-3";
+};
+
 // === INPUT GROUP COMPONENT ===
-interface InputGroupProps extends Omit<InputProps, "iconLeft" | "iconRight"> {
-    /** A leading addon (button, select, etc.) */
+interface InputGroupProps extends Omit<InputProps, "leftIcon" | "rightIcon"> {
+    /** A prefix text that is displayed in the same box as the input. */
+    prefix?: string;
+    /** A left addon that is displayed with visual separation from the input. */
     leftAddon?: ReactNode;
-    /** A trailing addon */
+    /** A right addon that is displayed with visual separation from the input. */
     rightAddon?: ReactNode;
-    /** Inline affix (ex: @, $) */
-    leftInputAffix?: ReactNode;
-    /** Inline suffix */
-    rightInputAffix?: ReactNode;
     containerClassName?: string;
 }
 
@@ -89,8 +100,6 @@ function InputGroup({
     size = "sm",
     leftAddon,
     rightAddon,
-    leftInputAffix,
-    rightInputAffix,
     disabled,
     wrapperClassName,
     containerClassName,
@@ -100,11 +109,11 @@ function InputGroup({
 
     // Determine component state
     const groupState = disabled ? "disabled" : isInvalid ? "error" : "default";
-    const hasLeftAddon = !!leftAddon || !!leftInputAffix;
-    const hasRightAddon = !!rightAddon || !!rightInputAffix || !!props.tooltip;
+    const hasLeading = !!leftAddon;
+    const hasTrailing = !!rightAddon;
 
     // Calculate padding for the input based on addons
-    const inputPadding = getInputGroupPadding(size, hasLeftAddon, hasRightAddon, !!prefix);
+    const inputPadding = getInputGroupPadding(size, hasLeading, hasTrailing, !!prefix);
 
     return (
         <div
@@ -112,90 +121,53 @@ function InputGroup({
             data-input-wrapper
             className={cn(inputGroupVariants({ state: groupState }), containerClassName)}
         >
-            {/* Left Addon */}
-            {leftAddon && <section data-leftaddon>{leftAddon}</section>}
+            {/* Leading Addon */}
+            {leftAddon && <section data-leading={hasLeading || undefined}>{leftAddon}</section>}
 
-            {/* Left Affix */}
-            {leftInputAffix && (
-                <InputAffix size={size} position="left" isDisabled={disabled}>
-                    {leftInputAffix}
-                </InputAffix>
+            {/* Prefix text inside input */}
+            {prefix && (
+                <span className={cn("my-auto pr-2", getPrefixPadding(size))}>
+                    <p className={cn("text-md text-tertiary", disabled && "text-disabled")}>
+                        {prefix}
+                    </p>
+                </span>
             )}
 
             {/* Main Input */}
             <Input
                 size={size}
-                prefix={prefix}
                 disabled={disabled}
                 inputClassName={inputPadding}
-                wrapperClassName={getInputWrapperClasses(
-                    hasLeftAddon,
-                    hasRightAddon,
-                    wrapperClassName
-                )}
-                tooltipClassName={cn(
-                    hasRightAddon && !hasLeftAddon && "group-has-[select]:right-0"
-                )}
+                wrapperClassName={getInputWrapperClasses(hasLeading, hasTrailing, wrapperClassName)}
+                tooltipClassName={cn(hasTrailing && !hasLeading && "group-has-[select]:right-0")}
                 {...props}
             />
 
-            {/* Right Affix */}
-            {rightInputAffix && (
-                <InputAffix size={size} position="right" isDisabled={disabled}>
-                    {rightInputAffix}
-                </InputAffix>
-            )}
-
             {/* Right Addon */}
-            {rightAddon && <section data-rightaddon>{rightAddon}</section>}
+            {rightAddon && <section data-trailing={hasTrailing || undefined}>{rightAddon}</section>}
         </div>
     );
 }
 
-// === INPUT AFFIX COMPONENT ===
-
-const inputAffixVariants = cva(
-    "flex text-md shadow-xs ring-1 ring-inset text-tertiary ring-border-primary items-center justify-center",
-    {
-        variants: {
-            size: {
-                sm: "px-3 py-2",
-                md: "px-3.5 py-2.5",
-            },
-            position: {
-                left: "rounded-l-lg -mr-px border-r-0",
-                right: "rounded-r-lg -ml-px border-l-0",
-            },
-        },
-        defaultVariants: {
-            size: "sm",
-        },
-    }
-);
-type InputAffixVariants = VariantProps<typeof inputAffixVariants>;
-interface InputAffixProps extends React.HTMLAttributes<HTMLSpanElement>, InputAffixVariants {
+// === INPUT PREFIX COMPONENT ===
+interface InputAffixProps extends React.HTMLAttributes<HTMLSpanElement> {
     isDisabled?: boolean;
 }
 
-function InputAffix({
-    className,
-    size = "sm",
-    position,
-    isDisabled,
-    children,
-    ...props
-}: InputAffixProps) {
+function InputAffix({ isDisabled, children, className, ...props }: InputAffixProps) {
     return (
         <span
+            {...props}
             className={cn(
-                inputAffixVariants({
-                    size,
-                    position,
-                }),
-                isDisabled && "text-disabled ring-border-disabled bg-disabled_subtle",
+                "flex text-md text-tertiary shadow-xs ring-1 ring-border-primary ring-inset items-center justify-center",
+                // Styles when the prefix is within an `InputGroup`
+                "in-data-input-wrapper:in-data-leading:-mr-px in-data-input-wrapper:in-data-leading:rounded-l-lg",
+                "in-data-input-wrapper:in-data-trailing:-ml-px in-data-input-wrapper:in-data-trailing:rounded-r-lg",
+                "in-data-input-wrapper:in-data-[input-size=md]:py-2.5 in-data-input-wrapper:in-data-[input-size=md]:pr-3 in-data-input-wrapper:in-data-[input-size=md]:pl-3.5 in-data-input-wrapper:in-data-[input-size=sm]:px-3 in-data-input-wrapper:in-data-[input-size=sm]:py-2",
+                isDisabled && "border-disabled bg-disabled_subtle text-disabled",
+                "in-data-input-wrapper:group-disabled:bg-disabled_subtle in-data-input-wrapper:group-disabled:text-disabled in-data-input-wrapper:group-disabled:ring-border-disabled",
                 className
             )}
-            {...props}
         >
             {children}
         </span>
