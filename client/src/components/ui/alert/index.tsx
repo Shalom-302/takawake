@@ -79,7 +79,7 @@ function Alert({
                     variant={"tertiary"}
                     onClick={handleClose}
                     className={`${size === "floating" && "absolute right-2 top-2"} rounded-lg inline-flex justify-center items-center text-fg-quaternary`}
-                    iconLeft={<XClose />}
+                    leftIcon={<XClose />}
                 />
             )}
         </div>

@@ -35,7 +35,7 @@ function FormWithAutoClose() {
             open={open}
             onOpenChange={setOpen}
             trigger={
-                <Button variant="secondary" iconLeft={<Settings02 />}>
+                <Button variant="secondary" leftIcon={<Settings02 />}>
                     Settings
                 </Button>
             }
@@ -197,7 +197,7 @@ function FormWithAutoClose() {
       <Dialog
         open={open}
         onOpenChange={setOpen}
-        trigger={<Button variant="secondary" iconLeft={<Settings02/>}>Settings</Button>}
+        trigger={<Button variant="secondary" leftIcon={<Settings02/>}>Settings</Button>}
         title="Edit profile"
         description="Make changes to your profile here. Click save when you're done."
         content={

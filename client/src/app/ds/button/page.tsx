@@ -49,7 +49,7 @@ export default function ButtonPage() {
                                         <div className="flex items-center gap-2 mb-2">
                                             <Button
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                iconLeft={<Placeholder />}
+                                                leftIcon={<Placeholder />}
                                             >
                                                 Button {variant.name}
                                             </Button>
@@ -59,7 +59,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<Button variant="${variant.name}" iconLeft={<Placeholder />}>Button ${variant.name}</Button>`}
+                                            code={`<Button variant="${variant.name}" leftIcon={<Placeholder />}>Button ${variant.name}</Button>`}
                                         />
                                     </div>
                                 ) : (
@@ -71,7 +71,7 @@ export default function ButtonPage() {
                                             <LinkButton
                                                 href={"#"}
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                iconRight={<Placeholder />}
+                                                rightIcon={<Placeholder />}
                                             >
                                                 Button {variant.name}
                                             </LinkButton>
@@ -81,7 +81,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<LinkButton href={"#"} variant="${variant.name}" iconRight={<Placeholder  />}>${variant.name} Button</LinkButton>`}
+                                            code={`<LinkButton href={"#"} variant="${variant.name}" rightIcon={<Placeholder  />}>${variant.name} Button</LinkButton>`}
                                         />
                                     </div>
                                 )}
@@ -90,12 +90,12 @@ export default function ButtonPage() {
                     })}
                     <div className="p-4 border border-tertiary rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                            <Button iconLeft={<Placeholder />} />
-                            <Button variant={"secondary"} iconLeft={<Placeholder />} />
-                            <Button variant={"tertiary"} iconLeft={<Placeholder />} />
+                            <Button leftIcon={<Placeholder />} />
+                            <Button variant={"secondary"} leftIcon={<Placeholder />} />
+                            <Button variant={"tertiary"} leftIcon={<Placeholder />} />
                         </div>
                         <p className="text-sm text-secondary">{"Icon Only Button"}</p>
-                        <CodeBlock className="mt-2" code={`<Button iconLeft={<Placeholder />}/>`} />
+                        <CodeBlock className="mt-2" code={`<Button leftIcon={<Placeholder />}/>`} />
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@ export default function ButtonPage() {
                     {sizes.map(size => (
                         <Button
                             key={size}
-                            iconLeft={<Placeholder />}
+                            leftIcon={<Placeholder />}
                             size={size as ButtonVariants["size"]}
                         />
                     ))}
@@ -193,13 +193,13 @@ export default function ButtonPage() {
                                 <td className="py-2 px-4">The button size .</td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">iconLeft?</td>
+                                <td className="py-2 px-4 font-mono text-sm">leftIcon?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The left icon.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">iconRight?</td>
+                                <td className="py-2 px-4 font-mono text-sm">rightIcon?</td>
                                 <td className="py-2 px-4 font-mono text-sm">Icon</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">The right icon.</td>

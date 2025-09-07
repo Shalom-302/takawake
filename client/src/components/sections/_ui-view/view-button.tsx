@@ -13,21 +13,21 @@ export default function ViewButton() {
                 <div className=" flex flex-wrap gap-4">
                     <Button
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
-                    <Button size="md" isLoading iconLeft={<Circle />} iconRight={<Circle />}>
+                    <Button size="md" isLoading leftIcon={<Circle />} rightIcon={<Circle />}>
                         Button
                     </Button>
-                    <Button size="lg" iconLeft={<Circle />} iconRight={<Circle />}>
+                    <Button size="lg" leftIcon={<Circle />} rightIcon={<Circle />}>
                         Button
                     </Button>
                     <Button
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -36,8 +36,8 @@ export default function ViewButton() {
                     <Button
                         variant="secondary"
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -45,24 +45,24 @@ export default function ViewButton() {
                         variant="secondary"
                         size="md"
                         isLoading
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="secondary"
                         size="lg"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="secondary"
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -71,8 +71,8 @@ export default function ViewButton() {
                     <Button
                         variant="tertiary"
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -80,24 +80,24 @@ export default function ViewButton() {
                         variant="tertiary"
                         size="md"
                         isLoading
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="tertiary"
                         size="lg"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="tertiary"
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -106,8 +106,8 @@ export default function ViewButton() {
                     <Button
                         variant="primary-destructive"
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -115,24 +115,24 @@ export default function ViewButton() {
                         variant="primary-destructive"
                         size="md"
                         isLoading
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="primary-destructive"
                         size="lg"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
                     <Button
                         variant="primary-destructive"
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Button
                     </Button>
@@ -142,8 +142,8 @@ export default function ViewButton() {
                         variant="link-gray"
                         href="#"
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -151,8 +151,8 @@ export default function ViewButton() {
                         variant="link-gray"
                         href="#"
                         size="md"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -160,8 +160,8 @@ export default function ViewButton() {
                         variant="link-gray"
                         href="#"
                         size="lg"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -169,8 +169,8 @@ export default function ViewButton() {
                         variant="link-gray"
                         href="#"
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -180,8 +180,8 @@ export default function ViewButton() {
                         variant="link-destructive"
                         href="#"
                         isDisabled
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -189,8 +189,8 @@ export default function ViewButton() {
                         variant="link-destructive"
                         href="#"
                         size="md"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -198,8 +198,8 @@ export default function ViewButton() {
                         variant="link-destructive"
                         href="#"
                         size="lg"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
@@ -207,18 +207,18 @@ export default function ViewButton() {
                         variant="link-destructive"
                         href="#"
                         size="xl"
-                        iconLeft={<Circle data-icon />}
-                        iconRight={<Circle data-icon />}
+                        leftIcon={<Circle data-icon />}
+                        rightIcon={<Circle data-icon />}
                     >
                         Lien
                     </LinkButton>
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                    <Button iconLeft={<Circle data-icon />} />
-                    <Button iconLeft={<Circle data-icon />} size={"md"} />
-                    <Button iconLeft={<Circle data-icon />} size={"lg"} />
-                    <Button iconLeft={<Circle data-icon />} size={"xl"} />
+                    <Button leftIcon={<Circle data-icon />} />
+                    <Button leftIcon={<Circle data-icon />} size={"md"} />
+                    <Button leftIcon={<Circle data-icon />} size={"lg"} />
+                    <Button leftIcon={<Circle data-icon />} size={"xl"} />
                 </div>
             </div>
         </section>

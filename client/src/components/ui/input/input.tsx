@@ -178,4 +178,4 @@ function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFi
     );
 }
 
-export { InputForm, Input, BaseInput };
+export { InputForm, Input };

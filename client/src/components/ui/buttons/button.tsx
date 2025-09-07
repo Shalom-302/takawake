@@ -94,8 +94,8 @@ const buttonVariants = cva(
 export interface CommonProps extends VariantProps<typeof buttonVariants> {
     isDisabled?: boolean;
     isLoading?: boolean;
-    iconLeft?: FC<{ className?: string }> | ReactNode;
-    iconRight?: FC<{ className?: string }> | ReactNode;
+    leftIcon?: FC<{ className?: string }> | ReactNode;
+    rightIcon?: FC<{ className?: string }> | ReactNode;
     /** Removes horizontal padding from the text content */
     textPadding?: boolean;
     /** When true, keeps the text visible during loading state */
@@ -127,8 +127,8 @@ function Button({
     effect,
     children,
     className,
-    iconLeft: IconLeft,
-    iconRight: IconRight,
+    leftIcon: LeftIcon,
+    rightIcon: RightIcon,
     isDisabled: disabled,
     isLoading: loading,
     textPadding = true,
@@ -138,7 +138,7 @@ function Button({
 }: Props) {
     const href = "href" in otherProps ? otherProps.href : undefined;
 
-    const isIcon = (IconLeft || IconRight) && !children;
+    const isIcon = (LeftIcon || RightIcon) && !children;
     const isLinkType =
         typeof variant === "string" &&
         ["link-gray", "link-color", "link-destructive"].includes(variant);
@@ -195,7 +195,7 @@ function Button({
             )}
         >
             {/* left icon */}
-            {isValidElement(IconLeft) && IconLeft}
+            {isValidElement(LeftIcon) && LeftIcon}
 
             {/* Loading spinner - Treated as a normal flex item */}
             {loading && (
@@ -255,7 +255,7 @@ function Button({
             )}
 
             {/* Right icon */}
-            {isValidElement(IconRight) && IconRight}
+            {isValidElement(RightIcon) && RightIcon}
         </Component>
     );
 }
