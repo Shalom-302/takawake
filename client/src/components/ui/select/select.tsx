@@ -149,7 +149,7 @@ function SelectTrigger({ className, size = "default", children, ...props }: Sele
                 size === "sm" ? "h-8 py-2 px-3 text-sm" : "h-9 py-2.5 px-3.5 text-sm",
                 // Icon styles
                 "[&>span]:line-clamp-1 [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-fg-quaternary",
-                isInvalid && "ring-error_subtle focus-within:ring-2 focus-within:ring-error",
+                isInvalid && "ring-error_subtle focus:ring-2 focus:ring-error",
                 className
             )}
             {...props}
