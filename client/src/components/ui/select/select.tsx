@@ -1,9 +1,10 @@
-//Mon composant avec shadcn ui
+//Enhanced Shadcn UI Select Component - Fixed
 
 "use client";
 
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
 import { Check, ChevronDown, ChevronUp } from "@untitled-ui/icons-react";
@@ -15,7 +16,11 @@ export interface SelectItemData {
     label?: React.ReactNode;
     value?: string;
     disabled?: boolean;
-    type?: "item" | "separator" | "group" | "label";
+    type?: "item" | "separator" | "group";
+    icon?: React.ReactNode;
+    avatarUrl?: string;
+    supportingText?: string;
+    customContent?: React.ReactNode;
     // pour group
     items?: SelectItemData[];
 }
@@ -28,34 +33,78 @@ interface SelectProps
     triggerClassName?: string;
     contentClassName?: string;
     itemClassName?: string;
+    renderItem?: (item: SelectItemData) => React.ReactNode;
+    showIcon?: boolean;
+    showAvatar?: boolean;
 }
 
-function renderSelectItem(item: SelectItemData): React.ReactNode {
+function renderSelectItem(
+    item: SelectItemData,
+    renderItem?: (item: SelectItemData) => React.ReactNode,
+    itemClassName?: string
+): React.ReactNode {
     switch (item.type) {
         case "separator":
             return <SelectSeparator key={item.id} />;
-        case "label":
-            return <SelectLabel key={item.id}>{item.label}</SelectLabel>;
+        // case "label":
+        //     return <SelectLabel key={item.id}>{item.label}</SelectLabel>;
         case "group":
             return (
                 <SelectGroup key={item.id}>
                     {item.label && <SelectLabel>{item.label}</SelectLabel>}
-                    {item.items?.map(renderSelectItem)}
+                    {item.items?.map(subItem =>
+                        renderSelectItem(subItem, renderItem, itemClassName)
+                    )}
                 </SelectGroup>
             );
         case "item":
         default:
             return (
-                <SelectItem key={item.id} value={item.value || item.id} disabled={item.disabled}>
-                    {item.label}
+                <SelectItem
+                    key={item.id}
+                    value={item.value || item.id}
+                    disabled={item.disabled}
+                    className={itemClassName}
+                >
+                    {renderItem ? renderItem(item) : <DefaultItemContent item={item} />}
                 </SelectItem>
             );
     }
 }
 
+// Composant pour le contenu par défaut d'un item
+function DefaultItemContent({ item }: { item: SelectItemData }) {
+    if (item.customContent) {
+        return <>{item.customContent}</>;
+    }
+
+    return (
+        <div className="flex items-center gap-2 w-full">
+            {item.icon && (
+                <span className="flex-shrink-0 flex items-center justify-center">{item.icon}</span>
+            )}
+            {item.avatarUrl && (
+                <Image
+                    src={item.avatarUrl}
+                    alt={typeof item.label === "string" ? item.label : ""}
+                    width={20}
+                    height={20}
+                    className="rounded-full flex-shrink-0"
+                />
+            )}
+
+            <div>{item.label}</div>
+
+            {item.supportingText && (
+                <div className="text-xs text-muted-foreground truncate">{item.supportingText}</div>
+            )}
+        </div>
+    );
+}
+
 function Select({
     items,
-    placeholder = "Sélectionnez une option...",
+    placeholder = "Select an option...",
     size = "default",
     value,
     onValueChange,
@@ -63,15 +112,45 @@ function Select({
     id,
     triggerClassName,
     contentClassName,
+    itemClassName,
+    renderItem,
+    showIcon = false,
+    showAvatar = false,
     ...props
 }: SelectProps) {
+    // Fonction pour trouver l'item sélectionné dans une structure imbriquée
+    const findSelectedItem = (
+        items: SelectItemData[],
+        targetValue: string
+    ): SelectItemData | undefined => {
+        for (const item of items) {
+            if (item.type === "group" && item.items) {
+                const found = findSelectedItem(item.items, targetValue);
+                if (found) return found;
+            } else if (item.type !== "separator") {
+                // Pour les items normaux, comparer avec value ou id
+                if ((item.value || item.id) === targetValue) {
+                    return item;
+                }
+            }
+        }
+        return undefined;
+    };
+
+    const selectedItem = value ? findSelectedItem(items, value) : undefined;
+
     return (
         <SelectRoot value={value} onValueChange={onValueChange} disabled={disabled}>
             <SelectTrigger className={triggerClassName} size={size} id={id} {...props}>
-                <SelectValue placeholder={placeholder} />
+                <SelectValue
+                    placeholder={placeholder}
+                    selectedItem={selectedItem}
+                    showIcon={showIcon}
+                    showAvatar={showAvatar}
+                />
             </SelectTrigger>
             <SelectContent className={contentClassName}>
-                {items.map(renderSelectItem)}
+                {items.map(item => renderSelectItem(item, renderItem, itemClassName))}
             </SelectContent>
         </SelectRoot>
     );
@@ -122,8 +201,45 @@ function SelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.G
     return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
-function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
-    return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+interface SelectValueProps extends React.ComponentProps<typeof SelectPrimitive.Value> {
+    selectedItem?: SelectItemData;
+    showIcon?: boolean;
+    showAvatar?: boolean;
+}
+
+//  <SelectPrimitive.Value data-slot="select-value" {...props} /
+
+function SelectValue({ selectedItem, showIcon, showAvatar, ...props }: SelectValueProps) {
+    if (!selectedItem) {
+        return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+    }
+
+    return (
+        <SelectPrimitive.Value data-slot="select-value" aria-label={selectedItem.id}>
+            <div className="flex items-center gap-2 w-full min-w-0 text-left">
+                {showIcon && selectedItem.icon && (
+                    <span className="flex-shrink-0 flex items-center justify-center">
+                        {selectedItem.icon}
+                    </span>
+                )}
+                {showAvatar && selectedItem.avatarUrl && (
+                    <Image
+                        src={selectedItem.avatarUrl}
+                        alt={typeof selectedItem.label === "string" ? selectedItem.label : ""}
+                        width={20}
+                        height={20}
+                        className="rounded-full flex-shrink-0"
+                    />
+                )}
+                <span>{selectedItem.label}</span>
+                {selectedItem.supportingText && (
+                    <div className="text-xs text-muted-foreground truncate">
+                        {selectedItem.supportingText}
+                    </div>
+                )}
+            </div>
+        </SelectPrimitive.Value>
+    );
 }
 
 type SelectTriggerProps = React.ComponentProps<typeof SelectPrimitive.Trigger> & {
@@ -302,4 +418,5 @@ export {
     SelectSeparator,
     SelectTrigger,
     SelectValue,
+    DefaultItemContent,
 };

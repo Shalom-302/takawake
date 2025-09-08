@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/buttons";
 import { toast } from "sonner";
+import { File01, Shield01, Star01, User01 } from "@untitled-ui/icons-react";
 
 export default function SelectPage() {
     // =========================
@@ -20,11 +21,15 @@ export default function SelectPage() {
         email: z.email({
             message: "Please select an email to display.",
         }),
+        user: z.string({
+            message: "Please select a user to display.",
+        }),
     });
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
     });
+
     function onSubmit(data: z.infer<typeof FormSchema>) {
         toast("You submitted the following values", {
             description: (
@@ -57,7 +62,7 @@ export default function SelectPage() {
             label: "North America",
             items: [
                 { id: "est", label: "Eastern Standard Time (EST)" },
-                { id: "cst", label: "Central Standard Time (CST)" },
+                { id: "cst", label: "Central Standard Time (CST)", disabled: true },
                 { id: "mst", label: "Mountain Standard Time (MST)" },
                 { id: "pst", label: "Pacific Standard Time (PST)" },
                 { id: "akst", label: "Alaska Standard Time (AKST)" },
@@ -79,6 +84,95 @@ export default function SelectPage() {
         },
     ];
 
+    // NEW EXAMPLES WITH ENHANCED FEATURES
+    const iconsItems: SelectItemData[] = [
+        {
+            id: "user",
+            label: "User",
+            icon: <User01 className="w-4 h-4" />,
+            supportingText: "Limited access",
+        },
+        {
+            id: "admin",
+            label: "Administrator",
+            icon: <Shield01 className="w-4 h-4" />,
+            supportingText: "Full access",
+        },
+        {
+            id: "moderator",
+            label: "Moderator",
+            icon: <Star01 className="w-4 h-4" />,
+            supportingText: "Content management",
+        },
+    ];
+
+    const avatarItems: SelectItemData[] = [
+        {
+            id: "john",
+            label: "John Doe",
+            value: "john",
+            avatarUrl: "/images/avatar-1.png",
+            supportingText: "john@example.com",
+        },
+        {
+            id: "jane",
+            value: "jane",
+            label: "Jane Smith",
+            avatarUrl: "/images/avatar-2.png",
+            supportingText: "jane@example.com",
+        },
+    ];
+
+    const customRenderItems: SelectItemData[] = [
+        {
+            id: "file1",
+            label: "Important Document.pdf",
+            icon: <File01 className="w-4 h-4" />,
+            supportingText: "Modified 2 hours ago",
+        },
+        {
+            id: "file2",
+            label: "Presentation.pptx",
+            icon: <File01 className="w-4 h-4" />,
+            supportingText: "Modified yesterday",
+        },
+    ];
+
+    const mixedContentItems: SelectItemData[] = [
+        {
+            id: "docs",
+            type: "group",
+            label: "Recent Files",
+            items: [
+                {
+                    id: "doc1",
+                    label: "Report.pdf",
+                    icon: <File01 className="w-4 h-4" />,
+                    supportingText: "2.4 MB",
+                },
+            ],
+        },
+        { id: "sep1", type: "separator" },
+        {
+            id: "projects-group",
+            type: "group",
+            label: "Projects",
+            items: [
+                {
+                    id: "proj1",
+                    label: "Project Alpha",
+                    supportingText: "Active",
+                    icon: <Star01 className="w-4 h-4" />,
+                },
+                {
+                    id: "proj2",
+                    label: "Project Beta",
+                    supportingText: "On hold",
+                },
+            ],
+        },
+    ];
+
     return (
         <div className="container mx-auto py-10 px-4">
             {/* HEADER */}
@@ -88,7 +182,8 @@ export default function SelectPage() {
                 </Link>
                 <h1 className="text-3xl font-bold mt-2">Select</h1>
                 <p className="text-tertiary mt-2">
-                    Select component with groups, scrollable items, and form integration.
+                    Advanced select component with icons, avatars, custom content, groups,
+                    scrollable items, and form integration.
                 </p>
             </div>
 
@@ -98,9 +193,136 @@ export default function SelectPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select items={basicItems} placeholder="Select a fruit" />
+
                         <CodeBlock
-                            code={`<Select items={[{ id: "apple", label: "Apple" },  { id: "orange", label: "Orange" },
-        { id: "banana", label: "Banana" },]} placeholder="Select a fruit" />`}
+                            code={`<Select 
+    items={[
+        { id: "apple", label: "Apple" },
+        { id: "orange", label: "Orange" },
+        { id: "banana", label: "Banana" }
+    ]} 
+    placeholder="Select a fruit"
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* DISABLED SELECT */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Disabled Select</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select disabled items={basicItems} placeholder="Select a fruit" />
+                        <CodeBlock
+                            code={`<Select 
+    disabled
+    items={basicItems} 
+    placeholder="Select a fruit" 
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* SELECT WITH ICONS */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">
+                    Select with Icons and Supporting Text
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select items={iconsItems} placeholder="Select a role" showIcon={true} />
+
+                        <CodeBlock
+                            code={`<Select 
+    items={items} 
+    placeholder="Select a role"
+    showIcon={true}
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* SELECT WITH AVATARS */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Select with Avatars</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select items={avatarItems} placeholder="Select a user" showAvatar={true} />
+
+                        <CodeBlock
+                            code={`<Select 
+    items={items} 
+    placeholder="Select a user"
+    showAvatar={true}
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* CUSTOM RENDER */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Custom Item Rendering</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select
+                            items={customRenderItems}
+                            placeholder="Select a file"
+                            renderItem={item => (
+                                <div className="flex items-center gap-3 w-full">
+                                    <div className="flex items-center gap-2">
+                                        {item.icon}
+                                        <span>{item.label}</span>
+                                    </div>
+                                    <span className="text-xs text-tertiary">
+                                        {item.supportingText}
+                                    </span>
+                                </div>
+                            )}
+                        />
+                        <CodeBlock
+                            code={`<Select 
+    items={items}
+    placeholder="Select a file"
+    renderItem={(item) => (
+        <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+                {item.icon}
+                <span>{item.label}</span>
+            </div>
+            <span className="text-xs text-tertiary">
+                {item.supportingText}
+            </span>
+        </div>
+    )}
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* MIXED CONTENT */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">
+                    Mixed Content with Groups and Separators
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select
+                            items={mixedContentItems}
+                            placeholder="Select an item"
+                            triggerClassName="w-[360px]"
+                        />
+
+                        <CodeBlock
+                            code={`<Select 
+    items={items}
+    placeholder="Select an item"
+    triggerClassName="w-[360px]"
+/>`}
                         />
                     </div>
                 </div>
@@ -108,38 +330,54 @@ export default function SelectPage() {
 
             {/* SCROLLABLE SELECT */}
             <section className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Scrollable Select</h2>
-                <div className="p-4 border border-tertiary rounded-lg">
-                    <Select
-                        items={scrollableItems}
-                        placeholder="Select a timezone"
-                        triggerClassName="w-[280px]"
-                    />
-                    <CodeBlock
-                        code={`<Select items={scrollableItems} placeholder="Select a timezone" triggerClassName="w-[280px]" />`}
-                    />
+                <h2 className="text-xl font-semibold mb-4">Scrollable Select With Disabled Item</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Select
+                            items={scrollableItems}
+                            placeholder="Select a timezone"
+                            triggerClassName="w-[360px]"
+                        />
+                        <CodeBlock
+                            code={`<Select 
+    items={scrollableItems}
+    placeholder="Select a timezone" 
+    triggerClassName="w-[360px]"
+/>`}
+                        />
+                    </div>
                 </div>
             </section>
 
             {/* FORM SELECT */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Select in Form</h2>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-                        <SelectForm
-                            control={form.control}
-                            name="email"
-                            label="Email"
-                            placeholder="Select a verified email to display"
-                            items={emailItems}
-                            isRequired
-                        />
-                        <Button type="submit">Submit</Button>
-                    </form>
-                </Form>
-                <CodeBlock
-                    code={`
-<SelectForm
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <SelectForm
+                                    control={form.control}
+                                    name="email"
+                                    label="Email"
+                                    placeholder="Select a verified email to display"
+                                    items={emailItems}
+                                    isRequired
+                                />
+                                <SelectForm
+                                    control={form.control}
+                                    name="user"
+                                    label="User"
+                                    placeholder="Select a user to display"
+                                    items={avatarItems}
+                                    showAvatar={true}
+                                    isRequired
+                                />
+                                <Button type="submit">Submit</Button>
+                            </form>
+                        </Form>
+                        <CodeBlock
+                            code={`<SelectForm
     control={form.control}
     name="email"
     label="Email"
@@ -147,84 +385,116 @@ export default function SelectPage() {
     items={emailItems}
     isRequired
 />`}
-                />
+                        />
+                    </div>
+                </div>
             </section>
 
             {/* API REFERENCE */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">API Reference</h2>
                 <div className="overflow-x-auto space-y-8">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-tertiary">
-                                <th className="text-left py-2 px-4">Props</th>
-                                <th className="text-left py-2 px-4">Type</th>
-                                <th className="text-left py-2 px-4">Default</th>
-                                <th className="text-left py-2 px-4">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">items</td>
-                                <td className="py-2 px-4 ">SelectItemData[]</td>
-                                <td className="py-2 px-4 ">[]</td>
-                                <td className="py-2 px-4 ">
-                                    Liste des éléments à afficher dans le select (items, groups,
-                                    labels, separators)
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">value?</td>
-                                <td className="py-2 px-4 ">string</td>
-                                <td className="py-2 px-4 ">—</td>
-                                <td className="py-2 px-4 ">Valeur sélectionnée (controlled)</td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">onValueChange?</td>
-                                <td className="py-2 px-4 ">{`(value: string) => void`}</td>
-                                <td className="py-2 px-4 ">—</td>
-                                <td className="py-2 px-4 ">
-                                    Callback appelé lors du changement de valeur
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">placeholder?</td>
-                                <td className="py-2 px-4 ">string</td>
-                                <td className="py-2 px-4 ">{`"Sélectionnez une option..."`}</td>
-                                <td className="py-2 px-4 ">
-                                    Texte affiché quand aucune valeur n’est sélectionnée
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">size?</td>
-                                <td className="py-2 px-4 ">{`"sm" | "default"`}</td>
-                                <td className="py-2 px-4 ">{`"default"`}</td>
-                                <td className="py-2 px-4 ">Taille du trigger</td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">contentClassName?</td>
-                                <td className="py-2 px-4 ">string</td>
-                                <td className="py-2 px-4 ">—</td>
-                                <td className="py-2 px-4 ">
-                                    Classe appliquée au contenu du select
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">itemClassName?</td>
-                                <td className="py-2 px-4 ">string</td>
-                                <td className="py-2 px-4 ">—</td>
-                                <td className="py-2 px-4 ">Classe appliquée aux items</td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">disabled?</td>
-                                <td className="py-2 px-4 ">boolean</td>
-                                <td className="py-2 px-4 ">false</td>
-                                <td className="py-2 px-4 ">Désactive le select</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    {/* Select Component Props */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">Select Props</h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-tertiary">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">items</td>
+                                    <td className="py-2 px-4">SelectItemData[]</td>
+                                    <td className="py-2 px-4">[]</td>
+                                    <td className="py-2 px-4">
+                                        List of items to display in the select (items, groups,
+                                        labels, separators)
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">value?</td>
+                                    <td className="py-2 px-4">string</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Selected value (controlled)</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
+                                    <td className="py-2 px-4">{`(value: string) => void`}</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">
+                                        Callback called when value changes
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">placeholder?</td>
+                                    <td className="py-2 px-4">string</td>
+                                    <td className="py-2 px-4">"Select an option..."</td>
+                                    <td className="py-2 px-4">
+                                        Text displayed when no value is selected
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">size?</td>
+                                    <td className="py-2 px-4">{`"sm" | "default"`}</td>
+                                    <td className="py-2 px-4">"default"</td>
+                                    <td className="py-2 px-4">Size of the trigger</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">disabled?</td>
+                                    <td className="py-2 px-4">boolean</td>
+                                    <td className="py-2 px-4">false</td>
+                                    <td className="py-2 px-4">Disables the select</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">showIcon?</td>
+                                    <td className="py-2 px-4">boolean</td>
+                                    <td className="py-2 px-4">false</td>
+                                    <td className="py-2 px-4">
+                                        Show icon in the trigger for selected item
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">showAvatar?</td>
+                                    <td className="py-2 px-4">boolean</td>
+                                    <td className="py-2 px-4">false</td>
+                                    <td className="py-2 px-4">
+                                        Show avatar in the trigger for selected item
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">renderItem?</td>
+                                    <td className="py-2 px-4">{`(item: SelectItemData) => ReactNode`}</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Custom render function for items</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">triggerClassName?</td>
+                                    <td className="py-2 px-4">string</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Custom class for the trigger</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
+                                    <td className="py-2 px-4">string</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Custom class for the content</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">itemClassName?</td>
+                                    <td className="py-2 px-4">string</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Custom class for items</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                    {/* --- SelectItemData --- */}
+                    {/* SelectItemData */}
                     <div>
                         <h3 className="text-md font-semibold mb-2">SelectItemData</h3>
                         <table className="w-full">
@@ -245,7 +515,7 @@ export default function SelectPage() {
                                         <code>string</code>
                                     </td>
                                     <td className="py-2 px-4">—</td>
-                                    <td className="py-2 px-4">Identifiant unique de l’item</td>
+                                    <td className="py-2 px-4">Unique identifier for the item</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4">
@@ -255,7 +525,7 @@ export default function SelectPage() {
                                         <code>React.ReactNode</code>
                                     </td>
                                     <td className="py-2 px-4">—</td>
-                                    <td className="py-2 px-4">Texte ou élément affiché</td>
+                                    <td className="py-2 px-4">Text or element displayed</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4">
@@ -265,7 +535,9 @@ export default function SelectPage() {
                                         <code>string</code>
                                     </td>
                                     <td className="py-2 px-4">—</td>
-                                    <td className="py-2 px-4">Valeur du select</td>
+                                    <td className="py-2 px-4">
+                                        Value used for selection (defaults to id)
+                                    </td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4">
@@ -275,19 +547,61 @@ export default function SelectPage() {
                                         <code>boolean</code>
                                     </td>
                                     <td className="py-2 px-4">false</td>
-                                    <td className="py-2 px-4">Désactive l’item</td>
+                                    <td className="py-2 px-4">Disables the item</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4">
                                         <code>type?</code>
                                     </td>
                                     <td className="py-2 px-4">
-                                        <code>{`"item" | "separator" | "group" | "label"`}</code>
+                                        <code>"item" | "separator" | "group" | "label"</code>
+                                    </td>
+                                    <td className="py-2 px-4">"item"</td>
+                                    <td className="py-2 px-4">Type of element</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>icon?</code>
                                     </td>
                                     <td className="py-2 px-4">
-                                        <code>{`"item"`}</code>
+                                        <code>React.ReactNode</code>
                                     </td>
-                                    <td className="py-2 px-4">Type d’élément</td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Icon to display</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>avatarUrl?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Avatar image URL</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>supportingText?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">
+                                        Secondary text displayed below label
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>customContent?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>React.ReactNode</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">
+                                        Completely custom content for the item
+                                    </td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4">
@@ -297,7 +611,77 @@ export default function SelectPage() {
                                         <code>SelectItemData[]</code>
                                     </td>
                                     <td className="py-2 px-4">[]</td>
-                                    <td className="py-2 px-4">Sous-items pour les groupes</td>
+                                    <td className="py-2 px-4">Sub-items for groups</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* SelectForm Props */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">SelectForm Props</h3>
+                        <p className="text-sm text-tertiary mb-2">
+                            Extends all Select props plus the following form-specific props:
+                        </p>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-tertiary">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>control</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>Control</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">React Hook Form control object</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>name</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Field name</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>label?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Field label</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>description?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>string</code>
+                                    </td>
+                                    <td className="py-2 px-4">—</td>
+                                    <td className="py-2 px-4">Field description</td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4">
+                                        <code>isRequired?</code>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <code>boolean</code>
+                                    </td>
+                                    <td className="py-2 px-4">false</td>
+                                    <td className="py-2 px-4">Shows required indicator</td>
                                 </tr>
                             </tbody>
                         </table>
