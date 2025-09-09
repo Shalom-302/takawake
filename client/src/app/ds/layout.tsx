@@ -25,6 +25,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Dropdown", href: "/ds/dropdown" },
         { name: "Input", href: "/ds/input" },
         { name: "Pagination", href: "/ds/pagination" },
+        { name: "Popover", href: "/ds/popover" },
         { name: "Progress", href: "/ds/progress" },
         { name: "Select", href: "/ds/select" },
         { name: "Slider", href: "/ds/slider" },

@@ -96,28 +96,21 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 // === FORM LABEL COMPONENT ===
 interface FormLabelProps extends React.ComponentProps<typeof LabelPrimitive.Root> {
     isRequired?: boolean;
-    hideRequiredIndicator?: boolean;
+    labelTooltip?: React.ReactNode;
 }
 
-function FormLabel({
-    className,
-    isRequired,
-    hideRequiredIndicator,
-    children,
-    ...props
-}: FormLabelProps) {
+function FormLabel({ className, isRequired, labelTooltip, ...props }: FormLabelProps) {
     const { formItemId } = useFormField();
 
     return (
         <Label
             data-slot="form-label"
-            isRequired={isRequired && !hideRequiredIndicator}
+            isRequired={isRequired}
+            labelTooltip={labelTooltip}
             className={className}
             htmlFor={formItemId}
             {...props}
-        >
-            {children}
-        </Label>
+        />
     );
 }
 
@@ -178,21 +171,21 @@ export interface FormFieldWrapperProps<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > extends Omit<ControllerProps<TFieldValues, TName>, "render"> {
     label?: string;
+    labelTooltip?: React.ReactNode;
     description?: string;
     isRequired?: boolean;
-    hideRequiredIndicator?: boolean;
     children: (field: ControllerRenderProps<TFieldValues, TName>) => React.ReactNode;
 }
 
 function FormFieldWrapper<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
     name,
     label,
+    labelTooltip,
     description,
     control,
     rules,
     defaultValue,
     isRequired,
-    hideRequiredIndicator,
     children,
 }: FormFieldWrapperProps<TFieldValues, TName>) {
     // Merge isRequired into rules if provided
@@ -215,10 +208,7 @@ function FormFieldWrapper<TFieldValues extends FieldValues, TName extends FieldP
             render={({ field }) => (
                 <FormItem>
                     {label && (
-                        <FormLabel
-                            isRequired={isRequired}
-                            hideRequiredIndicator={hideRequiredIndicator}
-                        >
+                        <FormLabel isRequired={isRequired} labelTooltip={labelTooltip}>
                             {label}
                         </FormLabel>
                     )}

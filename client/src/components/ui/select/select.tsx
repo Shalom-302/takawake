@@ -114,8 +114,6 @@ function Select({
     contentClassName,
     itemClassName,
     renderItem,
-    showIcon = false,
-    showAvatar = false,
     ...props
 }: SelectProps) {
     // Fonction pour trouver l'item sélectionné dans une structure imbriquée
@@ -142,12 +140,7 @@ function Select({
     return (
         <SelectRoot value={value} onValueChange={onValueChange} disabled={disabled}>
             <SelectTrigger className={triggerClassName} size={size} id={id} {...props}>
-                <SelectValue
-                    placeholder={placeholder}
-                    selectedItem={selectedItem}
-                    showIcon={showIcon}
-                    showAvatar={showAvatar}
-                />
+                <SelectValue placeholder={placeholder} selectedItem={selectedItem} />
             </SelectTrigger>
             <SelectContent className={contentClassName}>
                 {items.map(item => renderSelectItem(item, renderItem, itemClassName))}
@@ -161,7 +154,7 @@ interface SelectFormProps<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
         Omit<SelectProps, "defaultValue" | "name"> {
-    isRequired?: boolean;
+    // isRequired?: boolean;
 }
 
 function SelectForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
@@ -169,6 +162,7 @@ function SelectForm<TFieldValues extends FieldValues, TName extends FieldPath<TF
     control,
     name,
     label,
+    labelTooltip,
     description,
     ...selectProps
 }: SelectFormProps<TFieldValues, TName>) {
@@ -177,6 +171,7 @@ function SelectForm<TFieldValues extends FieldValues, TName extends FieldPath<TF
             control={control}
             name={name}
             label={label}
+            labelTooltip={labelTooltip}
             description={description}
             isRequired={isRequired}
         >
@@ -203,13 +198,9 @@ function SelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.G
 
 interface SelectValueProps extends React.ComponentProps<typeof SelectPrimitive.Value> {
     selectedItem?: SelectItemData;
-    showIcon?: boolean;
-    showAvatar?: boolean;
 }
 
-//  <SelectPrimitive.Value data-slot="select-value" {...props} /
-
-function SelectValue({ selectedItem, showIcon, showAvatar, ...props }: SelectValueProps) {
+function SelectValue({ selectedItem, ...props }: SelectValueProps) {
     if (!selectedItem) {
         return <SelectPrimitive.Value data-slot="select-value" {...props} />;
     }
@@ -217,12 +208,12 @@ function SelectValue({ selectedItem, showIcon, showAvatar, ...props }: SelectVal
     return (
         <SelectPrimitive.Value data-slot="select-value" aria-label={selectedItem.id}>
             <div className="flex items-center gap-2 w-full min-w-0 text-left">
-                {showIcon && selectedItem.icon && (
+                {selectedItem.icon && (
                     <span className="flex-shrink-0 flex items-center justify-center">
                         {selectedItem.icon}
                     </span>
                 )}
-                {showAvatar && selectedItem.avatarUrl && (
+                {selectedItem.avatarUrl && (
                     <Image
                         src={selectedItem.avatarUrl}
                         alt={typeof selectedItem.label === "string" ? selectedItem.label : ""}
@@ -308,7 +299,7 @@ function SelectContent({
                 <SelectScrollUpButton />
                 <SelectPrimitive.Viewport
                     className={cn(
-                        "p-1",
+                        "p-1 flex flex-col gap-0.5",
                         position === "popper" &&
                             "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
                     )}

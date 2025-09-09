@@ -12,7 +12,7 @@ export default function DesignSystemPage() {
         isNew: boolean;
         icon: string;
     }
-    
+
     // Base components - fundamental building blocks
     const baseComponents: ComponentItem[] = [
         {
@@ -104,6 +104,14 @@ export default function DesignSystemPage() {
             icon: "M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z",
         },
         {
+            name: "Popover",
+            description: "Navigation for multi-page content.",
+            count: "2 Components",
+            href: "/ds/popover",
+            isNew: true,
+            icon: "M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z",
+        },
+        {
             name: "Progress",
             description: "Visual indicators for operations status.",
             count: "6 Components",
@@ -173,7 +181,8 @@ export default function DesignSystemPage() {
     const compositeComponents = [
         {
             name: "Group Card",
-            description: "Card component for displaying savings group information with status and actions.",
+            description:
+                "Card component for displaying savings group information with status and actions.",
             count: "1 Component",
             href: "/ds/group-card",
             isNew: true,
@@ -181,7 +190,8 @@ export default function DesignSystemPage() {
         },
         {
             name: "Member List",
-            description: "List component for displaying member information with optional actions and pagination.",
+            description:
+                "List component for displaying member information with optional actions and pagination.",
             count: "1 Component",
             href: "/ds/member-list",
             isNew: true,
@@ -207,11 +217,7 @@ export default function DesignSystemPage() {
                             stroke="currentColor"
                             className="w-5 h-5 text-primary"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d={component.icon}
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" d={component.icon} />
                         </svg>
                     </div>
                     <h2 className="text-lg font-medium group-hover:text-primary transition-colors">
@@ -224,9 +230,7 @@ export default function DesignSystemPage() {
                     </span>
                 )}
             </div>
-            <p className="text-muted-foreground mb-4 flex-grow">
-                {component.description}
-            </p>
+            <p className="text-muted-foreground mb-4 flex-grow">{component.description}</p>
             <div className="text-xs text-muted-foreground">{component.count}</div>
         </Link>
     );
@@ -248,7 +252,8 @@ export default function DesignSystemPage() {
             <div className="mb-12">
                 <h2 className="text-2xl font-semibold mb-6">Base Components</h2>
                 <p className="text-muted-foreground mb-6">
-                    Fundamental building blocks with simplified APIs and enhanced variants for creating UI elements.
+                    Fundamental building blocks with simplified APIs and enhanced variants for
+                    creating UI elements.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {baseComponents.map(component => renderComponentCard(component))}
@@ -259,7 +264,8 @@ export default function DesignSystemPage() {
             <div className="mb-12">
                 <h2 className="text-2xl font-semibold mb-6">Composite Components</h2>
                 <p className="text-muted-foreground mb-6">
-                    Higher-level components that combine multiple base components for specific use cases in the application.
+                    Higher-level components that combine multiple base components for specific use
+                    cases in the application.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {compositeComponents.map(component => renderComponentCard(component))}

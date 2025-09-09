@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-type CardProps = React.ComponentProps<"div"> & {
+type CardProps = Omit<React.ComponentProps<"div">, "content"> & {
     title?: string;
     description?: string;
     action?: React.ReactNode;

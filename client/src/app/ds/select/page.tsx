@@ -232,13 +232,31 @@ export default function SelectPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <Select items={iconsItems} placeholder="Select a role" showIcon={true} />
+                        <Select items={iconsItems} placeholder="Select a role" />
 
                         <CodeBlock
                             code={`<Select 
-    items={items} 
+    items={[
+        {
+            id: "user",
+            label: "User",
+            icon: <User01 className="w-4 h-4" />,
+            supportingText: "Limited access",
+        },
+        {
+            id: "admin",
+            label: "Administrator",
+            icon: <Shield01 className="w-4 h-4" />,
+            supportingText: "Full access",
+        },
+        {
+            id: "moderator",
+            label: "Moderator",
+            icon: <Star01 className="w-4 h-4" />,
+            supportingText: "Content management",
+        },
+    ]} 
     placeholder="Select a role"
-    showIcon={true}
 />`}
                         />
                     </div>
@@ -250,13 +268,27 @@ export default function SelectPage() {
                 <h2 className="text-xl font-semibold mb-4">Select with Avatars</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <Select items={avatarItems} placeholder="Select a user" showAvatar={true} />
+                        <Select items={avatarItems} placeholder="Select a user" />
 
                         <CodeBlock
                             code={`<Select 
-    items={items} 
+    items={[
+        {
+            id: "john",
+            label: "John Doe",
+            value: "john",
+            avatarUrl: "/images/avatar-1.png",
+            supportingText: "john@example.com",
+        },
+        {
+            id: "jane",
+            value: "jane",
+            label: "Jane Smith",
+            avatarUrl: "/images/avatar-2.png",
+            supportingText: "jane@example.com",
+        },
+    ]} 
     placeholder="Select a user"
-    showAvatar={true}
 />`}
                         />
                     </div>
@@ -285,7 +317,20 @@ export default function SelectPage() {
                         />
                         <CodeBlock
                             code={`<Select 
-    items={items}
+    items={[
+        {
+            id: "file1",
+            label: "Important Document.pdf",
+            icon: <File01 className="w-4 h-4" />,
+            supportingText: "Modified 2 hours ago",
+        },
+        {
+            id: "file2",
+            label: "Presentation.pptx",
+            icon: <File01 className="w-4 h-4" />,
+            supportingText: "Modified yesterday",
+        },
+    ]}
     placeholder="Select a file"
     renderItem={(item) => (
         <div className="flex items-center justify-between w-full">
@@ -319,7 +364,40 @@ export default function SelectPage() {
 
                         <CodeBlock
                             code={`<Select 
-    items={items}
+    items={[
+        {
+            id: "docs",
+            type: "group",
+            label: "Recent Files",
+            items: [
+                {
+                    id: "doc1",
+                    label: "Report.pdf",
+                    icon: <File01 className="w-4 h-4" />,
+                    supportingText: "2.4 MB",
+                },
+            ],
+        },
+        { id: "sep1", type: "separator" },
+        {
+            id: "projects-group",
+            type: "group",
+            label: "Projects",
+            items: [
+                {
+                    id: "proj1",
+                    label: "Project Alpha",
+                    supportingText: "Active",
+                    icon: <Star01 className="w-4 h-4" />,
+                },
+                {
+                    id: "proj2",
+                    label: "Project Beta",
+                    supportingText: "On hold",
+                },
+            ],
+        },
+    ]}
     placeholder="Select an item"
     triggerClassName="w-[360px]"
 />`}
@@ -340,7 +418,34 @@ export default function SelectPage() {
                         />
                         <CodeBlock
                             code={`<Select 
-    items={scrollableItems}
+    items={[
+        {
+            id: "north-america",
+            type: "group",
+            label: "North America",
+            items: [
+                { id: "est", label: "Eastern Standard Time (EST)" },
+                { id: "cst", label: "Central Standard Time (CST)", disabled: true },
+                { id: "mst", label: "Mountain Standard Time (MST)" },
+                { id: "pst", label: "Pacific Standard Time (PST)" },
+                { id: "akst", label: "Alaska Standard Time (AKST)" },
+                { id: "hst", label: "Hawaii Standard Time (HST)" },
+            ],
+        },
+        {
+            id: "europe-africa",
+            type: "group",
+            label: "Europe & Africa",
+            items: [
+                { id: "gmt", label: "Greenwich Mean Time (GMT)" },
+                { id: "cet", label: "Central European Time (CET)" },
+                { id: "eet", label: "Eastern European Time (EET)" },
+                { id: "west", label: "Western European Summer Time (WEST)" },
+                { id: "cat", label: "Central Africa Time (CAT)" },
+                { id: "eat", label: "East Africa Time (EAT)" },
+            ],
+        },
+    ]}
     placeholder="Select a timezone" 
     triggerClassName="w-[360px]"
 />`}
@@ -360,6 +465,7 @@ export default function SelectPage() {
                                     control={form.control}
                                     name="email"
                                     label="Email"
+                                    labelTooltip="This is a tooltip"
                                     placeholder="Select a verified email to display"
                                     items={emailItems}
                                     isRequired
@@ -368,6 +474,7 @@ export default function SelectPage() {
                                     control={form.control}
                                     name="user"
                                     label="User"
+                                    labelTooltip="This is a tooltip"
                                     placeholder="Select a user to display"
                                     items={avatarItems}
                                     showAvatar={true}
@@ -377,14 +484,54 @@ export default function SelectPage() {
                             </form>
                         </Form>
                         <CodeBlock
-                            code={`<SelectForm
-    control={form.control}
-    name="email"
-    label="Email"
-    placeholder="Select a verified email to display"
-    items={emailItems}
-    isRequired
-/>`}
+                            code={`
+                              
+const FormSchema = z.object({
+        email: z.email({
+            message: "Please select an email to display.",
+        }),
+        user: z.string({
+            message: "Please select a user to display.",
+        }),
+    });
+
+    const form = useForm<z.infer<typeof FormSchema>>({
+        resolver: zodResolver(FormSchema),
+    });
+
+function onSubmit(data: z.infer<typeof FormSchema>) {
+        toast("You submitted the following values", {
+            description: (
+                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                </pre>
+            ),
+        });
+}
+<Form {...form}>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <SelectForm
+            control={form.control}
+            name="email"
+            label="Email"
+            labelTooltip = "This is a tooltip"
+            placeholder="Select a verified email to display"
+            items={emailItems}
+            isRequired
+        />
+        <SelectForm
+            control={form.control}
+            name="user"
+            label="User"
+            labelTooltip = "This is a tooltip"
+            placeholder="Select a user to display"
+            items={avatarItems}
+            showAvatar={true}
+            isRequired
+        />
+        <Button type="submit">Submit</Button>
+    </form>
+</Form>`}
                         />
                     </div>
                 </div>
@@ -433,7 +580,7 @@ export default function SelectPage() {
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4 font-medium">placeholder?</td>
                                     <td className="py-2 px-4">string</td>
-                                    <td className="py-2 px-4">"Select an option..."</td>
+                                    <td className="py-2 px-4">{`"Select an option..."`}</td>
                                     <td className="py-2 px-4">
                                         Text displayed when no value is selected
                                     </td>
@@ -441,7 +588,7 @@ export default function SelectPage() {
                                 <tr className="border-b border-tertiary">
                                     <td className="py-2 px-4 font-medium">size?</td>
                                     <td className="py-2 px-4">{`"sm" | "default"`}</td>
-                                    <td className="py-2 px-4">"default"</td>
+                                    <td className="py-2 px-4">{`"default"`}</td>
                                     <td className="py-2 px-4">Size of the trigger</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
@@ -554,9 +701,9 @@ export default function SelectPage() {
                                         <code>type?</code>
                                     </td>
                                     <td className="py-2 px-4">
-                                        <code>"item" | "separator" | "group" | "label"</code>
+                                        <code>{`"item" | "separator" | "group"`}</code>
                                     </td>
-                                    <td className="py-2 px-4">"item"</td>
+                                    <td className="py-2 px-4">{`"item"`}</td>
                                     <td className="py-2 px-4">Type of element</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
