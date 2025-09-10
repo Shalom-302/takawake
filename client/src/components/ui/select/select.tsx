@@ -34,8 +34,6 @@ interface SelectProps
     contentClassName?: string;
     itemClassName?: string;
     renderItem?: (item: SelectItemData) => React.ReactNode;
-    showIcon?: boolean;
-    showAvatar?: boolean;
 }
 
 function renderSelectItem(

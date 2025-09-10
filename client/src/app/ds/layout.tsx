@@ -10,7 +10,7 @@ interface DesignSystemLayoutProps {
 
 export default function DesignSystemLayout({ children }: DesignSystemLayoutProps) {
     const pathname = usePathname();
-    console.log("pathname======>", pathname);
+    // console.log("pathname======>", pathname);
     // List of all components in the design system
     const components = [
         { name: "Accordion", href: "/ds/accordion" },

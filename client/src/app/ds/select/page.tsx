@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 
 import { CodeBlock } from "@/ds/components/code-block";
-import { Select, SelectForm, SelectItemData } from "@/components/ui/select";
+import { Combobox, MultiSelect, Select, SelectForm, SelectItemData } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -106,20 +106,34 @@ export default function SelectPage() {
         },
     ];
 
-    const avatarItems: SelectItemData[] = [
+    const avatarItems = [
         {
-            id: "john",
+            id: "1",
             label: "John Doe",
-            value: "john",
-            avatarUrl: "/images/avatar-1.png",
+            value: "john-doe",
             supportingText: "john@example.com",
+            avatarUrl: "/images/avatar-1.png",
         },
         {
-            id: "jane",
-            value: "jane",
+            id: "2",
             label: "Jane Smith",
-            avatarUrl: "/images/avatar-2.png",
+            value: "jane-smith",
             supportingText: "jane@example.com",
+            avatarUrl: "/images/avatar-2.png",
+        },
+        {
+            id: "3",
+            label: "Bob Johnson",
+            value: "bob-johnson",
+            supportingText: "bob@example.com",
+            avatarUrl: "/images/avatar-3.png",
+        },
+        {
+            id: "4",
+            label: "Alice Brown",
+            value: "alice-brown",
+            supportingText: "alice@example.com",
+            avatarUrl: "/images/avatar-4.png",
         },
     ];
 
@@ -173,8 +187,16 @@ export default function SelectPage() {
         },
     ];
 
+    const frameworks = [
+        { label: "Next.js", value: "nextjs" },
+        { label: "SvelteKit", value: "sveltekit" },
+        { label: "Nuxt.js", value: "nuxtjs" },
+        { label: "Remix", value: "remix" },
+        { label: "Astro", value: "astro" },
+    ];
+    const [userValues, setUserValues] = React.useState<string[]>([]);
     return (
-        <div className="container mx-auto py-10 px-4">
+        <div className="container mx-auto pt-10 px-4 pb-0">
             {/* HEADER */}
             <div className="mb-8">
                 <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
@@ -195,12 +217,12 @@ export default function SelectPage() {
                         <Select items={basicItems} placeholder="Select a fruit" />
 
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         { id: "apple", label: "Apple" },
         { id: "orange", label: "Orange" },
         { id: "banana", label: "Banana" }
-    ]} 
+    ]}
     placeholder="Select a fruit"
 />`}
                         />
@@ -215,10 +237,10 @@ export default function SelectPage() {
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select disabled items={basicItems} placeholder="Select a fruit" />
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     disabled
-    items={basicItems} 
-    placeholder="Select a fruit" 
+    items={basicItems}
+    placeholder="Select a fruit"
 />`}
                         />
                     </div>
@@ -235,7 +257,7 @@ export default function SelectPage() {
                         <Select items={iconsItems} placeholder="Select a role" />
 
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         {
             id: "user",
@@ -255,7 +277,7 @@ export default function SelectPage() {
             icon: <Star01 className="w-4 h-4" />,
             supportingText: "Content management",
         },
-    ]} 
+    ]}
     placeholder="Select a role"
 />`}
                         />
@@ -271,7 +293,7 @@ export default function SelectPage() {
                         <Select items={avatarItems} placeholder="Select a user" />
 
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         {
             id: "john",
@@ -287,7 +309,7 @@ export default function SelectPage() {
             avatarUrl: "/images/avatar-2.png",
             supportingText: "jane@example.com",
         },
-    ]} 
+    ]}
     placeholder="Select a user"
 />`}
                         />
@@ -316,7 +338,7 @@ export default function SelectPage() {
                             )}
                         />
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         {
             id: "file1",
@@ -363,7 +385,7 @@ export default function SelectPage() {
                         />
 
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         {
             id: "docs",
@@ -417,7 +439,7 @@ export default function SelectPage() {
                             triggerClassName="w-[360px]"
                         />
                         <CodeBlock
-                            code={`<Select 
+                            code={`<Select
     items={[
         {
             id: "north-america",
@@ -446,7 +468,7 @@ export default function SelectPage() {
             ],
         },
     ]}
-    placeholder="Select a timezone" 
+    placeholder="Select a timezone"
     triggerClassName="w-[360px]"
 />`}
                         />
@@ -477,7 +499,6 @@ export default function SelectPage() {
                                     labelTooltip="This is a tooltip"
                                     placeholder="Select a user to display"
                                     items={avatarItems}
-                                    showAvatar={true}
                                     isRequired
                                 />
                                 <Button type="submit">Submit</Button>
@@ -485,7 +506,7 @@ export default function SelectPage() {
                         </Form>
                         <CodeBlock
                             code={`
-                              
+
 const FormSchema = z.object({
         email: z.email({
             message: "Please select an email to display.",
@@ -526,7 +547,6 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
             labelTooltip = "This is a tooltip"
             placeholder="Select a user to display"
             items={avatarItems}
-            showAvatar={true}
             isRequired
         />
         <Button type="submit">Submit</Button>
@@ -537,8 +557,59 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
                 </div>
             </section>
 
+            {/* Combobox */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Combobox</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Combobox
+                            placeholder="Search frameworks..."
+                            items={frameworks}
+                            emptyMessage="No framework found !"
+                            size="md"
+                        />
+
+                        <CodeBlock
+                            code={` 
+<Combobox
+    placeholder="Search frameworks..."
+    items={frameworks}
+    size="md"
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* MultiSelect */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">MultiSelect</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <MultiSelect
+                            placeholder="Search"
+                            items={avatarItems}
+                            value={userValues}
+                            onValueChange={setUserValues}
+                            size="sm"
+                        />
+
+                        <CodeBlock
+                            code={` 
+<MultiSelect
+    placeholder="Search"
+    items={avatarItems}
+    value={userValues}
+    onValueChange={setUserValues}
+    size="sm"
+/>`}
+                        />
+                    </div>
+                </div>
+            </section>
+
             {/* API REFERENCE */}
-            <div className="mb-10">
+            <div className="">
                 <h2 className="text-xl font-semibold mb-4">API Reference</h2>
                 <div className="overflow-x-auto space-y-8">
                     {/* Select Component Props */}
@@ -833,6 +904,252 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
                             </tbody>
                         </table>
                     </div>
+                    {/* Combobox Props */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">Combobox Props</h3>
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="border-b border-tertiary">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">placeholder?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"Search"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Placeholder text displayed in the input field.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcut?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether to display the keyboard shortcut hint (⌘K).
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">size?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"sm"</code> | <code>"md"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"sm"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Controls the input size and spacing.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">items?</td>
+                                    <td className="py-2 px-4 text-sm">ComboboxItemBase[]</td>
+                                    <td className="py-2 px-4 text-sm">[]</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        List of items available in the combobox.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">value?</td>
+                                    <td className="py-2 px-4 text-sm">string | null</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        The controlled selected value.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        function: <code>(value: string | null) =&gt; void</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Callback fired when the selected value changes.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">disabled?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether the combobox is disabled.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">className?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the input container.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcutClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the shortcut indicator.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the dropdown content.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">emptyMessage?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"No results found."</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Message displayed when no items match the search input.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 px-4 font-medium">children?</td>
+                                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Optional custom rendering of items. If provided, it
+                                        overrides <code>items</code>.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {/* MutiSelect Props */}
+                    {/* <div>
+                        <h3 className="text-md font-semibold mb-2">MutiSelect Props</h3>
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="border-b border-tertiary">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">placeholder?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"Search"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Placeholder text displayed in the input field.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcut?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether to display the keyboard shortcut hint (⌘K).
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">size?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"sm"</code> | <code>"md"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"sm"</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Controls the input size and spacing.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">items?</td>
+                                    <td className="py-2 px-4 text-sm">ComboboxItemBase[]</td>
+                                    <td className="py-2 px-4 text-sm">[]</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        List of items available in the combobox.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">value?</td>
+                                    <td className="py-2 px-4 text-sm">string | null</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        The controlled selected value.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        function: <code>(value: string | null) =&gt; void</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Callback fired when the selected value changes.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">disabled?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether the combobox is disabled.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">className?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the input container.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcutClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the shortcut indicator.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the dropdown content.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">emptyMessage?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>"No results found."</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Message displayed when no items match the search input.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 px-4 font-medium">children?</td>
+                                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Optional custom rendering of items. If provided, it
+                                        overrides <code>items</code>.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div> */}
                 </div>
             </div>
         </div>

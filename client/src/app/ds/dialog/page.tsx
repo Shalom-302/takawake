@@ -3,8 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ds/components/card";
-import { InfoIcon, Settings2Icon, HelpCircleIcon } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/buttons";
 import { Settings02 } from "@untitled-ui/icons-react";
@@ -315,6 +313,17 @@ function FormWithAutoClose() {
                                 <td className="py-2 px-4 text-sm">-</td>
                                 <td className="py-2 px-4 text-sm">
                                     Additional classes to apply to the dialog content container.
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">dialogContentClassName?</td>
+                                <td className="py-2 px-4 text-sm">string</td>
+                                <td className="py-2 px-4 text-sm">
+                                    {"flex flex-col gap-2 text-center sm:text-left"}
+                                </td>
+                                <td className="py-2 px-4 text-sm">
+                                    Additional classes to apply to the global content(header,
+                                    content and footer).
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">

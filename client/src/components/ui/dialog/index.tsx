@@ -13,6 +13,7 @@ interface DialogRootProps extends React.ComponentProps<typeof DialogPrimitive.Ro
     content?: React.ReactNode;
     footer?: React.ReactNode;
     showCloseButton?: boolean;
+    dialogContentClassName?: string;
     headerClassName?: string;
     titleClassName?: string;
     descriptionClassName?: string;
@@ -26,16 +27,18 @@ function Dialog({
     content,
     footer,
     showCloseButton,
+    dialogContentClassName,
     headerClassName,
     titleClassName,
     descriptionClassName,
     footerClassName,
+
     ...props
 }: DialogRootProps) {
     return (
         <DialogPrimitive.Root data-slot="dialog" {...props}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent showCloseButton={showCloseButton}>
+            <DialogContent className={dialogContentClassName} showCloseButton={showCloseButton}>
                 {(title || description) && (
                     <DialogHeader className={headerClassName}>
                         {title && <DialogTitle className={titleClassName}>{title}</DialogTitle>}

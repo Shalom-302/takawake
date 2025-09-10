@@ -37,6 +37,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "date-fns": "^4.1.0",
+        "downshift": "^9.0.10",
         "framer-motion": "^12.5.0",
         "jotai": "^2.12.2",
         "lucide-react": "^0.482.0",
