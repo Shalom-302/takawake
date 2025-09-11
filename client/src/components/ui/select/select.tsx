@@ -103,7 +103,7 @@ function DefaultItemContent({ item }: { item: SelectItemData }) {
 function Select({
     items,
     placeholder = "Select an option...",
-    size = "default",
+    size = "sm",
     value,
     onValueChange,
     disabled,
@@ -232,10 +232,10 @@ function SelectValue({ selectedItem, ...props }: SelectValueProps) {
 }
 
 type SelectTriggerProps = React.ComponentProps<typeof SelectPrimitive.Trigger> & {
-    size?: "sm" | "default";
+    size?: "sm" | "md";
 };
 
-function SelectTrigger({ className, size = "default", children, ...props }: SelectTriggerProps) {
+function SelectTrigger({ className, size = "sm", children, ...props }: SelectTriggerProps) {
     const isInvalid = props["aria-invalid"] === true;
     return (
         <SelectPrimitive.Trigger
@@ -243,7 +243,7 @@ function SelectTrigger({ className, size = "default", children, ...props }: Sele
             data-size={size}
             className={cn(
                 // Base styles
-                "flex w-full items-center justify-between gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
+                "flex w-full h-max text-md text-primary items-center justify-between gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
                 // Focus states
                 "focus:outline-none focus:ring-2 focus:ring-brand",
                 // Disabled states
@@ -251,7 +251,7 @@ function SelectTrigger({ className, size = "default", children, ...props }: Sele
                 // Placeholder styles
                 "data-[placeholder]:text-placeholder",
                 // Size variants
-                size === "sm" ? "h-8 py-2 px-3 text-sm" : "h-9 py-2.5 px-3.5 text-sm",
+                size === "sm" ? "py-2 px-3 " : "py-2.5 px-3.5",
                 // Icon styles
                 "[&>span]:line-clamp-1 [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-fg-quaternary",
                 isInvalid && "ring-error_subtle focus:ring-2 focus:ring-error",

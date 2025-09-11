@@ -16,14 +16,127 @@ import {
     useState,
 } from "react";
 import { useCombobox, useMultipleSelection } from "downshift";
-import { SearchLg as SearchIcon, XSquare } from "@untitled-ui/icons-react";
+import { SearchLg as SearchIcon, X as XIcon } from "@untitled-ui/icons-react";
 import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils/cn";
+import { FieldPath, FieldValues } from "react-hook-form";
+import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 
-// --------------------
-// Types
-// --------------------
+// ------------------------------------------------------------
+//  MultiSelect
+// ------------------------------------------------------------
+export interface MultiSelectProps extends Omit<MultiSelectInputProps, "size" | "className"> {
+    size?: "sm" | "md";
+    items?: MultiSelectItemBase[];
+    value?: string[];
+    onValueChange?: (values: string[]) => void;
+    disabled?: boolean;
+    inputClassName?: string;
+    contentClassName?: string;
+    emptyMessage?: string;
+    children?: React.ReactNode;
+}
+
+export const MultiSelect = ({
+    placeholder = "Search",
+    shortcut = false,
+    size = "sm",
+    items = [],
+    value = [],
+    onValueChange,
+    disabled = false,
+    inputClassName,
+    shortcutClassName,
+    contentClassName,
+    emptyMessage = "No results found.",
+    children,
+    ...props
+}: MultiSelectProps) => {
+    const isInvalid = props["aria-invalid"] === true;
+    return (
+        <MultiSelectRoot
+            value={value}
+            onValueChange={onValueChange}
+            size={size}
+            disabled={disabled}
+        >
+            <MultiSelectInput
+                placeholder={placeholder}
+                shortcut={shortcut}
+                isInvalid={isInvalid}
+                shortcutClassName={shortcutClassName}
+                className={inputClassName}
+            />
+
+            <MultiSelectContent className={contentClassName}>
+                <MultiSelectEmpty>{emptyMessage}</MultiSelectEmpty>
+                {children
+                    ? children
+                    : items.map(item => (
+                          <MultiSelectItem
+                              key={item.id}
+                              id={item.id}
+                              label={item.label}
+                              value={item.value}
+                              supportingText={item.supportingText}
+                              avatarUrl={item.avatarUrl}
+                              disabled={item.disabled}
+                          />
+                      ))}
+            </MultiSelectContent>
+        </MultiSelectRoot>
+    );
+};
+
+// ------------------------------------------------------------
+// MultiSelectForm
+// ------------------------------------------------------------
+
+interface MultiSelectFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
+        Omit<MultiSelectProps, "defaultValue" | "name"> {}
+
+export function MultiSelectForm<
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    isRequired,
+    control,
+    name,
+    label,
+    labelTooltip,
+    description,
+    ...multiSelectProps
+}: MultiSelectFormProps<TFieldValues, TName>) {
+    return (
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            labelTooltip={labelTooltip}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => (
+                <MultiSelect
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={field.disabled}
+                    name={field.name}
+                    {...multiSelectProps}
+                />
+            )}
+        </FormFieldWrapper>
+    );
+}
+
+// ------------------------------------------------------------
+// MultiSelectRoot
+// ------------------------------------------------------------
+
 export type MultiSelectItemBase = {
     id: string;
     label: string;
@@ -33,7 +146,7 @@ export type MultiSelectItemBase = {
     disabled?: boolean;
 };
 
-export type MultiSelectContextValue = {
+export type MultiSelectRootContextValue = {
     // Obligatoires
     filteredItems: MultiSelectItemBase[];
     items: MultiSelectItemBase[];
@@ -63,32 +176,23 @@ export type MultiSelectContextValue = {
     highlightedIndex: number;
 };
 
-// --------------------
-// Context
-// --------------------
-export const MultiSelectContext = createContext<MultiSelectContextValue>(
-    {} as MultiSelectContextValue
+export const MultiSelectRootContext = createContext<MultiSelectRootContextValue>(
+    {} as MultiSelectRootContextValue
 );
 
-export const useMultiSelectContext = () => useContext(MultiSelectContext);
+export const useMultiSelectContext = () => useContext(MultiSelectRootContext);
 
-// --------------------
-// Sizes
-// --------------------
 const sizes = {
     sm: {
-        root: "min-h-9 px-3 py-1.5 text-sm",
+        root: "px-3 py-2 ",
         shortcut: "pr-2",
     },
     md: {
-        root: "min-h-10 px-3 py-2 text-md",
+        root: "px-3.5 py-2.5",
         shortcut: "pr-3",
     },
 };
 
-// --------------------
-// Default filter function
-// --------------------
 const defaultFilter = (
     inputValue: string,
     items: MultiSelectItemBase[],
@@ -102,10 +206,7 @@ const defaultFilter = (
                 item.supportingText?.toLowerCase().includes(inputValue.toLowerCase()))
     );
 
-// --------------------
-// Main MultiSelectRoot component
-// --------------------
-export type MultiSelectProps = PropsWithChildren<{
+export type MultiSelectRootProps = PropsWithChildren<{
     value?: string[];
     onValueChange?: (values: string[]) => void;
     filterItems?: (
@@ -124,7 +225,7 @@ export const MultiSelectRoot = ({
     size = "sm",
     disabled = false,
     children,
-}: MultiSelectProps) => {
+}: MultiSelectRootProps) => {
     const [items, setItems] = useState<MultiSelectItemBase[]>([]);
     const [filteredItems, setFilteredItems] = useState<MultiSelectItemBase[]>([]);
     const [openedOnce, setOpenedOnce] = useState(false);
@@ -137,13 +238,6 @@ export const MultiSelectRoot = ({
     }, [items, value]);
 
     // // Multiple selection hook
-    // const { getDropdownProps, addSelectedItem, removeSelectedItem, activeIndex } =
-    //     useMultipleSelection({
-    //         selectedItems,
-    //         onSelectedItemsChange: ({ selectedItems: newSelectedItems }) => {
-    //             onValueChange?.(newSelectedItems?.map(item => item.id) || []);
-    //         },
-    //     });
     const { getDropdownProps, activeIndex } = useMultipleSelection({
         selectedItems,
         onSelectedItemsChange: ({ selectedItems: newSelectedItems }) => {
@@ -167,7 +261,7 @@ export const MultiSelectRoot = ({
         [onValueChange, selectedItems]
     );
 
-    // Combobox hook
+    // MultiSelect hook
     const { isOpen, getMenuProps, getInputProps, highlightedIndex, getItemProps } = useCombobox({
         items: filteredItems,
         itemToString: item => (item ? item.label : ""),
@@ -214,7 +308,7 @@ export const MultiSelectRoot = ({
     }, [filterItems, inputValue, items, selectedItems]);
 
     return (
-        <MultiSelectContext.Provider
+        <MultiSelectRootContext.Provider
             value={{
                 filteredItems,
                 items,
@@ -239,16 +333,17 @@ export const MultiSelectRoot = ({
             }}
         >
             <PopoverRoot open={isOpen}>{children}</PopoverRoot>
-        </MultiSelectContext.Provider>
+        </MultiSelectRootContext.Provider>
     );
 };
 
-// --------------------
-// MultiSelect Input with Tags
-// --------------------
+// ------------------------------------------------------------
+// MultiSelectInput
+// ------------------------------------------------------------
 export type MultiSelectInputProps = {
     placeholder?: string;
     shortcut?: boolean;
+    isInvalid?: boolean;
     shortcutClassName?: string;
     className?: string;
 } & Omit<ComponentPropsWithoutRef<"input">, "value" | "onChange">;
@@ -256,6 +351,7 @@ export type MultiSelectInputProps = {
 export const MultiSelectInput = ({
     placeholder = "Search",
     shortcut = true,
+    isInvalid,
     shortcutClassName,
     className,
     ...props
@@ -342,18 +438,19 @@ export const MultiSelectInput = ({
     );
 
     return (
-        <div className="relative w-full">
+        <div className="relative w-full" ref={ref}>
             <PopoverAnchor asChild>
                 <div
                     className={cn(
-                        "relative flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text",
+                        "relative h-max text-md text-primary flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text focus-within:ring-2 focus-within:ring-brand",
                         disabled && "cursor-not-allowed bg-disabled_subtle",
+                        isInvalid &&
+                            "ring-error_subtle focus-within:ring-2 focus-within:ring-error",
                         isOpen && "ring-2 ring-brand",
                         sizes[size].root,
                         className
                     )}
                     {...getDropdownProps()}
-                    ref={ref}
                 >
                     <SearchIcon className="pointer-events-none size-5 text-fg-quaternary flex-shrink-0" />
 
@@ -392,7 +489,7 @@ export const MultiSelectInput = ({
                                         disabled && "cursor-not-allowed opacity-50"
                                     )}
                                 >
-                                    <XSquare className="h-3 w-3" />
+                                    <XIcon className="h-3 w-3" />
                                 </button>
                             </div>
                         ))}
@@ -438,9 +535,9 @@ export const MultiSelectInput = ({
     );
 };
 
-// --------------------
-// MultiSelect Content
-// --------------------
+// ------------------------------------------------------------
+// MultiSelectContent
+// ------------------------------------------------------------
 export const MultiSelectContent = ({
     onOpenAutoFocus,
     children,
@@ -494,9 +591,9 @@ export const MultiSelectContent = ({
     );
 };
 
-// --------------------
+// ------------------------------------------------------------
 // MultiSelect Item
-// --------------------
+// ------------------------------------------------------------
 export type MultiSelectItemProps = MultiSelectItemBase & ComponentPropsWithoutRef<"div">;
 
 export const MultiSelectItem = ({
@@ -551,9 +648,9 @@ export const MultiSelectItem = ({
     );
 };
 
-// --------------------
+// ------------------------------------------------------------
 // MultiSelect Empty
-// --------------------
+// ------------------------------------------------------------
 export const MultiSelectEmpty = ({
     className,
     children,
@@ -567,71 +664,5 @@ export const MultiSelectEmpty = ({
         <div {...props} className={cn("py-6 text-center text-sm text-tertiary", className)}>
             {children ?? "No results found."}
         </div>
-    );
-};
-
-// --------------------
-// Simplified MultiSelect for DX
-// --------------------
-export interface MultiSelectSimpleProps {
-    placeholder?: string;
-    shortcut?: boolean;
-    size?: "sm" | "md";
-    items?: MultiSelectItemBase[];
-    value?: string[];
-    onValueChange?: (values: string[]) => void;
-    disabled?: boolean;
-    className?: string;
-    shortcutClassName?: string;
-    contentClassName?: string;
-    emptyMessage?: string;
-    children?: React.ReactNode;
-}
-
-export const MultiSelect = ({
-    placeholder = "Search",
-    shortcut = false,
-    size = "sm",
-    items = [],
-    value = [],
-    onValueChange,
-    disabled = false,
-    className,
-    shortcutClassName,
-    contentClassName,
-    emptyMessage = "No results found.",
-    children,
-}: MultiSelectSimpleProps) => {
-    return (
-        <MultiSelectRoot
-            value={value}
-            onValueChange={onValueChange}
-            size={size}
-            disabled={disabled}
-        >
-            <MultiSelectInput
-                placeholder={placeholder}
-                shortcut={shortcut}
-                shortcutClassName={shortcutClassName}
-                className={className}
-            />
-
-            <MultiSelectContent className={contentClassName}>
-                <MultiSelectEmpty>{emptyMessage}</MultiSelectEmpty>
-                {children
-                    ? children
-                    : items.map(item => (
-                          <MultiSelectItem
-                              key={item.id}
-                              id={item.id}
-                              label={item.label}
-                              value={item.value}
-                              supportingText={item.supportingText}
-                              avatarUrl={item.avatarUrl}
-                              disabled={item.disabled}
-                          />
-                      ))}
-            </MultiSelectContent>
-        </MultiSelectRoot>
     );
 };

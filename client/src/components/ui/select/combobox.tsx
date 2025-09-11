@@ -1,5 +1,3 @@
-//Mon combobox finale
-
 "use client";
 
 import {
@@ -20,18 +18,124 @@ import { useCombobox, type UseComboboxProps, type UseComboboxReturnValue } from 
 import { SearchLg as SearchIcon } from "@untitled-ui/icons-react";
 import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
+import { FieldPath, FieldValues } from "react-hook-form";
+import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 
-// --------------------
-// Types
-// --------------------
+// ------------------------------------------------------------
+// Combobox
+// ------------------------------------------------------------
+export interface ComboboxProps extends Omit<ComboboxInputProps, "size" | "className"> {
+    size?: "sm" | "md";
+    items?: ComboboxItemBase[];
+    value?: string | null;
+    onValueChange?: (value: string | null) => void;
+    disabled?: boolean;
+    inputClassName?: string;
+    contentClassName?: string;
+    emptyMessage?: string;
+    children?: React.ReactNode;
+}
+
+export const Combobox = ({
+    placeholder = "Search",
+    shortcut = false,
+    size = "sm",
+    items = [],
+    value,
+    onValueChange,
+    disabled = false,
+    inputClassName,
+    shortcutClassName,
+    contentClassName,
+    emptyMessage = "No results found.",
+    children,
+    ...props
+}: ComboboxProps) => {
+    const isInvalid = props["aria-invalid"] === true;
+    return (
+        <ComboboxRoot value={value} onValueChange={onValueChange} size={size} disabled={disabled}>
+            <ComboboxInput
+                placeholder={placeholder}
+                shortcut={shortcut}
+                shortcutClassName={shortcutClassName}
+                isInvalid={isInvalid}
+                className={inputClassName}
+            />
+
+            <ComboboxContent className={contentClassName}>
+                <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+                {children
+                    ? children
+                    : items.map(item => (
+                          <ComboboxItem
+                              key={item.value}
+                              label={item.label}
+                              value={item.value}
+                              disabled={item.disabled}
+                          />
+                      ))}
+            </ComboboxContent>
+        </ComboboxRoot>
+    );
+};
+
+// ------------------------------------------------------------
+// ComboboxForm
+// ------------------------------------------------------------
+
+interface ComboboxFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
+        Omit<ComboboxProps, "defaultValue" | "name"> {}
+
+export function ComboboxForm<
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    isRequired,
+    control,
+    name,
+    label,
+    labelTooltip,
+    description,
+    ...comboboxProps
+}: ComboboxFormProps<TFieldValues, TName>) {
+    return (
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            labelTooltip={labelTooltip}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => (
+                <Combobox
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={field.disabled}
+                    name={field.name}
+                    {...comboboxProps}
+                />
+            )}
+        </FormFieldWrapper>
+    );
+}
+
+// ------------------------------------------------------------
+// ComboboxRoot
+// ------------------------------------------------------------
+
 export type ComboboxItemBase = {
+    id?: string;
     label: string;
     value: string;
     supportingText?: string;
     disabled?: boolean;
 };
 
-export type ComboboxContextValue = {
+export type ComboboxRootContextValue = {
     filteredItems: ComboboxItemBase[];
     items: ComboboxItemBase[];
     onItemsChange: (items: ComboboxItemBase[]) => void;
@@ -56,10 +160,7 @@ export type ComboboxContextValue = {
     >
 >;
 
-// --------------------
-// Context
-// --------------------
-export const ComboboxContext = createContext<ComboboxContextValue>({
+export const ComboboxRootContext = createContext<ComboboxRootContextValue>({
     filteredItems: [],
     items: [],
     onItemsChange: () => {},
@@ -69,25 +170,19 @@ export const ComboboxContext = createContext<ComboboxContextValue>({
     setWidth: () => {},
 });
 
-export const useComboboxContext = () => useContext(ComboboxContext);
+export const useComboboxContext = () => useContext(ComboboxRootContext);
 
-// --------------------
-// Sizes
-// --------------------
 const sizes = {
     sm: {
-        root: "h-9 px-3 text-sm",
+        root: "px-3 py-2 ",
         shortcut: "pr-2",
     },
     md: {
-        root: "h-10 px-3 text-md",
+        root: "px-3.5 py-2.5",
         shortcut: "pr-3",
     },
 };
 
-// --------------------
-// Default filter function
-// --------------------
 const defaultFilter = (inputValue: string, items: ComboboxItemBase[]) =>
     items.filter(
         item => !inputValue || item.label.toLowerCase().includes(inputValue.toLowerCase())
@@ -95,10 +190,7 @@ const defaultFilter = (inputValue: string, items: ComboboxItemBase[]) =>
 
 const { stateChangeTypes } = useCombobox;
 
-// --------------------
-// Main ComboboxRoot component
-// --------------------
-export type ComboboxProps = PropsWithChildren<{
+export type ComboboxRootProps = PropsWithChildren<{
     value?: string | null;
     onValueChange?: (value: string | null) => void;
     filterItems?: (inputValue: string, items: ComboboxItemBase[]) => ComboboxItemBase[];
@@ -113,7 +205,7 @@ export const ComboboxRoot = ({
     size = "sm",
     disabled = false,
     children,
-}: ComboboxProps) => {
+}: ComboboxRootProps) => {
     const [items, setItems] = useState<ComboboxItemBase[]>([]);
     const [filteredItems, setFilteredItems] = useState<ComboboxItemBase[]>(items);
     const [openedOnce, setOpenedOnce] = useState(false);
@@ -177,10 +269,7 @@ export const ComboboxRoot = ({
         items: filteredItems,
         itemToString: item => (item ? item.label : ""),
         isItemDisabled: item => item.disabled ?? false,
-        selectedItem:
-            typeof value !== "undefined"
-                ? items.find(item => item.value === value) || null
-                : undefined,
+        selectedItem: items.find(item => item.value === value) || null,
         onSelectedItemChange: ({ selectedItem }) => onValueChange?.(selectedItem?.value || null),
         stateReducer,
     });
@@ -194,7 +283,7 @@ export const ComboboxRoot = ({
     }, [filterItems, inputValue, items]);
 
     return (
-        <ComboboxContext.Provider
+        <ComboboxRootContext.Provider
             value={{
                 filteredItems,
                 getInputProps,
@@ -217,23 +306,26 @@ export const ComboboxRoot = ({
             }}
         >
             <PopoverRoot open={isOpen}>{children}</PopoverRoot>
-        </ComboboxContext.Provider>
+        </ComboboxRootContext.Provider>
     );
 };
 
-// --------------------
-// ComboboxRoot Input
-// --------------------
-export type ComboboxInputProps = {
+// ------------------------------------------------------------
+// ComboboxInput
+// ------------------------------------------------------------
+export interface ComboboxInputProps
+    extends Omit<ComponentPropsWithoutRef<"input">, "value" | "onChange"> {
     placeholder?: string;
     shortcut?: boolean;
+    isInvalid?: boolean;
     shortcutClassName?: string;
     className?: string;
-} & Omit<ComponentPropsWithoutRef<"input">, "value" | "onChange">;
+}
 
 export const ComboboxInput = ({
     placeholder = "Search",
     shortcut = true,
+    isInvalid,
     shortcutClassName,
     className,
     ...props
@@ -249,7 +341,7 @@ export const ComboboxInput = ({
     } = useComboboxContext();
 
     const first = inputValue || "";
-    const last = selectedItem?.supportingText ? ` ${selectedItem.supportingText}` : "";
+    const last = selectedItem?.supportingText ? `${selectedItem.supportingText}` : "";
 
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -276,8 +368,10 @@ export const ComboboxInput = ({
             <PopoverAnchor asChild>
                 <div
                     className={cn(
-                        "relative flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text",
+                        "relative h-max text-md text-primary flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text focus-within:ring-2 focus-within:ring-brand",
                         disabled && "cursor-not-allowed bg-disabled_subtle",
+                        isInvalid &&
+                            "ring-error_subtle focus-within:ring-2 focus-within:ring-error",
                         isOpen && "ring-2 ring-brand",
                         sizes[size].root,
                         className
@@ -292,18 +386,11 @@ export const ComboboxInput = ({
                                 className="absolute top-1/2 z-0 inline-flex w-full -translate-y-1/2 gap-2 truncate"
                                 aria-hidden="true"
                             >
-                                <p
-                                    className={cn(
-                                        "text-md font-medium text-primary",
-                                        disabled && "text-disabled"
-                                    )}
-                                >
-                                    {first}
-                                </p>
+                                <p className={cn(disabled && "text-disabled")}>{first}</p>
                                 {last && (
                                     <p
                                         className={cn(
-                                            "-ml-0.75 text-md text-tertiary",
+                                            "-ml-0.75 text-tertiary",
                                             disabled && "text-disabled"
                                         )}
                                     >
@@ -350,9 +437,9 @@ export const ComboboxInput = ({
     );
 };
 
-// --------------------
-// ComboboxRoot Content
-// --------------------
+// ------------------------------------------------------------
+// ComboboxContent
+// ------------------------------------------------------------
 export const ComboboxContent = ({
     onOpenAutoFocus,
     children,
@@ -404,9 +491,9 @@ export const ComboboxContent = ({
     );
 };
 
-// --------------------
-// ComboboxRoot Item
-// --------------------
+// ------------------------------------------------------------
+// ComboboxItem
+// ------------------------------------------------------------
 export type ComboboxItemProps = ComboboxItemBase & ComponentPropsWithoutRef<"div">;
 
 export const ComboboxItem = ({
@@ -450,9 +537,9 @@ export const ComboboxItem = ({
     );
 };
 
-// --------------------
-// ComboboxRoot Empty
-// --------------------
+// ------------------------------------------------------------
+// ComboboxEmpty
+// ------------------------------------------------------------
 export const ComboboxEmpty = ({
     className,
     children,
@@ -466,63 +553,5 @@ export const ComboboxEmpty = ({
         <div {...props} className={cn("py-6 text-center text-sm text-tertiary", className)}>
             {children ?? "No results found."}
         </div>
-    );
-};
-
-// --------------------
-// Simplified Combobox for DX
-// --------------------
-export interface ComboBoxProps {
-    placeholder?: string;
-    shortcut?: boolean;
-    size?: "sm" | "md";
-    items?: ComboboxItemBase[];
-    value?: string | null;
-    onValueChange?: (value: string | null) => void;
-    disabled?: boolean;
-    className?: string;
-    shortcutClassName?: string;
-    contentClassName?: string;
-    emptyMessage?: string;
-    children?: React.ReactNode;
-}
-
-export const Combobox = ({
-    placeholder = "Search",
-    shortcut = false,
-    size = "sm",
-    items = [],
-    value,
-    onValueChange,
-    disabled = false,
-    className,
-    shortcutClassName,
-    contentClassName,
-    emptyMessage = "No results found.",
-    children,
-}: ComboBoxProps) => {
-    return (
-        <ComboboxRoot value={value} onValueChange={onValueChange} size={size} disabled={disabled}>
-            <ComboboxInput
-                placeholder={placeholder}
-                shortcut={shortcut}
-                shortcutClassName={shortcutClassName}
-                className={className}
-            />
-
-            <ComboboxContent className={contentClassName}>
-                <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-                {children
-                    ? children
-                    : items.map(item => (
-                          <ComboboxItem
-                              key={item.value}
-                              label={item.label}
-                              value={item.value}
-                              disabled={item.disabled}
-                          />
-                      ))}
-            </ComboboxContent>
-        </ComboboxRoot>
     );
 };

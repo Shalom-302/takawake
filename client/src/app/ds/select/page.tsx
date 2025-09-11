@@ -4,7 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 
 import { CodeBlock } from "@/ds/components/code-block";
-import { Combobox, MultiSelect, Select, SelectForm, SelectItemData } from "@/components/ui/select";
+import {
+    Combobox,
+    ComboboxForm,
+    MultiSelect,
+    MultiSelectForm,
+    Select,
+    SelectForm,
+    SelectItemData,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,32 +22,6 @@ import { toast } from "sonner";
 import { File01, Shield01, Star01, User01 } from "@untitled-ui/icons-react";
 
 export default function SelectPage() {
-    // =========================
-    // FORM SETUP
-    // =========================
-    const FormSchema = z.object({
-        email: z.email({
-            message: "Please select an email to display.",
-        }),
-        user: z.string({
-            message: "Please select a user to display.",
-        }),
-    });
-
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
-    });
-
-    function onSubmit(data: z.infer<typeof FormSchema>) {
-        toast("You submitted the following values", {
-            description: (
-                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-                </pre>
-            ),
-        });
-    }
-
     const emailItems: SelectItemData[] = [
         { id: "m@example.com", label: "m@example.com" },
         { id: "m@google.com", label: "m@google.com" },
@@ -187,14 +169,50 @@ export default function SelectPage() {
         },
     ];
 
+    const priorities = [
+        { id: "1", label: "Low", value: "low" },
+        { id: "2", label: "Medium", value: "medium" },
+        { id: "3", label: "High", value: "high" },
+        { id: "4", label: "Critical", value: "critical" },
+    ];
+    const [priority, setPriority] = React.useState<string | null>(null);
+
     const frameworks = [
-        { label: "Next.js", value: "nextjs" },
-        { label: "SvelteKit", value: "sveltekit" },
-        { label: "Nuxt.js", value: "nuxtjs" },
-        { label: "Remix", value: "remix" },
-        { label: "Astro", value: "astro" },
+        { id: "1", label: "Next.js", value: "nextjs", supportingText: "React framework" },
+        { id: "2", label: "SvelteKit", value: "sveltekit", supportingText: "Svelte framework" },
+        { id: "3", label: "Nuxt.js", value: "nuxtjs", supportingText: "Vue framework" },
+        { id: "4", label: "Remix", value: "remix", supportingText: "Full stack React framework" },
+        { id: "5", label: "Astro", value: "astro", supportingText: "Static site generator" },
     ];
     const [userValues, setUserValues] = React.useState<string[]>([]);
+
+    // =========================
+    // FORM SETUP
+    // =========================
+    const formSchema = z.object({
+        email: z.email({
+            message: "Please select an email to display.",
+        }),
+        framework: z.string({
+            message: "Please select a framework.",
+        }),
+        users: z.array(z.string()).min(1, "Please select at least one user."),
+    });
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+    });
+
+    function onSubmit(data: z.infer<typeof formSchema>) {
+        console.log("data", data);
+        toast("You submitted the following values", {
+            description: (
+                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                </pre>
+            ),
+        });
+    }
     return (
         <div className="container mx-auto pt-10 px-4 pb-0">
             {/* HEADER */}
@@ -212,7 +230,7 @@ export default function SelectPage() {
             {/* BASIC SELECT */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Basic Select</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select items={basicItems} placeholder="Select a fruit" />
 
@@ -233,7 +251,7 @@ export default function SelectPage() {
             {/* DISABLED SELECT */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Disabled Select</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select disabled items={basicItems} placeholder="Select a fruit" />
                         <CodeBlock
@@ -252,7 +270,7 @@ export default function SelectPage() {
                 <h2 className="text-xl font-semibold mb-4">
                     Select with Icons and Supporting Text
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select items={iconsItems} placeholder="Select a role" />
 
@@ -288,7 +306,7 @@ export default function SelectPage() {
             {/* SELECT WITH AVATARS */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Select with Avatars</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select items={avatarItems} placeholder="Select a user" />
 
@@ -320,7 +338,7 @@ export default function SelectPage() {
             {/* CUSTOM RENDER */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Custom Item Rendering</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select
                             items={customRenderItems}
@@ -376,7 +394,7 @@ export default function SelectPage() {
                 <h2 className="text-xl font-semibold mb-4">
                     Mixed Content with Groups and Separators
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select
                             items={mixedContentItems}
@@ -431,7 +449,7 @@ export default function SelectPage() {
             {/* SCROLLABLE SELECT */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Scrollable Select With Disabled Item</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Select
                             items={scrollableItems}
@@ -476,104 +494,27 @@ export default function SelectPage() {
                 </div>
             </section>
 
-            {/* FORM SELECT */}
-            <section className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Select in Form</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-4 border border-tertiary rounded-lg">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                <SelectForm
-                                    control={form.control}
-                                    name="email"
-                                    label="Email"
-                                    labelTooltip="This is a tooltip"
-                                    placeholder="Select a verified email to display"
-                                    items={emailItems}
-                                    isRequired
-                                />
-                                <SelectForm
-                                    control={form.control}
-                                    name="user"
-                                    label="User"
-                                    labelTooltip="This is a tooltip"
-                                    placeholder="Select a user to display"
-                                    items={avatarItems}
-                                    isRequired
-                                />
-                                <Button type="submit">Submit</Button>
-                            </form>
-                        </Form>
-                        <CodeBlock
-                            code={`
-
-const FormSchema = z.object({
-        email: z.email({
-            message: "Please select an email to display.",
-        }),
-        user: z.string({
-            message: "Please select a user to display.",
-        }),
-    });
-
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
-    });
-
-function onSubmit(data: z.infer<typeof FormSchema>) {
-        toast("You submitted the following values", {
-            description: (
-                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-                </pre>
-            ),
-        });
-}
-<Form {...form}>
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <SelectForm
-            control={form.control}
-            name="email"
-            label="Email"
-            labelTooltip = "This is a tooltip"
-            placeholder="Select a verified email to display"
-            items={emailItems}
-            isRequired
-        />
-        <SelectForm
-            control={form.control}
-            name="user"
-            label="User"
-            labelTooltip = "This is a tooltip"
-            placeholder="Select a user to display"
-            items={avatarItems}
-            isRequired
-        />
-        <Button type="submit">Submit</Button>
-    </form>
-</Form>`}
-                        />
-                    </div>
-                </div>
-            </section>
-
             {/* Combobox */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Combobox</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <Combobox
-                            placeholder="Search frameworks..."
-                            items={frameworks}
-                            emptyMessage="No framework found !"
+                            placeholder="Search priority..."
+                            items={priorities}
+                            value={priority}
+                            onValueChange={setPriority}
+                            emptyMessage="Not found !"
                             size="md"
                         />
 
                         <CodeBlock
                             code={` 
 <Combobox
-    placeholder="Search frameworks..."
-    items={frameworks}
+    placeholder="Search priority..."
+    items={priorities}
+    value={priority}
+    onValueChange={setPriority}
     size="md"
 />`}
                         />
@@ -584,7 +525,7 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
             {/* MultiSelect */}
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">MultiSelect</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
                         <MultiSelect
                             placeholder="Search"
@@ -603,6 +544,102 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
     onValueChange={setUserValues}
     size="sm"
 />`}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* FORM SELECT */}
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Select in Form</h2>
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <SelectForm
+                                    control={form.control}
+                                    name="email"
+                                    label="Email"
+                                    labelTooltip="This is a tooltip"
+                                    placeholder="Select a verified email to display"
+                                    items={emailItems}
+                                    isRequired
+                                />
+                                <ComboboxForm
+                                    control={form.control}
+                                    name="framework"
+                                    label="Framework"
+                                    labelTooltip="This is a tooltip"
+                                    placeholder="Select a framework"
+                                    items={frameworks}
+                                    isRequired
+                                />
+                                <MultiSelectForm
+                                    control={form.control}
+                                    name="users"
+                                    label="Users"
+                                    labelTooltip="This is a tooltip"
+                                    placeholder="Select some users"
+                                    items={avatarItems}
+                                    isRequired
+                                />
+                                <Button type="submit">Submit</Button>
+                            </form>
+                        </Form>
+                        <CodeBlock
+                            code={`
+
+ const formSchema = z.object({
+        email: z.email({
+            message: "Please select an email to display.",
+        }),
+        framework: z.string({
+            message: "Please select a framework.",
+        }),
+        users: z.array(z.string()).min(1, "Please select at least one user."),
+    });
+
+function onSubmit(data: z.infer<typeof formSchema>) {
+        toast("You submitted the following values", {
+            description: (
+                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                </pre>
+            ),
+        });
+}
+<Form {...form}>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <SelectForm
+            control={form.control}
+            name="email"
+            label="Email"
+            labelTooltip="This is a tooltip"
+            placeholder="Select a verified email to display"
+            items={emailItems}
+            isRequired
+        />
+        <ComboboxForm
+            control={form.control}
+            name="framework"
+            label="Framework"
+            labelTooltip="This is a tooltip"
+            placeholder="Select a framework"
+            items={frameworks}
+            isRequired
+        />
+        <MultiSelectForm
+            control={form.control}
+            name="users"
+            label="Users"
+            labelTooltip="This is a tooltip"
+            placeholder="Select some users"
+            items={avatarItems}
+            isRequired
+        />
+        <Button type="submit">Submit</Button>
+    </form>
+</Form>`}
                         />
                     </div>
                 </div>
@@ -835,11 +872,138 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
                         </table>
                     </div>
 
-                    {/* SelectForm Props */}
+                    {/* Combobox and MutiSelect Props */}
                     <div>
-                        <h3 className="text-md font-semibold mb-2">SelectForm Props</h3>
+                        <h3 className="text-md font-semibold mb-2">
+                            Combobox and MutiSelect Props
+                        </h3>
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="border-b border-tertiary">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">placeholder?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>{`"Search"`}</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Placeholder text displayed in the input field.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcut?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether to display the keyboard shortcut hint (⌘K).
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">size?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>{`"sm"`}</code> | <code>{`"md"`}</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>{`"sm"`}</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Controls the input size and spacing.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">items?</td>
+                                    <td className="py-2 px-4 text-sm">ComboboxItemBase[]</td>
+                                    <td className="py-2 px-4 text-sm">[]</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        List of items available in the combobox.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">value?</td>
+                                    <td className="py-2 px-4 text-sm">string | null</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        The controlled selected value.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        function: <code>(value: string | null) =&gt; void</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Callback fired when the selected value changes.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">disabled?</td>
+                                    <td className="py-2 px-4 text-sm">boolean</td>
+                                    <td className="py-2 px-4 text-sm">false</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Whether the combobox is disabled.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">inputClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the input container.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">shortcutClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the shortcut indicator.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Custom class applied to the dropdown content.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary">
+                                    <td className="py-2 px-4 font-medium">emptyMessage?</td>
+                                    <td className="py-2 px-4 text-sm">string</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        <code>{`"No results found."`}</code>
+                                    </td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Message displayed when no items match the search input.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2 px-4 font-medium">children?</td>
+                                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
+                                    <td className="py-2 px-4 text-sm">—</td>
+                                    <td className="py-2 px-4 text-sm">
+                                        Optional custom rendering of items. If provided, it
+                                        overrides <code>items</code>.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {/* SelectForm, ComboboxForm and MultiSelectForm Props */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">
+                            SelectForm, ComboboxForm and MultiSelectForm Props
+                        </h3>
                         <p className="text-sm text-tertiary mb-2">
-                            Extends all Select props plus the following form-specific props:
+                            Extends all Select type props plus the following form-specific props:
                         </p>
                         <table className="w-full">
                             <thead>
@@ -904,252 +1068,6 @@ function onSubmit(data: z.infer<typeof FormSchema>) {
                             </tbody>
                         </table>
                     </div>
-                    {/* Combobox Props */}
-                    <div>
-                        <h3 className="text-md font-semibold mb-2">Combobox Props</h3>
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-tertiary">
-                                    <th className="text-left py-2 px-4">Props</th>
-                                    <th className="text-left py-2 px-4">Type</th>
-                                    <th className="text-left py-2 px-4">Default</th>
-                                    <th className="text-left py-2 px-4">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">placeholder?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"Search"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Placeholder text displayed in the input field.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">shortcut?</td>
-                                    <td className="py-2 px-4 text-sm">boolean</td>
-                                    <td className="py-2 px-4 text-sm">false</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Whether to display the keyboard shortcut hint (⌘K).
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">size?</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"sm"</code> | <code>"md"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"sm"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Controls the input size and spacing.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">items?</td>
-                                    <td className="py-2 px-4 text-sm">ComboboxItemBase[]</td>
-                                    <td className="py-2 px-4 text-sm">[]</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        List of items available in the combobox.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">value?</td>
-                                    <td className="py-2 px-4 text-sm">string | null</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        The controlled selected value.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        function: <code>(value: string | null) =&gt; void</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Callback fired when the selected value changes.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">disabled?</td>
-                                    <td className="py-2 px-4 text-sm">boolean</td>
-                                    <td className="py-2 px-4 text-sm">false</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Whether the combobox is disabled.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">className?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the input container.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">shortcutClassName?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the shortcut indicator.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the dropdown content.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">emptyMessage?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"No results found."</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Message displayed when no items match the search input.
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td className="py-2 px-4 font-medium">children?</td>
-                                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Optional custom rendering of items. If provided, it
-                                        overrides <code>items</code>.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    {/* MutiSelect Props */}
-                    {/* <div>
-                        <h3 className="text-md font-semibold mb-2">MutiSelect Props</h3>
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-tertiary">
-                                    <th className="text-left py-2 px-4">Props</th>
-                                    <th className="text-left py-2 px-4">Type</th>
-                                    <th className="text-left py-2 px-4">Default</th>
-                                    <th className="text-left py-2 px-4">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">placeholder?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"Search"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Placeholder text displayed in the input field.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">shortcut?</td>
-                                    <td className="py-2 px-4 text-sm">boolean</td>
-                                    <td className="py-2 px-4 text-sm">false</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Whether to display the keyboard shortcut hint (⌘K).
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">size?</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"sm"</code> | <code>"md"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"sm"</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Controls the input size and spacing.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">items?</td>
-                                    <td className="py-2 px-4 text-sm">ComboboxItemBase[]</td>
-                                    <td className="py-2 px-4 text-sm">[]</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        List of items available in the combobox.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">value?</td>
-                                    <td className="py-2 px-4 text-sm">string | null</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        The controlled selected value.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">onValueChange?</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        function: <code>(value: string | null) =&gt; void</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Callback fired when the selected value changes.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">disabled?</td>
-                                    <td className="py-2 px-4 text-sm">boolean</td>
-                                    <td className="py-2 px-4 text-sm">false</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Whether the combobox is disabled.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">className?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the input container.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">shortcutClassName?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the shortcut indicator.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">contentClassName?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Custom class applied to the dropdown content.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">emptyMessage?</td>
-                                    <td className="py-2 px-4 text-sm">string</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        <code>"No results found."</code>
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Message displayed when no items match the search input.
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td className="py-2 px-4 font-medium">children?</td>
-                                    <td className="py-2 px-4 text-sm">React.ReactNode</td>
-                                    <td className="py-2 px-4 text-sm">—</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Optional custom rendering of items. If provided, it
-                                        overrides <code>items</code>.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div> */}
                 </div>
             </div>
         </div>
