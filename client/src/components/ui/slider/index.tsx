@@ -67,10 +67,9 @@ export const Slider = ({
                 return labelFormatter(val);
             }
 
-            // Use Intl.NumberFormat like react-aria does
             const formatter = new Intl.NumberFormat(undefined, finalFormatOptions);
 
-            // If using percentage format, convert to 0-1 range like react-aria
+            // If using percentage format, convert to 0-1 range
             if (finalFormatOptions.style === "percent") {
                 return formatter.format(val / 100);
             }
@@ -108,9 +107,9 @@ export const Slider = ({
             onValueChange={handleValueChange}
             {...rest}
         >
-            <SliderPrimitive.Track className="relative w-full grow overflow-hidden">
+            <SliderPrimitive.Track className="relative w-full h-2 grow overflow-hidden">
                 {/* Background Track */}
-                <span className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-quaternary" />
+                <span className="absolute top-1/2 h-full w-full -translate-y-1/2 rounded-full bg-quaternary" />
 
                 {/* Active Range - calculé manuellement */}
                 <span
@@ -128,7 +127,7 @@ export const Slider = ({
                     key={index}
                     className={cn(
                         "block size-6 cursor-grab rounded-full bg-slider-handle-bg shadow-md ring-2 ring-slider-handle-border ring-inset transition-colors",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                        "focus-visible:outline-none",
                         "disabled:pointer-events-none disabled:opacity-50"
                     )}
                 >
