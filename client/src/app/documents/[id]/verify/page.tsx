@@ -6,7 +6,7 @@ import { DocumentProvider, useDocuments } from "@/lib/contexts/document-context"
 import { SignatureVerification } from "@/components/documents/signature-verification";
 import { Button } from "@/components/ui/buttons/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
 import { ArrowLeft, FileText, Shield, Download, Clock } from "lucide-react";
 import { format } from "date-fns";
 

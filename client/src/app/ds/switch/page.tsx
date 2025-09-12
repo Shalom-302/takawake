@@ -189,14 +189,17 @@ export default function SwitchPage() {
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">Additional styles.</td>
+                                <td className="py-2 px-4">Additional styles for Switch.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto mt-10">
                     <h3 className="text-lg font-medium">SwitchForm</h3>
-                    <p>All Switch props execpt checked and onCheckedChange </p>
+                    <p>
+                        The following props plus reac-hook-form props (name, control...) and all
+                        Switch props execpt defaultChecked, checked and onCheckedChange
+                    </p>
                     <table className="w-full border-collapse border-tertiary">
                         <thead>
                             <tr className="border-b border-tertiary">
@@ -214,6 +217,12 @@ export default function SwitchPage() {
                                 <td className="py-2 px-4">Form label</td>
                             </tr>
                             <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">labelTooltip?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">Form label tooltip</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">description?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
@@ -224,6 +233,14 @@ export default function SwitchPage() {
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
                                 <td className="py-2 px-4">To indicate requirement to users.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">wrapperClassName?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    Additional styles for Switch, label and description wrapper.
+                                </td>
                             </tr>
                         </tbody>
                     </table>

@@ -1,18 +1,26 @@
 "use client";
+
 import React from "react";
 import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+
+import { Checkbox, CheckboxForm } from "@/components/ui/checkbox";
 import { CodeBlock } from "@/ds/components/code-block";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/buttons";
 
 export default function CheckboxPage() {
-    const sizes = ["sm", "md"];
-    const states = [
-        { label: "Unchecked", props: {} },
-        { label: "Checked", props: { checked: true } },
-        { label: "Indeterminate", props: { checked: "indeterminate" as const } },
-        { label: "Disabled", props: { disabled: true } },
-        { label: "Disabled & Checked", props: { checked: true, disabled: true } },
-    ];
+    const schema = z.object({
+        terms: z.boolean(),
+    });
+
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
+        defaultValues: { terms: false },
+    });
 
     return (
         <div className="container mx-auto py-10 px-4">
@@ -22,78 +30,102 @@ export default function CheckboxPage() {
                     ← Back to Design System
                 </Link>
                 <h1 className="text-3xl font-bold mt-2">Checkbox</h1>
-                <p className="text-secondary mt-2">
-                    Accessible checkbox component with size variants, labels, hint text, and support
-                    for indeterminate state.
+                <p className="text-muted-foreground mt-2">
+                    A control that allows users to select one or multiple options, including an
+                    indeterminate state.
                 </p>
+            </div>
+
+            {/* Base */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Base</h2>
+                <div className="p-4 border border-tertiary rounded-lg flex gap-4">
+                    <Checkbox />
+                    <Checkbox defaultChecked />
+                </div>
+                <CodeBlock code={`<Checkbox />\n<Checkbox defaultChecked />`} />
+            </div>
+
+            {/* Disabled */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Disabled</h2>
+                <div className="p-4 border border-tertiary rounded-lg flex gap-4">
+                    <Checkbox disabled />
+                    <Checkbox defaultChecked disabled />
+                </div>
+                <CodeBlock code={`<Checkbox disabled />\n<Checkbox defaultChecked disabled />`} />
             </div>
 
             {/* Sizes */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="flex flex-col gap-4 p-4 border border-tertiary rounded-lg">
-                    {sizes.map(size => (
-                        <Checkbox
-                            key={size}
-                            size={size as "sm" | "md"}
-                            label={`Checkbox ${size}`}
-                            hint={
-                                size === "md"
-                                    ? "Larger checkbox for better accessibility"
-                                    : undefined
-                            }
-                        />
-                    ))}
+                <div className="p-4 border border-tertiary rounded-lg flex gap-6 items-center">
+                    <Checkbox size="sm" defaultChecked />
+                    <Checkbox size="md" defaultChecked />
                 </div>
                 <CodeBlock
-                    className="mt-2"
-                    code={`<Checkbox size="sm" label="Small checkbox" />
-<Checkbox size="md" label="Medium checkbox" hint="Optional hint text" />`}
+                    code={`<Checkbox size="sm" defaultChecked  />\n<Checkbox size="md" defaultChecked />`}
                 />
             </div>
 
             {/* States */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">States</h2>
-                <div className="flex flex-col gap-4 p-4 border border-tertiary rounded-lg">
-                    {states.map(state => (
-                        <Checkbox key={state.label} label={state.label} {...state.props} />
-                    ))}
+                <div className="p-4 border border-tertiary rounded-lg flex gap-6 items-center">
+                    <Checkbox />
+                    <Checkbox defaultChecked />
+                    <Checkbox checked="indeterminate" />
                 </div>
                 <CodeBlock
-                    className="mt-2 max-w-[400px]"
-                    code={`<Checkbox checked />
-<Checkbox checked="indeterminate" />
-<Checkbox disabled />
-<Checkbox checked disabled />`}
+                    code={`<Checkbox />\n<Checkbox defaultChecked />\n<Checkbox checked="indeterminate" />`}
                 />
             </div>
 
-            {/* With label & hint */}
+            {/* Form Integration */}
             <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">With label & hint</h2>
+                <h2 className="text-xl font-semibold mb-4">Form Integration</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
-                    <Checkbox
-                        size="md"
-                        label="Enable notifications"
-                        hint="You will receive weekly updates by email"
-                    />
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(data =>
+                                toast("You submitted the following values", {
+                                    description: (
+                                        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                                            <code className="text-white">
+                                                {JSON.stringify(data, null, 2)}
+                                            </code>
+                                        </pre>
+                                    ),
+                                })
+                            )}
+                            className="space-y-4"
+                        >
+                            <CheckboxForm
+                                control={form.control}
+                                name="terms"
+                                label="Accept terms and conditions"
+                                description="You must accept before submitting."
+                            />
+                            <Button type="submit">Submit</Button>
+                        </form>
+                    </Form>
                 </div>
                 <CodeBlock
-                    className="mt-2"
-                    code={`<Checkbox
-  size="md"
-  label="Enable notifications"
-  hint="You will receive weekly updates by email"
+                    code={`<CheckboxForm
+  control={form.control}
+  name="terms"
+  label="Accept terms and conditions"
+  description="You must accept before submitting."
 />`}
                 />
             </div>
 
-            {/* API Reference */}
+            {/* API Reference Checkbox */}
+            <h1 className="text-xl font-medium mb-10">API Reference</h1>
             <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">API Reference</h2>
+                <h2 className="text-lg font-medium mb-4">Checkbox</h2>
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
+                    <table className="w-full border-collapse border-tertiary">
                         <thead>
                             <tr className="border-b border-tertiary">
                                 <th className="py-2 px-4 text-left">Props</th>
@@ -106,80 +138,94 @@ export default function CheckboxPage() {
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">size?</td>
                                 <td className="py-2 px-4 font-mono text-sm">{`"sm" | "md"`}</td>
-                                <td className="py-2 px-4 font-mono text-sm">"sm"</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`"sm"`}</td>
                                 <td className="py-2 px-4">Size of the checkbox.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">label?</td>
-                                <td className="py-2 px-4 font-mono text-sm">React.ReactNode</td>
-                                <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">
-                                    Optional label text displayed next to the checkbox.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">hint?</td>
-                                <td className="py-2 px-4 font-mono text-sm">React.ReactNode</td>
-                                <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">Optional hint text below the label.</td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">defaultChecked?</td>
-                                <td className="py-2 px-4 font-mono text-sm">{`boolean | "indeterminate"`}</td>
-                                <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">
-                                    The checked state of the checkbox when it is initially rendered.
-                                    Use when you do not need to control its checked state.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">checked?</td>
-                                <td className="py-2 px-4 font-mono text-sm">{`boolean | "indeterminate"`}</td>
-                                <td className="py-2 px-4 font-mono text-sm">false</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`boolean | 'indeterminate'`}</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    The controlled checked state of the checkbox. Must be used in
-                                    conjunction with onCheckedChange.
+                                    The controlled state of the switch. Must be used in conjunction
+                                    with onCheckedChange.
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">onCheckedChange?</td>
-                                <td className="py-2 px-4 font-mono text-sm">{`(checked: boolean | 'indeterminate') => void`}</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    funtion[ (checked: boolean) =&gt; void]
+                                </td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    Event handler called when the checked state of the checkbox
-                                    changes.
+                                    Event handler called when the state of the switch changes.
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">disabled?</td>
+                                <td className="py-2 px-4 font-mono text-sm">defaultChecked?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
-                                <td className="py-2 px-4">
-                                    Disable the checkbox and apply disabled styles.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">name?</td>
-                                <td className="py-2 px-4 font-mono text-sm">string</td>
-                                <td className="py-2 px-4 font-mono text-sm">on</td>
-                                <td className="py-2 px-4">
-                                    The name of the checkbox. Submitted with its owning form as part
-                                    of a name/value pair.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">value?</td>
-                                <td className="py-2 px-4 font-mono text-sm">string</td>
-                                <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">
-                                    The value given as data when submitted with a name.
-                                </td>
+                                <td className="py-2 px-4">Initial unchecked/checked state.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
-                                <td className="py-2 px-4">Additional CSS classes.</td>
+                                <td className="py-2 px-4">Additional styles for checkbox.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* CheckboxForm */}
+            <div className="mb-10">
+                <h2 className="text-lg font-medium mb-4">CheckboxForm</h2>
+                <p>
+                    The following props plus reac-hook-form props (name, control...) and all
+                    Checkbox props execpt defaultChecked, checked and onCheckedChange
+                </p>
+                <div className="overflow-x-auto mt-4">
+                    <table className="w-full border-collapse border-tertiary">
+                        <thead>
+                            <tr className="border-b border-tertiary">
+                                <th className="py-2 px-4 text-left">Props</th>
+                                <th className="py-2 px-4 text-left">Type</th>
+                                <th className="py-2 px-4 text-left">Default</th>
+                                <th className="py-2 px-4 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">label?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">Form label</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">labelTooltip?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">Form label tooltip</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">description?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">Form description</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">isRequired?</td>
+                                <td className="py-2 px-4 font-mono text-sm">boolean</td>
+                                <td className="py-2 px-4 font-mono text-sm">false</td>
+                                <td className="py-2 px-4">To indicate requirement to users.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">wrapperClassName?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    Additional styles for Ckexbox, label and description wrapper.
+                                </td>
                             </tr>
                         </tbody>
                     </table>

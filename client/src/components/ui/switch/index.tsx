@@ -88,9 +88,10 @@ export interface SwitchFormProps<
 > extends Omit<ControllerProps<TFieldValues, TName>, "render">,
         Omit<SwitchProps, "name" | "defaultValue" | "checked" | "onCheckedChange"> {
     label?: string;
-    labelTooltip?: React.ReactNode;
+    labelTooltip?: string;
     description?: string;
     isRequired?: boolean;
+    wrapperClassName?: string;
 }
 
 export function SwitchForm<
@@ -102,6 +103,7 @@ export function SwitchForm<
     description,
     isRequired,
     size = "sm",
+    wrapperClassName,
     className,
     name,
     control,
@@ -116,7 +118,11 @@ export function SwitchForm<
             render={({ field }) => (
                 <FormItem>
                     <div
-                        className={cn("flex w-max items-start", size === "sm" ? "gap-2" : "gap-3")}
+                        className={cn(
+                            "flex w-max items-start",
+                            size === "sm" ? "gap-2" : "gap-3",
+                            wrapperClassName
+                        )}
                     >
                         <FormControl>
                             <Switch
@@ -125,7 +131,6 @@ export function SwitchForm<
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                                 disabled={field.disabled}
-                                name={field.name}
                             />
                         </FormControl>
 
