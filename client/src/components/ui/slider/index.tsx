@@ -40,10 +40,8 @@ export const Slider = ({
 
     // État interne pour gérer les valeurs actuelles
     const [currentValues, setCurrentValues] = React.useState<number[]>(() => {
-        if (Array.isArray(value)) return value;
-        if (typeof value === "number") return [value];
-        if (Array.isArray(defaultValue)) return defaultValue;
-        if (typeof defaultValue === "number") return [defaultValue];
+        if (value) return value;
+        if (defaultValue) return defaultValue;
         return [min];
     });
 
@@ -127,7 +125,7 @@ export const Slider = ({
                     key={index}
                     className={cn(
                         "block size-6 cursor-grab rounded-full bg-slider-handle-bg shadow-md ring-2 ring-slider-handle-border ring-inset transition-colors",
-                        "focus-visible:outline-none",
+                        "focus-visible:outline-none ",
                         "disabled:pointer-events-none disabled:opacity-50"
                     )}
                 >

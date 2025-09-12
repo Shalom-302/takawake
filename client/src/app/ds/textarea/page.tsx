@@ -15,21 +15,20 @@ import { BaseTextAreaVariants, TextArea, TextAreaForm } from "@/components/ui/te
 export default function TextAreaPage() {
     const sizes: BaseTextAreaVariants["size"][] = ["sm", "md"];
 
-    // === FORM SCHEMA ===
-    const FormSchema = z.object({
+    const formSchema = z.object({
         description: z.string().min(5, {
             message: "Description must be at least 5 characters.",
         }),
     });
 
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
         defaultValues: {
             description: "",
         },
     });
 
-    function onSubmit(data: z.infer<typeof FormSchema>) {
+    function onSubmit(data: z.infer<typeof formSchema>) {
         toast("Form submitted", {
             description: (
                 <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
@@ -162,20 +161,23 @@ export default function TextAreaPage() {
                 <CodeBlock
                     className="mt-4"
                     code={`
- const FormSchema = z.object({
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+ const formSchema = z.object({
         description: z.string().min(5, {
             message: "Description must be at least 5 characters.",
         }),
     });
 
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
         defaultValues: {
             description: "",
         },
     });
 
-    function onSubmit(data: z.infer<typeof FormSchema>) {
+    function onSubmit(data: z.infer<typeof formSchema>) {
         toast("Form submitted", {
             description: (
                 <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">

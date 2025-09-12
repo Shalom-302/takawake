@@ -58,9 +58,11 @@ export default function SliderPage() {
                 <h2 className="text-xl font-semibold mb-4">Single Thumb</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4 max-w-md py-8">
-                        <Slider defaultValue={50} labelPosition="top-floating" />
+                        <Slider defaultValue={[50]} labelPosition="top-floating" />
                     </div>
-                    <CodeBlock code={`<Slider defaultValue={50} labelPosition="top-floating" />`} />
+                    <CodeBlock
+                        code={`<Slider defaultValue={[50]} labelPosition="top-floating" />`}
+                    />
                 </div>
             </div>
 
@@ -70,14 +72,14 @@ export default function SliderPage() {
                 <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4 max-w-md py-8">
                         <Slider
-                            defaultValue={30}
+                            defaultValue={[30]}
                             labelPosition="top-floating"
                             labelFormatter={v => `${v}px`}
                         />
                     </div>
                     <CodeBlock
                         code={`<Slider 
-  defaultValue={30} 
+  defaultValue={[30]} 
   labelPosition="top-floating" 
   labelFormatter={(v) => \`\${v}px\`} 
 />`}
@@ -101,13 +103,13 @@ export default function SliderPage() {
                         <tbody>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">value</td>
-                                <td className="py-2 px-4 font-mono text-sm">number \| number[]</td>
+                                <td className="py-2 px-4 font-mono text-sm">number[]</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">Controlled value of the slider.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">defaultValue</td>
-                                <td className="py-2 px-4 font-mono text-sm">number \| number[]</td>
+                                <td className="py-2 px-4 font-mono text-sm">number[]</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">Initial value for uncontrolled mode.</td>
                             </tr>
@@ -134,7 +136,7 @@ export default function SliderPage() {
                                 <td className="py-2 px-4 font-mono text-sm">
                                     {"'default' | 'bottom' | 'top-floating'"}
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">"default"</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`"default"`}</td>
                                 <td className="py-2 px-4">Position of the thumb label.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
@@ -142,7 +144,7 @@ export default function SliderPage() {
                                 <td className="py-2 px-4 font-mono text-sm">
                                     (value: number) =&gt; string
                                 </td>
-                                <td className="py-2 px-4 font-mono text-sm">(v) =&gt; v + "%"</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`(v) => v + "%"`}</td>
                                 <td className="py-2 px-4">Custom formatter for label text.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
