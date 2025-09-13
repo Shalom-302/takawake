@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Heading, HeadingDescription, HeadingTitle } from "@/components/heading";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Table,
     TableBody,

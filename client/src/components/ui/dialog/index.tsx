@@ -6,7 +6,7 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
 
-interface DialogRootProps extends React.ComponentProps<typeof DialogPrimitive.Root> {
+interface DialogProps extends React.ComponentProps<typeof DialogPrimitive.Root> {
     trigger?: React.ReactNode;
     title?: string;
     description?: string;
@@ -34,7 +34,7 @@ function Dialog({
     footerClassName,
 
     ...props
-}: DialogRootProps) {
+}: DialogProps) {
     return (
         <DialogPrimitive.Root data-slot="dialog" {...props}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>

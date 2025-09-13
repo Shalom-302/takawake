@@ -47,7 +47,7 @@ export function useResizeObserver<T extends Element>(options: useResizeObserverO
                 window.removeEventListener("resize", onResize, false);
             };
         } else {
-            const resizeObserverInstance = new window.ResizeObserver((entries) => {
+            const resizeObserverInstance = new window.ResizeObserver(entries => {
                 if (!entries.length) {
                     return;
                 }

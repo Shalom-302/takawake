@@ -8,7 +8,7 @@ import {
     TabsList as ShadcnTabsList,
     TabsTrigger as ShadcnTabsTrigger,
     TabsContent as ShadcnTabsContent,
-} from "@/components/ui/tabs/tabs";
+} from "@/components/ui/tabs";
 
 const tabsListVariants = cva(
     "inline-flex items-center justify-center rounded-md text-muted-foreground",

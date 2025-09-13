@@ -22,6 +22,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { useResizeObserver } from "@/hooks/use-resize-observer";
 
 // ------------------------------------------------------------
 //  MultiSelect
@@ -156,8 +157,8 @@ export type MultiSelectRootContextValue = {
     openedOnce: boolean;
     size: "sm" | "md";
     disabled?: boolean;
-    width: number;
-    setWidth: (width: number) => void;
+    popoverWidth: number;
+    setPopoverWidth: (popoverWidth: number) => void;
 
     // Actions multi-selection
     removeSelectedItem: (item: MultiSelectItemBase) => void;
@@ -229,7 +230,7 @@ export const MultiSelectRoot = ({
     const [items, setItems] = useState<MultiSelectItemBase[]>([]);
     const [filteredItems, setFilteredItems] = useState<MultiSelectItemBase[]>([]);
     const [openedOnce, setOpenedOnce] = useState(false);
-    const [width, setWidth] = useState(200);
+    const [popoverWidth, setPopoverWidth] = useState(200);
     const [inputValue, setInputValue] = useState("");
 
     // Compute selected items from value prop
@@ -318,8 +319,8 @@ export const MultiSelectRoot = ({
                 openedOnce,
                 size,
                 disabled,
-                width,
-                setWidth,
+                popoverWidth,
+                setPopoverWidth,
                 getInputProps,
                 getItemProps,
                 getMenuProps,
@@ -365,28 +366,40 @@ export const MultiSelectInput = ({
         isOpen,
         size = "sm",
         disabled,
-        setWidth,
+        setPopoverWidth,
     } = useMultiSelectContext();
 
-    const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        const resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                const newWidth = (entry.target as HTMLElement).offsetWidth;
-                if (newWidth) {
-                    setWidth?.(newWidth);
-                }
-            }
-        });
-        if (ref.current) {
-            resizeObserver.observe(ref.current);
-        }
-        return () => {
-            resizeObserver.disconnect();
-        };
-    }, [setWidth]);
+    const ref = useRef<HTMLDivElement>(null);
+    const onResize = useCallback(() => {
+        if (!ref.current) return;
+        const divRect = ref.current?.getBoundingClientRect();
+        setPopoverWidth(divRect.width);
+    }, [ref, setPopoverWidth]);
+
+    useResizeObserver({
+        ref: ref,
+        onResize: onResize,
+        box: "border-box",
+    });
+
+    // useEffect(() => {
+    //     const resizeObserver = new ResizeObserver(entries => {
+    //         for (const entry of entries) {
+    //             const newWidth = (entry.target as HTMLElement).offsetWidth;
+    //             if (newWidth) {
+    //                 setPopoverWidth?.(newWidth);
+    //             }
+    //         }
+    //     });
+    //     if (ref.current) {
+    //         resizeObserver.observe(ref.current);
+    //     }
+    //     return () => {
+    //         resizeObserver.disconnect();
+    //     };
+    // }, [setPopoverWidth]);
 
     const handleTagKeyDown = useCallback(
         (event: KeyboardEvent, item: MultiSelectItemBase, index: number) => {
@@ -544,7 +557,8 @@ export const MultiSelectContent = ({
     className,
     ...props
 }: ComponentPropsWithoutRef<typeof PopoverContent>) => {
-    const { getMenuProps, isOpen, openedOnce, onItemsChange, width } = useMultiSelectContext();
+    const { getMenuProps, isOpen, openedOnce, onItemsChange, popoverWidth } =
+        useMultiSelectContext();
 
     const childItems = useMemo(
         () =>
@@ -583,7 +597,7 @@ export const MultiSelectContent = ({
                 !openedOnce && "hidden",
                 className
             )}
-            style={{ width }}
+            style={{ width: popoverWidth }}
             {...getMenuProps?.({}, { suppressRefError: true })}
         >
             <div>{children}</div>

@@ -20,6 +20,7 @@ import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popo
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { useResizeObserver } from "@/hooks/use-resize-observer";
 
 // ------------------------------------------------------------
 // Combobox
@@ -143,8 +144,8 @@ export type ComboboxRootContextValue = {
     openedOnce: boolean;
     size: "sm" | "md";
     disabled?: boolean;
-    width: number;
-    setWidth: (width: number) => void;
+    popoverWidth: number;
+    setPopoverWidth: (popoverWidth: number) => void;
 } & Partial<
     Pick<
         UseComboboxReturnValue<ComboboxItemBase>,
@@ -166,8 +167,8 @@ export const ComboboxRootContext = createContext<ComboboxRootContextValue>({
     onItemsChange: () => {},
     openedOnce: false,
     size: "sm",
-    width: 200,
-    setWidth: () => {},
+    popoverWidth: 200,
+    setPopoverWidth: () => {},
 });
 
 export const useComboboxContext = () => useContext(ComboboxRootContext);
@@ -209,7 +210,7 @@ export const ComboboxRoot = ({
     const [items, setItems] = useState<ComboboxItemBase[]>([]);
     const [filteredItems, setFilteredItems] = useState<ComboboxItemBase[]>(items);
     const [openedOnce, setOpenedOnce] = useState(false);
-    const [width, setWidth] = useState(200);
+    const [popoverWidth, setPopoverWidth] = useState(200);
 
     const stateReducer = useCallback<
         NonNullable<UseComboboxProps<ComboboxItemBase>["stateReducer"]>
@@ -301,8 +302,8 @@ export const ComboboxRoot = ({
                 setInputValue,
                 size,
                 disabled,
-                width,
-                setWidth,
+                popoverWidth,
+                setPopoverWidth,
             }}
         >
             <PopoverRoot open={isOpen}>{children}</PopoverRoot>
@@ -337,31 +338,24 @@ export const ComboboxInput = ({
         isOpen,
         size = "sm",
         disabled,
-        setWidth,
+        setPopoverWidth,
     } = useComboboxContext();
 
     const first = inputValue || "";
     const last = selectedItem?.supportingText ? `${selectedItem.supportingText}` : "";
 
     const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        // Create a ResizeObserver to detect width changes
-        const resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-                const newWidth = (entry.target as HTMLElement).offsetWidth;
-                if (newWidth) {
-                    setWidth?.(newWidth);
-                }
-            }
-        });
-        if (ref.current) {
-            resizeObserver.observe(ref.current);
-        }
-        // Clean up the observer when component unmounts
-        return () => {
-            resizeObserver.disconnect();
-        };
-    }, [setWidth]);
+    const onResize = useCallback(() => {
+        if (!ref.current) return;
+        const divRect = ref.current?.getBoundingClientRect();
+        setPopoverWidth(divRect.width);
+    }, [ref, setPopoverWidth]);
+
+    useResizeObserver({
+        ref: ref,
+        onResize: onResize,
+        box: "border-box",
+    });
 
     return (
         <div className="relative w-full">
@@ -446,7 +440,7 @@ export const ComboboxContent = ({
     className,
     ...props
 }: ComponentPropsWithoutRef<typeof PopoverContent>) => {
-    const { getMenuProps, isOpen, openedOnce, onItemsChange, width } = useComboboxContext();
+    const { getMenuProps, isOpen, openedOnce, onItemsChange, popoverWidth } = useComboboxContext();
 
     const childItems = useMemo(
         () =>
@@ -483,7 +477,7 @@ export const ComboboxContent = ({
                 !openedOnce && "hidden",
                 className
             )}
-            style={{ width }}
+            style={{ width: popoverWidth }}
             {...getMenuProps?.({}, { suppressRefError: true })}
         >
             <div>{children}</div>

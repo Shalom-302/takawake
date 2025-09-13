@@ -6,7 +6,7 @@
  */
 import React from "react";
 import { Metadata } from "next";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/layouts/admin-layout";
 import AnalyticsOverview from "@/components/analytics/analytics-overview";
