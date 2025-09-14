@@ -377,7 +377,7 @@ export default function TabsPage() {
                                     </td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
-                                    <td className="py-2 px-4 font-medium">label?</td>
+                                    <td className="py-2 px-4 font-medium">label</td>
                                     <td className="py-2 px-4 text-sm">ReactNode</td>
                                     <td className="py-2 px-4 text-sm">—</td>
                                     <td className="py-2 px-4 text-sm">

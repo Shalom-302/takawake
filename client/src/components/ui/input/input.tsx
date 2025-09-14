@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils/cn";
 import { cva, VariantProps } from "class-variance-authority";
-import { Tooltip } from "../tooltip";
+import { Tooltip } from "../tootilp";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
