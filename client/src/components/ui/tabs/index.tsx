@@ -230,8 +230,8 @@ function TabsTrigger({ label, badge, children, className, value, ...props }: Tab
             {badge && (
                 <Badge
                     size={size}
-                    type="pill-color"
-                    color={getBadgeColor(type, isActive, isHovered)}
+                    variant="pill-color"
+                    color={getBadgeColor(type, isActive, isHovered)!}
                     className={cn(
                         "hidden transition-inherit-all md:flex",
                         size === "sm" && "-my-px"
@@ -278,6 +278,7 @@ const Tabs = ({
     type = "button-brand",
     orientation = "horizontal",
     fullWidth = false,
+    className,
     listClassName,
     contentClassName,
     ...props
@@ -288,6 +289,7 @@ const Tabs = ({
             type={type}
             orientation={orientation}
             fullWidth={fullWidth}
+            className={className}
             {...props}
         >
             <TabsList className={listClassName}>
