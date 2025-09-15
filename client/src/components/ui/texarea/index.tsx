@@ -139,6 +139,7 @@ function TextAreaForm<TFieldValues extends FieldValues, TName extends FieldPath<
     control,
     name,
     label,
+    labelTooltip,
     description,
     ...textAreaProps
 }: TextAreaFormProps<TFieldValues, TName>) {
@@ -147,6 +148,7 @@ function TextAreaForm<TFieldValues extends FieldValues, TName extends FieldPath<
             control={control}
             name={name}
             label={label}
+            labelTooltip={labelTooltip}
             description={description}
             isRequired={isRequired}
         >

@@ -150,6 +150,7 @@ export default function TextAreaPage() {
                             control={form.control}
                             name="description"
                             label="Description"
+                            labelTooltip="this is a hint"
                             description="Décrivez votre projet en quelques mots"
                             placeholder="Description de votre projet..."
                             isRequired

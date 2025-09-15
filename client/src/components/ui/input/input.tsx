@@ -133,8 +133,7 @@ function Input({
                     contentClassName={tooltipClassName}
                 />
             ) : (
-                RightIcon &&
-                !isInvalid && (
+                RightIcon && (
                     <RightIcon
                         className={cn(
                             "pointer-events-none absolute size-5 text-fg-quaternary peer-disabled:text-fg-disabled",

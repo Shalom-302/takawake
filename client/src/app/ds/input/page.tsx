@@ -109,7 +109,7 @@ export default function InputPage() {
             {/* =========================
            TOOLTIP
          ========================= */}
-            <section className="mb-10" id="tooltip">
+            <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Input with tooltip</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
@@ -132,7 +132,7 @@ export default function InputPage() {
             {/* =========================
            INPUT GROUP
          ========================= */}
-            <section className="space-y-8 my-10" id="input-group">
+            <section className="space-y-8 my-10">
                 <h2 className="text-xl font-semibold">InputGroup</h2>
 
                 {/* Addons left & right */}
