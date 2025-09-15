@@ -41,7 +41,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table/base";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDocuments } from "@/lib/contexts/document-context";
 import { Document, DocumentStatus, WorkflowStep } from "@/lib/services/document-service";

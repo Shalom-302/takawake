@@ -11,7 +11,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table/base";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select/select";
 import { Input } from "@/components/ui/input/input";
 import { Button } from "@/components/ui/buttons/button";

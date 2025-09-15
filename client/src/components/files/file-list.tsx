@@ -8,7 +8,7 @@ import {
     TableHead,
     TableBody,
     TableCell,
-} from "@/components/ui/table";
+} from "@/components/ui/table/base";
 import { Button } from "@/components/ui/buttons/button";
 import {
     Download,
