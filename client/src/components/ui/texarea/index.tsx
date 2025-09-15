@@ -119,7 +119,7 @@ function TextArea({
                             )}
                         />
                     }
-                    content={tooltip}
+                    title={tooltip}
                     contentClassName={tooltipClassName}
                 />
             )}

@@ -3,10 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-
-import { Button } from "@/components/ui/buttons";
 import { Tooltip } from "@/components/ui/tootilp";
 import { CodeBlock } from "@/ds/components";
+import { HelpCircle } from "@untitled-ui/icons-react";
 
 export default function TooltipPage() {
     return (
@@ -35,9 +34,9 @@ export default function TooltipPage() {
                 {/* Basic */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">Basic</h3>
-                    <Tooltip trigger={<Button>Hover me</Button>} content="Basic tooltip content" />
+                    <Tooltip trigger={<HelpCircle />} title="Basic tooltip title" />
                     <CodeBlock
-                        code={`<Tooltip trigger={<Button>Hover me</Button>} content="Basic tooltip content" />`}
+                        code={`<Tooltip trigger={<HelpCircle  />} title="Basic tooltip title" />`}
                     />
                 </div>
 
@@ -45,12 +44,13 @@ export default function TooltipPage() {
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">With Arrow</h3>
                     <Tooltip
-                        trigger={<Button>Hover me</Button>}
-                        content="Tooltip with arrow"
+                        trigger={<HelpCircle />}
+                        title="Tooltip with arrow"
+                        // variant={"secondary"}
                         arrow={true}
                     />
                     <CodeBlock
-                        code={`<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip with arrow" arrow={true} />`}
+                        code={`<Tooltip trigger={<HelpCircle  />} title="Tooltip with arrow" arrow={true} />`}
                     />
                 </div>
 
@@ -58,106 +58,30 @@ export default function TooltipPage() {
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">Positioning</h3>
                     <div className="flex gap-4 flex-wrap">
+                        <Tooltip trigger={<HelpCircle />} title="Tooltip on top" side="top" />
+                        <Tooltip trigger={<HelpCircle />} title="Tooltip on right" side="right" />
+                        <Tooltip trigger={<HelpCircle />} title="Tooltip on bottom" side="bottom" />
+                        <Tooltip trigger={<HelpCircle />} title="Tooltip on left" side="left" />
                         <Tooltip
-                            trigger={<Button>Top</Button>}
-                            content="Tooltip on top"
-                            side="top"
-                        />
-                        <Tooltip
-                            trigger={<Button>Right</Button>}
-                            content="Tooltip on right"
-                            side="right"
-                        />
-                        <Tooltip
-                            trigger={<Button>Bottom</Button>}
-                            content="Tooltip on bottom"
-                            side="bottom"
-                        />
-                        <Tooltip
-                            trigger={<Button>Left</Button>}
-                            content="Tooltip on left"
-                            side="left"
-                        />
-                        <Tooltip
-                            trigger={<Button>Aligned Start</Button>}
-                            content="Aligned start"
+                            trigger={<HelpCircle />}
+                            title="Aligned start"
                             side="top"
                             align="start"
                         />
                         <Tooltip
-                            trigger={<Button>Aligned End</Button>}
-                            content="Aligned end"
+                            trigger={<HelpCircle />}
+                            title="Aligned end"
                             side="top"
                             align="end"
                         />
                     </div>
                     <CodeBlock
-                        code={`<Tooltip trigger={<Button>Top</Button>} content="Tooltip on top" side="top" />
-<Tooltip trigger={<Button>Right</Button>} content="Tooltip on right" side="right" />
-<Tooltip trigger={<Button>Bottom</Button>} content="Tooltip on bottom" side="bottom" />
-<Tooltip trigger={<Button>Left</Button>} content="Tooltip on left" side="left" />
-<Tooltip trigger={<Button>Aligned Start</Button>} content="Aligned start" side="top" align="start" />
-<Tooltip trigger={<Button>Aligned End</Button>} content="Aligned end" side="top" align="end" />`}
-                    />
-                </div>
-
-                {/* Variants */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Variants</h3>
-                    <div className="flex items-center gap-3">
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip default variant"
-                            variant={"default"}
-                        />
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip secondary variant"
-                            variant={"secondary"}
-                        />
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip outline variant"
-                            variant={"outline"}
-                        />
-                    </div>
-
-                    <CodeBlock
-                        code={` 
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip default variant" variant={"default"}/>
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip secondary variant" variant={"secondary"}/>
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip outline variant" variant={"outline"}/>
-                        `}
-                    />
-                </div>
-
-                {/* Sizes */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Sizes</h3>
-                    <div className="flex items-center gap-3">
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip sm size"
-                            size={"sm"}
-                        />
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip md size"
-                            size={"md"}
-                        />
-                        <Tooltip
-                            trigger={<Button>Hover me</Button>}
-                            content="Tooltip lg size"
-                            size={"lg"}
-                        />
-                    </div>
-
-                    <CodeBlock
-                        code={` 
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip default variant" variant={"default"}/>
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip secondary variant" variant={"secondary"}/>
-<Tooltip trigger={<Button>Hover me</Button>} content="Tooltip outline variant" variant={"outline"}/>
-                        `}
+                        code={`<Tooltip trigger={<HelpCircle />} title="Tooltip on top" side="top" />
+<Tooltip trigger={<HelpCircle />} title="Tooltip on right" side="right" />
+<Tooltip trigger={<HelpCircle />} title="Tooltip on bottom" side="bottom" />
+<Tooltip trigger={<HelpCircle />} title="Tooltip on left" side="left" />
+<Tooltip trigger={<HelpCircle />} title="Aligned start" side="top" align="start" />
+<Tooltip trigger={<HelpCircle />} title="Aligned end" side="top" align="end" />`}
                     />
                 </div>
             </section>
@@ -173,7 +97,7 @@ export default function TooltipPage() {
                     <table className="w-full border-collapse text-sm">
                         <thead>
                             <tr className="border-b border-tertiary">
-                                <th className="text-left py-2 px-4">Prop</th>
+                                <th className="text-left py-2 px-4">Props</th>
                                 <th className="text-left py-2 px-4">Type</th>
                                 <th className="text-left py-2 px-4">Default</th>
                                 <th className="text-left py-2 px-4">Description</th>
@@ -187,12 +111,10 @@ export default function TooltipPage() {
                                 <td className="py-2 px-4">Element that triggers the tooltip.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">content</td>
-                                <td className="py-2 px-4">ReactNode</td>
+                                <td className="py-2 px-4 font-medium">title</td>
+                                <td className="py-2 px-4">string</td>
                                 <td className="py-2 px-4">—</td>
-                                <td className="py-2 px-4">
-                                    Content to display inside the tooltip.
-                                </td>
+                                <td className="py-2 px-4">The tooltip title.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">side</td>
@@ -238,15 +160,13 @@ export default function TooltipPage() {
                                 <td className="py-2 px-4 font-medium">size</td>
                                 <td className="py-2 px-4">{`"sm" | "md" | "lg"`}</td>
                                 <td className="py-2 px-4">{`"sm"`}</td>
-                                <td className="py-2 px-4">
-                                    Size of the tooltip content and arrow.
-                                </td>
+                                <td className="py-2 px-4">Size of the tooltip title and arrow.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">maxWidth</td>
                                 <td className="py-2 px-4">{`"xs" | "sm" | "md" | "lg" | "none"`}</td>
                                 <td className="py-2 px-4">{`"xs"`}</td>
-                                <td className="py-2 px-4">Maximum width of the tooltip content.</td>
+                                <td className="py-2 px-4">Maximum width of the tooltip title.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">delayDuration</td>
@@ -291,15 +211,7 @@ export default function TooltipPage() {
                                 <td className="py-2 px-4">string</td>
                                 <td className="py-2 px-4">-</td>
                                 <td className="py-2 px-4">
-                                    Custom classes applied to the tooltip content.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-medium">arrowClassName</td>
-                                <td className="py-2 px-4">string</td>
-                                <td className="py-2 px-4">-</td>
-                                <td className="py-2 px-4">
-                                    Custom classes applied to the arrow element.
+                                    Custom classes applied to the tooltip title.
                                 </td>
                             </tr>
                         </tbody>

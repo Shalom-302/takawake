@@ -129,7 +129,7 @@ function Input({
                             )}
                         />
                     }
-                    content={tooltip}
+                    title={tooltip}
                     contentClassName={tooltipClassName}
                 />
             ) : (

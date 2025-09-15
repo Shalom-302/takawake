@@ -3,194 +3,191 @@
 import type { ReactNode } from "react";
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
-const tooltipContentVariants = cva(
-    [
-        "z-50 overflow-hidden rounded-lg shadow-lg will-change-transform",
-        "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out",
-        "data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
-        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
-        "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-    ],
-    {
-        variants: {
-            variant: {
-                default: "bg-primary-solid text-white",
-                secondary: "bg-secondary text-secondary-foreground",
-                outline: "bg-background text-foreground border border-border",
-            },
-            size: {
-                sm: "px-2 py-1 text-xs",
-                md: "px-3 py-2 text-sm",
-                lg: "px-4 py-3 text-base",
-            },
-            maxWidth: {
-                xs: "max-w-xs",
-                sm: "max-w-sm",
-                md: "max-w-md",
-                lg: "max-w-lg",
-                none: "max-w-none",
-            },
-        },
-        defaultVariants: {
-            variant: "default",
-            size: "sm",
-            maxWidth: "xs",
-        },
-    }
-);
-
-const tooltipArrowVariants = cva("", {
-    variants: {
-        variant: {
-            default: "fill-primary-solid",
-            secondary: "fill-secondary",
-            outline: "fill-background [&>path]:stroke-border [&>path]:stroke-1",
-        },
-        size: {
-            sm: "w-2 h-2",
-            md: "w-2.5 h-2.5",
-            lg: "w-3 h-3",
-        },
-    },
-    defaultVariants: {
-        variant: "default",
-        size: "sm",
-    },
-});
-
-type TooltipProviderProps = React.ComponentProps<typeof TooltipPrimitive.Provider> & {
-    closeDelay?: number;
-};
-
-function TooltipProvider({ delayDuration = 300, children, ...props }: TooltipProviderProps) {
-    return (
-        <TooltipPrimitive.Provider delayDuration={delayDuration} {...props}>
-            {children}
-        </TooltipPrimitive.Provider>
-    );
-}
-
-// Interface pour le tooltip complet
-interface TooltipProps
-    extends Omit<React.ComponentProps<typeof TooltipPrimitive.Root>, "children">,
-        VariantProps<typeof tooltipContentVariants>,
-        VariantProps<typeof tooltipArrowVariants> {
-    trigger: ReactNode;
-    /** Content to display in the tooltip */
-    content: ReactNode;
-    /** Side where the tooltip should appear */
-    side?: "top" | "right" | "bottom" | "left";
-    /** Alignment of the tooltip relative to the trigger */
-    align?: "start" | "center" | "end";
-    /** Offset from the trigger element */
-    sideOffset?: number;
-    /** Offset along the alignment axis */
-    alignOffset?: number;
-    /** Whether to show the arrow */
+interface TooltipProps {
+    /**
+     * The title of the tooltip.
+     */
+    title: ReactNode;
+    /**
+     * The description of the tooltip.
+     */
+    description?: ReactNode;
+    /**
+     * The children that trigger the tooltip.
+     */
+    children?: ReactNode;
+    /**
+     * The trigger element (alternative to children).
+     */
+    trigger?: ReactNode;
+    /**
+     * Whether to show the arrow on the tooltip.
+     *
+     * @default false
+     */
     arrow?: boolean;
-    /** Custom class for the content */
-    contentClassName?: string;
-    /** Custom class for the arrow */
-    arrowClassName?: string;
-    /** Delay before showing tooltip */
+    /**
+     * Delay in milliseconds before the tooltip is shown.
+     *
+     * @default 300
+     */
     delayDuration?: number;
-    /** Delay before closing tooltip */
+    /**
+     * Delay in milliseconds before the tooltip is closed.
+     *
+     * @default 0
+     */
     closeDelay?: number;
-    /** Whether tooltip should be wrapped in provider (set to false if already wrapped) */
-    disableProvider?: boolean;
+    /**
+     * Whether the tooltip is disabled.
+     */
+    isDisabled?: boolean;
+    /**
+     * Whether the tooltip is open (controlled).
+     */
+    open?: boolean;
+    /**
+     * Whether the tooltip is open by default (uncontrolled).
+     */
+    defaultOpen?: boolean;
+    /**
+     * Offset from the trigger element.
+     *
+     * @default 6
+     */
+    offset?: number;
+    /**
+     * Cross offset for visual balance.
+     */
+    crossOffset?: number;
+    /**
+     * Side where the tooltip should appear.
+     *
+     * @default "top"
+     */
+    side?: "top" | "right" | "bottom" | "left";
+    /**
+     * Alignment of the tooltip relative to the trigger.
+     *
+     * @default "center"
+     */
+    align?: "start" | "center" | "end";
+    /**
+     * Callback when the tooltip open state changes.
+     */
+    onOpenChange?: (open: boolean) => void;
+    contentClassName?: string;
 }
-
-// CORRECTION: Composant interne sans provider
-const TooltipInternal = ({
-    trigger,
-    content,
-    side = "top",
-    align = "center",
-    sideOffset = 6,
-    alignOffset,
-    arrow = false,
-    variant = "default",
-    size = "sm",
-    maxWidth = "xs",
-    contentClassName,
-    arrowClassName,
-    open,
-    defaultOpen,
-    onOpenChange,
-    ...props
-}: Omit<TooltipProps, "delayDuration" | "disableProvider">) => {
-    return (
-        <TooltipPrimitive.Root
-            open={open}
-            defaultOpen={defaultOpen}
-            onOpenChange={onOpenChange}
-            {...props}
-        >
-            <TooltipPrimitive.Trigger asChild>{trigger}</TooltipPrimitive.Trigger>
-            <TooltipPrimitive.Portal>
-                <TooltipPrimitive.Content
-                    side={side}
-                    align={align}
-                    sideOffset={sideOffset}
-                    alignOffset={alignOffset}
-                    className={cn(
-                        tooltipContentVariants({
-                            variant,
-                            size,
-                            maxWidth,
-                        }),
-                        contentClassName
-                    )}
-                    avoidCollisions={true}
-                    collisionPadding={8}
-                >
-                    {content}
-
-                    {arrow && (
-                        <TooltipPrimitive.Arrow
-                            className={cn(
-                                tooltipArrowVariants({
-                                    variant,
-                                    size,
-                                }),
-                                arrowClassName
-                            )}
-                        />
-                    )}
-                </TooltipPrimitive.Content>
-            </TooltipPrimitive.Portal>
-        </TooltipPrimitive.Root>
-    );
-};
 
 export const Tooltip = ({
+    title,
+    description,
+    children,
+    trigger,
+    arrow = false,
     delayDuration = 300,
     closeDelay = 0,
-    disableProvider = false,
-    ...props
+    isDisabled,
+    open,
+    defaultOpen,
+    offset = 6,
+    crossOffset,
+    side = "top",
+    align = "center",
+    onOpenChange,
+    contentClassName,
 }: TooltipProps) => {
-    if (disableProvider) {
-        return <TooltipInternal {...props} />;
+    // Déterminer l'élément trigger
+    const triggerElement = trigger || children;
+
+    // Calculer le cross offset automatique pour équilibrage visuel
+    const isTopOrBottomStart = (side === "top" || side === "bottom") && align === "start";
+    const isTopOrBottomEnd = (side === "top" || side === "bottom") && align === "end";
+    const calculatedCrossOffset =
+        crossOffset ?? (isTopOrBottomStart ? -12 : isTopOrBottomEnd ? 12 : 0);
+
+    if (isDisabled || !triggerElement) {
+        return <>{triggerElement}</>;
     }
 
     return (
-        <TooltipProvider delayDuration={delayDuration} closeDelay={closeDelay}>
-            <TooltipInternal {...props} />
-        </TooltipProvider>
+        <TooltipPrimitive.Provider delayDuration={delayDuration} skipDelayDuration={closeDelay}>
+            <TooltipPrimitive.Root
+                open={open}
+                defaultOpen={defaultOpen}
+                onOpenChange={onOpenChange}
+            >
+                <TooltipPrimitive.Trigger asChild>{triggerElement}</TooltipPrimitive.Trigger>
+
+                <TooltipPrimitive.Portal>
+                    <TooltipPrimitive.Content
+                        side={side}
+                        align={align}
+                        sideOffset={offset}
+                        alignOffset={calculatedCrossOffset}
+                        className={cn(
+                            "z-50 flex max-w-xs flex-col items-start gap-1 rounded-lg bg-primary-solid px-3 shadow-lg will-change-transform",
+                            description ? "py-3" : "py-2",
+
+                            // Animations d'entrée
+                            "animate-in fade-in zoom-in-95 duration-200",
+                            "data-[side=bottom]:slide-in-from-top-0.5",
+                            "data-[side=left]:slide-in-from-right-0.5",
+                            "data-[side=right]:slide-in-from-left-0.5",
+                            "data-[side=top]:slide-in-from-bottom-0.5",
+
+                            // Animations de sortie
+                            "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 data-[state=closed]:duration-150",
+                            "data-[state=closed]:data-[side=bottom]:slide-out-to-top-0.5",
+                            "data-[state=closed]:data-[side=left]:slide-out-to-right-0.5",
+                            "data-[state=closed]:data-[side=right]:slide-out-to-left-0.5",
+                            "data-[state=closed]:data-[side=top]:slide-out-to-bottom-0.5",
+                            contentClassName
+                        )}
+                        avoidCollisions={true}
+                        collisionPadding={8}
+                    >
+                        <span className="text-xs font-semibold text-white">{title}</span>
+
+                        {description && (
+                            <span className="text-xs font-medium text-tooltip-supporting-text">
+                                {description}
+                            </span>
+                        )}
+
+                        {arrow && (
+                            <TooltipPrimitive.Arrow asChild>
+                                <svg
+                                    viewBox="0 0 100 100"
+                                    className="size-2.5 fill-primary-solid data-[side=left]:-rotate-90 data-[side=right]:rotate-90 data-[side=top]:rotate-0 data-[side=bottom]:rotate-180"
+                                >
+                                    <path d="M0,0 L35.858,35.858 Q50,50 64.142,35.858 L100,0 Z" />
+                                </svg>
+                            </TooltipPrimitive.Arrow>
+                        )}
+                    </TooltipPrimitive.Content>
+                </TooltipPrimitive.Portal>
+            </TooltipPrimitive.Root>
+        </TooltipPrimitive.Provider>
     );
 };
 
-// Composants de base exportés pour usage avancé
-export const TooltipTrigger = TooltipPrimitive.Trigger;
-export const TooltipContent = TooltipPrimitive.Content;
-export const TooltipArrow = TooltipPrimitive.Arrow;
-export const TooltipRoot = TooltipPrimitive.Root;
-export const TooltipPortal = TooltipPrimitive.Portal;
+interface TooltipTriggerProps {
+    children: ReactNode;
+    className?: string;
+}
 
-// Hook personnalisé pour usage avancé avec provider partagé
-export const useTooltipProvider = (delayDuration = 300) => {
-    return React.useMemo(() => ({ delayDuration }), [delayDuration]);
+export const TooltipTrigger = ({ children, className }: TooltipTriggerProps) => {
+    return (
+        <button
+            className={cn(
+                "h-max w-max outline-hidden focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                className
+            )}
+        >
+            {children}
+        </button>
+    );
 };

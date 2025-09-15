@@ -36,7 +36,7 @@ function Label({ className, isRequired, labelTooltip, children, ...props }: Labe
                     trigger={
                         <HelpCircle className="size-4 cursor-pointer text-fg-quaternary transition duration-200 hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover" />
                     }
-                    content={labelTooltip}
+                    title={labelTooltip}
                     side="top"
                 />
             )}

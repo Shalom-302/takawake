@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/buttons/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tootilp";
+import { Tooltip } from "@/components/ui/tootilp";
 import { Badge } from "@/components/ui/badges/badge";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 
@@ -160,58 +160,55 @@ export function Sidebar({ className, onToggle, initialExpanded = true }: Sidebar
 
                     {/* Navigation */}
                     <nav className="flex-1 space-y-1 px-3">
-                        <TooltipProvider>
-                            {navItems.map(item => {
-                                const isActive = pathname === item.href;
-                                const isMessages = item.name === "Messages";
-                                const showBadge = isMessages && unreadMessagesCount > 0;
+                        {navItems.map(item => {
+                            const isActive = pathname === item.href;
+                            const isMessages = item.name === "Messages";
+                            const showBadge = isMessages && unreadMessagesCount > 0;
 
-                                return (
-                                    <Tooltip key={item.href} delayDuration={expanded ? 999999 : 0}>
-                                        <TooltipTrigger asChild>
-                                            <Link
-                                                href={item.href}
-                                                className={cn(
-                                                    "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors relative",
-                                                    isActive
-                                                        ? "bg-primary/10 text-primary"
-                                                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                                                    !expanded && "justify-center"
-                                                )}
-                                            >
-                                                <item.icon
-                                                    className={cn("h-5 w-5", expanded && "mr-3")}
-                                                />
-                                                {expanded && <span>{item.name}</span>}
-
-                                                {/* Badge pour les messages non lus */}
-                                                {showBadge && (
-                                                    <Badge
-                                                        variant="default"
-                                                        className={cn(
-                                                            "ml-auto flex h-5 w-5 items-center justify-center p-0 text-xs",
-                                                            !expanded &&
-                                                                "absolute -top-1 -right-1 h-4 w-4 text-[10px]"
-                                                        )}
-                                                    >
-                                                        {unreadMessagesCount}
-                                                    </Badge>
-                                                )}
-                                            </Link>
-                                        </TooltipTrigger>
-                                        <TooltipContent
-                                            side="right"
-                                            className={cn(expanded && "hidden")}
+                            return (
+                                <Tooltip
+                                    key={item.href}
+                                    delayDuration={expanded ? 999999 : 0}
+                                    trigger={
+                                        <Link
+                                            href={item.href}
+                                            className={cn(
+                                                "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors relative",
+                                                isActive
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                                !expanded && "justify-center"
+                                            )}
                                         >
-                                            {item.name}
-                                            {isMessages &&
-                                                unreadMessagesCount > 0 &&
-                                                ` (${unreadMessagesCount})`}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                );
-                            })}
-                        </TooltipProvider>
+                                            <item.icon
+                                                className={cn("h-5 w-5", expanded && "mr-3")}
+                                            />
+                                            {expanded && <span>{item.name}</span>}
+
+                                            {/* Badge pour les messages non lus */}
+                                            {showBadge && (
+                                                <Badge
+                                                    className={cn(
+                                                        "ml-auto flex h-5 w-5 items-center justify-center p-0 text-xs",
+                                                        !expanded &&
+                                                            "absolute -top-1 -right-1 h-4 w-4 text-[10px]"
+                                                    )}
+                                                >
+                                                    {unreadMessagesCount}
+                                                </Badge>
+                                            )}
+                                        </Link>
+                                    }
+                                    side="right"
+                                    title={item.name}
+                                    description={
+                                        isMessages &&
+                                        unreadMessagesCount > 0 &&
+                                        ` (${unreadMessagesCount})`
+                                    }
+                                />
+                            );
+                        })}
                     </nav>
 
                     {/* Footer info */}
