@@ -1,14 +1,7 @@
 "use client";
 
-import type {
-    ComponentPropsWithRef,
-    HTMLAttributes,
-    ReactNode,
-    Ref,
-    TdHTMLAttributes,
-    ThHTMLAttributes,
-} from "react";
-import { createContext, isValidElement, useContext, useState } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { createContext, isValidElement, useContext, useState, useMemo } from "react";
 import {
     ArrowDown,
     ChevronSelectorVertical,
@@ -21,21 +14,41 @@ import type {
     Column,
     ColumnDef,
     SortingState,
+    RowSelectionState,
     Table as TableInstance,
+    ColumnFiltersState,
+    PaginationState,
+    ExpandedState,
+    OnChangeFn,
 } from "@tanstack/react-table";
 import {
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getExpandedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badges";
 import { cn } from "@/lib/utils/cn";
 import { Checkbox } from "../checkbox";
-import { Tooltip } from "../tootilp";
 import { DropdownDotsButton, DropdownMenu } from "../dropdown-menu";
+import { Tooltip } from "../tootilp";
 
-export const TableRowActionsDropdown = () => (
+// Export des types et helpers
+export type { ColumnDef } from "@tanstack/react-table";
+export { createColumnHelper } from "@tanstack/react-table";
+
+export const TableRowActionsDropdown = ({
+    onEdit,
+    onCopy,
+    onDelete,
+}: {
+    onEdit?: () => void;
+    onCopy?: () => void;
+    onDelete?: () => void;
+} = {}) => (
     <DropdownMenu
         trigger={<DropdownDotsButton />}
         align="end"
@@ -49,6 +62,7 @@ export const TableRowActionsDropdown = () => (
                         <span>Edit</span>
                     </div>
                 ),
+                onClick: onEdit,
             },
             {
                 id: "copy",
@@ -58,6 +72,7 @@ export const TableRowActionsDropdown = () => (
                         <span>Copy link</span>
                     </div>
                 ),
+                onClick: onCopy,
             },
             {
                 id: "delete",
@@ -68,23 +83,28 @@ export const TableRowActionsDropdown = () => (
                     </div>
                 ),
                 variant: "destructive",
+                onClick: onDelete,
             },
         ]}
     />
 );
 
-export type { ColumnDef } from "@tanstack/react-table";
-
-interface TableContextType {
+interface TableContextType<TData> {
     size: "sm" | "md";
-    data?: unknown[];
-    columns?: ColumnDef<unknown, unknown>[];
-    table?: TableInstance<unknown> | null;
-    selection?: Set<string>;
-    onSelectionChange?: (selection: Set<string>) => void;
+    table?: TableInstance<TData>;
+    enableRowSelection?: boolean;
+    enableMultiRowSelection?: boolean;
 }
 
-const TableContext = createContext<TableContextType>({ size: "md" });
+const TableContext = createContext<unknown>(undefined);
+
+export function useTableContext<TData>() {
+    const context = useContext(TableContext);
+    if (!context) {
+        throw new Error("useTableContext doit être utilisé à l'intérieur d'un TableProvider.");
+    }
+    return context as TableContextType<TData>;
+}
 
 export const TableCard = ({
     children,
@@ -95,13 +115,12 @@ export const TableCard = ({
     description,
     contentTrailing,
     ...props
-}: HTMLAttributes<HTMLDivElement> & {
+}: ComponentProps<"div"> & {
     size?: "sm" | "md";
     title: string;
     badge?: ReactNode;
     description?: string;
     contentTrailing?: ReactNode;
-    className?: string;
 }) => {
     return (
         <div
@@ -111,11 +130,11 @@ export const TableCard = ({
                 className
             )}
         >
+            {/* Header */}
             <div
                 className={cn(
                     "relative flex flex-col items-start gap-4 border-b border-secondary bg-primary px-4 md:flex-row",
-                    size === "sm" ? "py-4 md:px-5" : "py-5 md:px-6",
-                    className
+                    size === "sm" ? "py-4 md:px-5" : "py-5 md:px-6"
                 )}
             >
                 <div className="flex flex-1 flex-col gap-0.5">
@@ -128,124 +147,291 @@ export const TableCard = ({
                         >
                             {title}
                         </h2>
-                        {badge ? (
-                            isValidElement(badge) ? (
+                        {badge &&
+                            (isValidElement(badge) ? (
                                 badge
                             ) : (
                                 <Badge color="brand" size="sm">
                                     {badge}
                                 </Badge>
-                            )
-                        ) : null}
+                            ))}
                     </div>
                     {description && <p className="text-sm text-tertiary">{description}</p>}
                 </div>
                 {contentTrailing}
             </div>
+
             {children}
         </div>
     );
 };
 
-// Table Root Component
-interface TableRootProps extends ComponentPropsWithRef<"table"> {
+interface TableProps<TData, TValue> extends ComponentProps<"table"> {
+    data: TData[];
+    columns: ColumnDef<TData, TValue>[];
     size?: "sm" | "md";
-    data?: unknown[];
-    columns?: ColumnDef<unknown, unknown>[];
+
+    // État de tri
     sorting?: SortingState;
-    onSortingChange?: (sorting: SortingState) => void;
-    selection?: Set<string>;
-    onSelectionChange?: (selection: Set<string>) => void;
-    selectionMode?: "none" | "single" | "multiple";
+    onSortingChange?: OnChangeFn<SortingState>;
+    enableSorting?: boolean;
+
+    // Sélection de lignes
+    rowSelection?: RowSelectionState;
+    onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+    enableRowSelection?: boolean;
+    enableMultiRowSelection?: boolean;
+
+    // Filtrage
+    columnFilters?: ColumnFiltersState;
+    onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
+
+    // Pagination
+    pagination?: PaginationState;
+    onPaginationChange?: OnChangeFn<PaginationState>;
+    pageCount?: number;
+
+    // Expansion
+    expanded?: ExpandedState;
+    onExpandedChange?: OnChangeFn<ExpandedState>;
+    getSubRows?: (originalRow: TData, index: number) => TData[] | undefined;
+
+    // Styles et options
+    bordered?: boolean;
+    alternatingRows?: boolean;
+    emptyMessage?: string;
+    manualSorting?: boolean;
+    manualFiltering?: boolean;
+    manualPagination?: boolean;
 }
 
-const TableRoot = ({
-    className,
+export function Table<TData, TValue>({
+    data,
+    columns,
     size = "md",
-    data = [],
-    columns = [],
-    sorting = [],
-    onSortingChange,
-    selection = new Set(),
-    onSelectionChange,
-    // selectionMode = "none",
-    children,
-    ...props
-}: TableRootProps) => {
-    const [internalSorting, setInternalSorting] = useState<SortingState>(sorting);
-    const [internalSelection, setInternalSelection] = useState<Set<string>>(selection);
+    className,
 
-    const currentSorting = onSortingChange ? sorting : internalSorting;
-    const currentSelection = onSelectionChange ? selection : internalSelection;
+    // Tri
+    sorting: controlledSorting,
+    onSortingChange,
+    enableSorting = true,
+    manualSorting = false,
+
+    // Sélection
+    rowSelection: controlledRowSelection,
+    onRowSelectionChange,
+    enableRowSelection = false,
+    enableMultiRowSelection = true,
+
+    // Filtres
+    columnFilters: controlledColumnFilters,
+    onColumnFiltersChange,
+    manualFiltering = false,
+
+    // Pagination
+    pagination: controlledPagination,
+    onPaginationChange,
+    pageCount = -1,
+    manualPagination = false,
+
+    // Expansion
+    expanded: controlledExpanded,
+    onExpandedChange,
+    getSubRows,
+
+    // Options de style
+    bordered = true,
+    alternatingRows = false,
+    emptyMessage = "No results.",
+
+    ...props
+}: TableProps<TData, TValue>) {
+    // États internes (utilisés si pas de contrôle externe)
+    const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+    const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+    const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
+    const [internalPagination, setInternalPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
+    });
+    const [internalExpanded, setInternalExpanded] = useState<ExpandedState>({});
+
+    // Déterminer quels états utiliser
+    const sorting = controlledSorting ?? internalSorting;
+    const setSorting = onSortingChange ?? setInternalSorting;
+
+    const rowSelection = controlledRowSelection ?? internalRowSelection;
+    const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
+
+    const columnFilters = controlledColumnFilters ?? internalColumnFilters;
+    const setColumnFilters = onColumnFiltersChange ?? setInternalColumnFilters;
+
+    const pagination = controlledPagination ?? internalPagination;
+    const setPagination = onPaginationChange ?? setInternalPagination;
+
+    const expanded = controlledExpanded ?? internalExpanded;
+    const setExpanded = onExpandedChange ?? setInternalExpanded;
+
+    // Mémorisation des colonnes pour éviter les re-renders
+    const memoizedColumns = useMemo(() => columns, [columns]);
+    const memoizedData = useMemo(() => data, [data]);
 
     const table = useReactTable({
-        data,
-        columns,
+        data: memoizedData,
+        columns: memoizedColumns,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        onSortingChange: updater => {
-            const newSorting = typeof updater === "function" ? updater(currentSorting) : updater;
-            if (onSortingChange) {
-                onSortingChange(newSorting);
-            } else {
-                setInternalSorting(newSorting);
-            }
-        },
+
+        // Tri
+        getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
+        onSortingChange: setSorting,
+        manualSorting,
+        enableSorting,
+
+        // Sélection
+        enableRowSelection,
+        enableMultiRowSelection,
+        onRowSelectionChange: setRowSelection,
+
+        // Filtrage
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnFiltersChange: setColumnFilters,
+        manualFiltering,
+
+        // Pagination
+        getPaginationRowModel: getPaginationRowModel(),
+        onPaginationChange: setPagination,
+        manualPagination,
+        pageCount,
+
+        // Expansion
+        getExpandedRowModel: getExpandedRowModel(),
+        onExpandedChange: setExpanded,
+        getSubRows,
+
+        // État
         state: {
-            sorting: currentSorting,
+            sorting,
+            rowSelection,
+            columnFilters,
+            pagination,
+            expanded,
         },
     });
 
-    const contextValue: TableContextType = {
+    const contextValue = {
         size,
-        data,
-        columns,
         table,
-        selection: currentSelection,
-        onSelectionChange: onSelectionChange || setInternalSelection,
+        enableRowSelection,
+        enableMultiRowSelection,
     };
 
     return (
         <TableContext.Provider value={contextValue}>
             <div className="overflow-x-auto">
                 <table className={cn("w-full overflow-x-hidden", className)} {...props}>
-                    {children}
+                    {/* Header */}
+                    <TableHeader
+                        bordered={bordered}
+                        className={alternatingRows ? "bg-primary" : undefined}
+                    >
+                        {table.getHeaderGroups().map(headerGroup => (
+                            <tr key={headerGroup.id}>
+                                {/* Checkbox de sélection globale */}
+                                {enableRowSelection && (
+                                    <TableHead
+                                        className={cn(
+                                            "relative py-2 pr-0 pl-4",
+                                            size === "sm" ? "w-9 md:pl-5" : "w-11 md:pl-6"
+                                        )}
+                                    >
+                                        {enableMultiRowSelection && (
+                                            <div className="flex items-start">
+                                                <Checkbox
+                                                    checked={
+                                                        table.getIsAllPageRowsSelected() ||
+                                                        (table.getIsSomePageRowsSelected() &&
+                                                            "indeterminate")
+                                                    }
+                                                    onCheckedChange={value =>
+                                                        table.toggleAllPageRowsSelected(!!value)
+                                                    }
+                                                    aria-label="Select all"
+                                                />
+                                            </div>
+                                        )}
+                                    </TableHead>
+                                )}
+
+                                {/* Headers des colonnes */}
+                                {headerGroup.headers.map(header => (
+                                    <TableHead
+                                        key={header.id}
+                                        column={header.column}
+                                        sortable={header.column.getCanSort()}
+                                        className={header.column.columnDef.meta?.className}
+                                    >
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(
+                                                  header.column.columnDef.header,
+                                                  header.getContext()
+                                              )}
+                                    </TableHead>
+                                ))}
+                            </tr>
+                        ))}
+                    </TableHeader>
+
+                    <TableBody emptyMessage={emptyMessage}>
+                        {table.getRowModel().rows.map(row => (
+                            <TableRow
+                                key={row.id}
+                                className={cn(
+                                    alternatingRows && "odd:bg-secondary_subtle",
+                                    row.getIsSelected() && "bg-secondary"
+                                )}
+                            >
+                                {enableRowSelection && (
+                                    <TableCell
+                                        className={cn(
+                                            "relative py-2 pr-0 pl-4",
+                                            size === "sm" ? "md:pl-5" : "md:pl-6"
+                                        )}
+                                    >
+                                        <div className="flex items-end">
+                                            <Checkbox
+                                                checked={row.getIsSelected()}
+                                                disabled={!row.getCanSelect()}
+                                                onCheckedChange={value =>
+                                                    row.toggleSelected(!!value)
+                                                }
+                                                aria-label="Select row"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                )}
+
+                                {row.getVisibleCells().map(cell => (
+                                    <TableCell key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
                 </table>
             </div>
         </TableContext.Provider>
     );
-};
-
-// Table Header Component
-interface TableHeaderProps extends ComponentPropsWithRef<"thead"> {
-    bordered?: boolean;
-    selectionMode?: "none" | "single" | "multiple";
 }
 
-const TableHeader = ({
-    bordered = true,
-    selectionMode = "none",
-    className,
-    children,
-    ...props
-}: TableHeaderProps) => {
-    const { size, table, selection, onSelectionChange } = useContext(TableContext);
+// Table Header Component
+interface TableHeaderProps extends ComponentProps<"thead"> {
+    bordered?: boolean;
+}
 
-    const handleSelectAll = (checked: boolean) => {
-        if (!table || !onSelectionChange) return;
-
-        if (checked) {
-            const allIds = new Set(table.getRowModel().rows.map(row => row.id));
-            onSelectionChange(allIds);
-        } else {
-            onSelectionChange(new Set());
-        }
-    };
-
-    const isAllSelected =
-        table?.getRowModel()?.rows.length > 0 &&
-        table?.getRowModel()?.rows.every(row => selection?.has(row.id));
-    const isIndeterminate = selection?.size > 0 && !isAllSelected;
+const TableHeader = ({ bordered = true, className, children, ...props }: TableHeaderProps) => {
+    const { size } = useTableContext();
 
     return (
         <thead
@@ -258,42 +444,19 @@ const TableHeader = ({
                 className
             )}
         >
-            <tr>
-                {selectionMode === "multiple" && (
-                    <th
-                        className={cn(
-                            "relative py-2 pr-0 pl-4",
-                            size === "sm" ? "w-9 md:pl-5" : "w-11 md:pl-6"
-                        )}
-                    >
-                        <div className="flex items-start">
-                            <Checkbox
-                                checked={isIndeterminate ? "indeterminate" : isAllSelected}
-                                onCheckedChange={handleSelectAll}
-                                // ref={
-                                //     isIndeterminate
-                                //         ? el => el && (el.indeterminate = true)
-                                //         : undefined
-                                // }
-                            />
-                        </div>
-                    </th>
-                )}
-                {children}
-            </tr>
+            {children}
         </thead>
     );
 };
 
-// Table Head Component
-interface TableHeadProps extends ThHTMLAttributes<HTMLTableCellElement> {
+interface TableHeadProps<TData, TValue> extends ComponentProps<"th"> {
     label?: string;
     tooltip?: string;
-    column?: Column<unknown, unknown>;
+    column?: Column<TData, TValue>;
     sortable?: boolean;
 }
 
-const TableHead = ({
+function TableHead<TData, TValue>({
     className,
     tooltip,
     label,
@@ -301,7 +464,7 @@ const TableHead = ({
     sortable = false,
     children,
     ...props
-}: TableHeadProps) => {
+}: TableHeadProps<TData, TValue>) {
     const canSort = column?.getCanSort() ?? sortable;
     const sortDirection = column?.getIsSorted();
 
@@ -310,43 +473,6 @@ const TableHead = ({
             column.toggleSorting();
         }
     };
-
-    const headContent = (
-        <div className="flex items-center gap-1">
-            <div className="flex items-center gap-1">
-                {label && (
-                    <span className="text-xs font-semibold whitespace-nowrap text-quaternary">
-                        {label}
-                    </span>
-                )}
-                {children}
-            </div>
-
-            {tooltip && (
-                <Tooltip
-                    trigger={
-                        <HelpCircle className="size-4 cursor-pointer text-fg-quaternary transition duration-100 ease-linear hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover" />
-                    }
-                    title={tooltip}
-                />
-            )}
-
-            {canSort &&
-                (sortDirection ? (
-                    <ArrowDown
-                        className={cn(
-                            "size-3 stroke-[3px] text-fg-quaternary",
-                            sortDirection === "asc" && "rotate-180"
-                        )}
-                    />
-                ) : (
-                    <ChevronSelectorVertical
-                        strokeWidth={3}
-                        className="size-12 text-fg-quaternary"
-                    />
-                ))}
-        </div>
-    );
 
     return (
         <th
@@ -358,46 +484,48 @@ const TableHead = ({
             )}
             onClick={canSort ? handleSort : undefined}
         >
-            {headContent}
+            <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
+                    {label && (
+                        <span className="text-xs font-semibold whitespace-nowrap text-quaternary">
+                            {label}
+                        </span>
+                    )}
+                    {children}
+                </div>
+
+                {tooltip && (
+                    <Tooltip
+                        trigger={
+                            <HelpCircle className="size-4 cursor-pointer text-fg-quaternary transition duration-100 ease-linear hover:text-fg-quaternary_hover focus:text-fg-quaternary_hover" />
+                        }
+                        title={tooltip}
+                    />
+                )}
+
+                {canSort &&
+                    (sortDirection ? (
+                        <ArrowDown
+                            className={cn(
+                                "size-3 stroke-[3px] text-fg-quaternary",
+                                sortDirection === "asc" && "rotate-180"
+                            )}
+                        />
+                    ) : (
+                        <ChevronSelectorVertical
+                            strokeWidth={3}
+                            className="size-3 text-fg-quaternary"
+                        />
+                    ))}
+            </div>
         </th>
     );
-};
-
-// Table Row Component
-interface TableRowProps<T extends object> extends ComponentPropsWithRef<"tr"> {
-    highlightSelectedRow?: boolean;
-    selectionMode?: "none" | "single" | "multiple";
-    rowId?: string;
-    data?: T;
 }
 
-const TableRow = <T extends object>({
-    highlightSelectedRow = true,
-    selectionMode = "none",
-    rowId,
-    // data,
-    className,
-    children,
-    ...props
-}: TableRowProps<T>) => {
-    const { size, selection, onSelectionChange } = useContext(TableContext);
+// Table Row Component
 
-    const isSelected = rowId ? selection?.has(rowId) : false;
-
-    const handleSelectionChange = (checked: boolean) => {
-        if (!rowId || !onSelectionChange) return;
-
-        const newSelection = new Set(selection);
-        if (checked) {
-            if (selectionMode === "single") {
-                newSelection.clear();
-            }
-            newSelection.add(rowId);
-        } else {
-            newSelection.delete(rowId);
-        }
-        onSelectionChange(newSelection);
-    };
+const TableRow = ({ className, children, ...props }: ComponentProps<"tr">) => {
+    const { size } = useTableContext();
 
     return (
         <tr
@@ -405,32 +533,19 @@ const TableRow = <T extends object>({
             className={cn(
                 "relative outline-focus-ring transition-colors after:pointer-events-none hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2",
                 size === "sm" ? "h-14" : "h-18",
-                highlightSelectedRow && isSelected && "bg-secondary",
                 "[&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:w-full [&>td]:after:bg-border-secondary last:[&>td]:after:hidden [&>td]:focus-visible:after:opacity-0 focus-visible:[&>td]:after:opacity-0",
                 className
             )}
         >
-            {selectionMode !== "none" && (
-                <td
-                    className={cn("relative py-2 pr-0 pl-4", size === "sm" ? "md:pl-5" : "md:pl-6")}
-                >
-                    <div className="flex items-end">
-                        <Checkbox checked={isSelected} onCheckedChange={handleSelectionChange} />
-                    </div>
-                </td>
-            )}
             {children}
         </tr>
     );
 };
 
 // Table Cell Component
-interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {
-    ref?: Ref<HTMLTableCellElement>;
-}
 
-const TableCell = ({ className, children, ...props }: TableCellProps) => {
-    const { size } = useContext(TableContext);
+const TableCell = ({ className, children, ...props }: ComponentProps<"td">) => {
+    const { size } = useTableContext();
 
     return (
         <td
@@ -448,7 +563,7 @@ const TableCell = ({ className, children, ...props }: TableCellProps) => {
 };
 
 // Table Body Component
-interface TableBodyProps extends ComponentPropsWithRef<"tbody"> {
+interface TableBodyProps extends ComponentProps<"tbody"> {
     emptyMessage?: string;
 }
 
@@ -458,25 +573,19 @@ const TableBody = ({
     children,
     ...props
 }: TableBodyProps) => {
-    const { columns, table } = useContext(TableContext);
-    const rows = table?.getRowModel().rows;
+    const { table } = useTableContext();
+    const hasData = table?.getRowModel() && table?.getRowModel()?.rows?.length > 0;
 
     return (
         <tbody className={className} {...props}>
-            {rows?.length ? (
-                children ||
-                rows.map(row => (
-                    <TableRow key={row.id} rowId={row.id}>
-                        {row.getVisibleCells().map(cell => (
-                            <TableCell key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                        ))}
-                    </TableRow>
-                ))
+            {hasData ? (
+                children
             ) : (
                 <tr>
-                    <td className="h-24 text-center" colSpan={columns?.length || 1}>
+                    <td
+                        className="h-24 text-center text-tertiary"
+                        colSpan={table?.getAllColumns().length || 1}
+                    >
                         {emptyMessage}
                     </td>
                 </tr>
@@ -485,72 +594,5 @@ const TableBody = ({
     );
 };
 
-// Factory Function for Easy Usage
-interface TableFactoryProps<T extends object> {
-    data: T[];
-    columns: ColumnDef<T, unknown>[];
-    size?: "sm" | "md";
-    selectionMode?: "none" | "single" | "multiple";
-    sorting?: SortingState;
-    onSortingChange?: (sorting: SortingState) => void;
-    selection?: Set<string>;
-    onSelectionChange?: (selection: Set<string>) => void;
-    emptyMessage?: string;
-    className?: string;
-}
-
-export function Table<T extends object>({
-    data,
-    columns,
-    size = "md",
-    selectionMode = "none",
-    sorting,
-    onSortingChange,
-    selection,
-    onSelectionChange,
-    emptyMessage,
-    className,
-}: TableFactoryProps<T>) {
-    return (
-        <TableRoot
-            data={data}
-            columns={columns}
-            size={size}
-            sorting={sorting}
-            onSortingChange={onSortingChange}
-            selection={selection}
-            onSelectionChange={onSelectionChange}
-            className={className}
-        >
-            <TableHeader selectionMode={selectionMode}>
-                {columns.map(column => (
-                    <TableHead key={column.id}>
-                        {typeof column.header === "string"
-                            ? column.header
-                            : typeof column.header === "function"
-                              ? column.header({} as any)
-                              : column.header}
-                    </TableHead>
-                ))}
-            </TableHeader>
-            <TableBody emptyMessage={emptyMessage} />
-        </TableRoot>
-    );
-}
-
-// const Table = TableRoot as typeof TableRoot & {
-//     Body: typeof TableBody;
-//     Cell: typeof TableCell;
-//     Head: typeof TableHead;
-//     Header: typeof TableHeader;
-//     Row: typeof TableRow;
-//     Card: typeof TableCard;
-// };
-
-// Table.Body = TableBody;
-// Table.Cell = TableCell;
-// Table.Head = TableHead;
-// Table.Header = TableHeader;
-// Table.Row = TableRow;
-
-// export { Table };
+// Exports
+export { TableHeader, TableHead, TableRow, TableCell, TableBody };
