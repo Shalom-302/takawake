@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-    Edit01,
-    Trash01,
-    FilterLines,
-    Plus,
-    SearchLg,
-    UploadCloud02,
-} from "@untitled-ui/icons-react";
+import { Edit01, Trash01 } from "@untitled-ui/icons-react";
 import {
     createColumnHelper,
     Table,
@@ -16,12 +9,17 @@ import {
     TableRowActionsDropdown,
     type ColumnDef,
 } from "@/components/ui/table";
-import { Badge, BadgeVariants } from "@/components/ui/badges";
+import { Badge, type BadgeVariants } from "@/components/ui/badges";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/buttons";
-import { RowExpanding } from "@tanstack/react-table";
+// Import des types manquants pour les états
+import type {
+    SortingState,
+    ColumnFiltersState,
+    PaginationState,
+    RowSelectionState,
+} from "@tanstack/react-table";
 
-// === EXEMPLE 1: Table Simple avec Column Helper (API v8) ===
 type Payment = {
     id: string;
     status: "success" | "processing" | "failed";
@@ -54,7 +52,6 @@ const paymentData: Payment[] = [
     },
 ];
 
-// Utilisation du Column Helper (recommandé pour TypeScript)
 const columnHelper = createColumnHelper<Payment>();
 
 const paymentColumns = [
@@ -101,12 +98,9 @@ const paymentColumns = [
 ];
 
 export const ModernSimpleTable = () => {
-    const [rowSelection, setRowSelection] = useState({});
-
     return (
         <TableCard
             title="Payments"
-            badge={`${Object.keys(rowSelection).length} selected`}
             description="A list of your recent payments"
             contentTrailing={
                 <TableRowActionsDropdown
@@ -121,13 +115,13 @@ export const ModernSimpleTable = () => {
                 columns={paymentColumns}
                 enableRowSelection
                 enableMultiRowSelection
-                rowSelection={rowSelection}
-                onRowSelectionChange={setRowSelection}
                 size="md"
             />
         </TableCard>
     );
 };
+
+// ---
 
 // === EXEMPLE 2: Table avec Sorting et Filtering ===
 type TeamMember = {
@@ -138,7 +132,7 @@ type TeamMember = {
     avatarUrl: string;
     status: "active" | "inactive";
     role: string;
-    teams: Array<{ name: string; color: string }>;
+    teams: Array<{ name: string; color: BadgeVariants["color"] }>;
 };
 
 const teamMembersData: TeamMember[] = [
@@ -165,7 +159,7 @@ const teamMembersData: TeamMember[] = [
         status: "active",
         role: "Engineering Manager",
         teams: [
-            { name: "Engineering", color: "green" },
+            { name: "Engineering", color: "success" },
             { name: "Leadership", color: "gray" },
         ],
     },
@@ -177,7 +171,7 @@ const teamMembersData: TeamMember[] = [
         avatarUrl: "/avatars/avatar-3.png",
         status: "inactive",
         role: "Frontend Developer",
-        teams: [{ name: "Engineering", color: "green" }],
+        teams: [{ name: "Engineering", color: "success" }],
     },
 ];
 
@@ -199,7 +193,7 @@ const teamColumns = [
             );
         },
         meta: {
-            className: "w-full max-w-1/4",
+            headClassName: "w-full max-w-1/4",
         },
     }),
     teamColumnHelper.accessor("status", {
@@ -225,7 +219,7 @@ const teamColumns = [
         header: "Email address",
         cell: info => <span className="whitespace-nowrap">{info.getValue()}</span>,
         meta: {
-            className: "md:hidden xl:table-cell",
+            headClassName: "md:hidden xl:table-cell",
         },
     }),
     teamColumnHelper.accessor("teams", {
@@ -235,11 +229,7 @@ const teamColumns = [
             return (
                 <div className="flex gap-1">
                     {teams.slice(0, 2).map(team => (
-                        <Badge
-                            key={team.name}
-                            color={team.color as BadgeVariants["color"]}
-                            size="sm"
-                        >
+                        <Badge key={team.name} color={team.color!} size="sm">
                             {team.name}
                         </Badge>
                     ))}
@@ -277,9 +267,10 @@ const teamColumns = [
 ];
 
 export const ModernTeamMembersTable = () => {
-    const [sorting, setSorting] = useState([]);
-    const [columnFilters, setColumnFilters] = useState([]);
-    const [rowSelection, setRowSelection] = useState({});
+    // Correction du typage des états
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
     return (
         <TableCard
@@ -309,14 +300,17 @@ export const ModernTeamMembersTable = () => {
     );
 };
 
+// ---
+
 // === EXEMPLE 3: Table avec Pagination ===
 export const ModernPaginatedTable = () => {
-    const [sorting, setSorting] = useState([]);
-    const [pagination, setPagination] = useState({
+    // Correction du typage des états
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
     });
-    const [rowSelection, setRowSelection] = useState({});
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
     return (
         <TableCard
@@ -384,9 +378,11 @@ export const ModernPaginatedTable = () => {
     );
 };
 
+// ---
+
 // === EXEMPLE 4: Table avec Lignes Alternées ===
 export const ModernAlternatingTable = () => {
-    const [rowSelection, setRowSelection] = useState({});
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
     return (
         <TableCard
@@ -413,97 +409,10 @@ export const ModernAlternatingTable = () => {
     );
 };
 
-// === EXEMPLE 5: Table Empty State ===
-// export const ModernEmptyTable = () => {
-//     return (
-//         <TableCard
-//             title="Vendor movements"
-//             badge="240 vendors"
-//             description="Keep track of vendor and their security ratings."
-//             contentTrailing={
-//                 <>
-//                     <div className="flex gap-3 md:pr-9">
-//                         <Button color="secondary" size="md" iconLeading={UploadCloud02}>
-//                             Import
-//                         </Button>
-//                         <Button size="md" iconLeading={Plus}>
-//                             Add vendor
-//                         </Button>
-//                     </div>
-//                     <div className="absolute top-5 right-4 md:right-6">
-//                         <TableRowActionsDropdown />
-//                     </div>
-//                 </>
-//             }
-//         >
-//             {/* Filters Section */}
-//             <div className="flex justify-between gap-4 border-b border-secondary px-4 py-3 md:px-6">
-//                 <ButtonGroup defaultSelectedKeys={["all"]}>
-//                     <ButtonGroupItem id="all">View all</ButtonGroupItem>
-//                     <ButtonGroupItem id="monitored">Monitored</ButtonGroupItem>
-//                     <ButtonGroupItem id="unmonitored">Unmonitored</ButtonGroupItem>
-//                 </ButtonGroup>
-//                 <div className="hidden gap-3 md:flex">
-//                     <Input
-//                         icon={SearchLg}
-//                         aria-label="Search"
-//                         placeholder="Search"
-//                         className="w-70"
-//                     />
-//                     <Button size="md" color="secondary" iconLeading={FilterLines}>
-//                         Filters
-//                     </Button>
-//                 </div>
-//             </div>
-
-//             {/* Table vide */}
-//             <Table
-//                 data={[]}
-//                 columns={teamColumns}
-//                 enableRowSelection
-//                 enableMultiRowSelection
-//                 size="md"
-//                 emptyMessage={
-//                     <div className="flex items-center justify-center overflow-hidden px-8 pt-10 pb-12">
-//                         <EmptyState size="sm">
-//                             <EmptyState.Header pattern="circle">
-//                                 <EmptyState.FeaturedIcon color="gray" theme="modern-neue" />
-//                             </EmptyState.Header>
-//                             <EmptyState.Content>
-//                                 <EmptyState.Title>No vendors found</EmptyState.Title>
-//                                 <EmptyState.Description>
-//                                     Your search "Stripe" did not match any vendors. Please try again
-//                                     or create add a new vendor.
-//                                 </EmptyState.Description>
-//                             </EmptyState.Content>
-//                             <EmptyState.Footer>
-//                                 <Button size="md" color="secondary">
-//                                     Clear search
-//                                 </Button>
-//                                 <Button size="md" iconLeading={Plus}>
-//                                     New project
-//                                 </Button>
-//                             </EmptyState.Footer>
-//                         </EmptyState>
-//                     </div>
-//                 }
-//             />
-
-//             {/* Footer Pagination */}
-//             <div className="flex items-center justify-between border-t border-secondary px-6 pt-3 pb-4">
-//                 <span className="text-sm">Page 1 of 10</span>
-//                 <div className="flex gap-3">
-//                     <Button color="secondary">Previous</Button>
-//                     <Button color="secondary">Next</Button>
-//                 </div>
-//             </div>
-//         </TableCard>
-//     );
-// };
+// ---
 
 // === EXEMPLE 6: Table avec définition traditionnelle de colonnes ===
 export const TraditionalColumnDefTable = () => {
-    // Définition traditionnelle (sans column helper)
     const traditionalColumns: ColumnDef<Payment>[] = [
         {
             accessorKey: "id",
@@ -562,8 +471,9 @@ export const TraditionalColumnDefTable = () => {
         },
     ];
 
-    const [rowSelection, setRowSelection] = useState({});
-    const [sorting, setSorting] = useState([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    // Correction du typage de l'état de tri
+    const [sorting, setSorting] = useState<SortingState>([]);
 
     return (
         <TableCard
@@ -587,13 +497,16 @@ export const TraditionalColumnDefTable = () => {
     );
 };
 
+// ---
+
 // === EXEMPLE 7: Table avec état complet contrôlé ===
 export const FullyControlledTable = () => {
     // Tous les états contrôlés depuis l'extérieur
-    const [sorting, setSorting] = useState([{ id: "name", desc: false }]);
-    const [columnFilters, setColumnFilters] = useState([]);
-    const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({ "1": true });
-    const [pagination, setPagination] = useState({
+    // Correction du typage des états
+    const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({ "1": true });
+    const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 10,
     });
@@ -618,7 +531,7 @@ export const FullyControlledTable = () => {
                 <Button
                     size="sm"
                     onClick={() => {
-                        const allSelected: Record<string, boolean> = {};
+                        const allSelected: RowSelectionState = {};
                         teamMembersData.forEach(member => {
                             allSelected[member.id] = true;
                         });
