@@ -4,8 +4,8 @@ import Link from "next/link";
 
 import { CodeBlock } from "@/ds/components/code-block";
 import { Button, LinkButton } from "@/components/ui/buttons";
-import { Placeholder } from "@untitled-ui/icons-react";
 import { ButtonVariants } from "@/components/ui/buttons/button";
+import { Placeholder } from "@untitled-ui/icons-react";
 
 export default function ButtonPage() {
     const variants = [
