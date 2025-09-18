@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Avatar } from "@/components/ui/avatar";
+import { User01 } from "@untitled-ui/icons-react";
 
 export default function AvatarDocs() {
     return (
@@ -76,6 +77,59 @@ export default function AvatarDocs() {
                     <CodeBlock
                         code={`<Avatar src="/images/avatar-3.png" verified size="md" />
 <Avatar initials="VU" verified size="lg" />`}
+                    />
+                </div>
+
+                {/* Profile photo */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Profile photo</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Large, ringed avatar for user profiles with extended size options.
+                    </p>
+                    <div className="flex gap-4 items-end mb-4">
+                        <Avatar
+                            variant="profile"
+                            src="/images/avatar-1.png"
+                            alt="Profile photo 1"
+                            size="profile-sm"
+                        />
+                        <Avatar
+                            variant="profile"
+                            src="/images/avatar-2.png"
+                            alt="Profile photo 2"
+                            size="profile-md"
+                        />
+                        <Avatar
+                            variant="profile"
+                            src="/images/avatar-3.png"
+                            alt="Profile photo 3"
+                            size="profile-lg"
+                        />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar variant="profile" src="/images/avatar-1.png" alt="Profile photo 1" size="profile-sm" />
+<Avatar variant="profile" src="/images/avatar-2.png" alt="Profile photo 2" size="profile-md" />
+<Avatar variant="profile" src="/images/avatar-3.png" alt="Profile photo 3" size="profile-lg" />`}
+                    />
+                </div>
+
+                {/* Profile photo with fallback */}
+                <div className="mb-8">
+                    <h3 className="font-semibold mb-2">Profile photo with fallback</h3>
+                    <div className="flex gap-4 items-end mb-4">
+                        <Avatar variant="profile" initials="PS" size="profile-sm" />
+                        <Avatar variant="profile" placeholderIcon={User01} size="profile-md" />
+                        <Avatar
+                            variant="profile"
+                            src="https://broken-url.jpg"
+                            initials="BI"
+                            size="profile-lg"
+                        />
+                    </div>
+                    <CodeBlock
+                        code={`<Avatar variant="profile" initials="PS" size="profile-sm" />
+<Avatar variant="profile" placeholderIcon={User01} size="profile-md" />
+<Avatar variant="profile" src="https://broken-url.jpg" initials="BI" size="profile-lg" />`}
                     />
                 </div>
 
@@ -208,14 +262,24 @@ export default function AvatarDocs() {
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">size?</td>
                                 <td className="py-2 px-4 text-sm">
-                                    {` "xxs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl"`}
+                                    {`"xxs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "profile-sm" | "profile-md" | "profile-lg"`}
                                 </td>
                                 <td className="py-2 px-4 text-sm">{`"md"`}</td>
-                                <td className="py-2 px-4 text-sm">Avatar size</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Avatar size, including profile variants.
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-medium">variant?</td>
+                                <td className="py-2 px-4 text-sm">{`"default" | "profile"`}</td>
+                                <td className="py-2 px-4 text-sm">{`"default"`}</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Renders a default avatar or a profile photo variant with a ring.
+                                </td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">status?</td>
-                                <td className="py-2 px-4 text-sm">{` "online" | "offline"`}</td>
+                                <td className="py-2 px-4 text-sm">{`"online" | "offline"`}</td>
                                 <td className="py-2 px-4 text-sm">{`"offline"`}</td>
                                 <td className="py-2 px-4 text-sm">Status indicator</td>
                             </tr>
@@ -230,26 +294,29 @@ export default function AvatarDocs() {
                                 <td className="py-2 px-4 text-sm">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
                                 <td className="py-2 px-4 text-sm">
-                                    Focusable style on parent link
+                                    Adds a focusable style on the parent link.
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">contrastBorder?</td>
                                 <td className="py-2 px-4 text-sm">boolean</td>
                                 <td className="py-2 px-4 text-sm">true</td>
-                                <td className="py-2 px-4 text-sm">Show contrast border</td>
+                                <td className="py-2 px-4 text-sm">
+                                    Show a border that contrasts with the background. Only
+                                    applicable to "profile" variant.
+                                </td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-medium">customBadge?</td>
                                 <td className="py-2 px-4 text-sm">React.ReactNode</td>
                                 <td className="py-2 px-4 text-sm">-</td>
-                                <td className="py-2 px-4 text-sm">Custom badge element</td>
+                                <td className="py-2 px-4 text-sm">Custom badge element.</td>
                             </tr>
                             <tr>
                                 <td className="py-2 px-4 font-medium">className?</td>
                                 <td className="py-2 px-4 text-sm">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
-                                <td className="py-2 px-4 text-sm">Additional styles</td>
+                                <td className="py-2 px-4 text-sm">Additional styles.</td>
                             </tr>
                         </tbody>
                     </table>
