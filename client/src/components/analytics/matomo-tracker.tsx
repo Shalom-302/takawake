@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useMatomoConfig } from "@/hooks/use-matomo-config";
+import { useMatomoConfig } from "@/lib/hooks/use-matomo-config";
 
 /**
  * MatomoTracker component

@@ -11,7 +11,7 @@ import { AlertCircle, Save } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { MatomoDashboard } from "@/components/analytics/matomo-dashboard";
-import { useMatomoConfig } from "@/hooks/use-matomo-config";
+import { useMatomoConfig } from "@/lib/hooks/use-matomo-config";
 
 export default function MatomoAdminPage() {
     const { config, error, updateConfig } = useMatomoConfig();

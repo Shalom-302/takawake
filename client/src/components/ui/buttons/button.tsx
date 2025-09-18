@@ -11,6 +11,7 @@ import React, { isValidElement } from "react";
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
+import { isReactComponent } from "@/lib/utils/is-react-component";
 
 const buttonVariants = cva(
     [
@@ -196,38 +197,42 @@ function Button({
         >
             {/* left icon */}
             {isValidElement(LeftIcon) && LeftIcon}
+            {isReactComponent(LeftIcon) && <LeftIcon className={iconStyle} />}
 
             {/* Loading spinner - Treated as a normal flex item */}
             {loading && (
-                <span data-icon="loading" className={cn(iconStyle, "animate-spin")}>
-                    <svg
+                <svg
+                    fill="none"
+                    data-icon="loading"
+                    viewBox="0 0 20 20"
+                    className={cn(
+                        iconStyle,
+                        "animate-spin",
+                        !showTextWhileLoading &&
+                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    )}
+                >
+                    {/* Background circle */}
+                    <circle
+                        className="stroke-current opacity-30"
+                        cx="10"
+                        cy="10"
+                        r="8"
                         fill="none"
-                        data-icon="loading"
-                        viewBox="0 0 20 20"
-                        className="pointer-events-none size-5 shrink-0 transition-inherit-all"
-                    >
-                        {/* Background circle */}
-                        <circle
-                            className="stroke-current opacity-30"
-                            cx="10"
-                            cy="10"
-                            r="8"
-                            fill="none"
-                            strokeWidth="2"
-                        />
-                        {/* Spinning circle */}
-                        <circle
-                            className="origin-center animate-spin stroke-current"
-                            cx="10"
-                            cy="10"
-                            r="8"
-                            fill="none"
-                            strokeWidth="2"
-                            strokeDasharray="12.5 50"
-                            strokeLinecap="round"
-                        />
-                    </svg>
-                </span>
+                        strokeWidth="2"
+                    />
+                    {/* Spinning circle */}
+                    <circle
+                        className="origin-center animate-spin stroke-current"
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        fill="none"
+                        strokeWidth="2"
+                        strokeDasharray="12.5 50"
+                        strokeLinecap="round"
+                    />
+                </svg>
             )}
 
             {isLinkType ? (
@@ -256,6 +261,7 @@ function Button({
 
             {/* Right icon */}
             {isValidElement(RightIcon) && RightIcon}
+            {isReactComponent(RightIcon) && <RightIcon className={iconStyle} />}
         </Component>
     );
 }

@@ -57,15 +57,15 @@ export function ButtonGroup({ className, size, items, children, ...props }: Butt
 }
 
 export interface ButtonGroupItemProps
-    extends React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> {
-    children?: React.ReactNode;
+    extends React.ComponentProps<typeof ToggleGroupPrimitive.Item> {
+    label: React.ReactNode;
     leftIcon?: IconType;
     rightIcon?: IconType;
 }
 
 export function ButtonGroupItem({
     className,
-    children,
+    label,
     leftIcon: LeftIcon,
     rightIcon: RightIcon,
     ...props
@@ -84,7 +84,7 @@ export function ButtonGroupItem({
             {isReactComponent(LeftIcon) && <LeftIcon className="shrink-0" />}
             {React.isValidElement(LeftIcon) && LeftIcon}
 
-            {children}
+            {label}
 
             {isReactComponent(RightIcon) && <RightIcon className="shrink-0" />}
             {React.isValidElement(RightIcon) && RightIcon}

@@ -20,7 +20,7 @@ import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popo
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
-import { useResizeObserver } from "@/hooks/use-resize-observer";
+import { useResizeObserver } from "@/lib/hooks/use-resize-observer";
 
 // ------------------------------------------------------------
 // Combobox

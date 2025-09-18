@@ -4,37 +4,37 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Archive, Edit03, Trash01 } from "@untitled-ui/icons-react";
-import { ButtonGroup, ButtonGroupItem, ButtonGroupItemProps } from "@/components/ui/buttons";
+import { ButtonGroup, ButtonGroupItemProps } from "@/components/ui/buttons";
 
 export default function ButtonGroupPage() {
     const defaultItems = [
-        { value: "archive", children: "Archive" },
-        { value: "edit", children: "Edit" },
-        { value: "delete", children: "Delete" },
+        { value: "archive", label: "Archive" },
+        { value: "edit", label: "Edit" },
+        { value: "delete", label: "Delete" },
     ];
 
     const iconItems = [
         {
             value: "archive",
             leftIcon: Archive,
-            children: "Archive",
+            label: "Archive",
         },
         {
             value: "edit",
             leftIcon: Edit03,
-            children: "Edit",
+            label: "Edit",
         },
         {
             value: "delete",
             leftIcon: Trash01,
-            children: "Delete",
+            label: "Delete",
         },
     ];
 
     const singleSelectionItems = [
-        { value: "today", children: "Today" },
-        { value: "tomorrow", children: "Tomorrow" },
-        { value: "thisweek", children: "This week" },
+        { value: "today", label: "Today" },
+        { value: "tomorrow", label: "Tomorrow" },
+        { value: "thisweek", label: "This week" },
     ];
 
     return (
@@ -61,17 +61,17 @@ export default function ButtonGroupPage() {
         {
             value: "archive",
             lefIcon: { Archive },
-            children: "Archive",
+            label: "Archive",
         },
         {
             value: "edit",
             lefIcon: { Edit03 },
-            children: "Edit",
+            label: "Edit",
         },
         {
             value: "delete",
             lefIcon: { Trash01 },
-            children: "Delete",
+            label: "Delete",
         },
     ]} />`}
                     />
@@ -105,41 +105,19 @@ export default function ButtonGroupPage() {
         {
             value: "archive",
             lefIcon: { Archive },
-            children: "Archive",
+            label: "Archive",
         },
         {
             value: "edit",
             lefIcon: { Edit03 },
-            children: "Edit",
+            label: "Edit",
         },
         {
             value: "delete",
             lefIcon: { Trash01 },
-            children: "Delete",
+            label: "Delete",
         },
     ]} />`}
-                    />
-                </div>
-            </div>
-
-            {/* Mixed Usage (items prop + child component) */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">
-                    Mixed Usage (items prop + child component)
-                </h2>
-                <div className="p-4 border border-tertiary rounded-lg">
-                    <ButtonGroup type="single" value="">
-                        <ButtonGroupItem value="archive">Archive</ButtonGroupItem>
-                        <ButtonGroupItem value="edit">Edit</ButtonGroupItem>
-                        <ButtonGroupItem value="delete">Delete</ButtonGroupItem>
-                    </ButtonGroup>
-                    <CodeBlock
-                        className="mt-2"
-                        code={`<ButtonGroup value="">
-  <ButtonGroupItem value="archive">Archive</ButtonGroupItem>
-  <ButtonGroupItem value="edit">Edit</ButtonGroupItem>
-  <ButtonGroupItem value="delete">Delete</ButtonGroupItem>
-</ButtonGroup>`}
                     />
                 </div>
             </div>
@@ -152,9 +130,9 @@ export default function ButtonGroupPage() {
                     <CodeBlock
                         className="mt-2"
                         code={`<ButtonGroup value="" disabled items={[
-  { value: "archive", children: "Archive" },
-  { value: "edit", children: "Edit" },
-  { value: "delete", children: "Delete" },
+  { value: "archive", label: "Archive" },
+  { value: "edit", label: "Edit" },
+  { value: "delete", label: "Delete" },
 ]} />`}
                     />
                 </div>
@@ -237,6 +215,14 @@ export default function ButtonGroupPage() {
                                     Disable the button or the entire group.
                                 </td>
                             </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">className?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">
+                                    additional class for the entire group.
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -262,28 +248,28 @@ export default function ButtonGroupPage() {
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">leftIcon?</td>
                                 <td className="py-2 px-4 font-mono text-sm">{`React.ComponentType<{ className?: string }> | React.ReactNode`}</td>
-                                <td className="py-2 px-4">
-                                    Icon to be rendered before the children.
-                                </td>
+                                <td className="py-2 px-4">Icon to be rendered before the label.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">rightIcon?</td>
                                 <td className="py-2 px-4 font-mono text-sm">{`React.ComponentType<{ className?: string }> | React.ReactNode`}</td>
-                                <td className="py-2 px-4">
-                                    Icon to be rendered after the children.
-                                </td>
+                                <td className="py-2 px-4">Icon to be rendered after the label.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">children?</td>
+                                <td className="py-2 px-4 font-mono text-sm">label?</td>
                                 <td className="py-2 px-4 font-mono text-sm">React.ReactNode</td>
-                                <td className="py-2 px-4">
-                                    The content of the button. This is where you pass text or icons.
-                                </td>
+                                <td className="py-2 px-4">The content of the button.</td>
                             </tr>
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">disabled?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4">Disable the individual button item.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">className?</td>
+                                <td className="py-2 px-4 font-mono text-sm">string</td>
+                                <td className="py-2 px-4 font-mono text-sm">-</td>
+                                <td className="py-2 px-4">additional class for the item.</td>
                             </tr>
                         </tbody>
                     </table>

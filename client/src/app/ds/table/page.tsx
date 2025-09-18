@@ -4,12 +4,7 @@
 import React from "react";
 
 import { CodeBlock } from "@/ds/components/code-block";
-import {
-    createColumnHelper,
-    Table,
-    TableCard,
-    TableRowActionsDropdown,
-} from "@/components/ui/table";
+import { createColumnHelper } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badges";
 import {
     FullyControlledTable,
