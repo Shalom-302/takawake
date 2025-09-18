@@ -206,7 +206,7 @@ interface TableProps<TData extends RowData> extends ComponentProps<"table"> {
     // Styles et options
     bordered?: boolean;
     alternatingRows?: boolean;
-    emptyMessage?: string;
+    emptyMessage?: ReactNode;
     manualSorting?: boolean;
     manualFiltering?: boolean;
     manualPagination?: boolean;
@@ -571,7 +571,7 @@ const TableCell = ({ className, children, ...props }: ComponentProps<"td">) => {
 
 // Table Body Component
 interface TableBodyProps extends ComponentProps<"tbody"> {
-    emptyMessage?: string;
+    emptyMessage?: ReactNode;
 }
 
 const TableBody = ({
