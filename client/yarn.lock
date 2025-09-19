@@ -1263,6 +1263,11 @@
   resolved "https://registry.yarnpkg.com/@untitled-ui/icons-react/-/icons-react-0.1.4.tgz#7f09b7d385c76c51a5b24b41bf4e0145ee64becc"
   integrity sha512-MLgO1JO5Ku5h588iJjin4JNf8W4TEyAL2Gde6jbBWgh5A2VBwcajRWlGnaGlcQiXYkT6ueYw9ZW9iNBFBUKzTg==
 
+"@untitledui/file-icons@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@untitledui/file-icons/-/file-icons-0.0.9.tgz#5f2d25bde9bcdecb4efff00a775009caf14a4ce5"
+  integrity sha512-wz3btNnSSv2hTujgyxEFL21oyjPtGTj3osU8ZEMe8nwdlmLQEILLe96NMg9b1ciiOC5UOWNDeYIt7IfxEM6qtg==
+
 acorn-jsx@^5.3.2:
   version "5.3.2"
   resolved "https://registry.npmjs.org/acorn-jsx/-/acorn-jsx-5.3.2.tgz"

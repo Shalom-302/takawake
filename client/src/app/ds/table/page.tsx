@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/buttons";
 import { Pagination } from "@/components/ui/pagination";
 import { ProgressBar } from "@/components/ui/progress-indicators";
 import { ButtonUtility } from "@/components/ui/buttons/button-utility";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // Types pour les données d'exemple
 type User = {
@@ -1019,30 +1020,23 @@ const EmptyStateTableExample = () => {
             data={[]}
             columns={columns}
             emptyMessage={
-                <div className="text-center py-12">
-                    <div className="mx-auto size-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <svg
-                            className="size-6 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-                            />
-                        </svg>
-                    </div>
-                    <h3 className="font-medium text-gray-900 mb-1">No team members</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                        Get started by adding your first team member.
-                    </p>
-                    <Button size="sm" leftIcon={<Plus />}>
-                        Add team member
-                    </Button>
-                </div>
+                <EmptyState
+                    size="sm"
+                    headerPattern="circle"
+                    headerIcon={<EmptyState.FeaturedIcon color="gray" variant="modern-neue" />}
+                    title="No member found"
+                    description="Your search did not match. Please try again or create add a new member."
+                    footer={
+                        <>
+                            <Button size="md" variant="secondary">
+                                Clear search
+                            </Button>
+                            <Button size="md" leftIcon={Plus}>
+                                New member
+                            </Button>
+                        </>
+                    }
+                />
             }
             size="md"
         />
