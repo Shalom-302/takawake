@@ -65,7 +65,7 @@ export const TableRowActionsDropdown = ({
             {
                 id: "edit",
                 label: (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         <Edit01 />
                         <span>Edit</span>
                     </div>
@@ -75,7 +75,7 @@ export const TableRowActionsDropdown = ({
             {
                 id: "copy",
                 label: (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         <Copy01 />
                         <span>Copy link</span>
                     </div>
@@ -85,7 +85,7 @@ export const TableRowActionsDropdown = ({
             {
                 id: "delete",
                 label: (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         <Trash01 />
                         <span>Delete</span>
                     </div>

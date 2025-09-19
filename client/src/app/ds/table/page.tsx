@@ -3,19 +3,28 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Plus, DownloadCloud01, CheckCircle, XCircle, Clock } from "@untitled-ui/icons-react";
+import {
+    Plus,
+    DownloadCloud01,
+    CheckCircle,
+    XCircle,
+    Clock,
+    Trash01,
+    Edit01,
+} from "@untitled-ui/icons-react";
 import type { SortingState, RowSelectionState } from "@tanstack/react-table";
 import {
     createColumnHelper,
     Table,
     TableCard,
     TableRowActionsDropdown,
-    type ColumnDef,
 } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badges";
 import { Button } from "@/components/ui/buttons";
 import { Pagination } from "@/components/ui/pagination";
+import { ProgressBar } from "@/components/ui/progress-indicators";
+import { ButtonUtility } from "@/components/ui/buttons/button-utility";
 
 // Types pour les données d'exemple
 type User = {
@@ -55,10 +64,10 @@ type Invoice = {
 const usersData: User[] = [
     {
         id: "1",
-        name: "Olivia Rhye",
-        username: "@olivia",
-        email: "olivia@untitledui.com",
-        avatar: "/avatars/avatar-1.png",
+        name: "Mark Rhye",
+        username: "@mark",
+        email: "mark@untitledui.com",
+        avatar: "/images/avatar-1.png",
         role: "Admin",
         status: "Active",
         lastSeen: "2 hours ago",
@@ -69,7 +78,7 @@ const usersData: User[] = [
         name: "Phoenix Baker",
         username: "@phoenix",
         email: "phoenix@untitledui.com",
-        avatar: "/avatars/avatar-2.png",
+        avatar: "/images/avatar-2.png",
         role: "Editor",
         status: "Active",
         lastSeen: "1 day ago",
@@ -77,10 +86,10 @@ const usersData: User[] = [
     },
     {
         id: "3",
-        name: "Lana Steiner",
-        username: "@lana",
-        email: "lana@untitledui.com",
-        avatar: "/avatars/avatar-3.png",
+        name: "Brice Steiner",
+        username: "@brice",
+        email: "brice@untitledui.com",
+        avatar: "/images/avatar-3.png",
         role: "Viewer",
         status: "Pending",
         lastSeen: "3 days ago",
@@ -96,8 +105,8 @@ const projectsData: Project[] = [
         progress: 75,
         budget: 25000,
         team: [
-            { name: "Olivia", avatar: "/avatars/avatar-1.png" },
-            { name: "Phoenix", avatar: "/avatars/avatar-2.png" },
+            { name: "Olivia", avatar: "/images/avatar-1.png" },
+            { name: "Phoenix", avatar: "/images/avatar-2.png" },
         ],
         dueDate: "2024-03-15",
         priority: "High",
@@ -108,7 +117,7 @@ const projectsData: Project[] = [
         status: "Completed",
         progress: 100,
         budget: 45000,
-        team: [{ name: "Lana", avatar: "/avatars/avatar-3.png" }],
+        team: [{ name: "Lana", avatar: "/images/avatar-3.png" }],
         dueDate: "2024-02-28",
         priority: "Medium",
     },
@@ -497,7 +506,7 @@ export default function TableDocs() {
                                     <tr className="border-b border-tertiary">
                                         <td className="py-2 px-4 font-medium">size?</td>
                                         <td className="py-2 px-4 text-sm font-mono">
-                                            {`"sm" | "md`}"
+                                            {`"sm" | "md"`}
                                         </td>
                                         <td className="py-2 px-4 text-sm">{`"md"`}</td>
                                         <td className="py-2 px-4 text-sm">Table size variant</td>
@@ -649,6 +658,15 @@ const BasicTableExample = () => {
                 );
             },
         }),
+        userColumnHelper.display({
+            id: "actions",
+            cell: () => (
+                <div className="flex items-center gap-3">
+                    <ButtonUtility icon={Trash01} tooltip="Delete" />
+                    <ButtonUtility icon={Edit01} tooltip="Edit" />
+                </div>
+            ),
+        }),
     ];
 
     return <Table data={usersData} columns={columns} size="md" />;
@@ -771,10 +789,7 @@ const ComplexTableExample = () => {
                 return (
                     <div className="flex items-center gap-2">
                         <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-blue-500 rounded-full transition-all"
-                                style={{ width: `${progress}%` }}
-                            />
+                            <ProgressBar value={progress} />
                         </div>
                         <span className="text-sm text-muted-foreground">{progress}%</span>
                     </div>
