@@ -49,7 +49,7 @@ export default function ButtonPage() {
                                         <div className="flex items-center gap-2 mb-2">
                                             <Button
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                leftIcon={<Placeholder />}
+                                                leftIcon={Placeholder}
                                             >
                                                 Button {variant.name}
                                             </Button>
@@ -59,7 +59,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<Button variant="${variant.name}" leftIcon={<Placeholder />}>Button ${variant.name}</Button>`}
+                                            code={`<Button variant="${variant.name}" leftIcon={Placeholder}>Button ${variant.name}</Button>`}
                                         />
                                     </div>
                                 ) : (
@@ -71,7 +71,7 @@ export default function ButtonPage() {
                                             <LinkButton
                                                 href={"#"}
                                                 variant={variant.name as ButtonVariants["variant"]}
-                                                rightIcon={<Placeholder />}
+                                                rightIcon={Placeholder}
                                             >
                                                 Button {variant.name}
                                             </LinkButton>
@@ -81,7 +81,7 @@ export default function ButtonPage() {
                                         </p>
                                         <CodeBlock
                                             className="mt-2"
-                                            code={`<LinkButton href={"#"} variant="${variant.name}" rightIcon={<Placeholder  />}>${variant.name} Button</LinkButton>`}
+                                            code={`<LinkButton href={"#"} variant="${variant.name}" rightIcon={Placeholder}>${variant.name} Button</LinkButton>`}
                                         />
                                     </div>
                                 )}
@@ -90,12 +90,12 @@ export default function ButtonPage() {
                     })}
                     <div className="p-4 border border-tertiary rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                            <Button leftIcon={<Placeholder />} />
-                            <Button variant={"secondary"} leftIcon={<Placeholder />} />
-                            <Button variant={"tertiary"} leftIcon={<Placeholder />} />
+                            <Button leftIcon={Placeholder} />
+                            <Button variant={"secondary"} leftIcon={Placeholder} />
+                            <Button variant={"tertiary"} leftIcon={Placeholder} />
                         </div>
                         <p className="text-sm text-secondary">{"Icon Only Button"}</p>
-                        <CodeBlock className="mt-2" code={`<Button leftIcon={<Placeholder />}/>`} />
+                        <CodeBlock className="mt-2" code={`<Button leftIcon={Placeholder}/>`} />
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@ export default function ButtonPage() {
                     {sizes.map(size => (
                         <Button
                             key={size}
-                            leftIcon={<Placeholder />}
+                            leftIcon={Placeholder}
                             size={size as ButtonVariants["size"]}
                         />
                     ))}
