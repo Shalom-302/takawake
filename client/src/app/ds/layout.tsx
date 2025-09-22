@@ -22,6 +22,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Card", href: "/ds/card" },
         { name: "Checkbox", href: "/ds/checkbox" },
         { name: "Composite", href: "/ds/composite" },
+        { name: "Date Pickers", href: "/ds/date-pickers" },
         { name: "Dialog", href: "/ds/dialog" },
         { name: "Dropdown", href: "/ds/dropdown" },
         { name: "Input", href: "/ds/input" },

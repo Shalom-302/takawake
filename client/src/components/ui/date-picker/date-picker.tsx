@@ -2,27 +2,67 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
-
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/buttons";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover } from "@/components/ui/popover";
+import { Calendar } from "./calendar";
+import { Calendar as CalendarIcon } from "@untitled-ui/icons-react";
+import { DateInput } from "./date-input";
+import { useLocale } from "@/lib/hooks/use-locale";
+import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { type FieldPath, type FieldValues } from "react-hook-form";
 
-export function DatePicker({ ...props }) {
+interface DatePickerProps {
+    value?: Date | undefined;
+    onChange?: (date: Date | undefined) => void;
+    placeholder?: string;
+    disabled?: boolean;
+    "aria-invalid"?: boolean;
+}
+
+export function DatePicker({
+    value,
+    onChange,
+    placeholder = "Select date",
+    disabled = false,
+    ...props
+}: DatePickerProps) {
     const [open, setOpen] = React.useState(false);
-    const [date, setDate] = React.useState(props.date);
+    const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value || undefined);
+
+    React.useEffect(() => {
+        setSelectedDate(value);
+    }, [value]);
+
+    const highlightedDates = [new Date()]; // Today
+
+    const handleDateSelect = (date: Date | undefined) => {
+        setSelectedDate(date);
+    };
 
     const handleApply = () => {
-        props.onDateChange(date);
+        onChange?.(selectedDate || undefined);
         setOpen(false);
     };
 
     const handleCancel = () => {
-        setDate(props.date);
+        setSelectedDate(value || undefined);
         setOpen(false);
     };
+
+    const todayPreset = () => {
+        const today = new Date();
+        setSelectedDate(today);
+    };
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === "Enter") {
+            handleApply();
+        }
+    };
+
+    const { dateFormat } = useLocale();
+
+    const formattedDate = value ? format(value, dateFormat) : placeholder;
 
     return (
         <Popover
@@ -31,36 +71,95 @@ export function DatePicker({ ...props }) {
             trigger={
                 <Button
                     size="md"
-                    color="secondary"
+                    variant="secondary"
                     className={cn(
-                        "w-[240px] justify-start text-left font-normal",
-                        !props.date && "text-muted-foreground"
+                        "w-full justify-start text-left font-normal",
+                        !value && "text-placeholder"
                     )}
+                    disabled={disabled}
+                    leftIcon={<CalendarIcon className="size-4" />}
+                    aria-label="Date picker"
                 >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {props.date ? (
-                        format(props.date, "PPP", { locale: fr })
-                    ) : (
-                        <span>Select date</span>
-                    )}
+                    {formattedDate}
                 </Button>
             }
+            triggerClassName={
+                props["aria-invalid"]
+                    ? "ring-error_subtle focus-visible:ring-2 focus-visible:ring-error focus-visible:outline-none"
+                    : undefined
+            }
             content={
-                <>
-                    <div className="px-6 py-5">
-                        <Calendar mode="single" selected={date} onSelect={setDate} />
+                <div className="w-full" onKeyDown={handleKeyDown}>
+                    <div className="flex px-6 py-5 ">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-3">
+                                <DateInput
+                                    value={selectedDate}
+                                    onChange={setSelectedDate}
+                                    className="flex-1"
+                                />
+                                <Button size="md" variant="secondary" onClick={todayPreset}>
+                                    Today
+                                </Button>
+                            </div>
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={handleDateSelect}
+                                highlightedDates={highlightedDates}
+                                className="w-max"
+                            />
+                        </div>
                     </div>
+
                     <div className="grid grid-cols-2 gap-3 border-t border-secondary p-4">
-                        <Button size="md" color="secondary" onClick={handleCancel}>
+                        <Button size="md" variant="secondary" onClick={handleCancel}>
                             Cancel
                         </Button>
-                        <Button size="md" color="primary" onClick={handleApply}>
+                        <Button size="md" onClick={handleApply}>
                             Apply
                         </Button>
                     </div>
-                </>
+                </div>
             }
             contentClassName="w-auto p-0 rounded-2xl bg-primary shadow-xl ring ring-secondary_alt"
         />
+    );
+}
+
+// === FORM INTEGRATION ===
+export interface InputFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
+        Omit<DatePickerProps, "defaultValue" | "name"> {
+    isRequired?: boolean;
+}
+
+export function DatePickerForm<
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    isRequired,
+    control,
+    name,
+    label,
+    description,
+    labelTooltip,
+    ...props
+}: InputFormProps<TFieldValues, TName>) {
+    return (
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            labelTooltip={labelTooltip}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => {
+                return <DatePicker {...field} {...props} />;
+            }}
+        </FormFieldWrapper>
     );
 }

@@ -13,6 +13,7 @@ import DocumentProvider from "@/lib/contexts/document-context";
 import { AuditProvider } from "@/lib/contexts/audit-context";
 import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils/cn";
+import { LocaleProvider } from "@/lib/hooks/use-locale";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -48,21 +49,23 @@ export default function RootLayout({
             </head>
             <body className={cn(inter.variable, "bg-primary antialiased ")}>
                 <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-                    <AuthProvider>
-                        <Toaster position="top-right" richColors />
-                        <PWAProvider>
-                            <MessagingProvider>
-                                <CookieProvider>
-                                    <CookieManager />
-                                    {/* <PWAWrapper> */}
-                                    {/* <DocumentProvider> */}
-                                    <AuditProvider>{children}</AuditProvider>
-                                    {/* </DocumentProvider> */}
-                                    {/* </PWAWrapper> */}
-                                </CookieProvider>
-                            </MessagingProvider>
-                        </PWAProvider>
-                    </AuthProvider>
+                    <LocaleProvider>
+                        <AuthProvider>
+                            <Toaster position="top-right" richColors />
+                            <PWAProvider>
+                                <MessagingProvider>
+                                    <CookieProvider>
+                                        <CookieManager />
+                                        {/* <PWAWrapper> */}
+                                        {/* <DocumentProvider> */}
+                                        <AuditProvider>{children}</AuditProvider>
+                                        {/* </DocumentProvider> */}
+                                        {/* </PWAWrapper> */}
+                                    </CookieProvider>
+                                </MessagingProvider>
+                            </PWAProvider>
+                        </AuthProvider>
+                    </LocaleProvider>
                 </ThemeProvider>
             </body>
         </html>

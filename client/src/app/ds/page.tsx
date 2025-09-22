@@ -80,6 +80,14 @@ export default function DesignSystemPage() {
             icon: "M5 13l4 4L19 7",
         },
         {
+            name: "Date Pickers",
+            description: "Date selection components with various input methods.",
+            count: "8 Components",
+            href: "/ds/date-pickers",
+            isNew: false,
+            icon: "M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4",
+        },
+        {
             name: "Dialog",
             description: "Modal windows for focused interactions.",
             count: "8 Components",

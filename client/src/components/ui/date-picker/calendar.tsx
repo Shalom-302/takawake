@@ -1,61 +1,217 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
-import { fr } from "date-fns/locale";
+import { isToday, isSameDay } from "date-fns";
+import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
+import { ChevronDown, ChevronLeft, ChevronRight } from "@untitled-ui/icons-react";
+
+import { Button, ButtonVariants, buttonVariants } from "@/components/ui/buttons";
 
 import { cn } from "@/lib/utils/cn";
-import { buttonVariants } from "@/components/ui/buttons";
+import { getLocalizedLabels, useLocale } from "@/lib/hooks/use-locale";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export function Calendar({
+    className,
+    classNames,
+    showOutsideDays = true,
+    captionLayout = "label",
+    formatters,
+    components,
+    highlightedDates = [],
+    ...props
+}: React.ComponentProps<typeof DayPicker> & {
+    buttonVariant?: ButtonVariants["variant"];
+    highlightedDates?: Date[];
+}) {
+    const { locale, localeCode, isRTL, firstDayOfWeek } = useLocale();
+    const defaultClassNames = getDefaultClassNames();
+    const localizedLabels = getLocalizedLabels(localeCode);
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
     return (
         <DayPicker
+            locale={locale}
+            weekStartsOn={firstDayOfWeek}
+            dir={isRTL ? "rtl" : "ltr"}
             showOutsideDays={showOutsideDays}
-            className={cn("p-3", className)}
+            className={cn("flex flex-col gap-3", isRTL && "rtl", className)}
+            captionLayout={captionLayout}
+            labels={localizedLabels}
+            formatters={{
+                formatMonthDropdown: date => date.toLocaleString(localeCode, { month: "short" }),
+                formatYearDropdown: date => date.toLocaleString(localeCode, { year: "numeric" }),
+                formatWeekdayName: date =>
+                    date.toLocaleDateString(localeCode, { weekday: "short" }),
+                formatMonthCaption: date =>
+                    date.toLocaleDateString(localeCode, {
+                        month: "long",
+                        year: "numeric",
+                    }),
+                ...formatters,
+            }}
             classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                month: "space-y-4",
-                caption: "flex justify-center pt-1 relative items-center",
-                caption_label: "text-sm font-semibold text-fg-secondary",
-                nav: "space-x-1 flex items-center",
-                nav_button: cn(buttonVariants({ variant: "secondary", size: "sm" }), "h-8 w-8 p-0"),
-                nav_button_previous: "absolute left-1",
-                nav_button_next: "absolute right-1",
-                table: "w-full border-collapse space-y-1",
-                head_row: "flex border-b-4 border-transparent",
-                head_cell: "text-secondary rounded-md w-10 text-sm font-medium",
-                row: "flex w-full mt-2 border-b-4 border-transparent last-of-type:border-none",
-                cell: "h-10 w-10 p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-active first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full focus-within:relative focus-within:z-20",
-                day: cn(
-                    buttonVariants({ variant: "tertiary" }),
-                    "h-full w-full rounded-full p-0 font-normal hover:bg-primary_hover text-secondary",
-                    "aria-selected:bg-brand-solid aria-selected:text-white aria-selected:hover:bg-brand-solid_hover aria-selected:hover:text-white",
-                    "aria-selected:focus:bg-brand-solid aria-selected:focus:text-white",
-                    "day-range-start:rounded-r-none day-range-end:rounded-l-none",
-                    "day-selected:bg-brand-solid day-selected:text-white day-selected:hover:bg-brand-solid_hover day-selected:hover:text-white",
-                    "day-today:bg-active day-today:font-medium day-today:hover:bg-secondary_hover",
-                    "day-outside:text-disabled day-outside:pointer-events-none day-outside:aria-selected:bg-active",
-                    "day-disabled:text-disabled day-disabled:opacity-50 day-disabled:pointer-events-none",
-                    "day-range-middle:rounded-none bg-active aria-selected:!bg-active",
-                    "day-hidden:invisible"
+                root: cn("w-fit", defaultClassNames.root),
+                months: cn("flex gap-4 flex-col md:flex-row relative", defaultClassNames.months),
+                month: cn("flex flex-col w-full gap-4", defaultClassNames.month),
+                nav: cn(
+                    "flex items-center gap-1 w-full absolute top-0 inset-x-0 justify-between",
+                    isRTL && "flex-row-reverse",
+                    defaultClassNames.nav
                 ),
-                day_range_end: "day-range-end",
-                day_range_start: "day-range-start",
-                day_range_middle: "day-range-middle",
-                day_selected: "day-selected",
+                button_previous: cn(
+                    buttonVariants({ variant: "tertiary" }),
+                    "size-8 p-0 select-none hover:bg-primary_hover",
+                    defaultClassNames.button_previous
+                ),
+                button_next: cn(
+                    buttonVariants({ variant: "tertiary" }),
+                    "size-8 p-0 select-none hover:bg-primary_hover",
+                    defaultClassNames.button_next
+                ),
+                month_caption: cn(
+                    "flex items-center justify-center h-8 w-full px-8",
+                    defaultClassNames.month_caption
+                ),
+                caption_label: cn(
+                    "text-sm font-semibold text-fg-secondary",
+                    defaultClassNames.caption_label
+                ),
+                table: "w-full border-collapse",
+                weekdays: cn(
+                    "flex border-b-4 border-transparent",
+                    isRTL && "flex-row-reverse",
+                    defaultClassNames.weekdays
+                ),
+                weekday: cn(
+                    "flex size-10 items-center justify-center text-sm font-medium text-secondary",
+                    defaultClassNames.weekday
+                ),
+                week: cn(
+                    "flex w-full border-b-4 border-transparent last:border-none",
+                    isRTL && "flex-row-reverse",
+                    defaultClassNames.week
+                ),
+                // day: cn("relative size-10 p-0 focus-within:z-20", defaultClassNames.day),
+                // range_start: cn(
+                //     isRTL ? "rounded-r-full bg-active" : "rounded-l-full bg-active",
+                //     defaultClassNames.range_start
+                // ),
+                // range_middle: cn("bg-active", defaultClassNames.range_middle),
+                // range_end: cn(
+                //     isRTL ? "rounded-l-full bg-active" : "rounded-r-full bg-active",
+                //     defaultClassNames.range_end
+                // ),
+                // today: cn("bg-active font-medium rounded-full", defaultClassNames.today),
+                day: cn(
+                    "relative size-10 p-0 focus-within:z-20 [&:has([data-range-start])]:rounded-l-full [&:has([data-range-end])]:rounded-r-full [&:has([data-range-middle])]:bg-active",
+                    defaultClassNames.day
+                ),
+                range_start: cn("bg-active", defaultClassNames.range_start),
+                range_middle: cn("bg-active", defaultClassNames.range_middle),
+                range_end: cn("bg-active", defaultClassNames.range_end),
+                today: cn("bg-active font-medium rounded-full", defaultClassNames.today),
+                outside: cn("text-tertiary opacity-50 hidden", defaultClassNames.outside),
+                disabled: cn("text-disabled pointer-events-none", defaultClassNames.disabled),
+                hidden: cn("invisible", defaultClassNames.hidden),
                 ...classNames,
             }}
             components={{
-                IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-                IconRight: () => <ChevronRight className="h-4 w-4" />,
+                Root: ({ className, rootRef, ...props }) => (
+                    <div ref={rootRef} className={cn(className)} {...props} />
+                ),
+                Chevron: ({ className, orientation, ...props }) => {
+                    // Inverser les chevrons pour RTL
+                    const actualOrientation = isRTL
+                        ? orientation === "left"
+                            ? "right"
+                            : orientation === "right"
+                              ? "left"
+                              : orientation
+                        : orientation;
+
+                    if (actualOrientation === "left") {
+                        return <ChevronLeft className={cn("h-4 w-4", className)} {...props} />;
+                    }
+                    if (actualOrientation === "right") {
+                        return <ChevronRight className={cn("h-4 w-4", className)} {...props} />;
+                    }
+                    return <ChevronDown className={cn("size-4", className)} {...props} />;
+                },
+                DayButton: props => (
+                    <CalendarDayButton {...props} highlightedDates={highlightedDates} />
+                ),
+                ...components,
             }}
-            locale={fr}
             {...props}
         />
     );
 }
 
-export { Calendar };
+function CalendarDayButton({
+    className,
+    day,
+    modifiers,
+    highlightedDates = [],
+    ...props
+}: React.ComponentProps<typeof DayButton> & { highlightedDates?: Date[] }) {
+    const defaultClassNames = getDefaultClassNames();
+    const isHighlighted = highlightedDates.some(d => isSameDay(d, day.date));
+    const isTodayDate = isToday(day.date);
+
+    const ref = React.useRef<HTMLButtonElement>(null);
+    React.useEffect(() => {
+        if (modifiers.focused) ref.current?.focus();
+    }, [modifiers.focused]);
+
+    return (
+        <Button
+            ref={ref}
+            variant="tertiary"
+            data-range-start={modifiers.range_start || undefined}
+            data-range-end={modifiers.range_end || undefined}
+            data-range-middle={modifiers.range_middle || undefined}
+            className={cn(
+                "size-full rounded-full text-sm font-normal relative",
+                "hover:bg-primary_hover hover:text-secondary_hover hover:font-medium",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2",
+                "disabled:pointer-events-none disabled:text-disabled",
+                // Selected single date
+                modifiers.selected &&
+                    !modifiers.range_middle &&
+                    !modifiers.range_start &&
+                    !modifiers.range_end &&
+                    "bg-brand-solid font-medium text-white hover:bg-brand-solid_hover hover:text-white",
+                // Range styling with proper rounded corners
+                modifiers.range_start &&
+                    "bg-brand-solid font-medium text-white hover:bg-brand-solid_hover hover:text-white rounded-l-full ",
+                modifiers.range_end &&
+                    "bg-brand-solid font-medium text-white hover:bg-brand-solid_hover hover:text-white rounded-r-full",
+                modifiers.range_middle && "bg-active font-medium text-secondary rounded-none",
+                // Today styling (when not selected)
+                modifiers.today &&
+                    !modifiers.selected &&
+                    !modifiers.range_start &&
+                    !modifiers.range_end &&
+                    "bg-active font-medium",
+                // Outside month
+                modifiers.outside && "text-tertiary opacity-50",
+                defaultClassNames.day,
+                className
+            )}
+            {...props}
+        >
+            <div className="flex items-center justify-center size-full">
+                {day.date.getDate()}
+                {(isHighlighted || isTodayDate) && (
+                    <div
+                        className={cn(
+                            "absolute bottom-1 left-1/2 size-1.25 -translate-x-1/2 rounded-full",
+                            modifiers.selected && modifiers.range_start && modifiers.range_end
+                                ? "bg-fg-white"
+                                : "bg-fg-brand-primary"
+                        )}
+                    />
+                )}
+            </div>
+        </Button>
+    );
+}
