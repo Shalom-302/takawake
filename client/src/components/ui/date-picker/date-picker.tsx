@@ -9,7 +9,7 @@ import { Calendar } from "./calendar";
 import { Calendar as CalendarIcon } from "@untitled-ui/icons-react";
 import { DateInput } from "./date-input";
 import { useLocale } from "@/lib/hooks/use-locale";
-import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 
 interface DatePickerProps {

@@ -23,6 +23,7 @@ interface TabItem {
     label: ReactNode;
     badge?: number | string;
     content: ReactNode;
+    onClick?: () => void;
 }
 
 // === COMPONENT VARIANTS ===
@@ -299,6 +300,7 @@ const Tabs = ({
                         value={item.value}
                         label={item.label}
                         badge={item.badge}
+                        onClick={item.onClick}
                     />
                 ))}
             </TabsList>

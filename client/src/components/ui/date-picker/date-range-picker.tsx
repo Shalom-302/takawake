@@ -20,14 +20,15 @@ import { DateInput } from "./date-input";
 import { useLocale } from "@/lib/hooks/use-locale";
 import { RangePresetButton } from "./range-preset-button";
 import { DateRange } from "react-day-picker";
-// import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
-// import { type FieldPath, type FieldValues } from "react-hook-form";
+import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
+import { type FieldPath, type FieldValues } from "react-hook-form";
 
 interface DateRangePickerProps {
     value?: { start: Date; end: Date } | null;
     onChange?: (range: { start: Date; end: Date } | null) => void;
     placeholder?: string;
     disabled?: boolean;
+    "aria-invalid"?: boolean;
 }
 
 export function DateRangePicker({
@@ -35,6 +36,7 @@ export function DateRangePicker({
     onChange,
     placeholder = "Select dates",
     disabled = false,
+    ...props
 }: DateRangePickerProps) {
     const { dateFormat } = useLocale();
     const [open, setOpen] = React.useState(false);
@@ -157,6 +159,11 @@ export function DateRangePicker({
                     {formatDateRange()}
                 </Button>
             }
+            triggerClassName={
+                props["aria-invalid"]
+                    ? "ring-error_subtle focus-visible:ring-2 focus-visible:ring-error focus-visible:outline-none"
+                    : undefined
+            }
             content={
                 <div className="flex">
                     {/* Presets sidebar */}
@@ -224,5 +231,42 @@ export function DateRangePicker({
             }
             contentClassName="w-auto p-0 rounded-2xl bg-primary shadow-xl ring ring-secondary_alt focus:outline-hidden"
         />
+    );
+}
+
+// === FORM INTEGRATION ===
+export interface InputFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
+        Omit<DateRangePickerProps, "defaultValue" | "name"> {
+    isRequired?: boolean;
+}
+
+export function DateRangePickerForm<
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    isRequired,
+    control,
+    name,
+    label,
+    description,
+    labelTooltip,
+    ...props
+}: InputFormProps<TFieldValues, TName>) {
+    return (
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            labelTooltip={labelTooltip}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => {
+                return <DateRangePicker {...field} {...props} />;
+            }}
+        </FormFieldWrapper>
     );
 }

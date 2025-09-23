@@ -275,6 +275,15 @@ const form = useForm<z.infer<typeof formSchema>>({
   resolver: zodResolver(formSchema),
   defaultValues: { username: "", email: "" },
 });
+ function onSubmit(data: z.infer<typeof formSchema>) {
+        toast("You submitted the following values", {
+            description: (
+                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+                    <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                </pre>
+            ),
+        });
+    }
 
 <Form {...form}>
   <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">

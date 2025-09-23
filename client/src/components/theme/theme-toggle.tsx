@@ -2,9 +2,9 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Button } from "@/ds/components/button";
 import { Moon, Sun } from "lucide-react";
 import { Tooltip } from "../ui/tootilp";
+import { Button } from "../ui/buttons";
 
 export function ThemeToggle() {
     const { theme, setTheme } = useTheme();
@@ -24,8 +24,7 @@ export function ThemeToggle() {
             title={<p>{theme === "dark" ? "Passer au mode clair" : "Passer au mode sombre"}</p>}
         >
             <Button
-                variant="ghost"
-                size="icon"
+                variant="tertiary"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 aria-label="Basculer le thème"
             >
