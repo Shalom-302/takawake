@@ -16,14 +16,20 @@ import { FeaturedIcon } from "@/components/icons/featured-icons";
  * @param bytes - The size of the file in bytes.
  * @returns A string representing the file size in a human-readable format.
  */
-export const getReadableFileSize = (bytes: number) => {
+export const getReadableFileSize = (bytes: number, decimals: number = 1, locale: string = "en") => {
     if (bytes === 0) return "0 KB";
 
     const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
 
-    return Math.floor(bytes / Math.pow(1024, i)) + " " + suffixes[i];
+    const value = bytes / Math.pow(1024, i);
+
+    const formatter = new Intl.NumberFormat(locale, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals,
+    });
+
+    return formatter.format(value) + " " + suffixes[i];
 };
 
 // Types pour les fichiers uploadés
