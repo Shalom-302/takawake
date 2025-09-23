@@ -104,6 +104,14 @@ export default function DesignSystemPage() {
             icon: "M19 9l-7 7-7-7",
         },
         {
+            name: "File Upload",
+            description: "Components for uploading and managing files.",
+            count: "4 Components",
+            href: "/ds/file-upload",
+            isNew: true,
+            icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4 4m4-4v12",
+        },
+        {
             name: "Input",
             description: "Text fields for user data entry.",
             count: "5 Components",

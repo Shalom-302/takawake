@@ -25,6 +25,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Date Pickers", href: "/ds/date-pickers" },
         { name: "Dialog", href: "/ds/dialog" },
         { name: "Dropdown", href: "/ds/dropdown" },
+        { name: "File Upload", href: "/ds/file-upload" },
         { name: "Input", href: "/ds/input" },
         { name: "Pagination", href: "/ds/pagination" },
         { name: "Popover", href: "/ds/popover" },

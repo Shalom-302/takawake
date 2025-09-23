@@ -50,7 +50,7 @@ const buttonUtilityVariants = cva(
 /**
  * Common props shared between button and anchor variants
  */
-export interface CommonProps extends VariantProps<typeof buttonUtilityVariants> {
+interface CommonProps extends VariantProps<typeof buttonUtilityVariants> {
     /** Disables the button and shows a disabled state */
     isDisabled?: boolean;
     /** The icon to display in the button */
