@@ -133,11 +133,11 @@ export default function RadioGroupPage() {
                 <h2 className="text-xl font-semibold mb-4">Disabled</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
                     <RadioGroup
+                        value={"option1"}
                         items={[
                             {
                                 value: "option1",
                                 label: "Checked disabled",
-                                checked: true,
                                 disabled: true,
                             },
                             { value: "option2", label: "Unchecked and disabled", disabled: true },

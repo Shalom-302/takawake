@@ -17,10 +17,10 @@ import { cva, VariantProps } from "class-variance-authority";
 const checkboxVariants = cva(
     [
         "flex shrink-0 cursor-pointer appearance-none items-center justify-center rounded bg-primary ring-1 ring-primary ring-inset",
-        "data-[state=checked]:bg-brand-solid data-[state=checked]:ring-bg-brand-solid",
+        "data-[state=checked]:enabled:bg-brand-solid data-[state=checked]:enabled:ring-bg-brand-solid",
         "data-[state=indeterminate]:bg-brand-solid data-[state=indeterminate]:ring-bg-brand-solid",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled disabled:data-[state=checked]:bg-disabled_subtle  disabled:data-[state=checked]:ring-disabled",
+        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled",
     ],
     {
         variants: {

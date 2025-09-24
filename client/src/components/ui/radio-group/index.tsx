@@ -12,14 +12,18 @@ import {
 } from "@/components/ui/form";
 import { type ControllerProps, type FieldPath, type FieldValues } from "react-hook-form";
 import { cn } from "@/lib/utils/cn";
-import { cva, VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
+
+interface RadioGroupSize {
+    size?: "sm" | "md";
+}
 
 const radioItemVariants = cva(
     [
         "flex shrink-0 cursor-pointer appearance-none items-center justify-center rounded-full bg-primary ring-1 ring-primary ring-inset",
-        "data-[state=checked]:bg-brand-solid data-[state=checked]:ring-bg-brand-solid",
+        "data-[state=checked]:enabled:bg-brand-solid data-[state=checked]:enabled:ring-bg-brand-solid",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled disabled:data-[state=checked]:bg-disabled_subtle disabled:data-[state=checked]:ring-disabled",
+        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled",
     ],
     {
         variants: {
@@ -35,7 +39,7 @@ const radioItemVariants = cva(
 );
 
 const radioIndicatorVariants = cva(
-    "rounded-full bg-fg-white transition-inherit-all data-[state=unchecked]:opacity-0 data-[state=checked]:opacity-100 data-[disabled]:bg-fg-disabled_subtle",
+    "rounded-full bg-fg-white transition-inherit-all data-[state=unchecked]:opacity-0 data-[disabled]:bg-fg-disabled_subtle data-[state=checked]:opacity-100 ",
     {
         variants: {
             size: {
@@ -49,11 +53,8 @@ const radioIndicatorVariants = cva(
     }
 );
 
-export type RadioItemVariantProps = VariantProps<typeof radioItemVariants>;
-
-export interface RadioGroupProps extends React.ComponentProps<typeof RadioGroupPrimitive.Root> {
+export interface RadioGroupProps extends Omit<RadioGroupRootProps, "children"> {
     items: RadioItemProps[];
-    size?: "sm" | "md";
 }
 
 export function RadioGroup({ items, size = "sm", ...props }: RadioGroupProps) {
@@ -73,9 +74,10 @@ export function RadioGroup({ items, size = "sm", ...props }: RadioGroupProps) {
     );
 }
 
-export interface RadioGroupRootProps extends React.ComponentProps<typeof RadioGroupPrimitive.Root> {
+export interface RadioGroupRootProps
+    extends React.ComponentProps<typeof RadioGroupPrimitive.Root>,
+        RadioGroupSize {
     children: React.ReactNode;
-    size?: "sm" | "md";
 }
 
 export function RadioGroupRoot({ className, size = "sm", ...props }: RadioGroupRootProps) {
@@ -89,7 +91,7 @@ export function RadioGroupRoot({ className, size = "sm", ...props }: RadioGroupR
 
 export interface RadioItemProps
     extends React.ComponentProps<typeof RadioGroupPrimitive.Item>,
-        RadioItemVariantProps {
+        RadioGroupSize {
     label?: React.ReactNode;
     description?: React.ReactNode;
 }
@@ -99,6 +101,7 @@ export function RadioItem({
     size = "sm",
     label,
     description,
+    disabled,
     ...props
 }: RadioItemProps) {
     return (
@@ -106,7 +109,7 @@ export function RadioItem({
             className={cn(
                 "flex items-start w-fit",
                 size === "sm" ? "gap-2" : "gap-3",
-                props.disabled && "cursor-not-allowed"
+                disabled && "cursor-not-allowed"
             )}
         >
             <RadioGroupPrimitive.Item
@@ -115,6 +118,7 @@ export function RadioItem({
                     (label || description) && "mt-0.5",
                     className
                 )}
+                disabled={disabled}
                 {...props}
             >
                 <RadioGroupPrimitive.Indicator className={cn(radioIndicatorVariants({ size }))} />
@@ -159,12 +163,7 @@ export interface RadioGroupFormProps<
     groupDescription?: string;
     isRequired?: boolean;
     wrapperClassName?: string;
-    options: Array<{
-        value: string;
-        label?: React.ReactNode;
-        description?: React.ReactNode;
-        disabled?: boolean;
-    }>;
+    options: RadioItemProps[];
 }
 
 export function RadioGroupForm<
