@@ -16,11 +16,11 @@ import { cva, VariantProps } from "class-variance-authority";
 
 const checkboxVariants = cva(
     [
-        "flex size-4 shrink-0 cursor-pointer appearance-none items-center justify-center rounded bg-primary ring-1 ring-primary ring-inset",
+        "flex shrink-0 cursor-pointer appearance-none items-center justify-center rounded bg-primary ring-1 ring-primary ring-inset",
         "data-[state=checked]:bg-brand-solid data-[state=checked]:ring-bg-brand-solid",
         "data-[state=indeterminate]:bg-brand-solid data-[state=indeterminate]:ring-bg-brand-solid",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled",
+        "disabled:cursor-not-allowed disabled:bg-disabled_subtle disabled:ring-disabled disabled:data-[state=checked]:bg-disabled_subtle  disabled:data-[state=checked]:ring-disabled",
     ],
     {
         variants: {
@@ -50,7 +50,9 @@ export function Checkbox({ size, className, ...props }: CheckboxProps) {
         >
             <CheckboxPrimitive.Indicator
                 data-slot="checkbox-indicator"
-                className="flex items-center justify-center text-current transition-none"
+                className={cn(
+                    "flex items-center justify-center text-current transition-none text-fg-white opacity-0 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100"
+                )}
             >
                 {props.checked === "indeterminate" ? (
                     <svg
@@ -58,9 +60,8 @@ export function Checkbox({ size, className, ...props }: CheckboxProps) {
                         viewBox="0 0 14 14"
                         fill="none"
                         className={cn(
-                            "pointer-events-none h-3 w-2.5 text-fg-white transition-inherit-all",
-                            size === "md" && "size-3.5",
-                            props.disabled && "text-fg-disabled_subtle"
+                            "pointer-events-none h-3 w-2.5 transition-inherit-all",
+                            size === "md" && "size-3.5"
                         )}
                     >
                         <path
@@ -76,10 +77,13 @@ export function Checkbox({ size, className, ...props }: CheckboxProps) {
                         aria-hidden="true"
                         viewBox="0 0 14 14"
                         fill="none"
+                        color="currentColor"
                         className={cn(
-                            "pointer-events-none size-3 text-fg-white transition-inherit-all",
+                            "pointer-events-none size-3  transition-inherit-all",
                             size === "md" && "size-3.5",
-                            props.disabled && props.checked && "text-fg-disabled_subtle"
+                            props.disabled &&
+                                (props.checked || props.defaultChecked) &&
+                                "text-fg-disabled_subtle"
                         )}
                     >
                         <path
