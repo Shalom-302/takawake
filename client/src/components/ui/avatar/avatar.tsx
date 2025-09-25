@@ -20,7 +20,6 @@ const avatarRootVariants = cva(
                 lg: "size-12",
                 xl: "size-14",
                 "2xl": "size-16",
-                // Profile variants (revised)
                 "profile-sm": "size-12",
                 "profile-md": "size-16",
                 "profile-lg": "size-24",
@@ -88,10 +87,9 @@ const avatarFallbackVariants = cva(
                 lg: "text-lg",
                 xl: "text-xl",
                 "2xl": "text-display-xs",
-                // Profile variants (revised)
                 "profile-sm": "text-lg",
                 "profile-md": "text-xl",
-                "profile-lg": "text-2xl",
+                "profile-lg": "text-display-xs",
             },
             shadow: {
                 "profile-sm": "shadow-sm",
@@ -116,7 +114,6 @@ const avatarIconVariants = cva("text-fg-quaternary", {
             lg: "size-7",
             xl: "size-8",
             "2xl": "size-8",
-            // Profile variants (revised)
             "profile-sm": "size-7",
             "profile-md": "size-8",
             "profile-lg": "size-10",
@@ -133,7 +130,8 @@ export interface AvatarProps
     src?: string | null;
     alt?: string;
     initials?: string;
-    placeholderIcon?: React.ComponentType<{ className?: string }>;
+    placeholderIcon?: React.FC<{ className?: string }>;
+    placeholder?: React.ReactNode;
     status?: AvatarOnlineIndicatorProps["status"];
     verified?: boolean;
     customBadge?: React.ReactNode;
@@ -161,6 +159,7 @@ function Avatar({
     focusable = false,
     initials,
     placeholderIcon: PlaceholderIcon,
+    placeholder,
     status,
     verified,
     customBadge,
@@ -211,6 +210,7 @@ function Avatar({
                     size={size}
                     initials={initials}
                     placeholderIcon={PlaceholderIcon}
+                    placeholder={placeholder}
                     shadow={
                         isProfileVariant
                             ? (shadowSize as "profile-sm" | "profile-md" | "profile-lg")
@@ -251,6 +251,7 @@ const AvatarFallback = ({
     className,
     size,
     initials,
+    placeholder,
     placeholderIcon: PlaceholderIcon,
     shadow,
     ...props
@@ -258,12 +259,13 @@ const AvatarFallback = ({
     VariantProps<typeof avatarFallbackVariants> &
     VariantProps<typeof avatarIconVariants> & {
         initials?: string;
-        placeholderIcon?: React.ComponentType<{ className?: string }>;
+        placeholder?: React.ReactNode;
+        placeholderIcon?: React.FC<{ className?: string }>;
     }) => {
     const renderContent = () => {
         if (initials) return initials;
         if (PlaceholderIcon) return <PlaceholderIcon className={avatarIconVariants({ size })} />;
-        return <User01 className={avatarIconVariants({ size })} />;
+        return placeholder || <User01 className={avatarIconVariants({ size })} />;
     };
 
     return (
