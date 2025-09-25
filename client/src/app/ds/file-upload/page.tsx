@@ -9,7 +9,7 @@ import {
     type FileProgressVariant,
     type UploadedFileItemProps,
     type FileType,
-} from "@/components/ui/file-upload/file-upload-base";
+} from "@/components/ui/file-upload";
 
 const MAX_SIZE = 1024 * 1024 * 1; // 1MB
 

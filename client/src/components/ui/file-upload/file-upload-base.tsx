@@ -10,6 +10,8 @@ import { Button, ButtonUtility } from "@/components/ui/buttons";
 import { ProgressBar } from "@/components/ui/progress-indicators";
 import { cn } from "@/lib/utils/cn";
 import { FeaturedIcon } from "@/components/icons/featured-icons";
+import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { type FieldPath, type FieldValues } from "react-hook-form";
 
 /**
  * Returns a human-readable file size.
@@ -617,6 +619,61 @@ export const FileUpload = ({
         </FileUploadRoot>
     );
 };
+
+// === FORM INTEGRATION ===
+export interface FileUploadFormProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
+        FileUploadProps {
+    isRequired?: boolean;
+}
+
+export const FileUploadForm = <
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    isRequired,
+    control,
+    name,
+    label,
+    description,
+    ...props
+}: FileUploadFormProps<TFieldValues, TName>) => {
+    return (
+        <FormFieldWrapper
+            control={control}
+            name={name}
+            label={label}
+            description={description}
+            isRequired={isRequired}
+        >
+            {field => <AdaptedFileUploadRHF {...field} {...props} />}
+        </FormFieldWrapper>
+    );
+};
+
+function AdaptedFileUploadRHF({
+    value,
+    onChange,
+    ...props
+}: { value: UploadedFileItemProps[]; onChange: (files: UploadedFileItemProps[]) => void } & Omit<
+    FileUploadProps,
+    "files" | "onFilesAdded"
+>) {
+    const handleFilesAdded = (files: File[]) => {
+        const newFiles = files.map(file => ({
+            id: crypto.randomUUID(),
+            name: file.name,
+            size: file.size,
+            progress: 0,
+            type: undefined,
+        }));
+        onChange([...value, ...newFiles]);
+    };
+
+    return <FileUpload {...props} files={value} onFilesAdded={handleFilesAdded} />;
+}
 
 export const FileUploadComposition = {
     Root: FileUploadRoot,
