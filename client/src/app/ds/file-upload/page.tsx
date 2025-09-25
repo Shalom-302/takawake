@@ -10,6 +10,7 @@ import {
     type UploadedFileItemProps,
     type FileType,
 } from "@/components/ui/file-upload";
+import { SimpleFileUploadExample } from "@/components/ui/file-upload/file-upload-form";
 
 const MAX_SIZE = 1024 * 1024 * 1; // 1MB
 
@@ -64,6 +65,8 @@ export default function FileUploadPage() {
                     component or individual components for complex use cases.
                 </p>
             </div>
+
+            <SimpleFileUploadExample />
 
             {/* Basic example */}
             <div className="mb-10">

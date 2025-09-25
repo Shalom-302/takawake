@@ -629,51 +629,51 @@ export interface FileUploadFormProps<
     isRequired?: boolean;
 }
 
-export const FileUploadForm = <
-    TFieldValues extends FieldValues,
-    TName extends FieldPath<TFieldValues>,
->({
-    isRequired,
-    control,
-    name,
-    label,
-    description,
-    ...props
-}: FileUploadFormProps<TFieldValues, TName>) => {
-    return (
-        <FormFieldWrapper
-            control={control}
-            name={name}
-            label={label}
-            description={description}
-            isRequired={isRequired}
-        >
-            {field => <AdaptedFileUploadRHF {...field} {...props} />}
-        </FormFieldWrapper>
-    );
-};
+// export const FileUploadForm = <
+//     TFieldValues extends FieldValues,
+//     TName extends FieldPath<TFieldValues>,
+// >({
+//     isRequired,
+//     control,
+//     name,
+//     label,
+//     description,
+//     ...props
+// }: FileUploadFormProps<TFieldValues, TName>) => {
+//     return (
+//         <FormFieldWrapper
+//             control={control}
+//             name={name}
+//             label={label}
+//             description={description}
+//             isRequired={isRequired}
+//         >
+//             {field => <AdaptedFileUploadRHF {...field} {...props} />}
+//         </FormFieldWrapper>
+//     );
+// };
 
-function AdaptedFileUploadRHF({
-    value,
-    onChange,
-    ...props
-}: { value: UploadedFileItemProps[]; onChange: (files: UploadedFileItemProps[]) => void } & Omit<
-    FileUploadProps,
-    "files" | "onFilesAdded"
->) {
-    const handleFilesAdded = (files: File[]) => {
-        const newFiles = files.map(file => ({
-            id: crypto.randomUUID(),
-            name: file.name,
-            size: file.size,
-            progress: 0,
-            type: undefined,
-        }));
-        onChange([...value, ...newFiles]);
-    };
+// function AdaptedFileUploadRHF({
+//     value,
+//     onChange,
+//     ...props
+// }: { value: UploadedFileItemProps[]; onChange: (files: UploadedFileItemProps[]) => void } & Omit<
+//     FileUploadProps,
+//     "files" | "onFilesAdded"
+// >) {
+//     const handleFilesAdded = (files: File[]) => {
+//         const newFiles = files.map(file => ({
+//             id: crypto.randomUUID(),
+//             name: file.name,
+//             size: file.size,
+//             progress: 0,
+//             type: undefined,
+//         }));
+//         onChange([...value, ...newFiles]);
+//     };
 
-    return <FileUpload {...props} files={value} onFilesAdded={handleFilesAdded} />;
-}
+//     return <FileUpload {...props} files={value} onFilesAdded={handleFilesAdded} />;
+// }
 
 export const FileUploadComposition = {
     Root: FileUploadRoot,
