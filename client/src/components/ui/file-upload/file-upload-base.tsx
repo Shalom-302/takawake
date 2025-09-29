@@ -1,41 +1,25 @@
 "use client";
 
-import type { ComponentProps, ComponentPropsWithRef } from "react";
-import { useId, useRef, useState } from "react";
-import type { FileIcon } from "@untitledui/file-icons";
+import { useId, useRef, useState, type ComponentProps } from "react";
 import { FileIcon as FileTypeIcon } from "@untitledui/file-icons";
 import { CheckCircle, Trash01, UploadCloud02, XCircle } from "@untitled-ui/icons-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button, ButtonUtility } from "@/components/ui/buttons";
 import { ProgressBar } from "@/components/ui/progress-indicators";
 import { cn } from "@/lib/utils/cn";
 import { FeaturedIcon } from "@/components/icons/featured-icons";
-import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
+import { createFileItem, getReadableFileSize, isFileTypeAccepted } from "@/lib/utils/file-upload";
 
-/**
- * Returns a human-readable file size.
- * @param bytes - The size of the file in bytes.
- * @returns A string representing the file size in a human-readable format.
- */
-export const getReadableFileSize = (bytes: number, decimals: number = 1, locale: string = "en") => {
-    if (bytes === 0) return "0 KB";
+/** Type de fichier pour les icônes. */
+export type FileType = ComponentProps<typeof FileTypeIcon>["type"];
 
-    const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+// =========================================================================
+// TYPES
+// =========================================================================
 
-    const value = bytes / Math.pow(1024, i);
-
-    const formatter = new Intl.NumberFormat(locale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: decimals,
-    });
-
-    return formatter.format(value) + " " + suffixes[i];
-};
-
-// Types pour les fichiers uploadés
-export type FileType = ComponentProps<typeof FileIcon>["type"];
+/** Interface de base pour l'affichage de la liste */
 export interface UploadedFileItemProps {
     id: string;
     name: string;
@@ -43,92 +27,108 @@ export interface UploadedFileItemProps {
     progress: number;
     failed?: boolean;
     type?: FileType;
+    file?: File;
 }
 
+/** Interface pour les erreurs de validation */
+export interface FileValidationError {
+    message: string;
+    files: File[];
+}
+
+// =========================================================================
+// FILE UPLOAD DROP ZONE (Logique de validation conservée pour autonomie)
+// =========================================================================
+
 interface FileUploadDropZoneProps {
-    /** The class name of the drop zone. */
     className?: string;
-    /**
-     * A hint text explaining what files can be dropped.
-     */
     hint?: string;
-    /**
-     * Disables dropping or uploading files.
-     */
     isDisabled?: boolean;
-    /**
-     * Specifies the types of files that the server accepts.
-     * Examples: "image/*", ".pdf,image/*", "image/*,video/mpeg,application/pdf"
-     */
+    isRequired?: boolean;
     accept?: string;
-    /**
-     * Allows multiple file uploads.
-     */
     allowsMultiple?: boolean;
-    /**
-     * Maximum file size in bytes.
-     */
     maxSize?: number;
-    /**
-     * Callback function that is called with the list of dropped files
-     * when files are dropped on the drop zone.
-     */
+    maxFiles?: number;
+    currentFileCount?: number;
     onDropFiles?: (files: FileList) => void;
-    /**
-     * Callback function that is called with the list of unaccepted files
-     * when files are dropped on the drop zone.
-     */
-    onDropUnacceptedFiles?: (files: FileList) => void;
-    /**
-     * Callback function that is called with the list of files that exceed
-     * the size limit when files are dropped on the drop zone.
-     */
-    onSizeLimitExceed?: (files: FileList) => void;
 }
 
 const FileUploadDropZone = ({
     className,
     hint,
     isDisabled,
+    isRequired,
     accept,
     allowsMultiple = true,
     maxSize,
+    maxFiles = allowsMultiple ? undefined : 1,
+    currentFileCount = 0,
     onDropFiles,
-    onDropUnacceptedFiles,
-    onSizeLimitExceed,
 }: FileUploadDropZoneProps) => {
     const id = useId();
     const inputRef = useRef<HTMLInputElement>(null);
-    const [isInvalid, setIsInvalid] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<FileValidationError[]>([]);
 
-    const isFileTypeAccepted = (file: File): boolean => {
-        if (!accept) return true;
+    const hasErrors = validationErrors.length > 0;
 
-        // Split the accept string into individual types
-        const acceptedTypes = accept.split(",").map(type => type.trim());
+    /**
+     * Valide les fichiers de manière synchrone.
+     * Retourne les erreurs détectées et la liste des fichiers qui passent toutes les conditions.
+     */
+    const validateFiles = (files: File[]) => {
+        const errors: FileValidationError[] = [];
+        let filesPassingAllChecks = files; // Liste des fichiers valides (filtrée à chaque étape)
 
-        return acceptedTypes.some(acceptedType => {
-            // Handle file extensions (e.g., .pdf, .doc)
-            if (acceptedType.startsWith(".")) {
-                const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
-                return extension === acceptedType.toLowerCase();
+        // 1. VÉRIFICATION DU NOMBRE MAXIMUM
+        if (maxFiles && currentFileCount + files.length > maxFiles) {
+            errors.push({
+                message: `Maximum ${maxFiles} files allowed. You're trying to add ${files.length} files but only ${maxFiles - currentFileCount} slots available.`,
+                // Fichiers excédentaires (pour l'affichage des erreurs)
+                files: files.slice(
+                    maxFiles - currentFileCount > 0 ? maxFiles - currentFileCount : 0
+                ),
+            });
+            // Limiter les fichiers à traiter pour les vérifications suivantes
+            filesPassingAllChecks = files.slice(0, maxFiles - currentFileCount);
+        }
+
+        // 2. VÉRIFICATION DE LA TAILLE DES FICHIERS
+        if (maxSize) {
+            const oversizedFiles = filesPassingAllChecks.filter(file => file.size > maxSize);
+            if (oversizedFiles.length > 0) {
+                errors.push({
+                    message: `Files too large. Maximum size is ${getReadableFileSize(maxSize || 0)}.`,
+                    files: oversizedFiles,
+                });
+                // Retirer les fichiers non valides de la liste
+                filesPassingAllChecks = filesPassingAllChecks.filter(file => file.size <= maxSize);
             }
+        }
 
-            // Handle wildcards (e.g., image/*)
-            if (acceptedType.endsWith("/*")) {
-                const typePrefix = acceptedType.split("/")[0];
-                return file.type.startsWith(`${typePrefix}/`);
-            }
+        // 3. VÉRIFICATION DES TYPES DE FICHIERS
+        const invalidTypeFiles = filesPassingAllChecks.filter(
+            file => !isFileTypeAccepted(file, accept)
+        );
+        if (invalidTypeFiles.length > 0) {
+            errors.push({
+                message: `Invalid file types. Accepted types: ${accept || "all files"}.`,
+                files: invalidTypeFiles,
+            });
+            // Retirer les fichiers non valides de la liste
+            filesPassingAllChecks = filesPassingAllChecks.filter(file =>
+                isFileTypeAccepted(file, accept)
+            );
+        }
 
-            // Handle exact MIME types (e.g., application/pdf)
-            return file.type === acceptedType;
-        });
+        return {
+            errors,
+            validFiles: filesPassingAllChecks,
+        };
     };
 
     const handleDragIn = (event: React.DragEvent<HTMLDivElement>) => {
         if (isDisabled) return;
-
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOver(true);
@@ -136,64 +136,32 @@ const FileUploadDropZone = ({
 
     const handleDragOut = (event: React.DragEvent<HTMLDivElement>) => {
         if (isDisabled) return;
-
         event.preventDefault();
         event.stopPropagation();
         setIsDraggingOver(false);
     };
 
+    /**
+     * Traite les fichiers, valide, filtre, et envoie uniquement les fichiers valides.
+     */
     const processFiles = (files: File[]): void => {
-        // Reset the invalid state when processing files.
-        setIsInvalid(false);
+        // S'assurer de ne traiter qu'un seul fichier si allowsMultiple est faux
+        const filesToValidate = allowsMultiple ? files : files.slice(0, 1);
 
-        const acceptedFiles: File[] = [];
-        const unacceptedFiles: File[] = [];
-        const oversizedFiles: File[] = [];
+        // 1. Exécuter la validation de manière synchrone et obtenir les résultats
+        const { errors, validFiles } = validateFiles(filesToValidate);
 
-        // If multiple files are not allowed, only process the first file
-        const filesToProcess = allowsMultiple ? files : files.slice(0, 1);
+        // 2. Mettre à jour l'état des erreurs pour l'affichage (asynchrone)
+        setValidationErrors(errors);
 
-        filesToProcess.forEach(file => {
-            // Check file size first
-            if (maxSize && file.size > maxSize) {
-                oversizedFiles.push(file);
-                return;
-            }
-
-            // Then check file type
-            if (isFileTypeAccepted(file)) {
-                acceptedFiles.push(file);
-            } else {
-                unacceptedFiles.push(file);
-            }
-        });
-
-        // Handle oversized files
-        if (oversizedFiles.length > 0 && typeof onSizeLimitExceed === "function") {
+        // 3. Transférer les fichiers VALIDES uniquement
+        if (validFiles.length > 0) {
             const dataTransfer = new DataTransfer();
-            oversizedFiles.forEach(file => dataTransfer.items.add(file));
-
-            setIsInvalid(true);
-            onSizeLimitExceed(dataTransfer.files);
+            validFiles.forEach(file => dataTransfer.items.add(file));
+            onDropFiles?.(dataTransfer.files);
         }
 
-        // Handle accepted files
-        if (acceptedFiles.length > 0 && typeof onDropFiles === "function") {
-            const dataTransfer = new DataTransfer();
-            acceptedFiles.forEach(file => dataTransfer.items.add(file));
-            onDropFiles(dataTransfer.files);
-        }
-
-        // Handle unaccepted files
-        if (unacceptedFiles.length > 0 && typeof onDropUnacceptedFiles === "function") {
-            const unacceptedDataTransfer = new DataTransfer();
-            unacceptedFiles.forEach(file => unacceptedDataTransfer.items.add(file));
-
-            setIsInvalid(true);
-            onDropUnacceptedFiles(unacceptedDataTransfer.files);
-        }
-
-        // Clear the input value to ensure the same file can be selected again
+        // 4. Vider la valeur de l'input
         if (inputRef.current) {
             inputRef.current.value = "";
         }
@@ -201,70 +169,91 @@ const FileUploadDropZone = ({
 
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
         if (isDisabled) return;
-
         handleDragOut(event);
+        // Important: Utiliser event.dataTransfer.files pour le drag & drop
         processFiles(Array.from(event.dataTransfer.files));
     };
 
     const handleInputFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Important: Utiliser event.target.files pour la sélection via le bouton
         processFiles(Array.from(event.target.files || []));
     };
 
+    // --- RENDU ---
     return (
-        <div
-            data-dropzone
-            onDragOver={handleDragIn}
-            onDragEnter={handleDragIn}
-            onDragLeave={handleDragOut}
-            onDragEnd={handleDragOut}
-            onDrop={handleDrop}
-            className={cn(
-                "relative flex flex-col items-center gap-3 rounded-xl bg-primary px-6 py-4 text-tertiary ring-1 ring-secondary transition duration-100 ease-linear ring-inset",
-                isDraggingOver && "ring-2 ring-brand",
-                isDisabled && "cursor-not-allowed bg-disabled_subtle ring-disabled_subtle",
-                className
-            )}
-        >
-            <FeaturedIcon color="gray" variant="modern" size="md">
-                <UploadCloud02 className="size-5" />
-            </FeaturedIcon>
+        <div className="flex flex-col gap-2">
+            <div
+                data-dropzone
+                onDragOver={handleDragIn}
+                onDragEnter={handleDragIn}
+                onDragLeave={handleDragOut}
+                onDragEnd={handleDragOut}
+                onDrop={handleDrop}
+                className={cn(
+                    "relative flex flex-col items-center gap-3 rounded-xl bg-primary px-6 py-4 text-tertiary ring-1 ring-secondary transition duration-100 ease-linear ring-inset",
+                    isDraggingOver && "ring-2 ring-brand",
+                    (hasErrors || isRequired) && "ring-2 ring-error",
+                    isDisabled && "cursor-not-allowed bg-disabled_subtle ring-disabled_subtle",
+                    className
+                )}
+            >
+                <FeaturedIcon color="gray" variant="modern" size="md">
+                    <UploadCloud02 className="size-5" />
+                </FeaturedIcon>
 
-            <div className="flex flex-col gap-1 text-center">
-                <div className="flex justify-center gap-1 text-center">
-                    <input
-                        ref={inputRef}
-                        id={id}
-                        type="file"
-                        className="peer sr-only"
-                        disabled={isDisabled}
-                        accept={accept}
-                        multiple={allowsMultiple}
-                        onChange={handleInputFileChange}
-                    />
-                    <label htmlFor={id} className="flex cursor-pointer">
-                        <Button
-                            variant="link-color"
-                            size="md"
-                            isDisabled={isDisabled}
-                            onClick={() => inputRef.current?.click()}
-                        >
-                            Click to upload <span className="md:hidden">and attach files</span>
-                        </Button>
-                    </label>
-                    <span className="text-sm max-md:hidden">or drag and drop</span>
+                <div className="flex flex-col gap-1 text-center">
+                    <div className="flex justify-center gap-1 text-center">
+                        <input
+                            ref={inputRef}
+                            id={id}
+                            type="file"
+                            className="peer sr-only"
+                            disabled={isDisabled}
+                            accept={accept}
+                            multiple={allowsMultiple}
+                            onChange={handleInputFileChange}
+                        />
+                        <label htmlFor={id} className="flex cursor-pointer">
+                            <Button
+                                variant="link-color"
+                                size="md"
+                                isDisabled={isDisabled}
+                                onClick={() => inputRef.current?.click()}
+                            >
+                                Click to upload <span className="md:hidden">and attach files</span>
+                            </Button>
+                        </label>
+                        <span className="text-sm max-md:hidden">or drag and drop</span>
+                    </div>
+                    <p
+                        className={cn(
+                            "text-xs transition duration-100 ease-linear",
+                            hasErrors && "text-error-primary"
+                        )}
+                    >
+                        {hint ||
+                            `SVG, PNG, JPG or GIF (max. ${maxSize ? getReadableFileSize(maxSize) : "N/A"})`}
+                    </p>
                 </div>
-                <p
-                    className={cn(
-                        "text-xs transition duration-100 ease-linear",
-                        isInvalid && "text-error-primary"
-                    )}
-                >
-                    {hint || "SVG, PNG, JPG or GIF (max. 800x400px)"}
-                </p>
             </div>
+
+            {/* Affichage des erreurs de validation */}
+            {hasErrors && (
+                <div className="space-y-1">
+                    {validationErrors.map((error, index) => (
+                        <p key={index} className="text-xs text-error-primary">
+                            {error.message}
+                        </p>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
+
+// =========================================================================
+// FILE LIST ITEMS (Inchangé)
+// =========================================================================
 
 export interface FileListItemProps {
     /** The name of the file. */
@@ -500,19 +489,21 @@ const FileListItemProgressFill = ({
     );
 };
 
-const FileUploadRoot = (props: ComponentPropsWithRef<"div">) => (
+const FileUploadRoot = (props: ComponentProps<"div">) => (
     <div {...props} className={cn("flex flex-col gap-4", props.className)}>
         {props.children}
     </div>
 );
 
-const FileUploadList = (props: ComponentPropsWithRef<"ul">) => (
+const FileUploadList = (props: ComponentProps<"ul">) => (
     <ul {...props} className={cn("flex flex-col gap-3", props.className)}>
         <AnimatePresence initial={false}>{props.children}</AnimatePresence>
     </ul>
 );
 
-// ========== COMPOSANT PRINCIPAL FACTORISÉ ==========
+// =========================================================================
+// COMPOSANT PRINCIPAL FILEUPLOAD (Autonome)
+// =========================================================================
 
 export type FileProgressVariant = "progress-bar" | "progress-fill";
 
@@ -525,47 +516,53 @@ interface FileUploadProps {
     accept?: string;
     /** Taille maximale des fichiers en bytes */
     maxSize?: number;
+    /** Nombre maximum de fichiers */
+    maxFiles?: number;
     /** Autoriser plusieurs fichiers */
     allowsMultiple?: boolean;
     /** Texte d'aide affiché dans la zone de drop */
     hint?: string;
     /** Désactiver l'upload */
     isDisabled?: boolean;
-    /** Callback quand des fichiers sont déposés/sélectionnés */
+    /** Callback quand des fichiers sont déposés/sélectionnés (APRES validation interne) */
     onFilesAdded?: (files: File[]) => void;
-    /** Callback quand des fichiers non acceptés sont déposés */
-    onUnacceptedFiles?: (files: FileList) => void;
-    /** Callback quand des fichiers dépassent la taille limite */
-    onSizeLimitExceed?: (files: FileList) => void;
+    /** Callback pour les erreurs de validation */
+    onValidationError?: (errors: FileValidationError[]) => void;
     /** Callback pour supprimer un fichier */
     onDeleteFile?: (fileId: string) => void;
     /** Callback pour réessayer l'upload d'un fichier */
     onRetryFile?: (fileId: string) => void;
+    /** Erreurs de validation externes (pour l'affichage) */
+    validationErrors?: FileValidationError[];
+    /** Afficher les erreurs de validation */
+    showValidationErrors?: boolean;
     /** Classes CSS additionnelles */
     className?: string;
     /** Classes CSS pour la zone de drop */
     dropZoneClassName?: string;
     /** Classes CSS pour la liste */
     listClassName?: string;
+    "aria-invalid"?: boolean;
 }
 
 export const FileUpload = ({
     files,
-    variant = "progress-bar",
+    variant,
     accept,
     maxSize,
+    maxFiles,
     allowsMultiple = true,
     hint,
     isDisabled,
     onFilesAdded,
-    onUnacceptedFiles,
-    onSizeLimitExceed,
     onDeleteFile,
     onRetryFile,
     className,
     dropZoneClassName,
     listClassName,
+    ...props
 }: FileUploadProps) => {
+    const isRequired = props["aria-invalid"] === true;
     const handleDropFiles = (fileList: FileList) => {
         if (onFilesAdded) {
             onFilesAdded(Array.from(fileList));
@@ -584,97 +581,298 @@ export const FileUpload = ({
         }
     };
 
-    const ListItemComponent =
-        variant === "progress-fill" ? FileListItemProgressFill : FileListItemProgressBar;
-
     return (
         <FileUploadRoot className={className}>
             <FileUploadDropZone
                 className={dropZoneClassName}
                 accept={accept}
                 maxSize={maxSize}
+                maxFiles={maxFiles}
+                currentFileCount={files.length}
                 allowsMultiple={allowsMultiple}
                 hint={hint}
                 isDisabled={isDisabled}
+                isRequired={isRequired}
                 onDropFiles={handleDropFiles}
-                onDropUnacceptedFiles={onUnacceptedFiles}
-                onSizeLimitExceed={onSizeLimitExceed}
             />
-            {files.length > 0 && (
-                <FileUploadList className={listClassName}>
-                    {files.map(file => (
-                        <ListItemComponent
-                            key={file.id}
-                            name={file.name}
-                            size={file.size}
-                            progress={file.progress}
-                            failed={file.failed}
-                            type={file.type}
-                            onDelete={() => handleDeleteFile(file.id)}
-                            onRetry={() => handleRetryFile(file.id)}
-                        />
-                    ))}
-                </FileUploadList>
-            )}
+            {files.length > 0 &&
+                (variant === "progress-bar" ? (
+                    <FileUploadList className={listClassName}>
+                        {files.map(file => (
+                            <FileListItemProgressBar
+                                key={file.id}
+                                name={file.name}
+                                size={file.size}
+                                progress={file.progress}
+                                failed={file.failed}
+                                type={file.type}
+                                onDelete={() => handleDeleteFile(file.id)}
+                                onRetry={() => handleRetryFile(file.id)}
+                            />
+                        ))}
+                    </FileUploadList>
+                ) : variant === "progress-fill" ? (
+                    <FileUploadList className={listClassName}>
+                        {files.map(file => (
+                            <FileListItemProgressFill
+                                key={file.id}
+                                name={file.name}
+                                size={file.size}
+                                progress={file.progress}
+                                failed={file.failed}
+                                type={file.type}
+                                onDelete={() => handleDeleteFile(file.id)}
+                                onRetry={() => handleRetryFile(file.id)}
+                            />
+                        ))}
+                    </FileUploadList>
+                ) : null)}
         </FileUploadRoot>
     );
 };
 
-// === FORM INTEGRATION ===
+// =========================================================================
+// INTÉGRATION REACT HOOK FORM (Mapper et contrôler le flux)
+// =========================================================================
 export interface FileUploadFormProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
-        FileUploadProps {
+        Omit<FileUploadProps, "files" | "onFilesAdded" | "onDeleteFile" | "onRetryFile"> {
     isRequired?: boolean;
+    storageMode?: "files" | "metadata";
+
+    /**
+     * Fonction d'upload vers service tiers.
+     * REMARQUE: J'utilise ici la signature de votre code original (Promise).
+     */
+    uploadFn?: (
+        file: File,
+        onProgress: (progress: number) => void
+    ) => Promise<{
+        url: string;
+        [key: string]: string;
+    }>;
+
+    transformFiles?: (files: File[]) => Promise<UploadedFileItemProps[]> | UploadedFileItemProps[];
+    onFilesAddedSuccess?: (files: UploadedFileItemProps[]) => void;
+    onFileDeleted?: (file: UploadedFileItemProps) => void;
+    onUploadComplete?: (
+        fileId: string,
+        result:
+            | File
+            | {
+                  url: string;
+                  [key: string]: string;
+              }
+    ) => void;
+    onUploadError?: (fileId: string, error: Error) => void;
 }
 
-// export const FileUploadForm = <
-//     TFieldValues extends FieldValues,
-//     TName extends FieldPath<TFieldValues>,
-// >({
-//     isRequired,
-//     control,
-//     name,
-//     label,
-//     description,
-//     ...props
-// }: FileUploadFormProps<TFieldValues, TName>) => {
-//     return (
-//         <FormFieldWrapper
-//             control={control}
-//             name={name}
-//             label={label}
-//             description={description}
-//             isRequired={isRequired}
-//         >
-//             {field => <AdaptedFileUploadRHF {...field} {...props} />}
-//         </FormFieldWrapper>
-//     );
-// };
+export const FileUploadForm = <
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
+    control,
+    name,
+    label,
+    isRequired,
+    storageMode = "files",
+    uploadFn,
+    transformFiles,
+    onFilesAddedSuccess,
+    onFileDeleted,
+    onUploadComplete,
+    onUploadError,
+    ...props
+}: FileUploadFormProps<TFieldValues, TName>) => {
+    return (
+        <FormFieldWrapper control={control} name={name} label={label} isRequired={isRequired}>
+            {field => {
+                const { value, onChange } = field;
 
-// function AdaptedFileUploadRHF({
-//     value,
-//     onChange,
-//     ...props
-// }: { value: UploadedFileItemProps[]; onChange: (files: UploadedFileItemProps[]) => void } & Omit<
-//     FileUploadProps,
-//     "files" | "onFilesAdded"
-// >) {
-//     const handleFilesAdded = (files: File[]) => {
-//         const newFiles = files.map(file => ({
-//             id: crypto.randomUUID(),
-//             name: file.name,
-//             size: file.size,
-//             progress: 0,
-//             type: undefined,
-//         }));
-//         onChange([...value, ...newFiles]);
-//     };
+                /**
+                 * Affiche les fichiers pour la UI.
+                 */
+                const getFilesForDisplay = (): UploadedFileItemProps[] => {
+                    if (!value) return [];
 
-//     return <FileUpload {...props} files={value} onFilesAdded={handleFilesAdded} />;
-// }
+                    if (storageMode === "files") {
+                        return (value as File[]).map(file => ({
+                            id: `${file.name}-${file.size}`,
+                            name: file.name,
+                            size: file.size,
+                            progress: 100,
+                            file,
+                            type: file.type,
+                        }));
+                    }
+                    return value as UploadedFileItemProps[];
+                };
 
+                const filesInForm = getFilesForDisplay();
+
+                /**
+                 * Simule un upload rapide.
+                 */
+                const simulateQuickUpload = (fileId: string) => {
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+
+                        if (storageMode === "metadata") {
+                            // On utilise une fonction de mise à jour pour éviter de dépendre de 'value'
+                            onChange((prevFiles: UploadedFileItemProps[] = []) =>
+                                prevFiles.map(f =>
+                                    f.id === fileId
+                                        ? { ...f, progress: Math.min(progress, 100) }
+                                        : f
+                                )
+                            );
+                        }
+
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                        }
+                    }, 100);
+                };
+
+                /**
+                 * Upload réel vers service tiers.
+                 */
+                const startRealUpload = async (fileItem: UploadedFileItemProps) => {
+                    if (!fileItem.file || !uploadFn) return;
+
+                    try {
+                        const result = await uploadFn(fileItem.file, progress => {
+                            // Mise à jour de la progression
+                            onChange((prevFiles: UploadedFileItemProps[] = []) =>
+                                prevFiles.map(f => (f.id === fileItem.id ? { ...f, progress } : f))
+                            );
+                        });
+
+                        // Marquer comme complet
+                        onChange((prevFiles: UploadedFileItemProps[] = []) =>
+                            prevFiles.map(f =>
+                                f.id === fileItem.id
+                                    ? {
+                                          ...f,
+                                          progress: 100,
+                                          failed: false,
+                                          ...result,
+                                          file: undefined,
+                                      }
+                                    : f
+                            )
+                        );
+                        onUploadComplete?.(fileItem.id, result);
+                    } catch (error) {
+                        console.error(`Upload failed for ${fileItem.name}:`, error);
+
+                        // Marquer l'échec
+                        onChange((prevFiles: UploadedFileItemProps[] = []) =>
+                            prevFiles.map(f =>
+                                f.id === fileItem.id ? { ...f, failed: true, progress: 0 } : f
+                            )
+                        );
+                        onUploadError?.(fileItem.id, error as Error);
+                    }
+                };
+
+                /**
+                 * Gère l'ajout des fichiers.
+                 */
+                const handleFilesAdded = async (files: File[]) => {
+                    try {
+                        let newFileItems: UploadedFileItemProps[];
+
+                        if (transformFiles) {
+                            newFileItems = await Promise.resolve(transformFiles(files));
+                        } else {
+                            newFileItems = files.map(file =>
+                                createFileItem(file, {
+                                    progress: uploadFn || storageMode === "files" ? 0 : 100,
+                                })
+                            );
+                        }
+
+                        // Mise à jour RHF
+                        const max = props.maxFiles ?? Infinity;
+                        if (storageMode === "files") {
+                            const currentFiles = (value as File[]) || [];
+                            const newFiles = newFileItems.map(item => item.file!);
+                            onChange([...currentFiles, ...newFiles].slice(0, max));
+
+                            if (!uploadFn) {
+                                newFileItems.forEach(fileItem => simulateQuickUpload(fileItem.id));
+                            }
+                        } else {
+                            const updatedFiles = [...filesInForm, ...newFileItems].slice(0, max);
+                            onChange(updatedFiles);
+                        }
+
+                        if (uploadFn) {
+                            newFileItems.forEach(fileItem => startRealUpload(fileItem));
+                        }
+                        onFilesAddedSuccess?.(newFileItems);
+                    } catch (error) {
+                        console.error("Error processing files:", error);
+                    }
+                };
+
+                /**
+                 * Gère la suppression d'un fichier.
+                 */
+                const handleDeleteFile = (fileId: string) => {
+                    const fileToDelete = filesInForm.find(f => f.id === fileId);
+
+                    if (storageMode === "files") {
+                        const currentFiles = (value as File[]) || [];
+                        const updatedFiles = currentFiles.filter(
+                            f => f.name !== fileToDelete?.name || f.size !== fileToDelete?.size
+                        );
+                        onChange(updatedFiles);
+                    } else {
+                        const updatedFiles = filesInForm.filter(f => f.id !== fileId);
+                        onChange(updatedFiles);
+                    }
+                    if (fileToDelete) {
+                        onFileDeleted?.(fileToDelete);
+                    }
+                };
+
+                /**
+                 * Gère la relance d'un upload en échec.
+                 */
+                const handleRetryFile = (fileId: string) => {
+                    const fileToRetry = filesInForm.find(f => f.id === fileId);
+
+                    if (fileToRetry && uploadFn) {
+                        // Réinitialiser et relancer l'upload
+                        onChange((prevFiles: UploadedFileItemProps[] = []) =>
+                            prevFiles.map(f =>
+                                f.id === fileId ? { ...f, failed: false, progress: 0 } : f
+                            )
+                        );
+                        startRealUpload(fileToRetry);
+                    }
+                };
+
+                return (
+                    <FileUpload
+                        {...props}
+                        files={filesInForm}
+                        onFilesAdded={handleFilesAdded}
+                        onDeleteFile={handleDeleteFile}
+                        onRetryFile={handleRetryFile}
+                    />
+                );
+            }}
+        </FormFieldWrapper>
+    );
+};
+
+// Composition pour les cas d'usage avancés
 export const FileUploadComposition = {
     Root: FileUploadRoot,
     List: FileUploadList,

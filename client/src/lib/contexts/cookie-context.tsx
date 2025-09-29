@@ -1,12 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import {
-    useCookieSettings,
-    useSubmitCookieConsent,
-    getConsentFromLocalStorage,
-    isConsentExpired,
-} from "../services/cookie-service";
+// import {
+//     useCookieSettings,
+//     useSubmitCookieConsent,
+//     getConsentFromLocalStorage,
+//     isConsentExpired,
+// } from "../services/cookie-service";
 import { CookieSettings, CookieConsentSubmission } from "../types/cookies";
 
 interface CookieContextType {
@@ -29,45 +29,45 @@ interface CookieProviderProps {
 
 export function CookieProvider({ children }: CookieProviderProps) {
     // Use our SWR hook for cookie settings
-    const { cookieSettings, isLoadingSettings } = useCookieSettings();
-    const { submitConsent } = useSubmitCookieConsent();
+    // const { cookieSettings, isLoadingSettings } = useCookieSettings();
+    // const { submitConsent } = useSubmitCookieConsent();
 
     const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
     const [consentGiven, setConsentGiven] = useState<boolean>(false);
     const [consent, setConsent] = useState<CookieConsentSubmission | null>(null);
 
     // Initialize cookie settings and consent state
-    useEffect(() => {
-        async function initialize() {
-            try {
-                // Check that consent exists and has not expired
-                const storedConsent = getConsentFromLocalStorage();
+    // useEffect(() => {
+    //     async function initialize() {
+    //         try {
+    //             // Check that consent exists and has not expired
+    //             const storedConsent = getConsentFromLocalStorage();
 
-                // Handle the case where the parameters are null (API failure)
-                // Use a default expiration period of 180 days if the parameters are null
-                const expiryDays = cookieSettings?.consent_expiry_days || 180;
+    //             // Handle the case where the parameters are null (API failure)
+    //             // Use a default expiration period of 180 days if the parameters are null
+    //             const expiryDays = cookieSettings?.consent_expiry_days || 180;
 
-                if (storedConsent && !isConsentExpired(expiryDays)) {
-                    setConsent(storedConsent);
-                    setConsentGiven(true);
-                    // Do not show banner if consent is already given
-                    setShowCookieBanner(false);
-                } else {
-                    // Reset consent if expired
-                    setConsent(null);
-                    setConsentGiven(false);
-                    // Show banner if no consent or expired
-                    setShowCookieBanner(true);
-                }
-            } catch (error) {
-                console.error("Error initializing cookie consent:", error);
-            }
-        }
+    //             if (storedConsent && !isConsentExpired(expiryDays)) {
+    //                 setConsent(storedConsent);
+    //                 setConsentGiven(true);
+    //                 // Do not show banner if consent is already given
+    //                 setShowCookieBanner(false);
+    //             } else {
+    //                 // Reset consent if expired
+    //                 setConsent(null);
+    //                 setConsentGiven(false);
+    //                 // Show banner if no consent or expired
+    //                 setShowCookieBanner(true);
+    //             }
+    //         } catch (error) {
+    //             console.error("Error initializing cookie consent:", error);
+    //         }
+    //     }
 
-        if (!isLoadingSettings && cookieSettings) {
-            initialize();
-        }
-    }, [cookieSettings, isLoadingSettings]);
+    //     if (!isLoadingSettings && cookieSettings) {
+    //         initialize();
+    //     }
+    // }, [cookieSettings, isLoadingSettings]);
 
     // Accept all cookies
     const acceptAll = async (): Promise<void> => {
@@ -149,7 +149,8 @@ export function CookieProvider({ children }: CookieProviderProps) {
 
     // Context value
     const value: CookieContextType = {
-        cookieSettings: cookieSettings || null,
+        // cookieSettings: cookieSettings || null,
+        cookieSettings: null,
         showCookieBanner,
         consentGiven,
         consent,
