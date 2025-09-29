@@ -17,6 +17,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Alert", href: "/ds/alert" },
         { name: "Avatar", href: "/ds/avatar" },
         { name: "Badge", href: "/ds/badge" },
+        { name: "Breadcrumb", href: "/ds/breadcrumb" },
         { name: "Button", href: "/ds/button" },
         { name: "Button Group", href: "/ds/button-group" },
         { name: "Card", href: "/ds/card" },
