@@ -470,8 +470,8 @@ export function DropdownDotsButton({ className, ...props }: React.ComponentProps
         <button
             aria-label="Open menu"
             className={cn(
-                "cursor-pointer rounded-md text-fg-quaternary hover:text-fg-quaternary_hover outline-focus-ring transition duration-100 ease-linear",
-                "focus-visible:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 ",
+                "cursor-pointer rounded-md text-fg-quaternary hover:text-fg-quaternary_hover ring-focus-ring transition duration-100 ease-linear",
+                "focus-visible:text-fg-quaternary_hover focus-visible:ring-2 focus-visible:ring-offset-2 ",
                 className
             )}
             {...props}

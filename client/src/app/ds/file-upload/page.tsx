@@ -828,42 +828,36 @@ return (
                     </div>
                 </div>
 
-                {/* Individual Components */}
+                {/* Custom Components */}
                 <div className="mb-8">
                     <h3 className="text-lg font-semibold mb-4">
-                        Individual Components (`FileUploadComposition`)
+                        Custom Components with FileUploadCustom
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        For advanced customization, these components can be used individually:
-                    </p>
+                    <p className="text-sm text-secondary mb-4">For advanced customization:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm">
                         <li>
-                            <code className="bg-gray-100 px-1 rounded">
-                                FileUploadComposition.Root
-                            </code>{" "}
+                            <code className="bg-gray-100 px-1 rounded">FileUploadCustom.Root</code>{" "}
                             - Container wrapper
                         </li>
                         <li>
                             <code className="bg-gray-100 px-1 rounded">
-                                FileUploadComposition.DropZone
-                            </code>{" "}
+                                FileUploadCustom.DropZone
+                            </code>
                             - File drop and selection area
                         </li>
                         <li>
-                            <code className="bg-gray-100 px-1 rounded">
-                                FileUploadComposition.List
-                            </code>{" "}
+                            <code className="bg-gray-100 px-1 rounded">FileUploadCustom.List</code>{" "}
                             - Container for file list items
                         </li>
                         <li>
                             <code className="bg-gray-100 px-1 rounded">
-                                FileUploadComposition.ListItemProgressBar
+                                FileUploadCustom.ListItemProgressBar
                             </code>{" "}
                             - File item with progress bar
                         </li>
                         <li>
                             <code className="bg-gray-100 px-1 rounded">
-                                FileUploadComposition.ListItemProgressFill
+                                FileUploadCustom.ListItemProgressFill
                             </code>{" "}
                             - File item with fill progress
                         </li>

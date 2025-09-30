@@ -872,8 +872,8 @@ export const FileUploadForm = <
     );
 };
 
-// Composition pour les cas d'usage avancés
-export const FileUploadComposition = {
+// Pour les cas d'usage avancés
+export const FileUploadCustom = {
     Root: FileUploadRoot,
     List: FileUploadList,
     DropZone: FileUploadDropZone,
