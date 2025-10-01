@@ -152,6 +152,14 @@ export default function DesignSystemPage() {
             icon: "M13 10V3L4 14h7v7l9-11h-7z",
         },
         {
+            name: "Progress Steps",
+            description: "Visual indicators for operations steps status.",
+            count: "6 Components",
+            href: "/ds/progress-steps",
+            isNew: true,
+            icon: "M13 10V3L4 14h7v7l9-11h-7z",
+        },
+        {
             name: "Radio Group",
             description: "Selection controls for single options.",
             count: "6 Components",
