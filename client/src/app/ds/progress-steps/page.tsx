@@ -3,7 +3,7 @@ import * as React from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components";
 import { ProgressSteps } from "@/components/ui/progress-steps";
-import { User01, Building01, Users, Share01, Users01 } from "@untitled-ui/icons-react";
+import { User01, Building01, Share01, Users01 } from "@untitled-ui/icons-react";
 
 const steps = [
     {
@@ -109,7 +109,13 @@ export default function ProgressStepsPage() {
                     title="Icon Top - Horizontal Layout"
                     description="Horizontal progress steps with icons on top, perfect for multi-step forms."
                 >
-                    <ProgressSteps steps={steps} currentStep={1} type="icon-top" size="md" />
+                    <ProgressSteps
+                        showHorizontalConnector
+                        steps={steps}
+                        currentStep={1}
+                        type="icon-top"
+                        size="md"
+                    />
                     <CodeBlock
                         className="mt-6"
                         code={`<ProgressSteps
@@ -238,7 +244,7 @@ const stepsWithIcons = [
                         currentStep={1}
                         type="icon-top"
                         size="md"
-                        showConnector={false}
+                        showHorizontalConnector={false}
                     />
                     <CodeBlock
                         className="mt-6"
@@ -247,7 +253,7 @@ const stepsWithIcons = [
     currentStep={1}
     type="icon-top"
     size="md"
-    showConnector={false}
+    showHorizontalConnector={false}
 />`}
                     />
                 </ExampleCard>
@@ -384,22 +390,23 @@ const stepsWithIcons = [
                                 <tr>
                                     <td className="py-3 px-4 font-mono text-sm">type</td>
                                     <td className="py-3 px-4 text-sm font-mono text-xs">
-                                        "icon-left" | "icon-top" | "number-left" | "number-top" |
-                                        "featured-icon-left" | "featured-icon-top" | "text-line"
+                                        {`"icon-left" | "icon-top" | "number-left" | "number-top" | "featured-icon-left" | "featured-icon-top" | "text-line"`}
                                     </td>
                                     <td className="py-3 px-4 text-sm">-</td>
                                     <td className="py-3 px-4 text-sm">Layout and style variant</td>
                                 </tr>
                                 <tr>
                                     <td className="py-3 px-4 font-mono text-sm">size</td>
-                                    <td className="py-3 px-4 text-sm">"sm" | "md"</td>
-                                    <td className="py-3 px-4 text-sm">"sm"</td>
+                                    <td className="py-3 px-4 text-sm">{`"sm" | "md"`}</td>
+                                    <td className="py-3 px-4 text-sm">{`"sm"`}</td>
                                     <td className="py-3 px-4 text-sm">
                                         Size of indicators and text
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="py-3 px-4 font-mono text-sm">showConnector</td>
+                                    <td className="py-3 px-4 font-mono text-sm">
+                                        showHorizontalConnector
+                                    </td>
                                     <td className="py-3 px-4 text-sm">boolean</td>
                                     <td className="py-3 px-4 text-sm">true</td>
                                     <td className="py-3 px-4 text-sm">

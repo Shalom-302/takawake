@@ -21,12 +21,11 @@ interface StepBaseProps extends React.ComponentProps<"div"> {
     type: StepBaseType;
     status: StepIconStatus;
     size?: StepIconSize;
-    title: string;
+    title?: string;
     description?: string;
-    connector?: boolean;
     number?: number;
-    // Utilisation de FC et ReactNode importés pour la prop icon
     icon?: FC<{ className?: string }> | ReactNode;
+    isLastStep: boolean;
 }
 
 // ============ Component Principal ============
@@ -37,25 +36,25 @@ export function StepBase({
     size = "sm",
     title,
     description,
-    connector = false,
     number = 1,
     icon,
     className,
+    isLastStep,
     ...props
 }: StepBaseProps) {
-    const commonProps = { status, size, type, title, description, className, ...props };
+    const commonProps = { status, size, type, title, description, className, isLastStep, ...props };
 
     switch (type) {
         case "icon-left":
-            return <StepIconLeft connector={connector} {...commonProps} />;
+            return <StepIconLeft {...commonProps} />;
         case "icon-top":
             return <StepIconTop {...commonProps} />;
         case "number-left":
-            return <StepNumberLeft connector={connector} number={number} {...commonProps} />;
+            return <StepNumberLeft number={number} {...commonProps} />;
         case "number-top":
             return <StepNumberTop number={number} {...commonProps} />;
         case "featured-icon-left":
-            return <StepFeaturedIconLeft connector={connector} icon={icon} {...commonProps} />;
+            return <StepFeaturedIconLeft icon={icon} {...commonProps} />;
         case "featured-icon-top":
             return <StepFeaturedIconTop icon={icon} {...commonProps} />;
         case "text-line":
@@ -69,21 +68,20 @@ export function StepBase({
 // SOUS-COMPOSANTS VARIATIONS
 // =======================================================
 
-// --- Styles Utilitaires Répétés ---
 const LEFT_GAP_CLASS = {
     sm: "gap-3",
     md: "gap-4",
 };
 const TEXT_SIZE_CLASS = {
     sm: "text-sm",
-    md: "text-base",
+    md: "text-md",
 };
 const TEXT_PADDING_LEFT_CLASS = {
-    sm: "pt-0.5 pb-6", // Alignement vertical fin
+    sm: "pt-0.5 pb-6",
     md: "pt-1 pb-8",
 };
 
-const Connector = ({
+const VerticalConnector = ({
     size,
     status,
     type,
@@ -109,6 +107,8 @@ const Connector = ({
     />
 );
 
+// NOTE: Le composant HorizontalConnector a été retiré.
+
 // ============ Icon Left Variant ============
 
 function StepIconLeft({
@@ -117,10 +117,10 @@ function StepIconLeft({
     type,
     title,
     description,
-    connector,
     className,
+    isLastStep,
     ...props
-}: Omit<StepBaseProps, "number" | "icon">) {
+}: Omit<StepBaseProps, "number" | "icon" | "horizontalConnector">) {
     return (
         <div
             className={cn(
@@ -132,35 +132,28 @@ function StepIconLeft({
         >
             <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
                 <StepIcon type="radio" status={status} size={size} />
-                {connector && <Connector size={size} status={status} type={type} />}
+                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
             </div>
 
             {/* Text Column */}
-            <div
-                className={cn(
-                    "flex-1 inline-flex flex-col justify-start items-start",
-                    TEXT_PADDING_LEFT_CLASS[size]
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch justify-start text-text-secondary font-semibold",
+                        "flex-1 inline-flex flex-col justify-start items-start",
+                        TEXT_PADDING_LEFT_CLASS[size],
                         TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
+                    <h3 className={cn("self-stretch justify-start text-secondary font-semibold")}>
+                        {title}
+                    </h3>
+                    {description && (
+                        <p className={cn("self-stretch justify-start text-tertiary ")}>
+                            {description}
+                        </p>
+                    )}
                 </div>
-                {description && (
-                    <div
-                        className={cn(
-                            "self-stretch justify-start text-text-tertiary font-normal",
-                            TEXT_SIZE_CLASS[size]
-                        )}
-                    >
-                        {description}
-                    </div>
-                )}
-            </div>
+            )}
         </div>
     );
 }
@@ -174,49 +167,46 @@ function StepIconTop({
     description,
     className,
     ...props
-}: Omit<StepBaseProps, "type" | "connector" | "number" | "icon">) {
-    const textGapClass = size === "sm" ? "gap-0.5" : "gap-1";
-    const titleColorClass = status === "current" ? "text-brand-primary" : "text-text-secondary";
-
+}: Omit<StepBaseProps, "type" | "number" | "icon" | "horizontalConnector">) {
     return (
         <div
             className={cn(
-                "w-80 inline-flex flex-col justify-start items-center",
+                // IMPORTANT: relative z-10 assure que l'icône est au-dessus de la ligne du parent
+                "inline-flex flex-col justify-start items-center relative z-10",
                 LEFT_GAP_CLASS[size],
                 className
             )}
             {...props}
         >
-            {/* Icon */}
-            <StepIcon type="radio" status={status} size={size} />
+            <div className="flex gap-0">
+                <StepIcon type="radio" status={status} size={size} />
+                {/* Le connecteur est géré par le parent */}
+            </div>
 
             {/* Text */}
-            <div
-                className={cn(
-                    "self-stretch flex flex-col justify-start items-center",
-                    textGapClass
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch text-center font-semibold",
-                        TEXT_SIZE_CLASS[size],
-                        titleColorClass
+                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
+                        size === "sm" ? "gap-0.5" : "gap-1",
+                        TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
                     <div
                         className={cn(
-                            "self-stretch text-center font-normal text-text-tertiary",
-                            TEXT_SIZE_CLASS[size]
+                            "self-stretch text-center font-semibold",
+                            status === "current" ? "text-brand-primary" : "text-secondary"
                         )}
                     >
-                        {description}
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div className={cn("self-stretch text-center  text-tertiary")}>
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -229,11 +219,11 @@ function StepNumberLeft({
     type,
     title,
     description,
-    connector,
     number,
     className,
+    isLastStep,
     ...props
-}: Omit<StepBaseProps, "icon">) {
+}: Omit<StepBaseProps, "icon" | "horizontalConnector">) {
     return (
         <div
             className={cn(
@@ -243,38 +233,29 @@ function StepNumberLeft({
             )}
             {...props}
         >
-            {/* Icon + Connector Column - Ajout de h-full pour s'assurer que le connecteur s'étire */}
             <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
                 <StepIcon type="number" status={status} size={size} number={number} />
-                {connector && <Connector size={size} status={status} type={type} />}
+                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
             </div>
 
-            {/* Text Column */}
-            <div
-                className={cn(
-                    "flex-1 inline-flex flex-col justify-start items-start",
-                    TEXT_PADDING_LEFT_CLASS[size]
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch justify-start text-text-secondary font-semibold",
+                        "flex-1 inline-flex flex-col justify-start items-start",
+                        TEXT_PADDING_LEFT_CLASS[size],
                         TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
-                    <div
-                        className={cn(
-                            "self-stretch justify-start text-text-tertiary font-normal",
-                            TEXT_SIZE_CLASS[size]
-                        )}
-                    >
-                        {description}
+                    <div className={cn("self-stretch justify-start text-secondary font-semibold")}>
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div className={cn("self-stretch justify-start text-tertiary ")}>
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -289,49 +270,44 @@ function StepNumberTop({
     number,
     className,
     ...props
-}: Omit<StepBaseProps, "type" | "connector" | "icon">) {
-    const textGapClass = size === "sm" ? "gap-0.5" : "gap-1";
-    const titleColorClass = status === "current" ? "text-brand-primary" : "text-text-secondary";
-
+}: Omit<StepBaseProps, "type" | "icon" | "horizontalConnector">) {
     return (
         <div
             className={cn(
-                "w-80 inline-flex flex-col justify-start items-center",
+                "inline-flex flex-col justify-start items-center relative z-10", // Ajout de z-10
                 LEFT_GAP_CLASS[size],
                 className
             )}
             {...props}
         >
-            {/* Icon */}
-            <StepIcon type="number" status={status} size={size} number={number} />
+            <div className="flex gap-0">
+                <StepIcon type="number" status={status} size={size} number={number} />
+                {/* Le connecteur est géré par le parent */}
+            </div>
 
-            {/* Text */}
-            <div
-                className={cn(
-                    "self-stretch flex flex-col justify-start items-center",
-                    textGapClass
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch text-center font-semibold",
-                        TEXT_SIZE_CLASS[size],
-                        titleColorClass
+                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
+                        size === "sm" ? "gap-0.5" : "gap-1",
+                        TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
                     <div
                         className={cn(
-                            "self-stretch text-center font-normal text-text-tertiary",
-                            TEXT_SIZE_CLASS[size]
+                            "self-stretch text-center font-semibold",
+                            status === "current" ? "text-brand-primary" : "text-secondary"
                         )}
                     >
-                        {description}
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div className={cn("self-stretch text-center  text-tertiary")}>
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -344,57 +320,44 @@ function StepFeaturedIconLeft({
     type,
     title,
     description,
-    connector,
     icon: IconComponent,
     className,
+    isLastStep,
     ...props
-}: Omit<StepBaseProps, "number">) {
-    // Opacité appliquée au niveau du conteneur pour tout l'élément
-    const statusClass = status === "incomplete" ? "opacity-60" : "opacity-100";
-
+}: Omit<StepBaseProps, "number" | "horizontalConnector">) {
     return (
         <div
             className={cn(
                 "w-80 inline-flex justify-start items-start",
                 LEFT_GAP_CLASS[size],
-                statusClass,
+                status === "incomplete" ? "opacity-60" : "opacity-100",
                 className
             )}
             {...props}
         >
-            {/* Featured Icon + Connector Column - Ajout de h-full pour s'assurer que le connecteur s'étire */}
             <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
-                {/* Utilise le composant FeaturedIcon importé */}
                 <FeaturedIcon size="lg" variant="modern" color="gray" icon={IconComponent} />
-                {connector && <Connector size={size} status={status} type={type} />}
+                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
             </div>
 
-            {/* Text Column */}
-            <div
-                className={cn(
-                    "flex-1 inline-flex flex-col justify-start items-start",
-                    TEXT_PADDING_LEFT_CLASS[size]
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch justify-start text-text-secondary font-semibold",
+                        "flex-1 inline-flex flex-col justify-start items-start",
+                        TEXT_PADDING_LEFT_CLASS[size],
                         TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
-                    <div
-                        className={cn(
-                            "self-stretch justify-start text-text-tertiary font-normal",
-                            TEXT_SIZE_CLASS[size]
-                        )}
-                    >
-                        {description}
+                    <div className={cn("self-stretch justify-start text-secondary font-semibold")}>
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div className={cn("self-stretch justify-start text-tertiary ")}>
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -409,51 +372,46 @@ function StepFeaturedIconTop({
     icon: IconComponent,
     className,
     ...props
-}: Omit<StepBaseProps, "type" | "connector" | "number">) {
-    const statusClass = status === "incomplete" ? "opacity-60" : "opacity-100";
-    const textGapClass = size === "sm" ? "gap-0.5" : "gap-1";
-    const titleColorClass = status === "current" ? "text-brand-primary" : "text-text-secondary";
-
+}: Omit<StepBaseProps, "type" | "number" | "horizontalConnector">) {
     return (
         <div
             className={cn(
-                "w-80 inline-flex flex-col justify-start items-center",
-                statusClass,
+                "inline-flex flex-col justify-start items-center relative z-10", // Ajout de z-10
+                status === "incomplete" ? "opacity-60" : "opacity-100",
                 LEFT_GAP_CLASS[size],
                 className
             )}
             {...props}
         >
-            {/* Utilise le composant FeaturedIcon importé */}
-            <FeaturedIcon size="lg" variant="modern" color="gray" icon={IconComponent} />
+            <div className="flex gap-0">
+                <FeaturedIcon size="lg" variant="modern" color="gray" icon={IconComponent} />
+                {/* Le connecteur est géré par le parent */}
+            </div>
 
-            {/* Text */}
-            <div
-                className={cn(
-                    "self-stretch flex flex-col justify-start items-center",
-                    textGapClass
-                )}
-            >
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch text-center font-semibold",
-                        TEXT_SIZE_CLASS[size],
-                        titleColorClass
+                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
+                        size === "sm" ? "gap-0.5" : "gap-1",
+                        TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
                     <div
                         className={cn(
-                            "self-stretch text-center font-normal text-text-tertiary",
-                            TEXT_SIZE_CLASS[size]
+                            "self-stretch text-center font-semibold",
+
+                            status === "current" ? "text-brand-primary" : "text-secondary"
                         )}
                     >
-                        {description}
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div className={cn("self-stretch text-center text-tertiary")}>
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -467,150 +425,46 @@ function StepTextLine({
     description,
     className,
     ...props
-}: Omit<StepBaseProps, "type" | "connector" | "number" | "icon">) {
-    const paddingClass = size === "sm" ? "pt-3" : "pt-4";
-    const borderClass = size === "sm" ? "border-t-4" : "border-t-[5px]";
-
-    const borderColorClass =
-        status === "complete" || status === "current"
-            ? "border-brand-primary"
-            : "border-border-secondary";
-
+}: Omit<StepBaseProps, "type" | "horizontalConnector" | "number" | "icon">) {
     return (
         <div
             className={cn(
-                "w-80 inline-flex flex-col justify-start items-start",
-                paddingClass,
-                borderClass,
-                borderColorClass,
+                "w-80 inline-flex flex-col justify-start items-start border-t-4",
+                size === "sm" ? "pt-3" : "pt-4",
+                status === "complete" || status === "current"
+                    ? "border-fg-brand-primary_alt"
+                    : "border-border-secondary",
                 className
             )}
             {...props}
         >
-            <div className="self-stretch flex flex-col justify-start items-start">
+            {title && (
                 <div
                     className={cn(
-                        "self-stretch justify-start text-text-secondary font-semibold",
+                        "self-stretch flex flex-col justify-start items-start",
                         TEXT_SIZE_CLASS[size]
                     )}
                 >
-                    {title}
-                </div>
-                {description && (
                     <div
                         className={cn(
-                            "self-stretch justify-start text-text-tertiary font-normal",
-                            TEXT_SIZE_CLASS[size]
+                            "self-stretch justify-start text-secondary font-semibold",
+                            status === "current" && "text-brand-secondary"
                         )}
                     >
-                        {description}
+                        {title}
                     </div>
-                )}
-            </div>
+                    {description && (
+                        <div
+                            className={cn(
+                                "self-stretch justify-start text-tertiary",
+                                status === "current" && "text-brand-tertiary"
+                            )}
+                        >
+                            {description}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
-
-// ============ Exemples d'utilisation ============
-
-/*
-import { User } from "@untitled-ui/icons-react";
-
-// Icon Left avec connector
-<StepBase
-    type="icon-left"
-    status="incomplete"
-    size="sm"
-    title="Your details"
-    description="Please provide your name and email"
-    connector={true}
-/>
-
-// Icon Top
-<StepBase
-    type="icon-top"
-    status="current"
-    size="md"
-    title="Your details"
-    description="Please provide your name and email"
-/>
-
-// Number Left avec connector
-<StepBase
-    type="number-left"
-    status="complete"
-    size="sm"
-    title="Company details"
-    description="A few details about your company"
-    number={2}
-    connector={true}
-/>
-
-// Number Top
-<StepBase
-    type="number-top"
-    status="current"
-    size="md"
-    title="Invite your team"
-    description="Start collaborating with your team"
-    number={3}
-/>
-
-// Featured Icon Left
-<StepBase
-    type="featured-icon-left"
-    status="incomplete"
-    size="sm"
-    title="Add your socials"
-    description="Share posts to your social accounts"
-    icon={User}
-    connector={true}
-/>
-
-// Featured Icon Top
-<StepBase
-    type="featured-icon-top"
-    status="current"
-    size="md"
-    title="Review"
-    description="Radio everything before submitting"
-    icon={User}
-/>
-
-// Text Line
-<StepBase
-    type="text-line"
-    status="complete"
-    size="sm"
-    title="Your details"
-    description="Please provide your name and email"
-/>
-
-// Exemple d'une séquence complète (icon-left avec connectors)
-<div className="flex flex-col">
-    <StepBase
-        type="icon-left"
-        status="complete"
-        size="sm"
-        title="Your details"
-        description="Name and email"
-        connector={true}
-    />
-    <StepBase
-        type="icon-left"
-        status="current"
-        size="sm"
-        title="Company details"
-        description="Website and location"
-        connector={true}
-    />
-    <StepBase
-        type="icon-left"
-        status="incomplete"
-        size="sm"
-        title="Invite your team"
-        description="Start collaborating"
-        connector={false}
-    />
-</div>
-*/
