@@ -3,8 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { StepIcon, type StepIconStatus, type StepIconSize } from "./step-icon";
-import type { FC, ReactNode } from "react";
-import { FeaturedIcon } from "@/components/icons/featured-icons";
+import { cva } from "class-variance-authority";
 
 // ============ Types ============
 
@@ -17,18 +16,81 @@ export type StepBaseType =
     | "featured-icon-top"
     | "text-line";
 
-interface StepBaseProps extends React.ComponentProps<"div"> {
+// ============ Component Principal ============
+interface StepBaseProps {
     type: StepBaseType;
     status: StepIconStatus;
     size?: StepIconSize;
     title?: string;
     description?: string;
     number?: number;
-    icon?: FC<{ className?: string }> | ReactNode;
+    icon?: React.FC<{ className?: string }> | React.ReactNode;
     isLastStep: boolean;
+    stepIndex?: number;
+    totalSteps?: number;
+    className?: string;
+    onClick?: () => void;
 }
 
-// ============ Component Principal ============
+const stepBaseContainerVariants = cva("inline-flex", {
+    variants: {
+        type: {
+            "icon-left": "w-80 justify-start items-start",
+            "icon-top": "flex-col justify-start items-center relative z-10",
+            "number-left": "w-80 justify-start items-start",
+            "number-top": "flex-col justify-start items-center relative z-10",
+            "featured-icon-left": "w-80 justify-start items-start",
+            "featured-icon-top": "flex-col justify-start items-center relative z-10",
+            "text-line": "w-80 flex-col justify-start items-start border-t-4",
+        },
+        size: { sm: "", md: "" },
+        status: { incomplete: "", current: "", complete: "" },
+        clickable: { true: "cursor-pointer" },
+    },
+    compoundVariants: [
+        // Gaps for Top Layouts
+        { type: "icon-top", size: "sm", class: "gap-3" },
+        { type: "icon-top", size: "md", class: "gap-4" },
+        { type: "number-top", size: "sm", class: "gap-3" },
+        { type: "number-top", size: "md", class: "gap-4" },
+        { type: "featured-icon-top", size: "sm", class: "gap-3" },
+        { type: "featured-icon-top", size: "md", class: "gap-4" },
+
+        // Gaps for Left Layouts
+        { type: "icon-left", size: "sm", class: "gap-3" },
+        { type: "icon-left", size: "md", class: "gap-4" },
+        { type: "number-left", size: "sm", class: "gap-3" },
+        { type: "number-left", size: "md", class: "gap-4" },
+        { type: "featured-icon-left", size: "sm", class: "gap-3" },
+        { type: "featured-icon-left", size: "md", class: "gap-4" },
+
+        // Text line styles
+        { type: "text-line", size: "sm", class: "pt-3" },
+        { type: "text-line", size: "md", class: "pt-4" },
+        { type: "text-line", status: "current", class: "border-fg-brand-primary_alt" },
+        { type: "text-line", status: "complete", class: "border-fg-brand-primary_alt" },
+        { type: "text-line", status: "incomplete", class: "border-secondary" },
+
+        // Featured icon opacity
+        { type: "featured-icon-left", status: "incomplete", class: "opacity-60" },
+        { type: "featured-icon-top", status: "incomplete", class: "opacity-60" },
+        { type: "featured-icon-left", status: "current", class: "opacity-100" },
+        { type: "featured-icon-top", status: "current", class: "opacity-100" },
+        { type: "featured-icon-left", status: "complete", class: "opacity-100" },
+        { type: "featured-icon-top", status: "complete", class: "opacity-100" },
+    ],
+    defaultVariants: { type: "icon-left", size: "sm", status: "incomplete", clickable: false },
+});
+
+const stepContentLeftPaddingVariants = cva("flex-1", {
+    variants: {
+        size: {
+            sm: "pt-0.5 pb-6",
+            md: "pt-1 pb-8",
+        },
+    },
+    defaultVariants: { size: "sm" },
+});
 
 export function StepBase({
     type,
@@ -40,48 +102,208 @@ export function StepBase({
     icon,
     className,
     isLastStep,
-    ...props
+    stepIndex = 0,
+    totalSteps = 1,
+    onClick,
 }: StepBaseProps) {
-    const commonProps = { status, size, type, title, description, className, isLastStep, ...props };
+    const isClickable = !!onClick && status !== "incomplete";
+    const role = isClickable ? "button" : undefined;
+    const tabIndex = isClickable ? 0 : undefined;
+    const ariaDisabled = status === "incomplete" ? true : undefined;
+    const ariaCurrent = status === "current" ? ("step" as const) : undefined;
+    const isNumberType = type.includes("number");
+    const isFeaturedIcon = type.includes("featured-icon");
 
-    switch (type) {
-        case "icon-left":
-            return <StepIconLeft {...commonProps} />;
-        case "icon-top":
-            return <StepIconTop {...commonProps} />;
-        case "number-left":
-            return <StepNumberLeft number={number} {...commonProps} />;
-        case "number-top":
-            return <StepNumberTop number={number} {...commonProps} />;
-        case "featured-icon-left":
-            return <StepFeaturedIconLeft icon={icon} {...commonProps} />;
-        case "featured-icon-top":
-            return <StepFeaturedIconTop icon={icon} {...commonProps} />;
-        case "text-line":
-            return <StepTextLine {...commonProps} />;
-        default:
-            return null;
+    const clickableAriaLabel =
+        isClickable && title
+            ? `Aller à l'étape ${stepIndex + 1} : ${title}, actuellement ${status === "complete" ? "terminée" : "en cours"}`
+            : undefined;
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (isClickable && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onClick?.();
+        }
+    };
+
+    const commonA11yProps = {
+        role,
+        tabIndex,
+        "aria-disabled": ariaDisabled,
+        "aria-current": ariaCurrent,
+        "aria-label": clickableAriaLabel,
+        onClick: isClickable ? onClick : undefined,
+        onKeyDown: isClickable ? handleKeyDown : undefined,
+    };
+
+    const containerClasses = stepBaseContainerVariants({
+        type,
+        size,
+        status,
+        clickable: isClickable,
+    });
+
+    const RenderTextContent = ({ centered = false }: { centered?: boolean }) => (
+        <StepTextContent
+            title={title}
+            description={description}
+            status={status}
+            size={size}
+            type={type}
+            centered={centered}
+        />
+    );
+
+    // TEXT LINE
+    if (type === "text-line") {
+        return (
+            <div className={cn(containerClasses, className)} {...commonA11yProps}>
+                <RenderTextContent />
+            </div>
+        );
     }
+
+    // LEFT LAYOUTS
+    if (type.includes("-left")) {
+        return (
+            <div className={cn(containerClasses, className)} {...commonA11yProps}>
+                <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
+                    <StepIcon
+                        type={isNumberType ? "number" : isFeaturedIcon ? "featured-icon" : "radio"}
+                        status={status}
+                        size={size}
+                        number={number}
+                        icon={icon}
+                        stepIndex={stepIndex}
+                        totalSteps={totalSteps}
+                    />
+                    {!isLastStep && (
+                        <VerticalConnector
+                            size={size}
+                            status={status}
+                            type={type as "icon-left" | "number-left" | "featured-icon-left"}
+                        />
+                    )}
+                </div>
+                <div className={stepContentLeftPaddingVariants({ size })}>
+                    <RenderTextContent />
+                </div>
+            </div>
+        );
+    }
+
+    // TOP LAYOUTS
+    if (type.includes("-top")) {
+        return (
+            <div className={cn(containerClasses, className)} {...commonA11yProps}>
+                <StepIcon
+                    type={isNumberType ? "number" : isFeaturedIcon ? "featured-icon" : "radio"}
+                    status={status}
+                    size={size}
+                    number={number}
+                    icon={icon}
+                    stepIndex={stepIndex}
+                    totalSteps={totalSteps}
+                />
+                <div className="max-w-80 px-2 self-stretch flex flex-col justify-start items-center">
+                    <RenderTextContent centered />
+                </div>
+            </div>
+        );
+    }
+
+    return null;
 }
 
 // =======================================================
 // SOUS-COMPOSANTS VARIATIONS
 // =======================================================
 
-const LEFT_GAP_CLASS = {
-    sm: "gap-3",
-    md: "gap-4",
-};
-const TEXT_SIZE_CLASS = {
-    sm: "text-sm",
-    md: "text-md",
-};
-const TEXT_PADDING_LEFT_CLASS = {
-    sm: "pt-0.5 pb-6",
-    md: "pt-1 pb-8",
-};
+interface TextContentProps {
+    title?: string;
+    description?: string;
+    status: StepIconStatus;
+    size: StepIconSize;
+    centered?: boolean;
+    type?: StepBaseType;
+}
 
-const VerticalConnector = ({
+const textContentContainerVariants = cva("flex flex-col justify-start", {
+    variants: {
+        size: { sm: "text-sm", md: "text-md" },
+        centered: { true: "items-center" },
+    },
+    defaultVariants: { size: "sm", centered: true },
+});
+
+const textContentTitleVariants = cva("self-stretch justify-start font-semibold", {
+    variants: {
+        status: {
+            incomplete: "text-secondary",
+            current: "text-brand-secondary",
+            complete: "text-secondary",
+        },
+        type: {
+            "icon-left": "",
+            "icon-top": "",
+            "number-left": "text-secondary",
+            "number-top": "",
+            "featured-icon-left": "text-secondary",
+            "featured-icon-top": "",
+            "text-line": "",
+        },
+        centered: { true: "text-center" },
+    },
+    compoundVariants: [
+        { type: "number-top", status: "current", class: "text-brand-primary" },
+        { type: "featured-icon-top", status: "current", class: "text-brand-primary" },
+    ],
+    defaultVariants: { status: "incomplete", type: "icon-left", centered: false },
+});
+
+const textContentDescriptionVariants = cva("self-stretch justify-start", {
+    variants: {
+        status: {
+            incomplete: "text-tertiary",
+            current: "text-brand-tertiary",
+            complete: "text-tertiary",
+        },
+        type: {
+            "icon-left": "",
+            "icon-top": "",
+            "number-left": "text-tertiary",
+            "number-top": "text-tertiary",
+            "featured-icon-left": "text-tertiary",
+            "featured-icon-top": "text-tertiary",
+            "text-line": "",
+        } as Record<StepBaseType, string>,
+        centered: { true: "text-center" },
+    },
+    defaultVariants: { status: "incomplete", type: "icon-left", centered: true },
+});
+
+function StepTextContent({
+    title,
+    description,
+    status,
+    size,
+    centered = false,
+    type = "icon-left",
+}: TextContentProps) {
+    if (!title) return null;
+    return (
+        <div className={textContentContainerVariants({ size, centered })}>
+            <h3 className={textContentTitleVariants({ status, type, centered })}>{title}</h3>
+            {description && (
+                <p className={textContentDescriptionVariants({ status, type, centered })}>
+                    {description}
+                </p>
+            )}
+        </div>
+    );
+}
+
+function VerticalConnector({
     size,
     status,
     type,
@@ -89,382 +311,22 @@ const VerticalConnector = ({
     size: StepIconSize;
     status: StepIconStatus;
     type: StepBaseType;
-}) => (
-    <div
-        className={cn(
-            size === "sm" && type === "icon-left" && "h-[34px] border-l-2 border-secondary",
-            size === "md" && type === "icon-left" && "h-10 border-l-2 border-secondary",
-            size === "sm" &&
-                type === "number-left" &&
-                "h-[30px] border-l-2 border-dotted border-primary",
-            size === "md" &&
-                type === "number-left" &&
-                "h-9  border-l-2 border-dotted border-primary",
-            size === "sm" && type === "featured-icon-left" && "h-3 border-l-2 border-secondary",
-            size === "md" && type === "featured-icon-top" && "h-6 border-l-2 border-secondary",
-            status === "complete" && type === "icon-left" && "bg-fg-brand-primary"
-        )}
-    />
-);
-
-// NOTE: Le composant HorizontalConnector a été retiré.
-
-// ============ Icon Left Variant ============
-
-function StepIconLeft({
-    status,
-    size = "sm",
-    type,
-    title,
-    description,
-    className,
-    isLastStep,
-    ...props
-}: Omit<StepBaseProps, "number" | "icon" | "horizontalConnector">) {
+}) {
     return (
         <div
             className={cn(
-                "w-80 inline-flex justify-start items-start",
-                LEFT_GAP_CLASS[size],
-                className
+                size === "sm" && type === "icon-left" && "h-[34px] border-l-2 border-secondary",
+                size === "md" && type === "icon-left" && "h-10 border-l-2 border-secondary",
+                size === "sm" &&
+                    type === "number-left" &&
+                    "h-[30px] border-l-2 border-dotted border-primary",
+                size === "md" &&
+                    type === "number-left" &&
+                    "h-9  border-l-2 border-dotted border-primary",
+                size === "sm" && type === "featured-icon-left" && "h-3 border-l-2 border-secondary",
+                size === "md" && type === "featured-icon-top" && "h-6 border-l-2 border-secondary",
+                status === "complete" && type === "icon-left" && "border-fg-brand-primary"
             )}
-            {...props}
-        >
-            <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
-                <StepIcon type="radio" status={status} size={size} />
-                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
-            </div>
-
-            {/* Text Column */}
-            {title && (
-                <div
-                    className={cn(
-                        "flex-1 inline-flex flex-col justify-start items-start",
-                        TEXT_PADDING_LEFT_CLASS[size],
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <h3 className={cn("self-stretch justify-start text-secondary font-semibold")}>
-                        {title}
-                    </h3>
-                    {description && (
-                        <p className={cn("self-stretch justify-start text-tertiary ")}>
-                            {description}
-                        </p>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Icon Top Variant ============
-
-function StepIconTop({
-    status,
-    size = "sm",
-    title,
-    description,
-    className,
-    ...props
-}: Omit<StepBaseProps, "type" | "number" | "icon" | "horizontalConnector">) {
-    return (
-        <div
-            className={cn(
-                // IMPORTANT: relative z-10 assure que l'icône est au-dessus de la ligne du parent
-                "inline-flex flex-col justify-start items-center relative z-10",
-                LEFT_GAP_CLASS[size],
-                className
-            )}
-            {...props}
-        >
-            <div className="flex gap-0">
-                <StepIcon type="radio" status={status} size={size} />
-                {/* Le connecteur est géré par le parent */}
-            </div>
-
-            {/* Text */}
-            {title && (
-                <div
-                    className={cn(
-                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
-                        size === "sm" ? "gap-0.5" : "gap-1",
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div
-                        className={cn(
-                            "self-stretch text-center font-semibold",
-                            status === "current" ? "text-brand-primary" : "text-secondary"
-                        )}
-                    >
-                        {title}
-                    </div>
-                    {description && (
-                        <div className={cn("self-stretch text-center  text-tertiary")}>
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Number Left Variant ============
-
-function StepNumberLeft({
-    status,
-    size = "sm",
-    type,
-    title,
-    description,
-    number,
-    className,
-    isLastStep,
-    ...props
-}: Omit<StepBaseProps, "icon" | "horizontalConnector">) {
-    return (
-        <div
-            className={cn(
-                "w-80 inline-flex justify-start items-start",
-                LEFT_GAP_CLASS[size],
-                className
-            )}
-            {...props}
-        >
-            <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
-                <StepIcon type="number" status={status} size={size} number={number} />
-                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
-            </div>
-
-            {title && (
-                <div
-                    className={cn(
-                        "flex-1 inline-flex flex-col justify-start items-start",
-                        TEXT_PADDING_LEFT_CLASS[size],
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div className={cn("self-stretch justify-start text-secondary font-semibold")}>
-                        {title}
-                    </div>
-                    {description && (
-                        <div className={cn("self-stretch justify-start text-tertiary ")}>
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Number Top Variant ============
-
-function StepNumberTop({
-    status,
-    size = "sm",
-    title,
-    description,
-    number,
-    className,
-    ...props
-}: Omit<StepBaseProps, "type" | "icon" | "horizontalConnector">) {
-    return (
-        <div
-            className={cn(
-                "inline-flex flex-col justify-start items-center relative z-10", // Ajout de z-10
-                LEFT_GAP_CLASS[size],
-                className
-            )}
-            {...props}
-        >
-            <div className="flex gap-0">
-                <StepIcon type="number" status={status} size={size} number={number} />
-                {/* Le connecteur est géré par le parent */}
-            </div>
-
-            {title && (
-                <div
-                    className={cn(
-                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
-                        size === "sm" ? "gap-0.5" : "gap-1",
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div
-                        className={cn(
-                            "self-stretch text-center font-semibold",
-                            status === "current" ? "text-brand-primary" : "text-secondary"
-                        )}
-                    >
-                        {title}
-                    </div>
-                    {description && (
-                        <div className={cn("self-stretch text-center  text-tertiary")}>
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Featured Icon Left Variant ============
-
-function StepFeaturedIconLeft({
-    status,
-    size = "sm",
-    type,
-    title,
-    description,
-    icon: IconComponent,
-    className,
-    isLastStep,
-    ...props
-}: Omit<StepBaseProps, "number" | "horizontalConnector">) {
-    return (
-        <div
-            className={cn(
-                "w-80 inline-flex justify-start items-start",
-                LEFT_GAP_CLASS[size],
-                status === "incomplete" ? "opacity-60" : "opacity-100",
-                className
-            )}
-            {...props}
-        >
-            <div className="inline-flex flex-col justify-start items-center gap-1 h-full">
-                <FeaturedIcon size="lg" variant="modern" color="gray" icon={IconComponent} />
-                {!isLastStep && <VerticalConnector size={size} status={status} type={type} />}
-            </div>
-
-            {title && (
-                <div
-                    className={cn(
-                        "flex-1 inline-flex flex-col justify-start items-start",
-                        TEXT_PADDING_LEFT_CLASS[size],
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div className={cn("self-stretch justify-start text-secondary font-semibold")}>
-                        {title}
-                    </div>
-                    {description && (
-                        <div className={cn("self-stretch justify-start text-tertiary ")}>
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Featured Icon Top Variant ============
-
-function StepFeaturedIconTop({
-    status,
-    size = "sm",
-    title,
-    description,
-    icon: IconComponent,
-    className,
-    ...props
-}: Omit<StepBaseProps, "type" | "number" | "horizontalConnector">) {
-    return (
-        <div
-            className={cn(
-                "inline-flex flex-col justify-start items-center relative z-10", // Ajout de z-10
-                status === "incomplete" ? "opacity-60" : "opacity-100",
-                LEFT_GAP_CLASS[size],
-                className
-            )}
-            {...props}
-        >
-            <div className="flex gap-0">
-                <FeaturedIcon size="lg" variant="modern" color="gray" icon={IconComponent} />
-                {/* Le connecteur est géré par le parent */}
-            </div>
-
-            {title && (
-                <div
-                    className={cn(
-                        "max-w-80 px-2 self-stretch flex flex-col justify-start items-center",
-                        size === "sm" ? "gap-0.5" : "gap-1",
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div
-                        className={cn(
-                            "self-stretch text-center font-semibold",
-
-                            status === "current" ? "text-brand-primary" : "text-secondary"
-                        )}
-                    >
-                        {title}
-                    </div>
-                    {description && (
-                        <div className={cn("self-stretch text-center text-tertiary")}>
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============ Text Line Variant ============
-
-function StepTextLine({
-    status,
-    size = "sm",
-    title,
-    description,
-    className,
-    ...props
-}: Omit<StepBaseProps, "type" | "horizontalConnector" | "number" | "icon">) {
-    return (
-        <div
-            className={cn(
-                "w-80 inline-flex flex-col justify-start items-start border-t-4",
-                size === "sm" ? "pt-3" : "pt-4",
-                status === "complete" || status === "current"
-                    ? "border-fg-brand-primary_alt"
-                    : "border-border-secondary",
-                className
-            )}
-            {...props}
-        >
-            {title && (
-                <div
-                    className={cn(
-                        "self-stretch flex flex-col justify-start items-start",
-                        TEXT_SIZE_CLASS[size]
-                    )}
-                >
-                    <div
-                        className={cn(
-                            "self-stretch justify-start text-secondary font-semibold",
-                            status === "current" && "text-brand-secondary"
-                        )}
-                    >
-                        {title}
-                    </div>
-                    {description && (
-                        <div
-                            className={cn(
-                                "self-stretch justify-start text-tertiary",
-                                status === "current" && "text-brand-tertiary"
-                            )}
-                        >
-                            {description}
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
+        />
     );
 }

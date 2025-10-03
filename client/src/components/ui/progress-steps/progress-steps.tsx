@@ -20,6 +20,8 @@ interface ProgressStepsProps extends React.ComponentProps<"div"> {
     size?: StepIconSize;
     showHorizontalConnector?: boolean;
     onStepClick?: (stepIndex: number) => void;
+    className?: string;
+    ariaLabel?: string;
 }
 
 export function ProgressSteps({
@@ -30,7 +32,7 @@ export function ProgressSteps({
     showHorizontalConnector = true,
     onStepClick,
     className,
-    ...props
+    ariaLabel = "Progression des étapes",
 }: ProgressStepsProps) {
     const getStepStatus = (index: number): StepIconStatus => {
         if (index < currentStep) return "complete";
@@ -59,15 +61,18 @@ export function ProgressSteps({
     };
 
     return (
-        <div className={cn("w-full", className)} {...props}>
-            <div className={containerClass}>
+        <nav className={cn("w-full", className)} aria-label={ariaLabel}>
+            <ol className={containerClass}>
                 {steps.map((step, index) => {
                     const status = getStepStatus(index);
-                    const isClickable = index <= currentStep;
+                    const isClickable = onStepClick && index <= currentStep;
                     const isLast = index === steps.length - 1;
 
                     return (
-                        <div key={step.id} className="flex-1 relative flex flex-col items-center">
+                        <li
+                            key={step.id}
+                            className="flex-1 relative flex flex-col items-center list-none"
+                        >
                             <StepBase
                                 type={type}
                                 status={status}
@@ -77,8 +82,9 @@ export function ProgressSteps({
                                 number={index + 1}
                                 isLastStep={isLast}
                                 icon={step.icon}
-                                className={cn(isClickable ? "cursor-pointer" : undefined)}
-                                onClick={() => handleStepClick(index)}
+                                onClick={isClickable ? () => handleStepClick(index) : undefined}
+                                stepIndex={index}
+                                totalSteps={steps.length}
                             />
 
                             {/* Connector à droite sauf pour le dernier */}
@@ -125,10 +131,10 @@ export function ProgressSteps({
                                     )}
                                 </>
                             )}
-                        </div>
+                        </li>
                     );
                 })}
-            </div>
-        </div>
+            </ol>
+        </nav>
     );
 }
