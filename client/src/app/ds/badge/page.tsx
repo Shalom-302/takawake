@@ -10,20 +10,7 @@ export default function BadgePage() {
         { name: "color", description: " color variant" },
         { name: "modern", description: " modern variant" },
     ];
-    const colors = [
-        "gray",
-        "brand",
-        "error",
-        "warning",
-        "success",
-        "gray-blue",
-        "blue-ligt",
-        "blue",
-        "indigo",
-        "purple",
-        "pink",
-        "orange",
-    ];
+    const colors = ["gray", "brand", "error", "warning", "success", "blue"];
     const sizes = ["sm", "md", "lg"];
 
     return (

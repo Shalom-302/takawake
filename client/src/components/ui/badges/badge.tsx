@@ -23,15 +23,7 @@ const badgeVariants = cva(
                 error: "bg-utility-error-50 text-utility-error-700 ring-utility-error-200",
                 warning: "bg-utility-warning-50 text-utility-warning-700 ring-utility-warning-200",
                 success: "bg-utility-success-50 text-utility-success-700 ring-utility-success-200",
-                "gray-blue":
-                    "bg-utility-gray-blue-50 text-utility-gray-blue-700 ring-utility-gray-blue-200",
-                "blue-light":
-                    "bg-utility-blue-light-50 text-utility-blue-light-700 ring-utility-blue-light-200",
                 blue: "bg-utility-blue-50 text-utility-blue-700 ring-utility-blue-200",
-                indigo: "bg-utility-indigo-50 text-utility-indigo-700 ring-utility-indigo-200",
-                purple: "bg-utility-purple-50 text-utility-purple-700 ring-utility-purple-200",
-                pink: "bg-utility-pink-50 text-utility-pink-700 ring-utility-pink-200",
-                orange: "bg-utility-orange-50 text-utility-orange-700 ring-utility-orange-200",
             },
         },
         defaultVariants: {
