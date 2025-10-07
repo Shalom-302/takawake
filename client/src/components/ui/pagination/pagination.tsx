@@ -5,7 +5,7 @@ import * as React from "react";
 import type { PaginationRootProps } from "./pagination-base";
 import { PaginationBase } from "./pagination-base";
 import { cn } from "@/lib/utils/cn";
-import { Button, ButtonGroup, ButtonGroupItem } from "../buttons";
+import { Button, ButtonToggleGroupCustom } from "../buttons";
 import { useBreakpoint } from "@/lib/hooks/use-breakpoint";
 
 interface PaginationProps extends Partial<Omit<PaginationRootProps, "children">> {
@@ -304,9 +304,9 @@ function PaginationButtonGroup({
             <PaginationBase.Root {...props} page={page} total={total}>
                 <PaginationBase.Context>
                     {({ pages }) => (
-                        <ButtonGroup type="single" value={`${page}`} size="md">
+                        <ButtonToggleGroupCustom.Root type="single" value={`${page}`} size="md">
                             <PaginationBase.PrevTrigger asChild>
-                                <ButtonGroupItem
+                                <ButtonToggleGroupCustom.Item
                                     value="previous"
                                     leftIcon={ArrowLeft}
                                     label={isDesktop ? "Previous" : undefined}
@@ -316,7 +316,7 @@ function PaginationButtonGroup({
                             {pages.map((page, index) =>
                                 page.type === "page" ? (
                                     <PaginationBase.Item key={index} {...page} asChild>
-                                        <ButtonGroupItem
+                                        <ButtonToggleGroupCustom.Item
                                             value={`${page.value}`}
                                             label={page.value}
                                             className="size-10 items-center justify-center"
@@ -324,7 +324,7 @@ function PaginationButtonGroup({
                                     </PaginationBase.Item>
                                 ) : (
                                     <PaginationBase.Ellipsis key={index}>
-                                        <ButtonGroupItem
+                                        <ButtonToggleGroupCustom.Item
                                             value=""
                                             label="&#8230;"
                                             className="pointer-events-none size-10 items-center justify-center rounded-none!"
@@ -334,13 +334,13 @@ function PaginationButtonGroup({
                             )}
 
                             <PaginationBase.NextTrigger asChild>
-                                <ButtonGroupItem
+                                <ButtonToggleGroupCustom.Item
                                     value="next"
                                     rightIcon={ArrowRight}
                                     label={isDesktop ? "Next" : undefined}
                                 />
                             </PaginationBase.NextTrigger>
-                        </ButtonGroup>
+                        </ButtonToggleGroupCustom.Root>
                     )}
                 </PaginationBase.Context>
             </PaginationBase.Root>

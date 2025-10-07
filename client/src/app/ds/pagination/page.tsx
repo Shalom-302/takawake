@@ -231,13 +231,7 @@ export default function PaginationPage() {
                 <h2 className="text-xl font-semibold mb-4">Pagination dot</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
                     <div className="flex flex-col gap-8">
-                        <PaginationDot
-                            total={6}
-                            size="md"
-                            isBrand
-                            page={page}
-                            onPageChange={setPage}
-                        />
+                        <PaginationDot total={6} size="md" page={page} onPageChange={setPage} />
                         <PaginationDot total={6} size="lg" page={page} onPageChange={setPage} />
                     </div>
                     <CodeBlock

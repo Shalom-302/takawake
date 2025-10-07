@@ -56,7 +56,7 @@ export const PaginationDot = ({
                                     isBrand && "bg-fg-brand-secondary",
                                     isBrand && page.isCurrent && "bg-fg-white"
                                 )}
-                            ></PaginationBase.Item>
+                            />
                         ) : (
                             <PaginationBase.Ellipsis {...page} key={index} />
                         )

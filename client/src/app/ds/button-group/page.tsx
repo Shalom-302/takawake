@@ -4,34 +4,21 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Archive, Edit03, Trash01 } from "@untitled-ui/icons-react";
-import { ButtonGroup, ButtonGroupItemProps } from "@/components/ui/buttons";
+import {
+    Button,
+    ButtonGroup,
+    ButtonToggleGroup,
+    ButtonToggleGroupItemProps,
+} from "@/components/ui/buttons";
 
-export default function ButtonGroupPage() {
+export default function ButtonToggleGroupPage() {
     const defaultItems = [
-        { value: "archive", label: "Archive" },
-        { value: "edit", label: "Edit" },
-        { value: "delete", label: "Delete" },
+        { label: "Archive", icon: Archive },
+        { label: "Edit", icon: Edit03 },
+        { label: "Delete", icon: Trash01 },
     ];
 
-    const iconItems = [
-        {
-            value: "archive",
-            leftIcon: Archive,
-            label: "Archive",
-        },
-        {
-            value: "edit",
-            leftIcon: Edit03,
-            label: "Edit",
-        },
-        {
-            value: "delete",
-            leftIcon: Trash01,
-            label: "Delete",
-        },
-    ];
-
-    const singleSelectionItems = [
+    const toggleItems = [
         { value: "today", label: "Today" },
         { value: "tomorrow", label: "Tomorrow" },
         { value: "thisweek", label: "This week" },
@@ -43,97 +30,44 @@ export default function ButtonGroupPage() {
                 <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
                     ← Back to Design System
                 </Link>
-                <h1 className="text-3xl font-bold mt-2">ButtonGroup</h1>
-                <p className="text-secondary mt-2">
-                    Toggle group component built on Radix UI with support for icons, single/multiple
-                    selection, and disabled states.
-                </p>
+                <h1 className="text-3xl font-bold mt-2">ButtonGroup & ButtonToggleGroup</h1>
+                <ul className="text-secondary mt-2 list-disc">
+                    <li>
+                        Use the ButtonGroup component when you want to group buttons that perform an
+                        action.
+                    </li>
+                    <li>
+                        Use the ButtonToggleGroup component when you want to group buttons that
+                        toggle a state.
+                    </li>
+                </ul>
             </div>
 
             {/* Default */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Default</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
-                    <ButtonGroup type="single" value="" items={defaultItems} />
+                    <ButtonGroup>
+                        {defaultItems.map(el => (
+                            <Button key={el.label} leftIcon={el.icon} variant={"secondary"}>
+                                {el.label}
+                            </Button>
+                        ))}
+                    </ButtonGroup>
                     <CodeBlock
                         className="mt-2"
-                        code={`<ButtonGroup value="" items={[
-        {
-            value: "archive",
-            lefIcon: { Archive },
-            label: "Archive",
-        },
-        {
-            value: "edit",
-            lefIcon: { Edit03 },
-            label: "Edit",
-        },
-        {
-            value: "delete",
-            lefIcon: { Trash01 },
-            label: "Delete",
-        },
-    ]} />`}
-                    />
-                </div>
-            </div>
-
-            {/* Sizes */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Sizes</h2>
-                <div className="p-4 border border-tertiary rounded-lg space-x-4">
-                    <ButtonGroup type="single" value="" size="sm" items={defaultItems} />
-                    <ButtonGroup type="single" value="" size="md" items={defaultItems} />
-                    <ButtonGroup type="single" value="" size="lg" items={defaultItems} />
-                </div>
-                <CodeBlock
-                    className="mt-2"
-                    code={`<ButtonGroup size="sm" items={...} />
-<ButtonGroup size="md" items={...} />
-<ButtonGroup size="lg" items={...} />`}
-                />
-            </div>
-
-            {/* With Leading Icons */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">With Leading Icons</h2>
-                <div className="p-4 border border-tertiary rounded-lg">
-                    <ButtonGroup type="single" value="" items={iconItems} />
-                    <CodeBlock
-                        className="mt-2"
-                        code={`<ButtonGroup value="" items={[
-        {
-            value: "archive",
-            lefIcon: { Archive },
-            label: "Archive",
-        },
-        {
-            value: "edit",
-            lefIcon: { Edit03 },
-            label: "Edit",
-        },
-        {
-            value: "delete",
-            lefIcon: { Trash01 },
-            label: "Delete",
-        },
-    ]} />`}
-                    />
-                </div>
-            </div>
-
-            {/* Disabled */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Disabled</h2>
-                <div className="p-4 border border-tertiary rounded-lg">
-                    <ButtonGroup type="single" value="" disabled items={defaultItems} />
-                    <CodeBlock
-                        className="mt-2"
-                        code={`<ButtonGroup value="" disabled items={[
-  { value: "archive", label: "Archive" },
-  { value: "edit", label: "Edit" },
-  { value: "delete", label: "Delete" },
-]} />`}
+                        code={`
+<ButtonGroup>
+    {[
+        { label: "Archive", icon: Archive },
+        { label: "Edit", icon: Edit03 },
+        { label: "Delete", icon: Trash01 },
+    ].map(el => (
+        <Button key={el.label} variant={"secondary"}>
+            {el.label}
+        </Button>
+    ))}
+</ButtonGroup>`}
                     />
                 </div>
             </div>
@@ -141,20 +75,52 @@ export default function ButtonGroupPage() {
             {/* Single Selection */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Single Selection</h2>
-                <SingleSelectionExample items={singleSelectionItems} />
+                <SingleSelectionExample items={toggleItems} />
             </div>
 
             {/* Multiple Selection */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Multiple Selection</h2>
-                <MultipleSelectionExample items={singleSelectionItems} />
+                <MultipleSelectionExample items={toggleItems} />
+            </div>
+
+            {/* Sizes */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Sizes</h2>
+                <div className="p-4 border border-tertiary rounded-lg space-x-4">
+                    <ButtonToggleGroup type="single" value="" size="sm" items={toggleItems} />
+                    <ButtonToggleGroup type="single" value="" size="md" items={toggleItems} />
+                    <ButtonToggleGroup type="single" value="" size="lg" items={toggleItems} />
+                </div>
+                <CodeBlock
+                    className="mt-2"
+                    code={`<ButtonToggleGroup size="sm" items={defaultItems} />
+<ButtonToggleGroup size="md" items={defaultItems} />
+<ButtonToggleGroup size="lg" items={defaultItems} />`}
+                />
+            </div>
+
+            {/* Disabled */}
+            <div className="mb-10">
+                <h2 className="text-xl font-semibold mb-4">Disabled</h2>
+                <div className="p-4 border border-tertiary rounded-lg">
+                    <ButtonToggleGroup type="single" value="" disabled items={toggleItems} />
+                    <CodeBlock
+                        className="mt-2"
+                        code={`<ButtonToggleGroup value="" disabled items={[
+        { value: "today", label: "Today" },
+        { value: "tomorrow", label: "Tomorrow" },
+        { value: "thisweek", label: "This week" },
+    ]/>`}
+                    />
+                </div>
             </div>
 
             {/* API Reference */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">API Reference</h2>
                 <p className="text-sm text-secondary mb-2">
-                    {`The ButtonGroup component is built on Radix UI's ToggleGroup primitive. It inherits all of its props and behaviors.`}
+                    {`The ButtonToggleGroup component is built on Radix UI's ToggleGroup primitive. It inherits all of its props and behaviors.`}
                 </p>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
@@ -172,7 +138,7 @@ export default function ButtonGroupPage() {
                                 <td className="py-2 px-4 font-mono text-sm">string | string[]</td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
-                                    Selected value(s) for the ButtonGroup.
+                                    Selected value(s) for the ButtonToggleGroup.
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">
@@ -200,7 +166,7 @@ export default function ButtonGroupPage() {
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">items?</td>
                                 <td className="py-2 px-4 font-mono text-sm">
-                                    ButtonGroupItemProps[]
+                                    ButtonToggleGroupItemProps[]
                                 </td>
                                 <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">
@@ -226,9 +192,9 @@ export default function ButtonGroupPage() {
                         </tbody>
                     </table>
                 </div>
-                <h3 className="text-lg font-semibold mt-8 mb-4">ButtonGroupItem</h3>
+                <h3 className="text-lg font-semibold mt-8 mb-4">ButtonToggleGroupItem</h3>
                 <p className="text-sm text-secondary mb-2">
-                    {`The ButtonGroupItem component inherits all of its props and behaviors from Radix UI's ToggleGroupItem primitive.`}
+                    {`The ButtonToggleGroupItem component inherits all of its props and behaviors from Radix UI's ToggleGroupItem primitive.`}
                 </p>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
@@ -280,29 +246,34 @@ export default function ButtonGroupPage() {
 }
 
 // ─── Examples ─────────────────────────────
-const SingleSelectionExample = ({ items }: { items: ButtonGroupItemProps[] }) => {
+const SingleSelectionExample = ({ items }: { items: ButtonToggleGroupItemProps[] }) => {
     const [value, setValue] = useState("today");
 
     return (
         <div className="p-4 border border-tertiary rounded-lg">
-            <ButtonGroup type="single" value={value} onValueChange={setValue} items={items} />
+            <ButtonToggleGroup type="single" value={value} onValueChange={setValue} items={items} />
             <CodeBlock
                 className="mt-2"
-                code={`<ButtonGroup value={value} onValueChange={setValue} items={items} />`}
+                code={`<ButtonToggleGroup value={value} onValueChange={setValue} items={items} />`}
             />
         </div>
     );
 };
 
-const MultipleSelectionExample = ({ items }: { items: ButtonGroupItemProps[] }) => {
+const MultipleSelectionExample = ({ items }: { items: ButtonToggleGroupItemProps[] }) => {
     const [values, setValues] = useState<string[]>(["today"]);
 
     return (
         <div className="p-4 border border-tertiary rounded-lg">
-            <ButtonGroup type="multiple" value={values} onValueChange={setValues} items={items} />
+            <ButtonToggleGroup
+                type="multiple"
+                value={values}
+                onValueChange={setValues}
+                items={items}
+            />
             <CodeBlock
                 className="mt-2"
-                code={`<ButtonGroup type="multiple" value={values} onValueChange={setValues} items={items} />`}
+                code={`<ButtonToggleGroup type="multiple" value={values} onValueChange={setValues} items={items} />`}
             />
         </div>
     );
