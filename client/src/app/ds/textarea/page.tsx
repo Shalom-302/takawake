@@ -10,10 +10,10 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { BaseTextAreaVariants, TextArea, TextAreaForm } from "@/components/ui/texarea";
+import { BaseTextareaVariants, Textarea, TextareaForm } from "@/components/ui/textarea";
 
-export default function TextAreaPage() {
-    const sizes: BaseTextAreaVariants["size"][] = ["sm", "md"];
+export default function TextareaPage() {
+    const sizes: BaseTextareaVariants["size"][] = ["sm", "md"];
 
     const formSchema = z.object({
         description: z.string().min(5, {
@@ -47,7 +47,7 @@ export default function TextAreaPage() {
                 <Link href="/ds" className="text-primary hover:underline mb-4 inline-block">
                     ← Back to Design System
                 </Link>
-                <h1 className="text-3xl font-bold mt-2">TextArea</h1>
+                <h1 className="text-3xl font-bold mt-2">Textarea</h1>
                 <p className="text-tertiary mt-2">
                     Multi-line input with autosize, states, tooltip and form integration.
                 </p>
@@ -61,13 +61,13 @@ export default function TextAreaPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {sizes.map(size => (
                         <div key={size} className="p-4 border border-tertiary rounded-lg">
-                            <TextArea
+                            <Textarea
                                 size={size}
-                                placeholder={`TextArea size ${size}`}
+                                placeholder={`Textarea size ${size}`}
                                 className="w-full"
                             />
                             <CodeBlock
-                                code={`<TextArea size="${size}" placeholder="TextArea size ${size}" />`}
+                                code={`<Textarea size="${size}" placeholder="Textarea size ${size}" />`}
                             />
                         </div>
                     ))}
@@ -80,13 +80,13 @@ export default function TextAreaPage() {
             <section className="mb-12" id="tooltip">
                 <h2 className="text-xl font-semibold mb-4">Tooltip</h2>
                 <div className="p-4 border border-tertiary rounded-lg space-y-3">
-                    <TextArea
+                    <Textarea
                         placeholder="Avec tooltip"
                         tooltip="Ceci est une aide contextuelle"
                         className="w-full"
                     />
                     <CodeBlock
-                        code={`<TextArea 
+                        code={`<Textarea 
   placeholder="Avec tooltip" 
   tooltip="Ceci est une aide contextuelle" 
 />`}
@@ -102,17 +102,17 @@ export default function TextAreaPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Error */}
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <TextArea placeholder="Champ avec erreur..." aria-invalid />
+                        <Textarea placeholder="Champ avec erreur..." aria-invalid />
                         <CodeBlock
-                            code={`<TextArea placeholder="Champ avec erreur..." aria-invalid />`}
+                            code={`<Textarea placeholder="Champ avec erreur..." aria-invalid />`}
                         />
                     </div>
 
                     {/* Disabled */}
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <TextArea disabled defaultValue="Contenu désactivé" />
+                        <Textarea disabled defaultValue="Contenu désactivé" />
                         <CodeBlock
-                            code={`<TextArea disabled defaultValue="Contenu désactivé" />`}
+                            code={`<Textarea disabled defaultValue="Contenu désactivé" />`}
                         />
                     </div>
                 </div>
@@ -125,15 +125,15 @@ export default function TextAreaPage() {
                 <h2 className="text-xl font-semibold mb-4">Resize Options</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <TextArea placeholder="Resize vertical..." className="resize-y" rows={3} />
+                        <Textarea placeholder="Resize vertical..." className="resize-y" rows={3} />
                         <CodeBlock
-                            code={`<TextArea placeholder="Resize vertical..." className="resize-y" rows={3} />`}
+                            code={`<Textarea placeholder="Resize vertical..." className="resize-y" rows={3} />`}
                         />
                     </div>
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <TextArea placeholder="No resize..." className="resize-none" rows={3} />
+                        <Textarea placeholder="No resize..." className="resize-none" rows={3} />
                         <CodeBlock
-                            code={`<TextArea placeholder="No resize..." className="resize-none" rows={3} />`}
+                            code={`<Textarea placeholder="No resize..." className="resize-none" rows={3} />`}
                         />
                     </div>
                 </div>
@@ -146,7 +146,7 @@ export default function TextAreaPage() {
                 <h2 className="text-xl font-semibold mb-4">Form integration</h2>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-                        <TextAreaForm
+                        <TextareaForm
                             control={form.control}
                             name="description"
                             label="Description"
@@ -187,7 +187,7 @@ import { z } from "zod";
             ),
         });
     }
-<TextAreaForm
+<TextareaForm
   control={form.control}
   name="description"
   label="Description"
@@ -206,7 +206,7 @@ import { z } from "zod";
                 <div className="overflow-x-auto space-y-16">
                     {/* TEXTAREA */}
                     <div>
-                        <h3 className="text-md font-semibold mb-2">TextArea</h3>
+                        <h3 className="text-md font-semibold mb-2">Textarea</h3>
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-tertiary">
@@ -249,7 +249,7 @@ import { z } from "zod";
 
                     {/* TEXTAREA FORM */}
                     <div>
-                        <h3 className="text-md font-semibold mb-2">TextAreaForm</h3>
+                        <h3 className="text-md font-semibold mb-2">TextareaForm</h3>
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-tertiary">

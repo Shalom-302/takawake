@@ -1,14 +1,15 @@
-import * as React from "react";
+"use client";
 
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
-import { cva, VariantProps } from "class-variance-authority";
-import { Tooltip } from "../tootilp";
+import { Tooltip } from "@/components/ui/tooltip";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";
-import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
+import { FormFieldWrapper, FormFieldWrapperProps } from "@/components/ui/form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 
-const baseInputVariants = cva(
-    "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary ",
+export const baseInputVariants = cva(
+    "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary",
     {
         variants: {
             size: {
@@ -24,9 +25,11 @@ const baseInputVariants = cva(
 
 export type BaseInputVariants = VariantProps<typeof baseInputVariants>;
 
-interface BaseInputProps extends Omit<React.ComponentProps<"input">, "size">, BaseInputVariants {}
+export interface BaseInputProps
+    extends Omit<React.ComponentProps<"input">, "size">,
+        BaseInputVariants {}
 
-function BaseInput({ className, size, type, ...props }: BaseInputProps) {
+export const BaseInput = ({ className, size, type = "text", ...props }: BaseInputProps) => {
     return (
         <input
             type={type}
@@ -35,11 +38,13 @@ function BaseInput({ className, size, type, ...props }: BaseInputProps) {
             {...props}
         />
     );
-}
+};
 
-// === INPUT WRAPPER VARIANTS ===
+// ============================================
+// 2. INPUT WRAPPER (conteneur avec bordure et états)
+// ============================================
 const inputWrapperVariants = cva(
-    "relative flex w-full flex-row place-content-center place-items-center rounded-lg bg-primary shadow-xs ring-1 ring-inset transition-shadow duration-100 ease-linear",
+    "relative flex w-full place-content-center place-items-center rounded-lg bg-primary shadow-xs ring-1 ring-inset transition-shadow duration-100 ease-linear",
     {
         variants: {
             state: {
@@ -54,6 +59,9 @@ const inputWrapperVariants = cva(
     }
 );
 
+// ============================================
+// 3. INPUT (standalone avec icônes et tooltip)
+// ============================================
 export interface InputProps extends Omit<BaseInputProps, "className"> {
     /** Tooltip message on hover. */
     tooltip?: string;
@@ -63,7 +71,7 @@ export interface InputProps extends Omit<BaseInputProps, "className"> {
     rightIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Class name for the input wrapper. */
     inputWrapperClassName?: string;
-    /** Class name for the input . */
+    /** Class name for the input. */
     inputClassName?: string;
     /** Class name for the icon. */
     iconClassName?: string;
@@ -71,7 +79,7 @@ export interface InputProps extends Omit<BaseInputProps, "className"> {
     tooltipClassName?: string;
 }
 
-function Input({
+export function Input({
     size = "sm",
     type = "text",
     leftIcon: LeftIcon,
@@ -86,57 +94,62 @@ function Input({
     const isInvalid = props["aria-invalid"] === true;
     const disabled = props.disabled;
     const wrapperState = disabled ? "disabled" : isInvalid ? "error" : "default";
+
     const hasLeftIcon = !!LeftIcon;
     const hasRightIcon = !!RightIcon || !!tooltip || isInvalid;
+
     return (
         <div className={cn(inputWrapperVariants({ state: wrapperState }), inputWrapperClassName)}>
             <BaseInput
                 type={type}
                 size={size}
                 className={cn(
-                    size === "sm" ? hasLeftIcon && "pl-10" : hasRightIcon && "pr-9",
-                    size === "md" ? hasLeftIcon && "pl-10.5" : hasRightIcon && "pr-9.5",
+                    hasLeftIcon && (size === "sm" ? "pl-10" : "pl-10.5"),
+                    hasRightIcon && (size === "sm" ? "pr-10" : "pr-10.5"),
                     inputClassName
                 )}
                 {...props}
             />
 
+            {/* Left Icon */}
             {LeftIcon && (
                 <LeftIcon
                     className={cn(
-                        "pointer-events-none absolute size-5 text-fg-quaternary peer-disabled:text-fg-disabled",
+                        "pointer-events-none absolute size-5 text-gray-400 peer-disabled:text-gray-300",
                         size === "sm" ? "left-3" : "left-3.5",
                         iconClassName
                     )}
                 />
             )}
 
+            {/* Right Icon (priority: error > tooltip > custom) */}
             {isInvalid ? (
                 <InfoCircle
                     className={cn(
-                        "pointer-events-none absolute size-5 text-fg-error-secondary",
+                        "pointer-events-none absolute size-5 text-red-500",
                         size === "sm" ? "right-3" : "right-3.5",
                         iconClassName
                     )}
                 />
             ) : tooltip ? (
-                <Tooltip
-                    trigger={
-                        <HelpCircle
-                            className={cn(
-                                "absolute size-5 text-fg-quaternary hover:text-fg-quaternary_hover transition duration-200 peer-focus:text-fg-quaternary_hover peer-disabled:text-fg-disabled",
-                                size === "sm" ? "right-3" : "right-3.5"
-                            )}
-                        />
-                    }
-                    title={tooltip}
-                    contentClassName={tooltipClassName}
-                />
+                <div className={cn("absolute", size === "sm" ? "right-3" : "right-3.5")}>
+                    <Tooltip
+                        trigger={
+                            <HelpCircle
+                                className={cn(
+                                    "size-5 text-gray-400 hover:text-gray-500 transition duration-200 peer-focus:text-gray-500 peer-disabled:text-gray-300"
+                                )}
+                            />
+                        }
+                        title={tooltip}
+                        contentClassName={tooltipClassName}
+                    />
+                </div>
             ) : (
                 RightIcon && (
                     <RightIcon
                         className={cn(
-                            "pointer-events-none absolute size-5 text-fg-quaternary peer-disabled:text-fg-disabled",
+                            "pointer-events-none absolute size-5 text-gray-400 peer-disabled:text-gray-300",
                             size === "sm" ? "right-3" : "right-3.5",
                             iconClassName
                         )}
@@ -147,7 +160,9 @@ function Input({
     );
 }
 
-// === FORM INTEGRATION ===
+// ============================================
+// 4. FORM INTEGRATION
+// ============================================
 export interface InputFormProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -156,7 +171,7 @@ export interface InputFormProps<
     isRequired?: boolean;
 }
 
-function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
     isRequired,
     control,
     name,
@@ -176,5 +191,3 @@ function InputForm<TFieldValues extends FieldValues, TName extends FieldPath<TFi
         </FormFieldWrapper>
     );
 }
-
-export { InputForm, Input };

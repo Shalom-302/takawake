@@ -9,7 +9,7 @@ import { isReactComponent } from "@/lib/utils/is-react-component";
 import { Separator } from "@/components/ui/separator";
 
 const buttonGroupVariants = cva(
-    "flex w-fit items-stretch [&>*]:cursor-pointer [&>*]:whitespace-nowrap [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md has-[>[data-slot=button-group]]:gap-2",
+    "flex w-fit items-stretch [&>*]:cursor-pointer [&>*]:whitespace-nowrap [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-lg has-[>[data-slot=button-group]]:gap-2",
     {
         variants: {
             orientation: {
@@ -52,7 +52,7 @@ export function ButtonGroupText({
     return (
         <Comp
             className={cn(
-                "bg-active flex items-center gap-2 rounded-md border px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5",
+                "bg-primary flex items-center gap-2 rounded-lg ring-1 ring-inset ring-primary px-4 text-md font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5",
                 className
             )}
             {...props}

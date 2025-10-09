@@ -16,9 +16,9 @@ import { isReactComponent } from "@/lib/utils/is-react-component";
 const buttonVariants = cva(
     [
         "group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2",
-        // When button is used within `InputGroup`
+        // InputGroup integration
         "in-data-input-wrapper:shadow-xs in-data-input-wrapper:focus:!z-50 in-data-input-wrapper:in-data-left:-mr-px in-data-input-wrapper:in-data-left:rounded-r-none in-data-input-wrapper:in-data-left:before:rounded-r-none in-data-input-wrapper:in-data-right:-ml-px in-data-input-wrapper:in-data-right:rounded-l-none in-data-input-wrapper:in-data-right:before:rounded-l-none",
-        // Disabled styles
+        // Disabled state
         "disabled:text-fg-disabled disabled:pointer-events-none",
         // Icon styles
         "disabled:[&_svg]:text-fg-disabled_subtle",
@@ -28,19 +28,18 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 primary: [
-                    "bg-brand-solid text-white shadow-xs-skeumorphic ring-1 ring-transparent ring-inset hover:bg-brand-solid_hover data-loading:bg-brand-solid_hover",
-                    // Inner border gradient
+                    "bg-brand-solid text-white shadow-xs-skeumorphic ring-1 ring-transparent ring-inset hover:bg-brand-solid_hover",
                     "before:absolute before:inset-px before:border before:border-white/12 before:mask-b-from-0%",
                     "disabled:bg-disabled disabled:shadow-xs disabled:ring-disabled_subtle",
                     "[&_svg]:text-button-primary-icon hover:[&_svg]:text-button-primary-icon_hover",
                 ],
                 secondary: [
-                    "bg-primary text-secondary shadow-xs-skeumorphic ring-1 ring-primary ring-inset hover:bg-primary_hover hover:text-secondary_hover data-loading:bg-primary_hover",
+                    "bg-primary text-secondary shadow-xs-skeumorphic ring-1 ring-primary ring-inset hover:bg-primary_hover hover:text-secondary_hover",
                     "disabled:shadow-xs disabled:ring-disabled_subtle",
                     "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
                 ],
                 tertiary: [
-                    "text-tertiary hover:bg-primary_hover hover:text-tertiary_hover data-loading:bg-primary_hover",
+                    "text-tertiary hover:bg-primary_hover hover:text-tertiary_hover",
                     "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
                 ],
                 "link-gray": [
@@ -58,12 +57,12 @@ const buttonVariants = cva(
                     "[&_svg]:text-button-destructive-primary-icon hover:[&_svg]:text-button-destructive-primary-icon_hover",
                 ],
                 "secondary-destructive": [
-                    "bg-primary text-error-primary shadow-xs-skeumorphic ring-1 ring-error_subtle outline-error ring-inset hover:bg-error-primary hover:text-error-primary_hover data-loading:bg-error-primary",
+                    "bg-primary text-error-primary shadow-xs-skeumorphic ring-1 ring-error_subtle outline-error ring-inset hover:bg-error-primary hover:text-error-primary_hover",
                     "disabled:bg-primary disabled:shadow-xs disabled:ring-disabled_subtle",
                     "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
                 "tertiary-destructive": [
-                    "text-error-primary outline-error hover:bg-error-primary hover:text-error-primary_hover data-loading:bg-error-primary",
+                    "text-error-primary outline-error hover:bg-error-primary hover:text-error-primary_hover",
                     "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
                 "link-destructive": [
@@ -77,10 +76,6 @@ const buttonVariants = cva(
                 lg: "gap-1.5 rounded-lg px-4 py-2.5 text-md font-semibold before:rounded-[7px] data-icon-only:p-3",
                 xl: "gap-1.5 rounded-lg px-4.5 py-3 text-md font-semibold before:rounded-[7px] data-icon-only:p-3.5",
             },
-            effect: {
-                outlineHover:
-                    "transition-all duration-300 hover:outline-2 hover:outline-brand hover:outline-offset-2",
-            },
         },
         defaultVariants: {
             variant: "primary",
@@ -89,43 +84,69 @@ const buttonVariants = cva(
     }
 );
 
-/**
- * Common props shared between button and anchor variants
- */
+// ============================================
+// TYPES
+// ============================================
 export interface CommonProps extends VariantProps<typeof buttonVariants> {
     isDisabled?: boolean;
     isLoading?: boolean;
     leftIcon?: FC<{ className?: string }> | ReactNode;
     rightIcon?: FC<{ className?: string }> | ReactNode;
-    /** Removes horizontal padding from the text content */
     textPadding?: boolean;
-    /** When true, keeps the text visible during loading state */
     showTextWhileLoading?: boolean;
-    /** Use Slot for composition (Radix UI specific) */
     asChild?: boolean;
 }
 
-/**
- * Props for the button variant (non-link)
- */
 export interface ButtonProps
     extends CommonProps,
         DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {}
 
-/**
- * Props for the link variant (anchor tag)
- */
 export interface LinkProps
     extends CommonProps,
         DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement> {}
 
-/** Union type of button and link props */
 export type Props = ButtonProps | LinkProps;
 
+// ============================================
+// LOADING SPINNER COMPONENT
+// ============================================
+function LoadingSpinner({ className }: { className?: string }) {
+    return (
+        <svg
+            fill="none"
+            data-slot="loading-icon"
+            viewBox="0 0 20 20"
+            className={cn("animate-spin", className)}
+            aria-hidden="true"
+        >
+            <circle
+                className="stroke-current opacity-30"
+                cx="10"
+                cy="10"
+                r="8"
+                fill="none"
+                strokeWidth="2"
+            />
+            <circle
+                className="stroke-current"
+                cx="10"
+                cy="10"
+                r="8"
+                fill="none"
+                strokeWidth="2"
+                strokeDasharray="12.5 50"
+                strokeLinecap="round"
+            />
+        </svg>
+    );
+}
+
+// ============================================
+// MAIN BUTTON COMPONENT
+// ============================================
 function Button({
     size,
     variant,
-    effect,
     children,
     className,
     leftIcon: LeftIcon,
@@ -138,111 +159,70 @@ function Button({
     ...otherProps
 }: Props) {
     const href = "href" in otherProps ? otherProps.href : undefined;
-
-    const isIcon = (LeftIcon || RightIcon) && !children;
-    const isLinkType =
+    const isIconOnly = (LeftIcon || RightIcon) && !children;
+    const isLinkVariant =
         typeof variant === "string" &&
         ["link-gray", "link-color", "link-destructive"].includes(variant);
 
-    // textPadding = !isLinkType || textPadding;
+    // Déterminer le composant à utiliser
+    const Component: React.ElementType = asChild ? Slot : href ? "a" : "button";
 
-    let props = {};
-    let Component: React.ElementType = "button";
+    // Props communes
+    const commonProps = {
+        "data-loading": loading || undefined,
+        "data-icon-only": isIconOnly || undefined,
+        className: cn(
+            buttonVariants({ size, variant }),
+            (loading || disabled) && "pointer-events-none",
+            loading && !showTextWhileLoading && "[&>:not([data-slot])]:invisible",
+            loading && showTextWhileLoading && "[&>:not([data-slot]):not([data-text])]:hidden",
+            className
+        ),
+    };
 
-    if (href) {
-        Component = "a";
-        props = {
-            ...otherProps,
+    // Props spécifiques selon le type
+    let specificProps = {};
+    if (href && !asChild) {
+        specificProps = {
             href: disabled ? undefined : href,
-            // Since anchor elements do not support the `disabled` attribute and state,
-            // we need to specify `data-rac` and `data-disabled` in order to be able
-            // to use the `disabled:` selector in classes.
-            ...(disabled ? { "data-rac": true, "data-disabled": true } : {}),
+            ...(disabled && { "data-rac": true, "data-disabled": true }),
         };
-    } else {
-        Component = "button";
-        props = {
-            ...otherProps,
+    } else if (!asChild) {
+        specificProps = {
             type: (otherProps as ButtonHTMLAttributes<HTMLButtonElement>).type || "button",
             disabled: disabled,
         };
-    }
-
-    // If asChild is true, use Radix UI's Slot
-    if (asChild) {
-        Component = Slot;
-        props = {
-            ...otherProps,
-            disabled: disabled,
-        };
+    } else {
+        specificProps = { disabled };
     }
 
     const iconStyle = "pointer-events-none size-5 shrink-0 transition-inherit-all";
 
     return (
-        <Component
-            data-loading={loading ? true : undefined}
-            data-icon-only={isIcon ? true : undefined}
-            {...props}
-            className={cn(
-                buttonVariants({ size, variant, effect }),
-                (loading || (href && (disabled || loading))) && "pointer-events-none",
-                // If in `loading` state, hide everything except the loading icon (and text if `showTextWhileLoading` is true).
-                loading &&
-                    (showTextWhileLoading
-                        ? "[&>*:not([data-icon=loading]):not([data-text])]:hidden"
-                        : "[&>*:not([data-icon=loading])]:invisible"),
-                className
-            )}
-        >
-            {/* left icon */}
+        <Component {...commonProps} {...specificProps} {...otherProps}>
+            {/* Left icon */}
             {isValidElement(LeftIcon) && LeftIcon}
             {isReactComponent(LeftIcon) && <LeftIcon className={iconStyle} />}
 
-            {/* Loading spinner - Treated as a normal flex item */}
+            {/* Loading spinner */}
             {loading && (
-                <svg
-                    fill="none"
-                    data-icon="loading"
-                    viewBox="0 0 20 20"
+                <LoadingSpinner
                     className={cn(
                         iconStyle,
-                        "animate-spin",
                         !showTextWhileLoading &&
                             "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                     )}
-                >
-                    {/* Background circle */}
-                    <circle
-                        className="stroke-current opacity-30"
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        fill="none"
-                        strokeWidth="2"
-                    />
-                    {/* Spinning circle */}
-                    <circle
-                        className="origin-center animate-spin stroke-current"
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        fill="none"
-                        strokeWidth="2"
-                        strokeDasharray="12.5 50"
-                        strokeLinecap="round"
-                    />
-                </svg>
+                />
             )}
 
-            {isLinkType ? (
+            {/* Text content */}
+            {isLinkVariant ? (
                 <Slottable>
                     {children && (
                         <span
                             data-text
-                            className={
-                                "underline decoration-transparent underline-offset-2 hover:decoration-current"
-                            }
+                            data-slot="text"
+                            className="underline decoration-transparent underline-offset-2 hover:decoration-current"
                         >
                             {children}
                         </span>
@@ -253,6 +233,7 @@ function Button({
                     {children && (
                         <span
                             data-text
+                            data-slot="text"
                             className={cn("transition-inherit-all", textPadding && "px-0.5")}
                         >
                             {children}
@@ -269,5 +250,4 @@ function Button({
 }
 
 export type ButtonVariants = VariantProps<typeof buttonVariants>;
-
 export { Button, buttonVariants };

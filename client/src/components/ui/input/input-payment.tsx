@@ -10,7 +10,7 @@ import {
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";
-import { Tooltip } from "../tootilp";
+import { Tooltip } from "../tooltip";
 
 const cardTypes = [
     {

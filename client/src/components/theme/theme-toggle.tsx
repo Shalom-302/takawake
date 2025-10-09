@@ -3,7 +3,7 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { Tooltip } from "../ui/tootilp";
+import { Tooltip } from "../ui/tooltip";
 import { Button } from "../ui/buttons";
 
 export function ThemeToggle() {

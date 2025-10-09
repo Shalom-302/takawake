@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/buttons/button";
-import { Tooltip } from "@/components/ui/tootilp";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badges/badge";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 

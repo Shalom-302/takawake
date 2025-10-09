@@ -121,7 +121,7 @@ function InputGroup({
             data-input-wrapper
             className={cn(inputGroupVariants({ state: groupState }), inputGroupClassName)}
         >
-            {/* Left Addon */}
+            {/* Leading Addon */}
             {leftAddon && <section data-leading={hasLeading || undefined}>{leftAddon}</section>}
 
             {/* Prefix text inside input */}
@@ -153,7 +153,7 @@ function InputGroup({
     );
 }
 
-// === INPUT AFFIX COMPONENT ===
+// === INPUT PREFIX COMPONENT ===
 interface InputAffixProps extends React.HTMLAttributes<HTMLSpanElement> {
     isDisabled?: boolean;
 }

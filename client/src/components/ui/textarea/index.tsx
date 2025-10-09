@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { cva, VariantProps } from "class-variance-authority";
-import { Tooltip } from "../tootilp";
+import { Tooltip } from "../tooltip";
 import { HelpCircle } from "@untitled-ui/icons-react";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
@@ -12,7 +12,7 @@ const getResizeHandleBg = (color: string) => {
 };
 
 // === BASE TEXTAREA VARIANTS ===
-const baseTextAreaVariants = cva(
+const baseTextareaVariants = cva(
     "w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary field-sizing-content min-h-[5.5rem] resize-y",
     {
         variants: {
@@ -27,13 +27,13 @@ const baseTextAreaVariants = cva(
     }
 );
 
-export type BaseTextAreaVariants = VariantProps<typeof baseTextAreaVariants>;
+export type BaseTextareaVariants = VariantProps<typeof baseTextareaVariants>;
 
-interface BaseTextAreaProps
+export interface BaseTextareaProps
     extends Omit<React.ComponentProps<"textarea">, "size">,
-        BaseTextAreaVariants {}
+        BaseTextareaVariants {}
 
-function BaseTextArea({ className, size, style, ...props }: BaseTextAreaProps) {
+export function BaseTextarea({ className, size, style, ...props }: BaseTextareaProps) {
     const customStyle = {
         "--resize-handle-bg": getResizeHandleBg("#D5D7DA"),
         "--resize-handle-bg-dark": getResizeHandleBg("#373A41"),
@@ -44,7 +44,7 @@ function BaseTextArea({ className, size, style, ...props }: BaseTextAreaProps) {
         <textarea
             data-slot="textarea"
             className={cn(
-                baseTextAreaVariants({ size }),
+                baseTextareaVariants({ size }),
                 // Custom resize handle styling
                 "[&::-webkit-resizer]:bg-[image:var(--resize-handle-bg)] [&::-webkit-resizer]:bg-contain",
                 "dark:[&::-webkit-resizer]:bg-[image:var(--resize-handle-bg-dark)]",
@@ -74,7 +74,7 @@ const textAreaWrapperVariants = cva(
 );
 
 // === MAIN TEXTAREA COMPONENT ===
-export interface TextAreaProps extends BaseTextAreaProps {
+export interface TextareaProps extends BaseTextareaProps {
     /** Tooltip message on hover. */
     tooltip?: string;
     /** Class name for the textarea wrapper. */
@@ -83,14 +83,14 @@ export interface TextAreaProps extends BaseTextAreaProps {
     tooltipClassName?: string;
 }
 
-function TextArea({
+function Textarea({
     size = "sm",
     tooltip,
     wrapperClassName,
     tooltipClassName,
     className,
     ...props
-}: TextAreaProps) {
+}: TextareaProps) {
     const isInvalid = props["aria-invalid"] === true;
     const disabled = props.disabled;
 
@@ -99,7 +99,7 @@ function TextArea({
 
     return (
         <div className={cn(textAreaWrapperVariants({ state: wrapperState }), wrapperClassName)}>
-            <BaseTextArea
+            <BaseTextarea
                 size={size}
                 className={cn(
                     size === "sm" ? "pr-9" : "9.5",
@@ -128,13 +128,13 @@ function TextArea({
 }
 
 // === FORM INTEGRATION ===
-export interface TextAreaFormProps<
+export interface TextareaFormProps<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > extends Omit<FormFieldWrapperProps<TFieldValues, TName>, "children">,
-        Omit<TextAreaProps, "defaultValue" | "name"> {}
+        Omit<TextareaProps, "defaultValue" | "name"> {}
 
-function TextAreaForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+function TextareaForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
     isRequired,
     control,
     name,
@@ -142,7 +142,7 @@ function TextAreaForm<TFieldValues extends FieldValues, TName extends FieldPath<
     labelTooltip,
     description,
     ...textAreaProps
-}: TextAreaFormProps<TFieldValues, TName>) {
+}: TextareaFormProps<TFieldValues, TName>) {
     return (
         <FormFieldWrapper
             control={control}
@@ -152,9 +152,9 @@ function TextAreaForm<TFieldValues extends FieldValues, TName extends FieldPath<
             description={description}
             isRequired={isRequired}
         >
-            {field => <TextArea {...field} {...textAreaProps} />}
+            {field => <Textarea {...field} {...textAreaProps} />}
         </FormFieldWrapper>
     );
 }
 
-export { TextAreaForm, TextArea };
+export { TextareaForm, Textarea };

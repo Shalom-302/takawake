@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Tooltip } from "@/components/ui/tootilp";
+import { Tooltip } from "@/components/ui/tooltip";
 import { CodeBlock } from "@/ds/components";
 import { HelpCircle } from "@untitled-ui/icons-react";
 

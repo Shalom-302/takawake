@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badges";
 import { cn } from "@/lib/utils/cn";
 import { Checkbox } from "../checkbox";
 import { DropdownDotsButton, DropdownMenu } from "../dropdown-menu";
-import { Tooltip } from "../tootilp";
+import { Tooltip } from "../tooltip";
 
 // Export des types et helpers
 export type { ColumnDef } from "@tanstack/react-table";

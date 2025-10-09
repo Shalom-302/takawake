@@ -96,9 +96,9 @@ const [selected, setSelected] = useState<Date>();
                     <DateRangePicker value={dateRange} onChange={setDateRange} />
                     <CodeBlock
                         code={`
-const [selected, setSelected] = useState<Date>();
+const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null);
 
-<DatePicker value={selected} onChange={setSelected} />
+<DateRangePicker value={dateRange} onChange={setDateRange} />
 `}
                     />
                 </div>

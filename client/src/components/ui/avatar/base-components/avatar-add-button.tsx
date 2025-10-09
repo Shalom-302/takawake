@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils/cn";
-import { Tooltip } from "../../tootilp";
+import { Tooltip } from "../../tooltip";
 import { Plus } from "@untitled-ui/icons-react";
 
 interface AvatarAddButtonProps {

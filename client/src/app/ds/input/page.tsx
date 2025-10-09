@@ -221,13 +221,31 @@ export default function InputPage() {
                             tooltip="This is a tooltip"
                         />
                         <CodeBlock
-                            code={`<InputGroup
-  type="text"
-  leftAddon={<InputAffix>https://</InputAffix>}
-  rightAddon={<InputAffix>.com</InputAffix>}
-  size="sm"
-  tooltip="This is a tooltip"
-/>`}
+                            code={`
+<InputGroup
+    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        setValue(e.target.value)
+    }
+    type="text"
+    rightAddon={
+        <InputAffix
+            onClick={() => copy(value || "Copied")}
+            className={cn(
+                "flex items-center gap-1 bg-primary text-secondary hover:bg-primary_hover hover:text-secondary_hover cursor-pointer"
+            )}
+        >
+            {copied ? (
+                <Check className="size-4" />
+            ) : (
+                <Copy01 className="size-4" />
+            )}
+            Copy
+        </InputAffix>
+    }
+    size="sm"
+    tooltip="This is a tooltip"
+/>
+`}
                         />
                     </div>
                 </div>

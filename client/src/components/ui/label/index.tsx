@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "@/lib/utils/cn";
-import { Tooltip } from "../tootilp";
+import { Tooltip } from "../tooltip";
 import { HelpCircle } from "@untitled-ui/icons-react";
 
 interface LabelProps extends React.ComponentProps<typeof LabelPrimitive.Root> {
