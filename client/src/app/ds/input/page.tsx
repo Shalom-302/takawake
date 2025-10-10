@@ -457,17 +457,13 @@ function onSubmit(data: z.infer<typeof formSchema>) {
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="px-4 py-2 font-mono">leftIcon?</td>
-                                    <td className="px-4 py-2">
-                                        React.ComponentType&lt;SVGProps&gt;
-                                    </td>
+                                    <td className="px-4 py-2">React.FC&lt;SVGProps&gt;</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">Icon displayed on the left.</td>
                                 </tr>
                                 <tr className="border-b border-tertiary">
                                     <td className="px-4 py-2 font-mono">rightIcon?</td>
-                                    <td className="px-4 py-2">
-                                        React.ComponentType&lt;SVGProps&gt;
-                                    </td>
+                                    <td className="px-4 py-2">React.F&lt;SVGProps&gt;</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">Icon displayed on the right.</td>
                                 </tr>

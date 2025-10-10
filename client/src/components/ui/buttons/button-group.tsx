@@ -2,19 +2,18 @@
 
 import * as React from "react";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
-import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { isReactComponent } from "@/lib/utils/is-react-component";
-import { Separator } from "@/components/ui/separator";
+import { Button, ButtonVariants } from "@/components/ui/buttons";
 
 const buttonGroupVariants = cva(
-    "flex w-fit items-stretch [&>*]:cursor-pointer [&>*]:whitespace-nowrap [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-lg has-[>[data-slot=button-group]]:gap-2",
+    "flex w-fit items-stretch [&>*]:cursor-pointer [&>*]:whitespace-nowrap [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md has-[>[data-slot=button-group]]:gap-2",
     {
         variants: {
             orientation: {
                 horizontal:
-                    "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
+                    "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:last-child)]:rounded-r-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
                 vertical:
                     "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
             },
@@ -25,11 +24,25 @@ const buttonGroupVariants = cva(
     }
 );
 
+type Item = {
+    label: string;
+    leftIcon?: React.FC<{ className?: string }> | React.ReactNode;
+    rightIcon?: React.FC<{ className?: string }> | React.ReactNode;
+};
+
 export function ButtonGroup({
     className,
     orientation,
+    items,
+    variant = "secondary",
+    size,
     ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
+}: React.ComponentProps<"div"> &
+    VariantProps<typeof buttonGroupVariants> & {
+        items: Item[];
+        variant?: "secondary" | "secondary-destructive";
+        size?: ButtonVariants["size"];
+    }) {
     return (
         <div
             role="group"
@@ -37,49 +50,24 @@ export function ButtonGroup({
             data-orientation={orientation}
             className={cn(buttonGroupVariants({ orientation }), className)}
             {...props}
-        />
-    );
-}
-
-export function ButtonGroupText({
-    className,
-    asChild = false,
-    ...props
-}: React.ComponentProps<"div"> & {
-    asChild?: boolean;
-}) {
-    const Comp = asChild ? Slot : "div";
-    return (
-        <Comp
-            className={cn(
-                "bg-primary flex items-center gap-2 rounded-lg ring-1 ring-inset ring-primary px-4 text-md font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5",
-                className
-            )}
-            {...props}
-        />
-    );
-}
-
-export function ButtonGroupSeparator({
-    className,
-    orientation = "vertical",
-    ...props
-}: React.ComponentProps<typeof Separator>) {
-    return (
-        <Separator
-            data-slot="button-group-separator"
-            orientation={orientation}
-            className={cn(
-                "bg-border relative !m-0 self-stretch data-[orientation=vertical]:h-auto",
-                className
-            )}
-            {...props}
-        />
+        >
+            {items.map(el => (
+                <Button
+                    leftIcon={el.leftIcon}
+                    rightIcon={el.rightIcon}
+                    key={el.label}
+                    variant={variant}
+                    size={size}
+                >
+                    {el.label}
+                </Button>
+            ))}
+        </div>
     );
 }
 
 type ButtonToggleGroupVariants = VariantProps<typeof buttonToggleGroupItemStyles>;
-type IconType = React.ComponentType<{ className?: string }> | React.ReactNode;
+type IconType = React.FC<{ className?: string }> | React.ReactNode;
 
 type ButtonToggleGroupProps = React.ComponentProps<typeof ToggleGroupPrimitive.Root> & {
     size?: ButtonToggleGroupVariants["size"];

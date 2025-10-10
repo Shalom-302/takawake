@@ -5,7 +5,6 @@ import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Archive, Edit03, Trash01 } from "@untitled-ui/icons-react";
 import {
-    Button,
     ButtonGroup,
     ButtonToggleGroup,
     ButtonToggleGroupItemProps,
@@ -13,9 +12,9 @@ import {
 
 export default function ButtonToggleGroupPage() {
     const defaultItems = [
-        { label: "Archive", icon: Archive },
-        { label: "Edit", icon: Edit03 },
-        { label: "Delete", icon: Trash01 },
+        { label: "Archive", leftIcon: Archive },
+        { label: "Edit", leftIcon: Edit03 },
+        { label: "Delete", leftIcon: Trash01 },
     ];
 
     const toggleItems = [
@@ -43,31 +42,21 @@ export default function ButtonToggleGroupPage() {
                 </ul>
             </div>
 
-            {/* Default */}
+            {/* ButtonGroup */}
             <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">Default</h2>
+                <h2 className="text-xl font-semibold mb-4">ButtonGroup</h2>
                 <div className="p-4 border border-tertiary rounded-lg">
-                    <ButtonGroup>
-                        {defaultItems.map(el => (
-                            <Button key={el.label} leftIcon={el.icon} variant={"secondary"}>
-                                {el.label}
-                            </Button>
-                        ))}
-                    </ButtonGroup>
+                    <ButtonGroup items={defaultItems} />
                     <CodeBlock
                         className="mt-2"
                         code={`
-<ButtonGroup>
-    {[
-        { label: "Archive", icon: Archive },
-        { label: "Edit", icon: Edit03 },
-        { label: "Delete", icon: Trash01 },
-    ].map(el => (
-        <Button key={el.label} variant={"secondary"}>
-            {el.label}
-        </Button>
-    ))}
-</ButtonGroup>`}
+<ButtonGroup 
+    items={[
+        { label: "Archive", leftIcon: Archive },
+        { label: "Edit", leftIcon: Edit03 },
+        { label: "Delete", leftIcon: Trash01 },
+    ]} 
+/>`}
                     />
                 </div>
             </div>
@@ -234,7 +223,6 @@ export default function ButtonToggleGroupPage() {
                             <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">className?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
-                                <td className="py-2 px-4 font-mono text-sm">-</td>
                                 <td className="py-2 px-4">additional class for the item.</td>
                             </tr>
                         </tbody>

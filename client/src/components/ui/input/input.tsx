@@ -66,9 +66,9 @@ export interface InputProps extends Omit<BaseInputProps, "className"> {
     /** Tooltip message on hover. */
     tooltip?: string;
     /** Icon component to display on the left side of the input. */
-    leftIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
+    leftIcon?: React.FC<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Icon component to display on the right side of the input. */
-    rightIcon?: React.ComponentType<React.HTMLAttributes<HTMLOrSVGElement>>;
+    rightIcon?: React.FC<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Class name for the input wrapper. */
     inputWrapperClassName?: string;
     /** Class name for the input. */
