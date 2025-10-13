@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Archive, Edit03, Trash01 } from "@untitled-ui/icons-react";
 import { ButtonGroup, ButtonToggleGroup, ButtonToggleGroupItemProps } from "@/components/ui/button";
 

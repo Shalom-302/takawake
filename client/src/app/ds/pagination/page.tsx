@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Pagination, PaginationDot, PaginationLine } from "@/components/ui/pagination";
 
 export default function PaginationPage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Avatar, AvatarAddButton, AvatarGroup, AvatarLabel } from "@/components/ui/avatar";
 import { User01 } from "@untitled-ui/icons-react";
 

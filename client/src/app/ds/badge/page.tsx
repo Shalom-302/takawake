@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Badge, BadgeVariants } from "@/components/ui/badge";
 import { Dot } from "@/components/icons/dot-icon";
 

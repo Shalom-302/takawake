@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { Switch, SwitchForm } from "@/components/ui/switch";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

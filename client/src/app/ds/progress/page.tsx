@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ProgressBar, ProgressBarCircle } from "@/components/ui/progress-indicators";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import { ProgressBarHalfCircle } from "@/components/ui/progress-indicators/progress-circle";
 
 export default function ProgressPage() {

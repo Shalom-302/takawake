@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { DatePicker, DatePickerForm } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import {
     DateRangePicker,
     DateRangePickerForm,

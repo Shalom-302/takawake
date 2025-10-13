@@ -11,7 +11,7 @@ interface LabelProps extends React.ComponentProps<typeof LabelPrimitive.Root> {
     labelTooltip?: React.ReactNode;
 }
 
-function Label({ className, isRequired, labelTooltip, children, ...props }: LabelProps) {
+export function Label({ className, isRequired, labelTooltip, children, ...props }: LabelProps) {
     return (
         <LabelPrimitive.Root
             data-slot="label"
@@ -43,5 +43,3 @@ function Label({ className, isRequired, labelTooltip, children, ...props }: Labe
         </LabelPrimitive.Root>
     );
 }
-
-export { Label };

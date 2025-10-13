@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 import {
     BaseInputVariants,
     Input,
@@ -12,6 +12,7 @@ import {
     InputGroup,
     PaymentInput,
     PaymentInputForm,
+    InputOTP,
 } from "@/components/ui/input";
 import { Check, Copy01, Mail01, Mail02, User02 } from "@untitled-ui/icons-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -166,6 +167,26 @@ export default function InputPage() {
                     <div className="p-4 border border-tertiary rounded-lg">
                         <PaymentInput placeholder="Card number" size="md" />
                         <CodeBlock code={`<PaymentInput placeholder="Card number" size="md" />`} />
+                    </div>
+                </div>
+            </section>
+
+            {/* =========================
+             INPUT OTP
+            ========================= */}
+            <section className="mb-10" id="payment">
+                <h2 className="text-xl font-semibold mb-4">OTP Input</h2>
+                <p className="text-tertiary mb-4">
+                    Specialized input for credit card numbers with automatic card type detection.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <InputOTP size="sm" slots={4} maxLength={4} />
+                        <CodeBlock code={`<InputOTP size="sm" slots={4} maxLength={4} />`} />
+                    </div>
+                    <div className="p-4 border border-tertiary rounded-lg">
+                        <InputOTP slots={6} maxLength={5} separator />
+                        <CodeBlock code={`<InputOTP slots={6} maxLength={4} separator />`} />
                     </div>
                 </div>
             </section>

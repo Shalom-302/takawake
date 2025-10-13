@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Slider } from "@/components/ui/slider";
-import { CodeBlock } from "@/ds/components/code-block";
+import { CodeBlock } from "@/components/ui/code-block";
 
 export default function SliderPage() {
     return (
