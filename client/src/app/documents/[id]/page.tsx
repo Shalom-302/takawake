@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { DocumentProvider } from "@/lib/contexts/document-context";
 import { DocumentViewer } from "@/components/documents/document-viewer";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import { ArrowLeft } from "lucide-react";
 
 interface DocumentPageProps {

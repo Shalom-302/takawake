@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Popover } from "@/components/ui/popover";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { CodeBlock } from "@/ds/components";

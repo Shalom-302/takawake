@@ -9,7 +9,7 @@ import {
     TableBody,
     TableCell,
 } from "@/components/ui/table/base";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import {
     Download,
     ExternalLink,

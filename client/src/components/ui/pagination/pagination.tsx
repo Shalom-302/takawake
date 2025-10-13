@@ -5,7 +5,7 @@ import * as React from "react";
 import type { PaginationRootProps } from "./pagination-base";
 import { PaginationBase } from "./pagination-base";
 import { cn } from "@/lib/utils/cn";
-import { Button, ButtonToggleGroupCustom } from "../buttons";
+import { Button, ButtonToggleGroupCustom } from "../button";
 import { useBreakpoint } from "@/lib/hooks/use-breakpoint";
 
 interface PaginationProps extends Partial<Omit<PaginationRootProps, "children">> {

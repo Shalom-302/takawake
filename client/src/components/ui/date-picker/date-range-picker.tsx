@@ -12,7 +12,7 @@ import {
     subWeeks,
     subMonths,
 } from "date-fns";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { Calendar } from "./calendar";
 import { Calendar as CalendarIcon } from "@untitled-ui/icons-react";

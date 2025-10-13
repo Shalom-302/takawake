@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { ProfilImagePreview } from "@/components/ui/file-upload/upload-media-preview";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const MAX_SIZE = 1024 * 1024 * 1; // 1MB

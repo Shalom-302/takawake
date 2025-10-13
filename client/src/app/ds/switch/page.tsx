@@ -10,7 +10,7 @@ import { Switch, SwitchForm } from "@/components/ui/switch";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 
 export default function SwitchPage() {
     const schema = z.object({

@@ -3,8 +3,8 @@ import React from "react";
 import Link from "next/link";
 
 import { CodeBlock } from "@/ds/components/code-block";
-import { Button, LinkButton } from "@/components/ui/buttons";
-import { ButtonVariants } from "@/components/ui/buttons/button";
+import { Button, LinkButton } from "@/components/ui/button";
+import { ButtonVariants } from "@/components/ui/button/button";
 import { Placeholder } from "@untitled-ui/icons-react";
 
 export default function ButtonPage() {

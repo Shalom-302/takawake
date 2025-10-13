@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useCookieStatus } from "@/lib/services/cookie-service";
 import CookieConsentDashboard from "@/components/examples/cookie-consent-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badges/badge";
+import { Badge } from "@/components/ui/badge/badge";
 
 export default function CookieStatusPage() {
     const { status, isLoading, refreshStatus } = useCookieStatus();

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils/cn";
 
 // import { cn } from "@/lib/utils/cn";
-// import { Button } from "@/components/ui/buttons";
+// import { Button } from "@/components/ui/button";
 
 // import * as React from "react";
 

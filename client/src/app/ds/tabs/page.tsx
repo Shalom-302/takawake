@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Tabs } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Input } from "@/components/ui/input";
 

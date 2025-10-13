@@ -4,11 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Archive, Edit03, Trash01 } from "@untitled-ui/icons-react";
-import {
-    ButtonGroup,
-    ButtonToggleGroup,
-    ButtonToggleGroupItemProps,
-} from "@/components/ui/buttons";
+import { ButtonGroup, ButtonToggleGroup, ButtonToggleGroupItemProps } from "@/components/ui/button";
 
 export default function ButtonToggleGroupPage() {
     const defaultItems = [

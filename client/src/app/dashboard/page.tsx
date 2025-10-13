@@ -10,7 +10,7 @@ import {
     CardDescription,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress-indicators/progress";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Clock, MessageSquare, Bell, Activity, RefreshCw, BarChart3 } from "lucide-react";

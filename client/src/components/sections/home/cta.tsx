@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 
 export default function CTASection() {
     return (

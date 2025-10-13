@@ -4,7 +4,7 @@ import { useMessaging } from "@/lib/contexts/messaging-context";
 import ConversationHeader from "./conversation-header";
 import MessageList from "./message-list";
 import MessageInput from "./message-input";
-import { Button } from "../ui/buttons/button";
+import { Button } from "../ui/button/button";
 import { useAuth } from "@/lib/contexts/auth-context";
 
 export default function ConversationView() {

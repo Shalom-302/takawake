@@ -20,11 +20,11 @@ import {
     TableRowActionsDropdown,
 } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badges";
-import { Button } from "@/components/ui/buttons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { ProgressBar } from "@/components/ui/progress-indicators";
-import { ButtonUtility } from "@/components/ui/buttons/button-utility";
+import { ButtonUtility } from "@/components/ui/button/button-utility";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // Types pour les données d'exemple

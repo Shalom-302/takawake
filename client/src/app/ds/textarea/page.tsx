@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { CodeBlock } from "@/ds/components/code-block";
 import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";

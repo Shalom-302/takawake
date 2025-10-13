@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils/cn";
 import { CheckCircle, InfoCircle, XClose } from "@untitled-ui/icons-react";
-import { Button } from "../buttons";
+import { Button } from "../button";
 
 export type AlertVariants = "default" | "brand" | "gray" | "error" | "warning" | "success";
 export type AlertSizes = "floating" | "with-full";

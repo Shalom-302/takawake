@@ -4,7 +4,7 @@ import { useId, useRef, useState, type ComponentProps } from "react";
 import { FileIcon as FileTypeIcon } from "@untitledui/file-icons";
 import { CheckCircle, Trash01, UploadCloud02, XCircle } from "@untitled-ui/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button, ButtonUtility } from "@/components/ui/buttons";
+import { Button, ButtonUtility } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-indicators";
 import { cn } from "@/lib/utils/cn";
 import { FeaturedIcon } from "@/components/icons/featured-icons";

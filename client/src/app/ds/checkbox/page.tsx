@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Checkbox, CheckboxForm } from "@/components/ui/checkbox";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 
 export default function CheckboxPage() {
     const schema = z.object({

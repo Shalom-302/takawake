@@ -18,9 +18,9 @@ import {
     TestTube,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badges/badge";
+import { Badge } from "@/components/ui/badge/badge";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 
 interface SidebarProps {

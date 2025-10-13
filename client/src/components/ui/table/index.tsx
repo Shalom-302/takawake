@@ -31,7 +31,7 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import { Checkbox } from "../checkbox";
 import { DropdownDotsButton, DropdownMenu } from "../dropdown-menu";

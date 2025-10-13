@@ -1,7 +1,7 @@
 "use client";
 import { Circle } from "@untitled-ui/icons-react";
-import { Button } from "@/components/ui/buttons/button";
-import { LinkButton } from "@/components/ui/buttons/link-button";
+import { Button } from "@/components/ui/button/button";
+import { LinkButton } from "@/components/ui/button/link-button";
 
 export default function ViewButton() {
     return (

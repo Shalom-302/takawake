@@ -5,7 +5,7 @@ import { isToday, isSameDay } from "date-fns";
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import { ChevronDown, ChevronLeft, ChevronRight } from "@untitled-ui/icons-react";
 
-import { Button, ButtonVariants, buttonVariants } from "@/components/ui/buttons";
+import { Button, ButtonVariants, buttonVariants } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils/cn";
 import { getLocalizedLabels, useLocale } from "@/lib/hooks/use-locale";

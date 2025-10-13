@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/select";
 import { useClipboard } from "@/lib/hooks/use-clipboard";
 import { cn } from "@/lib/utils/cn";

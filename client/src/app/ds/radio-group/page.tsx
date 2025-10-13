@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { RadioGroup, RadioGroupForm } from "@/components/ui/radio-group";
 import { CodeBlock } from "@/ds/components/code-block";
 import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 
 export default function RadioGroupPage() {
     const schema = z.object({

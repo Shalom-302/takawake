@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Bell, User, Menu, X, MessageSquare, Settings, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar/avatar";
 import {
     DropdownMenu,
@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badges/badge";
+import { Badge } from "@/components/ui/badge/badge";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

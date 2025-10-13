@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-import { Button } from "@/components/ui/buttons/button";
-import { Badge } from "@/components/ui/badges/badge";
+import { Button } from "@/components/ui/button/button";
+import { Badge } from "@/components/ui/badge/badge";
 import {
     Card,
     CardContent,

@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { File01, Shield01, Star01, User01 } from "@untitled-ui/icons-react";
 

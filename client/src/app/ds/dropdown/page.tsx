@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { CodeBlock } from "@/ds/components/code-block";
-import { Button } from "@/components/ui/buttons";
+import { Button } from "@/components/ui/button";
 import { DropdownDotsButton } from "@/components/ui/dropdown-menu";
 
 export default function DropdownPage() {

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
-import { Badge, type BadgeVariants } from "../badges";
+import { Badge, type BadgeVariants } from "../badge";
 
 // === TYPES ===
 type Orientation = "horizontal" | "vertical";

@@ -5,7 +5,7 @@ import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { isReactComponent } from "@/lib/utils/is-react-component";
-import { Button, ButtonVariants } from "@/components/ui/buttons";
+import { Button, ButtonVariants } from "@/components/ui/button";
 
 const buttonGroupVariants = cva(
     "flex w-fit items-stretch [&>*]:cursor-pointer [&>*]:whitespace-nowrap [&>*]:focus-visible:z-10 [&>*]:focus-visible:relative [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md has-[>[data-slot=button-group]]:gap-2",

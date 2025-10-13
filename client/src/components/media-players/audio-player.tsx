@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Button } from "@/components/ui/buttons/button";
+import { Button } from "@/components/ui/button/button";
 import {
     Play,
     Pause,
