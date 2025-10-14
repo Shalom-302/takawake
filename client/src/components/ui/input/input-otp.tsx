@@ -1,14 +1,16 @@
 "use client";
 
-import type { ComponentPropsWithRef } from "react";
+import type { ComponentPropsWithRef, RefAttributes } from "react";
 import { createContext, useContext, useId } from "react";
+// Les imports suivants dépendent de votre configuration de projet.
+// Ils sont laissés tels quels car c'est la version finale de votre composant.
 import { OTPInput, OTPInputContext } from "input-otp";
 import { FormFieldWrapper, type FormFieldWrapperProps } from "@/components/ui/form";
 import type { FieldValues, FieldPath } from "react-hook-form";
 import { cn } from "@/lib/utils/cn";
 
 // ============================================================================
-// Context
+// Context (Partagé pour la taille et l'état 'disabled')
 // ============================================================================
 
 type InputOTPContextType = {
@@ -30,7 +32,7 @@ export const useInputOTPContext = () => {
 };
 
 // ============================================================================
-// Root Component
+// Root Component (Conteneur principal et fournisseur de contexte)
 // ============================================================================
 
 interface InputOTPRootProps extends ComponentPropsWithRef<"div"> {
@@ -54,7 +56,7 @@ const InputOTPRoot = ({
 };
 
 // ============================================================================
-// Group Component
+// Group Component (Wrapper pour le composant headless OTPInput)
 // ============================================================================
 
 type InputOTPGroupProps = ComponentPropsWithRef<typeof OTPInput> & {
@@ -88,7 +90,7 @@ const InputOTPGroup = ({
             aria-labelledby={"input-otp-label-" + id}
             aria-describedby={"input-otp-description-" + id}
             containerClassName={cn(
-                "flex items-center  gap-3",
+                "flex items-center gap-3",
                 size === "sm" && "gap-2",
                 heights[size],
                 containerClassName
@@ -99,7 +101,7 @@ const InputOTPGroup = ({
 };
 
 // ============================================================================
-// Slot Component
+// Slot Component (Rendu visuel d'un chiffre)
 // ============================================================================
 
 const sizes = {
@@ -132,13 +134,14 @@ const InputOTPSlot = ({
                 className
             )}
         >
+            {/* Affichage du caractère, du curseur ou d'un 0 (placeholder) */}
             {slot?.char ? slot.char : slot?.hasFakeCaret ? <FakeCaret size={size} /> : 0}
         </div>
     );
 };
 
 // ============================================================================
-// FakeCaret Component
+// FakeCaret Component (Curseur clignotant pour le slot actif)
 // ============================================================================
 
 const FakeCaret = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
@@ -153,7 +156,7 @@ const FakeCaret = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
 };
 
 // ============================================================================
-// Separator Component
+// Separator Component (Séparateur entre les groupes de slots)
 // ============================================================================
 
 const InputOTPSeparator = ({ className, ...props }: ComponentPropsWithRef<"div">) => {
@@ -172,11 +175,12 @@ const InputOTPSeparator = ({ className, ...props }: ComponentPropsWithRef<"div">
 };
 
 // ============================================================================
-// Simplified InputOTP Component
+// Simplified InputOTP Component (Composable pour une utilisation rapide)
 // ============================================================================
 
-type InputOTPProps = Omit<InputOTPGroupProps, "children" | "size"> & {
+type InputOTPProps = Omit<InputOTPGroupProps, "children" | "size" | "maxLength"> & {
     slots?: number;
+    maxLength?: number;
     size?: "sm" | "md" | "lg";
     disabled?: boolean;
     separator?: boolean | number[];
@@ -187,25 +191,25 @@ export const InputOTP = ({
     size = "md",
     disabled = false,
     separator = false,
-    maxLength,
+    maxLength = slots,
     containerClassName,
     inputClassName,
-}: InputOTPProps) => {
+}: InputOTPProps & RefAttributes<HTMLInputElement>) => {
     const renderSlots = () => {
         const elements: React.ReactNode[] = [];
 
         for (let i = 0; i < slots; i++) {
             elements.push(<InputOTPSlot key={i} index={i} />);
 
-            // Add separator if needed
+            // Ajout du séparateur
             if (separator) {
                 if (Array.isArray(separator)) {
-                    // Custom positions for separators
-                    if (separator.includes(i + 1)) {
+                    // Positions personnalisées
+                    if (separator.includes(i + 1) && i < slots - 1) {
                         elements.push(<InputOTPSeparator key={`sep-${i}`} />);
                     }
                 } else if (separator === true) {
-                    // Default: add separator in the middle
+                    // Séparateur au milieu si slots pair
                     if (i === Math.floor(slots / 2) - 1 && slots % 2 === 0) {
                         elements.push(<InputOTPSeparator key={`sep-${i}`} />);
                     }
@@ -230,7 +234,7 @@ export const InputOTP = ({
 };
 
 // ============================================================================
-// Form Integration Component
+// Form Integration Component (Wrapper pour React Hook Form)
 // ============================================================================
 type InputOTPFormProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -268,6 +272,7 @@ export function InputOTPForm<
     inputClassName,
     containerClassName,
     containerProps,
+    ...rest
 }: InputOTPFormProps<TFieldValues, TName>) {
     return (
         <FormFieldWrapper
@@ -281,7 +286,7 @@ export function InputOTPForm<
             isRequired={isRequired}
         >
             {field => {
-                // Si renderSlots est fourni, utiliser la composition manuelle
+                // Si renderSlots est fourni, utiliser la composition manuelle (permet des séparateurs personnalisés)
                 if (renderSlots) {
                     return (
                         <InputOTPRoot size={size} disabled={disabled} {...containerProps}>
@@ -292,12 +297,15 @@ export function InputOTPForm<
                                 onBlur={field.onBlur}
                                 inputClassName={inputClassName}
                                 containerClassName={containerClassName}
+                                {...rest}
                             >
                                 {renderSlots(slots)}
                             </InputOTPGroup>
                         </InputOTPRoot>
                     );
                 }
+
+                // Sinon, utiliser le composant InputOTP simplifié
                 return (
                     <InputOTP
                         slots={slots}
@@ -310,7 +318,7 @@ export function InputOTPForm<
                         onBlur={field.onBlur}
                         inputClassName={inputClassName}
                         containerClassName={containerClassName}
-                        // containerProps={containerProps}
+                        {...rest}
                     />
                 );
             }}
@@ -319,7 +327,7 @@ export function InputOTPForm<
 }
 
 // ============================================================================
-// Compound Component with Subcomponents
+// Compound Component Exports
 // ============================================================================
 
 export const InputOTPCustom = {
@@ -328,277 +336,3 @@ export const InputOTPCustom = {
     Slot: InputOTPSlot,
     Separator: InputOTPSeparator,
 };
-
-// ============================================================================
-// Demo Component
-// ============================================================================
-
-// export default function Demo() {
-//     const [value1, setValue1] = useState("");
-//     const [value2, setValue2] = useState("");
-//     const [value3, setValue3] = useState("");
-//     const [value4, setValue4] = useState("");
-//     const [value5, setValue5] = useState("");
-//     const [value6, setValue6] = useState("");
-
-//     return (
-//         <div className="min-h-screen bg-gray-50 p-8">
-//             <div className="mx-auto max-w-4xl space-y-12">
-//                 <div>
-//                     <h1 className="text-3xl font-bold mb-2">InputOTP Refactorisé</h1>
-//                     <p className="text-gray-600">
-//                         Composant OTP avec version simplifiée et API de composition
-//                     </p>
-//                 </div>
-
-//                 {/* Simplified Usage */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">✨ Version Simplifiée</h2>
-//                     <div className="space-y-6">
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">4 chiffres</p>
-//                             <InputOTP
-//                                 slots={4}
-//                                 value={value4}
-//                                 onChange={setValue4}
-//                             />
-//                             <p className="mt-2 text-xs text-gray-500">Valeur: {value4}</p>
-//                             <pre className="mt-2 bg-gray-100 p-2 rounded text-xs">
-// {`<InputOTP slots={4} value={value} onChange={setValue} />`}
-//                             </pre>
-//                         </div>
-
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">6 chiffres avec séparateur auto</p>
-//                             <InputOTP
-//                                 slots={6}
-//                                 separator={true}
-//                                 value={value5}
-//                                 onChange={setValue5}
-//                             />
-//                             <p className="mt-2 text-xs text-gray-500">Valeur: {value5}</p>
-//                             <pre className="mt-2 bg-gray-100 p-2 rounded text-xs">
-// {`<InputOTP slots={6} separator={true} />`}
-//                             </pre>
-//                         </div>
-
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">Séparateurs personnalisés (après positions 2 et 4)</p>
-//                             <InputOTP
-//                                 slots={6}
-//                                 separator={[2, 4]}
-//                                 value={value6}
-//                                 onChange={setValue6}
-//                             />
-//                             <p className="mt-2 text-xs text-gray-500">Valeur: {value6}</p>
-//                             <pre className="mt-2 bg-gray-100 p-2 rounded text-xs">
-// {`<InputOTP slots={6} separator={[2, 4]} />
-// // Résultat: XX-XX-XX`}
-//                             </pre>
-//                         </div>
-//                     </div>
-//                 </section>
-
-//                 {/* Example 1: Basic 4-digit PIN */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">🔧 Composition Manuelle : PIN 4 chiffres</h2>
-//                     <InputOTP.Root>
-//                         <InputOTP.Group maxLength={4} value={value1} onChange={setValue1}>
-//                             <InputOTP.Slot index={0} />
-//                             <InputOTP.Slot index={1} />
-//                             <InputOTP.Slot index={2} />
-//                             <InputOTP.Slot index={3} />
-//                         </InputOTP.Group>
-//                     </InputOTP.Root>
-//                     <p className="mt-4 text-sm text-gray-600">Valeur: {value1}</p>
-//                     <pre className="mt-2 bg-gray-100 p-3 rounded text-xs overflow-x-auto">
-// {`<InputOTP.Root>
-//   <InputOTP.Group maxLength={4}>
-//     <InputOTP.Slot index={0} />
-//     <InputOTP.Slot index={1} />
-//     <InputOTP.Slot index={2} />
-//     <InputOTP.Slot index={3} />
-//   </InputOTP.Group>
-// </InputOTP.Root>`}
-//                     </pre>
-//                 </section>
-
-//                 {/* Example 2: 6-digit with separator */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">🔧 Composition Manuelle : Code avec séparateur (XXX-XXX)</h2>
-//                     <InputOTP.Root size="md">
-//                         <InputOTP.Group maxLength={6} value={value2} onChange={setValue2}>
-//                             <InputOTP.Slot index={0} />
-//                             <InputOTP.Slot index={1} />
-//                             <InputOTP.Slot index={2} />
-//                             <InputOTP.Separator />
-//                             <InputOTP.Slot index={3} />
-//                             <InputOTP.Slot index={4} />
-//                             <InputOTP.Slot index={5} />
-//                         </InputOTP.Group>
-//                     </InputOTP.Root>
-//                     <p className="mt-4 text-sm text-gray-600">Valeur: {value2}</p>
-//                     <pre className="mt-2 bg-gray-100 p-3 rounded text-xs overflow-x-auto">
-// {`<InputOTP.Root size="md">
-//   <InputOTP.Group maxLength={6}>
-//     <InputOTP.Slot index={0} />
-//     <InputOTP.Slot index={1} />
-//     <InputOTP.Slot index={2} />
-//     <InputOTP.Separator />
-//     <InputOTP.Slot index={3} />
-//     <InputOTP.Slot index={4} />
-//     <InputOTP.Slot index={5} />
-//   </InputOTP.Group>
-// </InputOTP.Root>`}
-//                     </pre>
-//                 </section>
-
-//                 {/* Different Sizes */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-6">Différentes Tailles</h2>
-//                     <div className="space-y-6">
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">Small</p>
-//                             <InputOTP size="sm" slots={4} />
-//                         </div>
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">Medium (default)</p>
-//                             <InputOTP size="md" slots={4} />
-//                         </div>
-//                         <div>
-//                             <p className="text-sm font-medium mb-2 text-gray-700">Large</p>
-//                             <InputOTP size="lg" slots={4} />
-//                         </div>
-//                     </div>
-//                 </section>
-
-//                 {/* Complex Custom Layout */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">Layout Complexe : XX-XX-XX</h2>
-//                     <InputOTP.Root size="md">
-//                         <InputOTP.Group maxLength={6} value={value3} onChange={setValue3}>
-//                             <InputOTP.Slot index={0} />
-//                             <InputOTP.Slot index={1} />
-//                             <InputOTP.Separator />
-//                             <InputOTP.Slot index={2} />
-//                             <InputOTP.Slot index={3} />
-//                             <InputOTP.Separator />
-//                             <InputOTP.Slot index={4} />
-//                             <InputOTP.Slot index={5} />
-//                         </InputOTP.Group>
-//                     </InputOTP.Root>
-//                     <p className="mt-4 text-sm text-gray-600">Valeur: {value3}</p>
-//                 </section>
-
-//                 {/* Disabled State */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">État Désactivé</h2>
-//                     <InputOTP disabled slots={6} value="123456" />
-//                 </section>
-
-//                 {/* Form Integration Example */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">Intégration avec React Hook Form</h2>
-//                     <p className="text-sm text-gray-600 mb-4">
-//                         Utilisez <code className="bg-gray-100 px-1 py-0.5 rounded">InputOTPForm</code> pour l'intégration avec les formulaires
-//                     </p>
-//                     <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
-// {`<InputOTPForm
-//   name="verification_code"
-//   control={control}
-//   label="Code de vérification"
-//   description="Entrez le code à 6 chiffres"
-//   isRequired
-//   slots={6}
-// />
-
-// // Ou avec un layout personnalisé :
-// <InputOTPForm
-//   name="pin"
-//   control={control}
-//   label="Code PIN"
-//   slots={6}
-//   renderSlots={(slots) => (
-//     <>
-//       <InputOTP.Slot index={0} />
-//       <InputOTP.Slot index={1} />
-//       <InputOTP.Slot index={2} />
-//       <InputOTP.Separator />
-//       <InputOTP.Slot index={3} />
-//       <InputOTP.Slot index={4} />
-//       <InputOTP.Slot index={5} />
-//     </>
-//   )}
-// />`}
-//                     </pre>
-//                 </section>
-
-//                 {/* API Summary */}
-//                 <section className="bg-white rounded-lg p-6 shadow-sm">
-//                     <h2 className="text-xl font-semibold mb-4">📚 Résumé de l'API</h2>
-//                     <div className="space-y-4 text-sm">
-//                         <div className="border-l-4 border-blue-500 pl-4">
-//                             <h3 className="font-semibold mb-2 text-blue-700">✨ Version Simplifiée</h3>
-//                             <pre className="bg-gray-100 p-2 rounded text-xs mb-2">
-// {`<InputOTP
-//   slots={6}              // Nombre de slots
-//   separator={true}       // true | false | [2, 4]
-//   size="md"              // "sm" | "md" | "lg"
-//   disabled={false}
-//   value={value}
-//   onChange={setValue}
-// />`}
-//                             </pre>
-//                             <p className="text-gray-600 text-xs">
-//                                 Génère automatiquement les slots avec séparateurs optionnels
-//                             </p>
-//                         </div>
-
-//                         <div className="border-l-4 border-green-500 pl-4">
-//                             <h3 className="font-semibold mb-2 text-green-700">🔧 Composition Manuelle</h3>
-//                             <pre className="bg-gray-100 p-2 rounded text-xs mb-2">
-// {`<InputOTP.Root size="md" disabled={false}>
-//   <InputOTP.Group maxLength={6} value={v} onChange={setV}>
-//     <InputOTP.Slot index={0} />
-//     <InputOTP.Slot index={1} />
-//     <InputOTP.Separator />
-//     <InputOTP.Slot index={2} />
-//   </InputOTP.Group>
-// </InputOTP.Root>`}
-//                             </pre>
-//                             <p className="text-gray-600 text-xs">
-//                                 Contrôle total sur le layout et la position des séparateurs
-//                             </p>
-//                         </div>
-
-//                         <div className="border-l-4 border-purple-500 pl-4">
-//                             <h3 className="font-semibold mb-2 text-purple-700">📋 Formulaires (React Hook Form)</h3>
-//                             <pre className="bg-gray-100 p-2 rounded text-xs mb-2">
-// {`<InputOTPForm
-//   name="code"
-//   control={control}
-//   label="Code de vérification"
-//   description="Entrez le code"
-//   isRequired
-//   slots={6}
-//   separator={true}
-//   // ou avec renderSlots pour layout custom
-//   renderSlots={(slots) => (
-//     <>
-//       <InputOTP.Slot index={0} />
-//       <InputOTP.Separator />
-//       <InputOTP.Slot index={1} />
-//     </>
-//   )}
-// />`}
-//                             </pre>
-//                             <p className="text-gray-600 text-xs">
-//                                 Intégration complète avec validation et gestion d'erreurs
-//                             </p>
-//                         </div>
-//                     </div>
-//                 </section>
-//             </div>
-//         </div>
-//     );
-// }

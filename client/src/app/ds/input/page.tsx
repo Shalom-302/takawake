@@ -13,6 +13,7 @@ import {
     PaymentInput,
     PaymentInputForm,
     InputOTP,
+    InputOTPForm,
 } from "@/components/ui/input";
 import { Check, Copy01, Mail01, Mail02, User02 } from "@untitled-ui/icons-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,9 @@ const formSchema = z.object({
     cardNumber: z.string().min(13, {
         message: "Card number must be at least 13 digits.",
     }),
+    code: z.string().min(6, {
+        message: "Your one-time password must be 6 characters.",
+    }),
 });
 
 // Définition du composant de page
@@ -47,6 +51,7 @@ export default function InputPage() {
             username: "",
             email: "",
             cardNumber: "",
+            code: "",
         },
     });
 
@@ -141,10 +146,11 @@ export default function InputPage() {
                             tooltip="Input with tooltip"
                         />
                         <CodeBlock
-                            code={`<Input 
-  type="text" 
-  placeholder="Input with tooltip" 
-  tooltip="Input with tooltip"
+                            code={`
+<Input 
+    type="text" 
+    placeholder="Input with tooltip" 
+    tooltip="Input with tooltip"
 />`}
                         />
                     </div>
@@ -177,11 +183,11 @@ export default function InputPage() {
             <section className="mb-10" id="payment">
                 <h2 className="text-xl font-semibold mb-4">OTP Input</h2>
                 <p className="text-tertiary mb-4">
-                    Specialized input for credit card numbers with automatic card type detection.
+                    Verification code input components built for modern applications and websites.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 border border-tertiary rounded-lg">
-                        <InputOTP size="sm" slots={4} maxLength={4} />
+                        <InputOTP size="sm" slots={4} />
                         <CodeBlock code={`<InputOTP size="sm" slots={4} maxLength={4} />`} />
                     </div>
                     <div className="p-4 border border-tertiary rounded-lg">
@@ -380,6 +386,16 @@ export default function InputPage() {
                             tooltip="This is a tooltip"
                             isRequired
                         />
+                        <InputOTPForm
+                            size="sm"
+                            name="code"
+                            control={form.control}
+                            label="Code de vérification"
+                            description="Entrez le code"
+                            slots={6}
+                            separator={true}
+                            isRequired
+                        />
                         <Button type="submit">Submit</Button>
                     </form>
                 </Form>
@@ -395,11 +411,14 @@ const formSchema = z.object({
   username: z.string().min(2, { message: "Username must be at least 2 characters." }),
   email: z.string().email(),
   cardNumber: z.string().min(13, { message: "Card number must be at least 13 digits." }),
+  code: z.string().min(6, {
+        message: "Your one-time password must be 6 characters.",
+    }),
 });
 
 const form = useForm<z.infer<typeof formSchema>>({
   resolver: zodResolver(formSchema),
-  defaultValues: { username: "", email: "", cardNumber: "" },
+  defaultValues: { username: "", email: "", cardNumber: "", code: "" },
 });
 
 function onSubmit(data: z.infer<typeof formSchema>) {
@@ -442,6 +461,15 @@ function onSubmit(data: z.infer<typeof formSchema>) {
       placeholder="1234 5678 9012 3456"
       description="Enter your credit card number."
       isRequired
+    />
+    <InputOTPForm
+        name="code"
+        control={form.control}
+        label="Code de vérification"
+        description="Entrez le code"
+        slots={6}
+        separator={true}
+        isRequired
     />
     <Button type="submit">Submit</Button>
   </form>
@@ -739,6 +767,168 @@ function onSubmit(data: z.infer<typeof formSchema>) {
                                     <td className="px-4 py-2">string</td>
                                     <td className="px-4 py-2">—</td>
                                     <td className="px-4 py-2">Styles for tooltip content.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">INPUT OTP</h3>
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <th className="px-4 py-2">Props</th>
+                                    <th className="px-4 py-2">Type</th>
+                                    <th className="px-4 py-2">Default</th>
+                                    <th className="px-4 py-2">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">slots?</td>
+                                    <td className="px-4 py-2">number</td>
+                                    <td className="px-4 py-2">6</td>
+                                    <td className="px-4 py-2">Number of input boxes to render.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">size?</td>
+                                    <td className="px-4 py-2">{`"sm" | "md" | "lg"`}</td>
+                                    <td className="px-4 py-2">{`"md"`}</td>
+                                    <td className="px-4 py-2">
+                                        Controls the size of each input slot.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">separator?</td>
+                                    <td className="px-4 py-2">{`boolean | number[]`}</td>
+                                    <td className="px-4 py-2">false</td>
+                                    <td className="px-4 py-2">
+                                        If <code>true</code>, adds a separator in the middle (if
+                                        slots are even). Can be an array of positions (e.g.,{" "}
+                                        <code>[3, 6]</code>).
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">maxLength?</td>
+                                    <td className="px-4 py-2">number</td>
+                                    <td className="px-4 py-2">slots</td>
+                                    <td className="px-4 py-2">
+                                        Maximum characters allowed. Defaults to <code>slots</code>.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">disabled?</td>
+                                    <td className="px-4 py-2">boolean</td>
+                                    <td className="px-4 py-2">false</td>
+                                    <td className="px-4 py-2">Disables user input.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">containerClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Extra classes for the flex container wrapping the slots.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">inputClassName?</td>
+                                    <td className="px-4 py-2">string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Extra classes for the underlying invisible
+                                        <code>&lt;input&gt;</code> element (used for keyboard and
+                                        paste handling).
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* INPUT OTP FORM */}
+                    <div>
+                        <h3 className="text-md font-semibold mb-2">INPUT OTP FORM</h3>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <th className="text-left py-2 px-4">Props</th>
+                                    <th className="text-left py-2 px-4">Type</th>
+                                    <th className="text-left py-2 px-4">Default</th>
+                                    <th className="text-left py-2 px-4">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">control</td>
+                                    <td className="px-4 py-2">Control&lt;TFieldValues&gt;</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">React Hook Form control instance.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">name</td>
+                                    <td className="px-4 py-2">FieldPath&lt;TFieldValues&gt;</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Field name registered in the form schema.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">label?</td>
+                                    <td className="px-4 py-2">ReactNode | string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Field label displayed above input.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">description?</td>
+                                    <td className="px-4 py-2">ReactNode | string</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">Helper text under the input.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">isRequired?</td>
+                                    <td className="px-4 py-2">boolean</td>
+                                    <td className="px-4 py-2">false</td>
+                                    <td className="px-4 py-2">Adds required indicator on label.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">slots?</td>
+                                    <td className="px-4 py-2">number</td>
+                                    <td className="px-4 py-2">6</td>
+                                    <td className="px-4 py-2">Number of input boxes to render.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">size?</td>
+                                    <td className="px-4 py-2">{`"sm" | "md" | "lg"`}</td>
+                                    <td className="px-4 py-2">{`"md"`}</td>
+                                    <td className="px-4 py-2">
+                                        Controls the size of each input slot.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">maxLength?</td>
+                                    <td className="px-4 py-2">number</td>
+                                    <td className="px-4 py-2">slots</td>
+                                    <td className="px-4 py-2">Maximum characters allowed.</td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">renderSlots?</td>
+                                    <td className="px-4 py-2">{`(slots: number) => React.ReactNode`}</td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Custom rendering function for slots and separators.
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-tertiary dark:border-gray-600">
+                                    <td className="px-4 py-2 font-mono">…otpProps</td>
+                                    <td className="px-4 py-2">
+                                        All <code>InputOTP</code> props (except <code>value</code>{" "}
+                                        and <code>onChange</code>).
+                                    </td>
+                                    <td className="px-4 py-2">—</td>
+                                    <td className="px-4 py-2">
+                                        Props passed to the inner <code>InputOTP</code> component.
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
