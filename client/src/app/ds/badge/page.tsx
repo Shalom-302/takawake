@@ -11,6 +11,7 @@ import {
     BadgeWithImage,
     BadgeWithButton,
     BadgeIcon,
+    BadgeGroup,
 } from "@/components/ui/badge";
 import { Sizes } from "@/components/ui/badge/badge-types";
 import {
@@ -30,7 +31,6 @@ export default function BadgePage() {
         { name: "modern", description: "Rectangular badge with a subtle shadow (modern style)." },
     ];
 
-    // Palette de couleurs limitée pour l'exemple
     const colors: BadgeVariants["color"][] = [
         "gray",
         "brand",
@@ -41,7 +41,6 @@ export default function BadgePage() {
     ];
     const sizes: Sizes[] = ["sm", "md", "lg"];
 
-    // Props par défaut pour l'affichage
     const defaultColor = "brand";
     const defaultVariant = "pill-color";
 
@@ -59,9 +58,7 @@ export default function BadgePage() {
                 </p>
             </div>
 
-            {/* ----------------------------------------------------------------- */}
             {/* COMPOSANTS DE BASE (BADGE) */}
-            {/* ----------------------------------------------------------------- */}
             <h2 className="text-2xl font-bold mt-10 mb-6">1. Badge Simple & Couleurs</h2>
             <p className="text-muted-foreground mb-4">
                 La couleur, la taille et la variante (forme) sont les props de base.
@@ -113,11 +110,13 @@ export default function BadgePage() {
                         </Badge>
                     ))}
                 </div>
+                <CodeBlock
+                    className="mt-2"
+                    code={`<Badge color="gray|brand|error|warning|success|blue">Color</Badge>`}
+                />
             </div>
 
-            {/* ----------------------------------------------------------------- */}
             {/* VARIANTES RICHES */}
-            {/* ----------------------------------------------------------------- */}
             <h2 className="text-2xl font-bold mt-10 mb-6">2. Composants Complexes</h2>
             <p className="text-muted-foreground mb-4">
                 Ces composants utilisent la même API de base mais encapsulent des éléments
@@ -145,7 +144,7 @@ export default function BadgePage() {
 
             {/* BadgeWithIcon */}
             <div className="mb-10 p-4 border border-tertiary rounded-lg">
-                <h3 className="text-xl font-semibold mb-4">BadgeWithIcon (Icône en tête/fin)</h3>
+                <h3 className="text-xl font-semibold mb-4">BadgeWithIcon</h3>
                 <div className="flex flex-wrap gap-4 mb-4">
                     <BadgeWithIcon leftIcon={User01} color="blue" size="md">
                         Profil
@@ -163,7 +162,7 @@ export default function BadgePage() {
                     </BadgeWithIcon>
                 </div>
                 <CodeBlock
-                    code={`<BadgeWithIcon leftIcon={UserIcon} color="blue">Profil</BadgeWithIcon>\n<BadgeWithIcon rightIcon={ArrowDown} variant="color">Télécharger</BadgeWithIcon>`}
+                    code={`<BadgeWithIcon leftIcon={UserIcon} color="blue">Profil</BadgeWithIcon>\n<BadgeWithIcon rightIcon={ArrowDown} variant="color">Télécharger</BadgeWithIcon>\n<BadgeWithIcon leftIcon={ShieldDollar} variant="modern">Payé</BadgeWithIcon>`}
                 />
             </div>
 
@@ -218,13 +217,204 @@ export default function BadgePage() {
                     <BadgeIcon icon={Globe01} color="success" size="md" variant="color" />
                 </div>
                 <CodeBlock
-                    code={`<BadgeIcon icon={Settings} color="gray" size="md" />\n<BadgeIcon icon={Mail} color="brand" size="sm" />\n<BadgeIcon icon={Globe01} color="success" size="md" variant="color" />`}
+                    code={`<BadgeIcon icon={Settings} color="gray" size="md" />\n<BadgeIcon icon={Mail} color="brand" size="md" />\n<BadgeIcon icon={Globe01} color="success" size="md" variant="color" />`}
                 />
             </div>
 
-            {/* ----------------------------------------------------------------- */}
-            {/* API REFERENCE (MIS À JOUR) */}
-            {/* ----------------------------------------------------------------- */}
+            {/* BadgeGroup */}
+            <div className="mb-10 p-4 border border-tertiary rounded-lg">
+                <h3 className="text-xl font-semibold mb-4">BadgeGroup (Badge avec Addon)</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                    Badge composite avec un élément addon (compteur, action) et alignement
+                    configurable.
+                </p>
+
+                <div className="space-y-6">
+                    {/* Light Theme - Left Align */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-3">Light Theme </h4>
+                        <div className="flex flex-col items-start gap-4">
+                            <BadgeGroup
+                                addonText="New feature"
+                                color="gray"
+                                theme="light"
+                                align="left"
+                                size="md"
+                            >
+                                {"We've just released a new feature"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="New feature"
+    color="gray"
+    theme="light"
+    align="left"
+    size="md"
+>
+    {"We've just released a new feature"}
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="Error"
+                                color="error"
+                                theme="light"
+                                align="left"
+                                size="md"
+                            >
+                                There was a problem with that action
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="Error"
+    color="error"
+    theme="light"
+    align="left"
+    size="md"
+>
+    There was a problem with that action
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="Warning"
+                                color="warning"
+                                theme="light"
+                                align="right"
+                                size="lg"
+                            >
+                                Just to let you know this might be a problem
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="Warning"
+    color="warning"
+    theme="light"
+    align="right"
+    size="lg"
+>
+    Just to let you know this might be a problem
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="Success"
+                                color="success"
+                                theme="light"
+                                align="right"
+                                size="lg"
+                            >
+                                {"You've updated your profile and details"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="Success"
+    color="success"
+    theme="light"
+    align="right"
+    size="lg"
+>
+    {"You've updated your profile and details"}
+</BadgeGroup>`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Modern Theme - Left Align */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-3">Modern Theme</h4>
+                        <div className="flex flex-col items-start gap-4">
+                            <BadgeGroup
+                                addonText="New feature"
+                                color="gray"
+                                theme="modern"
+                                align="left"
+                                size="md"
+                            >
+                                {"We've just released a new feature"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="New feature"
+    color="gray"
+    theme="modern"
+    align="left"
+    size="md"
+>
+    {"We've just released a new feature"}
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="New feature"
+                                color="brand"
+                                theme="modern"
+                                align="left"
+                                size="md"
+                            >
+                                {"We've just released a new feature"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="New feature"
+    color="brand"
+    theme="modern"
+    align="left"
+    size="md"
+>
+    {"We've just released a new feature"}
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="Error"
+                                color="error"
+                                theme="modern"
+                                align="right"
+                                size="lg"
+                            >
+                                {"There was a problem with that action"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="Error"
+    color="error"
+    theme="modern"
+    align="right"
+    size="lg"
+>
+    {"There was a problem with that action"}
+</BadgeGroup>`}
+                            />
+                            <BadgeGroup
+                                addonText="Success"
+                                color="success"
+                                theme="modern"
+                                align="right"
+                                size="lg"
+                            >
+                                {" You've updated your profile and details"}
+                            </BadgeGroup>
+                            <CodeBlock
+                                code={`
+<BadgeGroup
+    addonText="Success"
+    color="success"
+    theme="modern"
+    align="right"
+    size="lg"
+>
+    {" You've updated your profile and details"}
+</BadgeGroup>`}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* API REFERENCE */}
             <div className="mb-10">
                 <h2 className="text-2xl font-bold mt-10 mb-4">API Reference</h2>
                 <div className="overflow-x-auto">
@@ -326,6 +516,34 @@ export default function BadgePage() {
                                 <td className="py-2 px-4 font-mono text-sm">buttonLabel?</td>
                                 <td className="py-2 px-4 font-mono text-sm">string</td>
                                 <td className="py-2 px-4">(Accessible) label for the button.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">BadgeGroup</td>
+                                <td className="py-2 px-4 font-mono text-sm">addonText</td>
+                                <td className="py-2 px-4 font-mono text-sm">string | ReactNode</td>
+                                <td className="py-2 px-4">
+                                    Content of the addon section (required).
+                                </td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">BadgeGroup</td>
+                                <td className="py-2 px-4 font-mono text-sm">theme?</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`'light' | 'modern'`}</td>
+                                <td className="py-2 px-4">Visual theme of the badge group.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">BadgeGroup</td>
+                                <td className="py-2 px-4 font-mono text-sm">align?</td>
+                                <td className="py-2 px-4 font-mono text-sm">{`'left' | 'right'`}</td>
+                                <td className="py-2 px-4">Position of the addon section.</td>
+                            </tr>
+                            <tr className="border-b border-tertiary">
+                                <td className="py-2 px-4 font-mono text-sm">BadgeGroup</td>
+                                <td className="py-2 px-4 font-mono text-sm">rightIcon?</td>
+                                <td className="py-2 px-4 font-mono text-sm">
+                                    IconComponentType | ReactNode
+                                </td>
+                                <td className="py-2 px-4">Optional trailing icon.</td>
                             </tr>
                         </tbody>
                     </table>
