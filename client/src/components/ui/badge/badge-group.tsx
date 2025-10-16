@@ -115,8 +115,8 @@ export const BadgeGroup: FC<BadgeGroupProps> = ({
         theme === "light" && themeColors.light[color],
         // 2. Calcul du padding horizontal basé sur l'alignement et la présence de texte
         align === "left"
-            ? cn("pl-1", hasText ? "pr-2" : "pr-1") // Addon à gauche, padding à droite ajusté
-            : cn("pr-1", hasText ? "pl-3" : "pl-2.5"), // Addon à droite, padding à gauche ajusté
+            ? cn("pl-1", hasText ? "pr-2" : "pr-1")
+            : cn("pr-1", hasText ? "pl-3" : "pl-2.5"),
         className
     );
 

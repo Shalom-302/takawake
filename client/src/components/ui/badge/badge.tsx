@@ -36,52 +36,100 @@ export const badgeAddonColors = {
         addon: "text-utility-blue-500",
         addonButton: "hover:bg-utility-blue-100 text-utility-blue-400 hover:text-utility-blue-500",
     },
-    // Styles pour 'modern'
     modern: {
         addon: "text-gray-500",
         addonButton: "hover:bg-utility-gray-100 text-utility-gray-400 hover:text-utility-gray-500",
     },
 } as const;
 
+const sizeConfig = {
+    sm: { padding: "px-2 py-0.5", gap: "gap-1", text: "text-xs" },
+    md: { padding: "px-2.5 py-0.5", gap: "gap-1.5", text: "text-sm" },
+    lg: { padding: "px-3 py-1", gap: "gap-1.5", text: "text-sm" },
+} as const;
+
+const generateSizeClasses = (
+    size: Sizes,
+    type: "default" | "dot" | "icon" | "flag" | "button" | "iconOnly"
+) => {
+    const config = sizeConfig[size as keyof typeof sizeConfig];
+
+    const sizeMap = {
+        sm: {
+            icon: 3,
+            padding: {
+                dot: "pl-1.5 pr-2",
+                iconL: "pr-2 pl-1.5",
+                iconR: "pl-2 pr-1.5",
+                flag: "pl-0.75 pr-2",
+                button: "pl-2 pr-0.75",
+                iconOnly: "p-1.25",
+            },
+        },
+        md: {
+            icon: 3,
+            padding: {
+                dot: "pl-2 pr-2.5",
+                iconL: "pr-2.5 pl-2",
+                iconR: "pl-2.5 pr-2",
+                flag: "pl-1 pr-2.5",
+                button: "pl-2.5 pr-1",
+                iconOnly: "p-1.5",
+            },
+        },
+        lg: {
+            icon: 3,
+            padding: {
+                dot: "pl-2.5 pr-3",
+                iconL: "pr-3 pl-2.5",
+                iconR: "pl-3 pr-2.5",
+                flag: "pl-1.5 pr-3",
+                button: "pl-3 pr-1.5",
+                iconOnly: "p-2",
+            },
+        },
+    };
+
+    const s = sizeMap[size as keyof typeof sizeMap];
+
+    switch (type) {
+        case "dot":
+            return `${s.padding.dot} ${config.gap} ${config.text}`;
+        case "icon":
+            return `${config.gap} ${config.text}`;
+        case "flag":
+            return `${s.padding.flag} ${config.gap} ${config.text}`;
+        case "button":
+            return `${s.padding.button} gap-0.5 ${config.text}`;
+        case "iconOnly":
+            return s.padding.iconOnly;
+        default:
+            return `${config.padding} ${config.gap} ${config.text}`;
+    }
+};
+
 const badgeSizes = {
-    // ----------------------------------------------------
-    // Badge Standard (Badge)
-    sm: "px-2 py-0.5 gap-1 text-xs",
-    md: "px-2.5 py-0.5 gap-1.5 text-sm",
-    lg: "px-3 py-1 gap-1.5 text-sm",
-
-    // ----------------------------------------------------
-    // Badge avec Dot (BadgeWithDot)
-    dot_sm: "py-0.5 pl-1.5 pr-2 gap-1 text-xs",
-    dot_md: "py-0.5 pl-2 pr-2.5 gap-1.5 text-sm",
-    dot_lg: "py-1 pl-2.5 pr-3 gap-1.5 text-sm",
-
-    // ----------------------------------------------------
-    // Badge avec Icône (BadgeWithIcon)
-    icon_leading_sm: "gap-0.5 py-0.5 pr-2 pl-1.5 text-xs",
-    icon_trailing_sm: "gap-0.5 py-0.5 pl-2 pr-1.5 text-xs",
-    icon_leading_md: "gap-1 py-0.5 pr-2.5 pl-2 text-sm",
-    icon_trailing_md: "gap-1 py-0.5 pl-2.5 pr-2 text-sm",
-    icon_leading_lg: "gap-1 py-1 pr-3 pl-2.5 text-sm",
-    icon_trailing_lg: "gap-1 py-1 pl-3 pr-2.5 text-sm",
-
-    // ----------------------------------------------------
-    // Badge avec Drapeau/Image (BadgeWithFlag, BadgeWithImage)
-    flag_sm: "gap-1 py-0.5 pl-0.75 pr-2 text-xs",
-    flag_md: "gap-1.5 py-0.5 pl-1 pr-2.5 text-sm",
-    flag_lg: "gap-1.5 py-1 pl-1.5 pr-3 text-sm",
-
-    // ----------------------------------------------------
-    // Badge avec Bouton (BadgeWithButton)
-    button_sm: "gap-0.5 py-0.5 pl-2 pr-0.75 text-xs",
-    button_md: "gap-0.5 py-0.5 pl-2.5 pr-1 text-sm",
-    button_lg: "gap-0.5 py-1 pl-3 pr-1.5 text-sm",
-
-    // ----------------------------------------------------
-    // Icône seule (BadgeIcon)
-    icon_only_sm: "p-1.25",
-    icon_only_md: "p-1.5",
-    icon_only_lg: "p-2",
+    sm: generateSizeClasses("sm", "default"),
+    md: generateSizeClasses("md", "default"),
+    lg: generateSizeClasses("lg", "default"),
+    dot_sm: generateSizeClasses("sm", "dot"),
+    dot_md: generateSizeClasses("md", "dot"),
+    dot_lg: generateSizeClasses("lg", "dot"),
+    icon_leading_sm: `${generateSizeClasses("sm", "icon")} pr-2 pl-1.5`,
+    icon_trailing_sm: `${generateSizeClasses("sm", "icon")} pl-2 pr-1.5`,
+    icon_leading_md: `${generateSizeClasses("md", "icon")} pr-2.5 pl-2`,
+    icon_trailing_md: `${generateSizeClasses("md", "icon")} pl-2.5 pr-2`,
+    icon_leading_lg: `${generateSizeClasses("lg", "icon")} pr-3 pl-2.5`,
+    icon_trailing_lg: `${generateSizeClasses("lg", "icon")} pl-3 pr-2.5`,
+    flag_sm: generateSizeClasses("sm", "flag"),
+    flag_md: generateSizeClasses("md", "flag"),
+    flag_lg: generateSizeClasses("lg", "flag"),
+    button_sm: generateSizeClasses("sm", "button"),
+    button_md: generateSizeClasses("md", "button"),
+    button_lg: generateSizeClasses("lg", "button"),
+    icon_only_sm: generateSizeClasses("sm", "iconOnly"),
+    icon_only_md: generateSizeClasses("md", "iconOnly"),
+    icon_only_lg: generateSizeClasses("lg", "iconOnly"),
 } as const;
 
 export const badgeVariants = cva(
@@ -90,12 +138,12 @@ export const badgeVariants = cva(
         variants: {
             variant: {
                 "pill-color": "rounded-full ring-1 ring-inset",
-                color: " rounded-md ring-1 ring-inset",
-                modern: " rounded-md ring-1 ring-inset shadow-xs bg-primary! text-secondary! ring-primary!",
+                color: "rounded-md ring-1 ring-inset",
+                modern: "rounded-md ring-1 ring-inset shadow-xs bg-primary! text-secondary! ring-primary!",
             },
             size: badgeSizes,
             color: {
-                gray: "bg-utility-gray-50 text-utility-gray-700 ring-utility-gray-200 ",
+                gray: "bg-utility-gray-50 text-utility-gray-700 ring-utility-gray-200",
                 brand: "bg-utility-brand-50 text-utility-brand-700 ring-utility-brand-200",
                 error: "bg-utility-error-50 text-utility-error-700 ring-utility-error-200",
                 warning: "bg-utility-warning-50 text-utility-warning-700 ring-utility-warning-200",
@@ -118,6 +166,18 @@ type CommonBadgeProps = BadgeVariants &
         asChild?: boolean;
     };
 
+// Utilitaire pour récupérer les styles d'addon
+const getAddonStyle = (
+    variant: BadgeVariants["variant"],
+    color: BadgeVariants["color"],
+    type: "addon" | "button" = "addon"
+) => {
+    const colorKey: BadgeColorKeys = variant === "modern" ? "modern" : (color as BadgeColorKeys);
+    return type === "button"
+        ? badgeAddonColors[colorKey]?.addonButton || ""
+        : badgeAddonColors[colorKey]?.addon || "";
+};
+
 export function Badge({
     className,
     variant,
@@ -128,16 +188,13 @@ export function Badge({
 }: CommonBadgeProps) {
     const Comp = asChild ? Slot : "span";
 
-    const baseSize =
-        size === "dot_sm" || size === "dot_md" || size === "dot_lg" ? "md" : (size as Sizes);
-
     return (
         <Comp
             data-slot="badge"
             className={cn(
                 badgeVariants({
                     variant,
-                    size: baseSize,
+                    size,
                     ...(variant !== "modern" && { color }),
                 }),
                 className
@@ -146,10 +203,6 @@ export function Badge({
         />
     );
 }
-
-// ----------------------------------------------------
-// BadgeWithDot
-// ----------------------------------------------------
 
 export function BadgeWithDot({
     className,
@@ -162,33 +215,25 @@ export function BadgeWithDot({
 }: CommonBadgeProps) {
     const Comp = asChild ? Slot : "span";
 
-    const sizeWithDot = `dot_${size}` as BadgeVariants["size"];
-    const addonColorKey: BadgeColorKeys =
-        variant === "modern" ? "modern" : (color as BadgeColorKeys);
-    const addonStyle = badgeAddonColors[addonColorKey]?.addon || "";
-
     return (
         <Comp
             data-slot="badge-with-dot"
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeWithDot,
+                    size: `dot_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
             )}
             {...props}
         >
-            <Dot className={addonStyle} />
+            <Dot className={getAddonStyle(variant, color)} size="sm" />
             {children}
         </Comp>
     );
 }
 
-// ----------------------------------------------------
-// BadgeWithIcon
-// ----------------------------------------------------
 interface BadgeWithIconProps extends CommonBadgeProps {
     leftIcon?: IconComponentType;
     rightIcon?: IconComponentType;
@@ -206,13 +251,8 @@ export function BadgeWithIcon({
     ...props
 }: BadgeWithIconProps) {
     const Comp = asChild ? Slot : "span";
-
-    const iconPosition = LeftIcon ? "leading" : "trailing";
-    const sizeWithIcon = `icon_${iconPosition}_${size}` as BadgeVariants["size"];
-
-    const addonColorKey: BadgeColorKeys =
-        variant === "modern" ? "modern" : (color as BadgeColorKeys);
-    const addonStyle = badgeAddonColors[addonColorKey]?.addon || "";
+    const position = LeftIcon ? "leading" : "trailing";
+    const addonStyle = getAddonStyle(variant, color);
 
     return (
         <Comp
@@ -220,7 +260,7 @@ export function BadgeWithIcon({
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeWithIcon,
+                    size: `icon_${position}_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
@@ -236,9 +276,6 @@ export function BadgeWithIcon({
     );
 }
 
-// ----------------------------------------------------
-// BadgeWithFlag
-// ----------------------------------------------------
 interface BadgeWithFlagProps extends CommonBadgeProps {
     flag?: FlagTypes;
 }
@@ -254,7 +291,6 @@ export function BadgeWithFlag({
     ...props
 }: BadgeWithFlagProps) {
     const Comp = asChild ? Slot : "span";
-    const sizeWithFlag = `flag_${size}` as BadgeVariants["size"];
 
     return (
         <Comp
@@ -262,7 +298,7 @@ export function BadgeWithFlag({
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeWithFlag,
+                    size: `flag_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
@@ -276,15 +312,11 @@ export function BadgeWithFlag({
                     fill
                 />
             </div>
-
             {children}
         </Comp>
     );
 }
 
-// ----------------------------------------------------
-// BadgeWithImage
-// ----------------------------------------------------
 interface BadgeWithImageProps extends CommonBadgeProps {
     imgSrc: string;
 }
@@ -300,7 +332,6 @@ export function BadgeWithImage({
     ...props
 }: BadgeWithImageProps) {
     const Comp = asChild ? Slot : "span";
-    const sizeWithImage = `flag_${size}` as BadgeVariants["size"];
 
     return (
         <Comp
@@ -308,7 +339,7 @@ export function BadgeWithImage({
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeWithImage,
+                    size: `flag_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
@@ -318,15 +349,11 @@ export function BadgeWithImage({
             <div className="relative size-4 max-w-none">
                 <Image src={imgSrc} alt="Badge image" className="rounded-full" fill />
             </div>
-
             {children}
         </Comp>
     );
 }
 
-// ----------------------------------------------------
-// BadgeWithButton
-// ----------------------------------------------------
 interface BadgeWithButtonProps extends CommonBadgeProps {
     icon?: IconComponentType;
     buttonLabel?: string;
@@ -346,11 +373,6 @@ export function BadgeWithButton({
     ...props
 }: BadgeWithButtonProps) {
     const Comp = asChild ? Slot : "span";
-    const sizeWithButton = `button_${size}` as BadgeVariants["size"];
-
-    const addonColorKey: BadgeColorKeys =
-        variant === "modern" ? "modern" : (color as BadgeColorKeys);
-    const buttonStyle = badgeAddonColors[addonColorKey]?.addonButton || "";
 
     return (
         <Comp
@@ -358,7 +380,7 @@ export function BadgeWithButton({
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeWithButton,
+                    size: `button_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
@@ -372,7 +394,7 @@ export function BadgeWithButton({
                 onClick={onButtonClick}
                 className={cn(
                     "flex cursor-pointer items-center justify-center p-0.5 outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2",
-                    buttonStyle,
+                    getAddonStyle(variant, color, "button"),
                     variant === "pill-color" ? "rounded-full" : "rounded-[3px]"
                 )}
             >
@@ -382,9 +404,6 @@ export function BadgeWithButton({
     );
 }
 
-// ----------------------------------------------------
-// BadgeIcon
-// ----------------------------------------------------
 interface BadgeIconProps extends CommonBadgeProps {
     icon: IconComponentType;
 }
@@ -399,11 +418,6 @@ export function BadgeIcon({
     ...props
 }: BadgeIconProps) {
     const Comp = asChild ? Slot : "span";
-    const sizeIconOnly = `icon_only_${size}` as BadgeVariants["size"];
-
-    const addonColorKey: BadgeColorKeys =
-        variant === "modern" ? "modern" : (color as BadgeColorKeys);
-    const addonStyle = badgeAddonColors[addonColorKey]?.addon || "";
 
     return (
         <Comp
@@ -411,14 +425,17 @@ export function BadgeIcon({
             className={cn(
                 badgeVariants({
                     variant,
-                    size: sizeIconOnly,
+                    size: `icon_only_${size}` as BadgeVariants["size"],
                     ...(variant !== "modern" && { color }),
                 }),
                 className
             )}
             {...props}
         >
-            <Icon className={cn("size-3 stroke-[3px]", addonStyle)} strokeWidth={3} />
+            <Icon
+                className={cn("size-3 stroke-[3px]", getAddonStyle(variant, color))}
+                strokeWidth={3}
+            />
         </Comp>
     );
 }

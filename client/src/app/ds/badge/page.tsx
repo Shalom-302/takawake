@@ -127,15 +127,11 @@ export default function BadgePage() {
             <div className="mb-10 p-4 border border-tertiary rounded-lg">
                 <h3 className="text-xl font-semibold mb-4">BadgeWithDot (Statut)</h3>
                 <div className="flex flex-wrap gap-4 mb-4">
-                    <BadgeWithDot color="success" size="md">
-                        En Ligne
-                    </BadgeWithDot>
-                    <BadgeWithDot color="warning" size="md" variant="color">
+                    <BadgeWithDot color="success">En Ligne</BadgeWithDot>
+                    <BadgeWithDot color="warning" variant="color">
                         En Attente
                     </BadgeWithDot>
-                    <BadgeWithDot color="error" size="md">
-                        Hors Ligne
-                    </BadgeWithDot>
+                    <BadgeWithDot color="error">Hors Ligne</BadgeWithDot>
                 </div>
                 <CodeBlock
                     code={`<BadgeWithDot color="success">En Ligne</BadgeWithDot>\n<BadgeWithDot color="warning" variant="color">En Attente</BadgeWithDot>\n<BadgeWithDot color="error" size="md">Hors Ligne</BadgeWithDot>`}
