@@ -1,9 +1,14 @@
 import { Check } from "@untitled-ui/icons-react";
-import { cva } from "class-variance-authority";
-import { type TagSize } from ".";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils/cn";
+import * as React from "react";
+
+// ============================================================================
+// CVA Variants
+// ============================================================================
 
 const checkboxVariants = cva(
-    "flex cursor-pointer appearance-none items-center justify-center rounded bg-primary ring-1 ring-primary ring-inset transition-all",
+    "relative flex appearance-none items-center justify-center rounded ring-1 ring-inset transition-all",
     {
         variants: {
             size: {
@@ -13,10 +18,14 @@ const checkboxVariants = cva(
             },
             isSelected: {
                 true: "bg-brand-solid ring-brand-solid",
-                false: "",
+                false: "bg-primary ring-primary",
             },
             isDisabled: {
                 true: "cursor-not-allowed bg-disabled_subtle ring-disabled",
+                false: "cursor-pointer",
+            },
+            isFocused: {
+                true: "outline-2 outline-offset-2 outline-focus-ring",
                 false: "",
             },
         },
@@ -24,11 +33,12 @@ const checkboxVariants = cva(
             size: "sm",
             isSelected: false,
             isDisabled: false,
+            isFocused: false,
         },
     }
 );
 
-const checkIconVariants = cva("absolute text-fg-white opacity-0 transition-opacity", {
+const checkIconVariants = cva("absolute opacity-0 transition-opacity", {
     variants: {
         size: {
             sm: "size-2.5",
@@ -36,8 +46,8 @@ const checkIconVariants = cva("absolute text-fg-white opacity-0 transition-opaci
             lg: "size-3.5",
         },
         isSelected: {
-            true: "opacity-100",
-            false: "",
+            true: "opacity-100 text-fg-white",
+            false: "text-fg-white",
         },
         isDisabled: {
             true: "text-fg-disabled_subtle",
@@ -51,19 +61,31 @@ const checkIconVariants = cva("absolute text-fg-white opacity-0 transition-opaci
     },
 });
 
+// ============================================================================
+// Props & Composant
+// ============================================================================
+
+interface TagCheckboxProps extends VariantProps<typeof checkboxVariants> {
+    size: "sm" | "md" | "lg";
+    isSelected: boolean;
+    isDisabled?: boolean;
+    isFocused?: boolean;
+    className?: string;
+    iconClassName?: string;
+}
+
 export const TagCheckbox = ({
     size,
     isSelected,
     isDisabled,
-}: {
-    size: TagSize;
-    isSelected: boolean;
-    isDisabled?: boolean;
-}) => (
-    <div className={checkboxVariants({ size, isSelected, isDisabled })}>
+    isFocused,
+    className,
+    iconClassName,
+}: TagCheckboxProps) => (
+    <div className={cn(checkboxVariants({ size, isSelected, isDisabled, isFocused }), className)}>
         <Check
             aria-hidden="true"
-            className={checkIconVariants({ size, isSelected, isDisabled })}
+            className={cn(checkIconVariants({ size, isSelected, isDisabled }), iconClassName)}
             strokeWidth="2"
         />
     </div>

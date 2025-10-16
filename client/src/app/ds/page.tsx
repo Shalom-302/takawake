@@ -208,6 +208,14 @@ export default function DesignSystemPage() {
             icon: "M9 4h6v16H9V4zm-4 4h2v8H5V8zm12 0h2v8h-2V8z",
         },
         {
+            name: "Tags",
+            description: "",
+            count: "5 Components",
+            href: "/ds/tags",
+            isNew: false,
+            icon: "M9 4h6v16H9V4zm-4 4h2v8H5V8zm12 0h2v8h-2V8z",
+        },
+        {
             name: "Textarea",
             description: "Multi-line text input fields.",
             count: "5 Components",

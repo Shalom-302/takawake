@@ -3,14 +3,18 @@
 import * as React from "react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
+import { Avatar } from "../avatar";
+import { Dot } from "@/components/icons/dot-icon";
+import { getTagPaddingClasses } from "./tag-utils";
 import { TagCheckbox } from "./tag-checkbox";
 import { TagCloseButton } from "./tag-close-button";
+import { useControlledState } from "@/lib/hooks/use-controlled-sate";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type TagSize = "sm" | "md" | "lg";
+export type TagSize = "sm" | "md" | "lg";
 type SelectionMode = "none" | "single" | "multiple";
 
 interface TagGroupContextValue {
@@ -29,14 +33,9 @@ interface TagGroupProps extends React.ComponentPropsWithoutRef<"div"> {
     disallowEmptySelection?: boolean;
 }
 
-// Suppression de l'interface TagListProps vide (simplification)
 type TagListProps = React.ComponentPropsWithoutRef<"div">;
 
-// Définir les types d'éléments fusionnés pour les gestionnaires d'événements
-type TagElement = HTMLButtonElement | HTMLDivElement;
-
-interface TagProps
-    extends Omit<React.ComponentPropsWithoutRef<"div">, "id" | "onClick" | "onKeyDown"> {
+interface TagProps extends Omit<React.ComponentPropsWithoutRef<"div">, "id"> {
     id: string;
     avatarSrc?: string;
     avatarContrastBorder?: boolean;
@@ -46,9 +45,7 @@ interface TagProps
     isDisabled?: boolean;
     onClose?: (id: string) => void;
     allowsRemoving?: boolean;
-    // Types fusionnés pour éviter les conflits lors du rendu conditionnel de <button> ou <div>
-    onClick?: React.MouseEventHandler<TagElement>;
-    onKeyDown?: React.KeyboardEventHandler<TagElement>;
+    className?: string;
 }
 
 export interface TagItem extends Omit<TagProps, "children"> {
@@ -73,7 +70,7 @@ const TagGroupContext = React.createContext<TagGroupContextValue>({
 const useTagGroup = () => React.useContext(TagGroupContext);
 
 // ============================================================================
-// CVA Variants (Simplifiés)
+// CVA Variants
 // ============================================================================
 
 const tagVariants = cva(
@@ -136,76 +133,6 @@ const tagCountVariants = cva(
     }
 );
 
-// ============================================================================
-// Hooks
-// ============================================================================
-
-function useControlledState<T>(
-    controlledValue: T | undefined,
-    defaultValue: T,
-    onChange?: (value: T) => void
-) {
-    const [internalValue, setInternalValue] = React.useState<T>(defaultValue);
-    const isControlled = controlledValue !== undefined;
-    const value = isControlled ? controlledValue : internalValue;
-
-    const setValue = React.useCallback(
-        (newValue: T) => {
-            if (!isControlled) {
-                setInternalValue(newValue);
-            }
-            onChange?.(newValue);
-        },
-        [isControlled, onChange]
-    );
-
-    return [value, setValue] as const;
-}
-
-// ============================================================================
-// Utils (Calcul de Padding)
-// ============================================================================
-
-/**
- * Calcule le padding à gauche (pl) basé sur la taille et le contenu principal.
- */
-function getTagLeftPadding(
-    size: TagSize,
-    isSelectable: boolean,
-    hasAvatar: boolean,
-    hasDot: boolean
-): string {
-    if (isSelectable) {
-        return size === "sm" ? "pl-1.25" : size === "md" ? "pl-1" : "pl-1.25";
-    }
-    if (hasAvatar) {
-        return size === "sm" ? "pl-1" : size === "md" ? "pl-1.25" : "pl-1.75";
-    }
-    if (hasDot) {
-        return size === "sm" ? "pl-1.5" : size === "md" ? "pl-1.75" : "pl-2.25";
-    }
-    // Padding par défaut
-    return size === "sm" ? "pl-2" : size === "md" ? "pl-2.25" : "pl-2.5";
-}
-
-/**
- * Calcule le padding à droite (pr) basé sur la taille et la présence du count/close button.
- */
-function getTagRightPadding(size: TagSize, hasCount: boolean, hasClose: boolean): string {
-    if (hasClose) {
-        return size === "sm" ? "pr-1" : size === "md" ? "pr-1" : "pr-1";
-    }
-    if (hasCount) {
-        return size === "sm" ? "pr-1" : size === "md" ? "pr-0.75" : "pr-1";
-    }
-    // Padding par défaut
-    return size === "sm" ? "pr-2" : size === "md" ? "pr-2.25" : "pr-2.5";
-}
-
-// ============================================================================
-// Main Components
-// ============================================================================
-
 function TagGroup({
     label,
     selectionMode = "none",
@@ -225,15 +152,13 @@ function TagGroup({
 
     const handleSelectionChange = React.useCallback(
         (newIds: Set<string>) => {
-            // Logique de disallowEmptySelection AJUSTÉE
-            const isDeselectingLastItem = newIds.size === 0 && selectedIds.size === 1;
-
-            if (disallowEmptySelection && selectionMode !== "none" && isDeselectingLastItem) {
+            // Empêcher la désélection du dernier élément si disallowEmptySelection est true
+            if (disallowEmptySelection && newIds.size === 0 && selectedIds.size > 0) {
                 return;
             }
             setSelectedIds(newIds);
         },
-        [setSelectedIds, disallowEmptySelection, selectionMode, selectedIds]
+        [setSelectedIds, disallowEmptySelection, selectedIds]
     );
 
     const contextValue = React.useMemo(
@@ -270,15 +195,12 @@ export function Tag({
     allowsRemoving = false,
     className,
     children,
-    onClick,
-    onKeyDown,
     ...props
 }: TagProps) {
     const { selectionMode, size, selectedIds, onSelectionChange } = useTagGroup();
     const isSelected = selectedIds.has(id);
     const isSelectable = selectionMode !== "none";
 
-    // CORRECTION: Utilisation de la double négation pour s'assurer que le type est boolean
     const showCloseButton = !!onClose || allowsRemoving;
 
     // Calculer les classes de padding/margin
@@ -286,37 +208,75 @@ export function Tag({
     const hasDot = !!dot;
     const hasCount = typeof count === "number";
 
-    const tagPaddingClasses = cn(
-        getTagLeftPadding(size, isSelectable, hasAvatar, hasDot),
-        getTagRightPadding(size, hasCount, showCloseButton)
-    );
+    const tagPaddingClasses = getTagPaddingClasses({
+        size,
+        isSelectable,
+        hasAvatar,
+        hasDot,
+        hasCount,
+        showCloseButton,
+    });
 
-    const handleSelectionClick = React.useCallback(
-        (e: React.MouseEvent<TagElement>) => {
-            onClick?.(e);
-            if (isDisabled || !isSelectable) return;
+    const handleSelectionClick = React.useCallback(() => {
+        if (isDisabled || !isSelectable) return;
 
-            const newSelectedIds = new Set(selectedIds);
+        const newSelectedIds = new Set(selectedIds);
 
-            if (selectionMode === "single") {
-                if (isSelected) {
-                    newSelectedIds.delete(id);
-                } else {
-                    newSelectedIds.clear();
-                    newSelectedIds.add(id);
+        if (selectionMode === "single") {
+            if (isSelected) {
+                newSelectedIds.delete(id);
+            } else {
+                newSelectedIds.clear();
+                newSelectedIds.add(id);
+            }
+        } else if (selectionMode === "multiple") {
+            if (isSelected) {
+                newSelectedIds.delete(id);
+            } else {
+                newSelectedIds.add(id);
+            }
+        }
+
+        onSelectionChange?.(newSelectedIds);
+    }, [isDisabled, isSelectable, selectedIds, selectionMode, isSelected, id, onSelectionChange]);
+
+    const handleKeyDown = React.useCallback(
+        (e: React.KeyboardEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLDivElement>) => {
+            if (isDisabled) return;
+
+            // Support de la navigation au clavier
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+
+                if (!isSelectable) return;
+
+                const newSelectedIds = new Set(selectedIds);
+
+                if (selectionMode === "single") {
+                    if (isSelected) {
+                        newSelectedIds.delete(id);
+                    } else {
+                        newSelectedIds.clear();
+                        newSelectedIds.add(id);
+                    }
+                } else if (selectionMode === "multiple") {
+                    if (isSelected) {
+                        newSelectedIds.delete(id);
+                    } else {
+                        newSelectedIds.add(id);
+                    }
                 }
-            } else if (selectionMode === "multiple") {
-                if (isSelected) {
-                    newSelectedIds.delete(id);
-                } else {
-                    newSelectedIds.add(id);
-                }
+
+                onSelectionChange?.(newSelectedIds);
             }
 
-            onSelectionChange?.(newSelectedIds);
+            // Support de Delete/Backspace pour fermer
+            if ((e.key === "Delete" || e.key === "Backspace") && onClose) {
+                e.preventDefault();
+                onClose(id);
+            }
         },
         [
-            onClick,
             isDisabled,
             isSelectable,
             selectedIds,
@@ -324,35 +284,43 @@ export function Tag({
             isSelected,
             id,
             onSelectionChange,
+            onClose,
         ]
     );
 
-    const Element = isSelectable ? "button" : "div";
+    const handleClose = React.useCallback(
+        (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.stopPropagation();
+            onClose?.(id);
+        },
+        [onClose, id]
+    );
 
-    return (
-        <Element
-            id={id}
-            role={isSelectable ? "button" : undefined}
-            aria-pressed={isSelectable ? isSelected : undefined}
-            tabIndex={isDisabled || !isSelectable ? undefined : 0}
-            onClick={handleSelectionClick}
-            // onKeyDown n'est plus nécessaire pour Enter/Space, mais on peut le garder pour des actions custom.
-            onKeyDown={onKeyDown}
-            // 'disabled' n'est valide que sur un <button>
-            disabled={isSelectable ? isDisabled : undefined}
-            className={cn(
-                tagVariants({
-                    size,
-                    isSelectable,
-                    isDisabled,
-                    isSelected,
-                }),
-                tagPaddingClasses,
-                className
-            )}
-            // CORRECTION: Assertion de type pour les props restantes (résout le conflit de type Element)
-            {...(props as React.ComponentProps<typeof Element>)}
-        >
+    const leadingContent = hasAvatar ? (
+        <Avatar size="xxs" src={avatarSrc} alt="Avatar" contrastBorder={avatarContrastBorder} />
+    ) : hasDot ? (
+        <Dot className={cn("text-fg-success-secondary", dotClassName)} size="sm" />
+    ) : null;
+
+    const commonProps = {
+        id,
+        role: isSelectable ? "button" : undefined,
+        "aria-pressed": isSelectable ? isSelected : undefined,
+        tabIndex: isDisabled || !isSelectable ? undefined : 0,
+        className: cn(
+            tagVariants({
+                size,
+                isSelectable,
+                isDisabled,
+                isSelected,
+            }),
+            tagPaddingClasses,
+            className
+        ),
+    };
+
+    const content = (
+        <>
             <div className={tagContentVariants({ size })}>
                 {isSelectable && (
                     <TagCheckbox size={size} isSelected={isSelected} isDisabled={isDisabled} />
@@ -363,20 +331,39 @@ export function Tag({
             </div>
 
             {showCloseButton && (
-                // CORRECTION: Passer une fonction sans argument pour le TagCloseButton
-                <TagCloseButton
-                    size={size}
-                    onClose={e => {
-                        // La fonction doit intercepter l'événement du bouton pour stopper la propagation
-                        e.stopPropagation();
-                        onClose?.(id);
-                    }}
-                    isDisabled={isDisabled}
-                />
+                <TagCloseButton size={size} onClose={handleClose} isDisabled={isDisabled} />
             )}
-        </Element>
+        </>
+    );
+
+    if (isSelectable) {
+        return (
+            <button
+                type="button"
+                onClick={handleSelectionClick}
+                onKeyDown={handleKeyDown}
+                disabled={isDisabled}
+                {...commonProps}
+                {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <div
+            onClick={handleSelectionClick}
+            onKeyDown={handleKeyDown}
+            {...commonProps}
+            {...(props as React.HTMLAttributes<HTMLDivElement>)}
+        >
+            {content}
+        </div>
     );
 }
+
+Tag.displayName = "Tag";
 
 // ============================================================================
 // Tags Wrapper Component
@@ -396,8 +383,16 @@ export function Tags({ items, listClassName, ...tagGroupProps }: TagsProps) {
     );
 }
 
+Tags.displayName = "Tags";
+
+// ============================================================================
+// Export composé pour usage personnalisé
+// ============================================================================
+
 export const TagsCustom = {
     Group: TagGroup,
     List: TagList,
     Tag: Tag,
 };
+
+export type { TagsProps };
