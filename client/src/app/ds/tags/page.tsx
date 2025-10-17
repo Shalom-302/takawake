@@ -38,11 +38,11 @@ const TagsDocumentationPage = () => {
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl">
             <div className="mb-8">
-                <a href="/ds" className="text-blue-600 hover:underline mb-4 inline-block">
+                <a href="/ds" className="hover:underline mb-4 inline-block">
                     ← Retour au Design System
                 </a>
                 <h1 className="text-3xl font-bold mt-2">Composant Tags</h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-secondary mt-2">
                     Composant flexible pour afficher des étiquettes (labels, filtres, membres) avec
                     support de sélection, avatars, compteurs et actions.
                 </p>
@@ -51,7 +51,7 @@ const TagsDocumentationPage = () => {
             {/* Base example */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Exemple de base</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <Tags label="Catégories" size="md" items={baseItems} />
                     </div>
@@ -72,26 +72,27 @@ const TagsDocumentationPage = () => {
             {/* Sizes */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Tailles</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-4">
-                        Le composant Tags supporte trois tailles : **sm**, **md**, **lg**.
+                <div className="p-4 border border-tertiary rounded-lg">
+                    <p className="text-sm text-secondary mb-4">
+                        Le composant Tags supporte trois tailles :
                     </p>
                     <div className="space-y-4 mb-4">
                         <div className="flex flex-col gap-2">
-                            <span className="text-sm text-gray-500">Small (sm):</span>
+                            <span className="text-sm text-gray-500">Small :</span>
                             <Tags label="Small tags" size="sm" items={baseItems.slice(0, 3)} />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <span className="text-sm text-gray-500">Medium (md):</span>
+                            <span className="text-sm text-gray-500">Medium :</span>
                             <Tags label="Medium tags" size="md" items={baseItems.slice(0, 3)} />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <span className="text-sm text-gray-500">Large (lg):</span>
+                            <span className="text-sm text-gray-500">Large :</span>
                             <Tags label="Large tags" size="lg" items={baseItems.slice(0, 3)} />
                         </div>
                     </div>
                     <CodeBlock
-                        code={`<Tags label="Small" size="sm" items={[...]} />
+                        code={`
+<Tags label="Small" size="sm" items={[...]} />
 <Tags label="Medium" size="md" items={[...]} />
 <Tags label="Large" size="lg" items={[...]} />`}
                     />
@@ -101,7 +102,7 @@ const TagsDocumentationPage = () => {
             {/* With Avatar, Dot, Count */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Contenu Visuel & Compteur</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <Tags label="Tags visuels" size="md" items={itemsWithVisuals} />
                     </div>
@@ -122,7 +123,7 @@ const TagsDocumentationPage = () => {
             {/* With Close Button */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Bouton de Fermeture</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <Tags label="Tags amovibles" size="md" items={removableItems} />
                     </div>
@@ -143,8 +144,8 @@ const TagsDocumentationPage = () => {
             {/* Selection Mode - Multiple */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sélection Multiple (Contrôlée)</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-4">
+                <div className="p-4 border border-tertiary rounded-lg">
+                    <p className="text-sm text-secondary mb-4">
                         **Mode: multiple** — IDs sélectionnés: **
                         {Array.from(selectedMultiple).join(", ")}**
                     </p>
@@ -175,8 +176,8 @@ const TagsDocumentationPage = () => {
             {/* Selection Mode - Single */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Sélection Unique (Contrôlée)</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-4">
+                <div className="p-4 border border-tertiary rounded-lg">
+                    <p className="text-sm text-secondary mb-4">
                         **Mode: single** — ID sélectionné: **
                         {Array.from(selectedSingle).join("") || "Aucun"}**
                     </p>
@@ -213,7 +214,7 @@ const TagsDocumentationPage = () => {
             {/* Disabled */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">États Désactivés</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border border-tertiary rounded-lg">
                     <div className="mb-4">
                         <Tags
                             label="Tags désactivés"
@@ -240,8 +241,8 @@ const TagsDocumentationPage = () => {
             {/* Usage Avancé (TagsCustom) */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Utilisation Avancée (TagsCustom)</h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-4">
+                <div className="p-4 border border-tertiary rounded-lg">
+                    <p className="text-sm text-secondary mb-4">
                         Utilisez les composants individuels exportés via{" "}
                         <code className="bg-gray-100 px-2 py-1 rounded text-sm">TagsCustom</code>{" "}
                         pour une composition sur mesure.
@@ -287,7 +288,7 @@ const { Group, List, Tag } = TagsCustom;
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <th className="text-left py-2 px-4">Propriété / Prop</th>
                                 <th className="text-left py-2 px-4">Type</th>
                                 <th className="text-left py-2 px-4">Défaut / Default</th>
@@ -295,7 +296,7 @@ const { Group, List, Tag } = TagsCustom;
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">label</td>
                                 <td className="py-2 px-4 text-sm font-mono">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -304,34 +305,34 @@ const { Group, List, Tag } = TagsCustom;
                                     **Required**: Accessible label for the tag group.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">items</td>
                                 <td className="py-2 px-4 text-sm font-mono">TagItem[]</td>
                                 <td className="py-2 px-4 text-sm">-</td>
                                 <td className="py-2 px-4 text-sm">
-                                    **Obligatoire** : Tableau d'objets définissant les tags. /
-                                    **Required**: Array of objects defining the tags to display.
+                                    Tableau d&apos;objets définissant les tags. / Array of objects
+                                    defining the tags to display.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">size?</td>
-                                <td className="py-2 px-4 text-sm font-mono">"sm" | "md" | "lg"</td>
-                                <td className="py-2 px-4 text-sm">"sm"</td>
+                                <td className="py-2 px-4 text-sm font-mono">{`"sm" | "md" | "lg"`}</td>
+                                <td className="py-2 px-4 text-sm">{`"sm"`}</td>
                                 <td className="py-2 px-4 text-sm">
                                     Taille des tags. / Size of the tags.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">selectionMode?</td>
                                 <td className="py-2 px-4 text-sm font-mono">
-                                    "none" | "single" | "multiple"
+                                    {`"none" | "single" | "multiple"`}
                                 </td>
-                                <td className="py-2 px-4 text-sm">"none"</td>
+                                <td className="py-2 px-4 text-sm">{`"none"`}</td>
                                 <td className="py-2 px-4 text-sm">
                                     Mode de sélection des tags. / Tag selection mode.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">selectedIds?</td>
                                 <td className="py-2 px-4 text-sm font-mono">Set&lt;string&gt;</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -340,7 +341,7 @@ const { Group, List, Tag } = TagsCustom;
                                     (controlled mode).
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">onSelectionChange?</td>
                                 <td className="py-2 px-4 text-sm font-mono">
                                     (ids: Set&lt;string&gt;) =&gt; void
@@ -351,7 +352,7 @@ const { Group, List, Tag } = TagsCustom;
                                     fired when selection changes.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">disallowEmptySelection?</td>
                                 <td className="py-2 px-4 text-sm font-mono">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
@@ -360,7 +361,7 @@ const { Group, List, Tag } = TagsCustom;
                                     deselection of the last item.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">listClassName?</td>
                                 <td className="py-2 px-4 text-sm font-mono">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -379,7 +380,7 @@ const { Group, List, Tag } = TagsCustom;
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <th className="text-left py-2 px-4">Propriété / Prop</th>
                                 <th className="text-left py-2 px-4">Type</th>
                                 <th className="text-left py-2 px-4">Défaut / Default</th>
@@ -387,7 +388,7 @@ const { Group, List, Tag } = TagsCustom;
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">id</td>
                                 <td className="py-2 px-4 text-sm font-mono">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -396,7 +397,7 @@ const { Group, List, Tag } = TagsCustom;
                                     Unique identifier for the tag.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">label</td>
                                 <td className="py-2 px-4 text-sm font-mono">React.ReactNode</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -404,25 +405,25 @@ const { Group, List, Tag } = TagsCustom;
                                     Contenu principal du tag. / Main content of the tag.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">avatarSrc?</td>
                                 <td className="py-2 px-4 text-sm font-mono">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
                                 <td className="py-2 px-4 text-sm">
-                                    URL de l'avatar à afficher à gauche. / URL of the avatar to
+                                    URL de l&apos;avatar à afficher à gauche. / URL of the avatar to
                                     display on the left.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">avatarContrastBorder?</td>
                                 <td className="py-2 px-4 text-sm font-mono">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
                                 <td className="py-2 px-4 text-sm">
-                                    Ajoute une bordure contrastée autour de l'avatar. / Adds a
+                                    Ajoute une bordure contrastée autour de l&apos;avatar. / Adds a
                                     contrast border around the avatar.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">dot?</td>
                                 <td className="py-2 px-4 text-sm font-mono">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
@@ -431,7 +432,7 @@ const { Group, List, Tag } = TagsCustom;
                                     the left.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">dotClassName?</td>
                                 <td className="py-2 px-4 text-sm font-mono">string</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -440,7 +441,7 @@ const { Group, List, Tag } = TagsCustom;
                                     dot (e.g., color).
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">count?</td>
                                 <td className="py-2 px-4 text-sm font-mono">number</td>
                                 <td className="py-2 px-4 text-sm">-</td>
@@ -449,16 +450,16 @@ const { Group, List, Tag } = TagsCustom;
                                     display in the count badge on the right.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">isDisabled?</td>
                                 <td className="py-2 px-4 text-sm font-mono">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
                                 <td className="py-2 px-4 text-sm">
-                                    Désactive l'interaction pour ce tag spécifique. / Disables
+                                    Désactive l&apos;interaction pour ce tag spécifique. / Disables
                                     interaction for this specific tag.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">onClose?</td>
                                 <td className="py-2 px-4 text-sm font-mono">
                                     (id: string) =&gt; void
@@ -466,11 +467,11 @@ const { Group, List, Tag } = TagsCustom;
                                 <td className="py-2 px-4 text-sm">-</td>
                                 <td className="py-2 px-4 text-sm">
                                     Callback appelé lorsque le bouton de fermeture est cliqué.
-                                    Affiche le bouton 'X'. / Callback fired when the close button is
-                                    clicked. Displays the 'X' button.
+                                    Affiche le bouton &apos;X&apos;. / Callback fired when the close
+                                    button is clicked. Displays the &apos;X&apos; button.
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-200">
+                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-bold">allowsRemoving?</td>
                                 <td className="py-2 px-4 text-sm font-mono">boolean</td>
                                 <td className="py-2 px-4 text-sm">false</td>
@@ -482,74 +483,6 @@ const { Group, List, Tag } = TagsCustom;
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            {/* --- */}
-
-            {/* Keyboard Navigation */}
-            <div className="mb-10">
-                <h2 className="text-xl font-semibold mb-4">
-                    Navigation au clavier / Keyboard Navigation
-                </h2>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-4">
-                        Le composant est entièrement navigable et interagit via le clavier,
-                        conformément aux standards ARIA. / The component is fully navigable and
-                        interactive via keyboard, compliant with ARIA standards.
-                    </p>
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left py-2 px-4">Touche / Key</th>
-                                    <th className="text-left py-2 px-4">Action / Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="border-b border-gray-200">
-                                    <td className="py-2 px-4 font-mono text-sm">
-                                        Tab / Shift + Tab
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Déplace le focus vers/depuis le groupe de tags. / Moves
-                                        focus into/out of the tag group.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-gray-200">
-                                    <td className="py-2 px-4 font-mono text-sm">
-                                        Flèches (Gauche/Droite)
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Naviguer entre les tags. / Navigates between tags.
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-gray-200">
-                                    <td className="py-2 px-4 font-mono text-sm">Enter / Espace</td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Sélectionner/désélectionner le tag (en mode sélection). /
-                                        Selects/deselects the tag (in selection mode).
-                                    </td>
-                                </tr>
-                                <tr className="border-b border-gray-200">
-                                    <td className="py-2 px-4 font-mono text-sm">
-                                        Delete / Retour arrière
-                                    </td>
-                                    <td className="py-2 px-4 text-sm">
-                                        Ferme le tag si{" "}
-                                        <code className="bg-gray-100 px-1 rounded text-sm">
-                                            onClose
-                                        </code>{" "}
-                                        est défini. / Closes the tag if{" "}
-                                        <code className="bg-gray-100 px-1 rounded text-sm">
-                                            onClose
-                                        </code>{" "}
-                                        is defined.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </div>

@@ -1,3 +1,5 @@
+// ./tag-group.tsx
+
 "use client";
 
 import * as React from "react";
@@ -8,6 +10,7 @@ import { Dot } from "@/components/icons/dot-icon";
 import { getTagPaddingClasses } from "./tag-utils";
 import { TagCheckbox } from "./tag-checkbox";
 import { TagCloseButton } from "./tag-close-button";
+// Assurez-vous que useControlledState est bien défini ou importé
 import { useControlledState } from "@/lib/hooks/use-controlled-sate";
 
 // ============================================================================
@@ -16,15 +19,20 @@ import { useControlledState } from "@/lib/hooks/use-controlled-sate";
 
 export type TagSize = "sm" | "md" | "lg";
 type SelectionMode = "none" | "single" | "multiple";
+type TagElement = HTMLButtonElement | HTMLDivElement;
 
 interface TagGroupContextValue {
     selectionMode: SelectionMode;
     size: TagSize;
     selectedIds: Set<string>;
     onSelectionChange?: (ids: Set<string>) => void;
+    registerTag: (id: string, ref: HTMLElement | null) => void;
+    unregisterTag: (id: string) => void;
+    tagIdsOrder: string[];
+    focusTag: (id: string) => void;
 }
 
-interface TagGroupProps extends React.ComponentPropsWithoutRef<"div"> {
+export interface TagGroupProps extends React.ComponentPropsWithoutRef<"div"> {
     label: string;
     size?: TagSize;
     selectionMode?: SelectionMode;
@@ -35,7 +43,8 @@ interface TagGroupProps extends React.ComponentPropsWithoutRef<"div"> {
 
 type TagListProps = React.ComponentPropsWithoutRef<"div">;
 
-interface TagProps extends Omit<React.ComponentPropsWithoutRef<"div">, "id"> {
+export interface TagProps
+    extends Omit<React.ComponentPropsWithoutRef<"div">, "id" | "onClick" | "onKeyDown"> {
     id: string;
     avatarSrc?: string;
     avatarContrastBorder?: boolean;
@@ -46,13 +55,15 @@ interface TagProps extends Omit<React.ComponentPropsWithoutRef<"div">, "id"> {
     onClose?: (id: string) => void;
     allowsRemoving?: boolean;
     className?: string;
+    onClick?: React.MouseEventHandler<TagElement>;
+    onKeyDown?: React.KeyboardEventHandler<TagElement>;
 }
 
 export interface TagItem extends Omit<TagProps, "children"> {
     label: React.ReactNode;
 }
 
-interface TagsProps extends Omit<TagGroupProps, "children"> {
+export interface TagsProps extends Omit<TagGroupProps, "children"> {
     items: TagItem[];
     listClassName?: string;
 }
@@ -65,12 +76,16 @@ const TagGroupContext = React.createContext<TagGroupContextValue>({
     selectionMode: "none",
     size: "sm",
     selectedIds: new Set(),
+    registerTag: () => {},
+    unregisterTag: () => {},
+    tagIdsOrder: [],
+    focusTag: () => {},
 });
 
 const useTagGroup = () => React.useContext(TagGroupContext);
 
 // ============================================================================
-// CVA Variants
+// CVA Variants (Reste inchangé)
 // ============================================================================
 
 const tagVariants = cva(
@@ -133,6 +148,10 @@ const tagCountVariants = cva(
     }
 );
 
+// ============================================================================
+// TagGroup Component
+// ============================================================================
+
 function TagGroup({
     label,
     selectionMode = "none",
@@ -150,9 +169,34 @@ function TagGroup({
         onSelectionChange
     );
 
+    const [tagIdsOrder, setTagIdsOrder] = React.useState<string[]>([]);
+    const tagRefsMap = React.useRef<Map<string, HTMLElement>>(new Map());
+
+    const registerTag = React.useCallback((id: string, ref: HTMLElement | null) => {
+        if (ref && !tagRefsMap.current.has(id)) {
+            tagRefsMap.current.set(id, ref);
+            setTagIdsOrder(prev => {
+                if (!prev.includes(id)) {
+                    // Maintient l'ordre d'apparition
+                    return [...prev, id];
+                }
+                return prev;
+            });
+        }
+    }, []);
+
+    const unregisterTag = React.useCallback((id: string) => {
+        tagRefsMap.current.delete(id);
+        setTagIdsOrder(prev => prev.filter(tagId => tagId !== id));
+    }, []);
+
+    const focusTag = React.useCallback((id: string) => {
+        const ref = tagRefsMap.current.get(id);
+        ref?.focus();
+    }, []);
+
     const handleSelectionChange = React.useCallback(
         (newIds: Set<string>) => {
-            // Empêcher la désélection du dernier élément si disallowEmptySelection est true
             if (disallowEmptySelection && newIds.size === 0 && selectedIds.size > 0) {
                 return;
             }
@@ -162,8 +206,26 @@ function TagGroup({
     );
 
     const contextValue = React.useMemo(
-        () => ({ selectionMode, size, selectedIds, onSelectionChange: handleSelectionChange }),
-        [selectionMode, size, selectedIds, handleSelectionChange]
+        () => ({
+            selectionMode,
+            size,
+            selectedIds,
+            onSelectionChange: handleSelectionChange,
+            registerTag,
+            unregisterTag,
+            tagIdsOrder,
+            focusTag,
+        }),
+        [
+            selectionMode,
+            size,
+            selectedIds,
+            handleSelectionChange,
+            registerTag,
+            unregisterTag,
+            tagIdsOrder,
+            focusTag,
+        ]
     );
 
     return (
@@ -175,6 +237,12 @@ function TagGroup({
     );
 }
 
+TagGroup.displayName = "TagGroup";
+
+// ============================================================================
+// TagList Component
+// ============================================================================
+
 function TagList({ children, className, ...props }: TagListProps) {
     return (
         <div className={cn("flex flex-wrap gap-2", className)} {...props}>
@@ -182,6 +250,12 @@ function TagList({ children, className, ...props }: TagListProps) {
         </div>
     );
 }
+
+TagList.displayName = "TagList";
+
+// ============================================================================
+// Tag Component
+// ============================================================================
 
 export function Tag({
     id,
@@ -195,19 +269,31 @@ export function Tag({
     allowsRemoving = false,
     className,
     children,
+    onClick,
+    onKeyDown,
     ...props
 }: TagProps) {
-    const { selectionMode, size, selectedIds, onSelectionChange } = useTagGroup();
+    const {
+        selectionMode,
+        size,
+        selectedIds,
+        onSelectionChange,
+        registerTag,
+        unregisterTag,
+        tagIdsOrder,
+        focusTag,
+    } = useTagGroup();
     const isSelected = selectedIds.has(id);
     const isSelectable = selectionMode !== "none";
+    const isInteractive = isSelectable || !!onClose || allowsRemoving;
 
     const showCloseButton = !!onClose || allowsRemoving;
 
-    // Calculer les classes de padding/margin
     const hasAvatar = !!avatarSrc;
     const hasDot = !!dot;
     const hasCount = typeof count === "number";
 
+    // Calcul des classes de padding
     const tagPaddingClasses = getTagPaddingClasses({
         size,
         isSelectable,
@@ -217,7 +303,23 @@ export function Tag({
         showCloseButton,
     });
 
-    const handleSelectionClick = React.useCallback(() => {
+    // CORRECTION: Référence unique et fonction d'enregistrement (pour le clavier)
+    const elementRef = React.useRef<HTMLElement | null>(null);
+    const setRef = React.useCallback(
+        (node: HTMLElement | null) => {
+            elementRef.current = node;
+            registerTag(id, node);
+        },
+        [id, registerTag]
+    );
+
+    // Désenregistrement au démontage
+    React.useEffect(() => {
+        return () => unregisterTag(id);
+    }, [id, unregisterTag]);
+
+    // Logique de sélection simplifiée
+    const handleSelectionLogic = React.useCallback(() => {
         if (isDisabled || !isSelectable) return;
 
         const newSelectedIds = new Set(selectedIds);
@@ -240,60 +342,86 @@ export function Tag({
         onSelectionChange?.(newSelectedIds);
     }, [isDisabled, isSelectable, selectedIds, selectionMode, isSelected, id, onSelectionChange]);
 
+    const handleSelectionClick = React.useCallback(
+        (e: React.MouseEvent<TagElement>) => {
+            onClick?.(e);
+            handleSelectionLogic();
+        },
+        [onClick, handleSelectionLogic]
+    );
+
     const handleKeyDown = React.useCallback(
-        (e: React.KeyboardEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLDivElement>) => {
+        (e: React.KeyboardEvent<HTMLElement>) => {
+            onKeyDown?.(e as React.KeyboardEvent<TagElement>);
             if (isDisabled) return;
 
-            // Support de la navigation au clavier
-            if (e.key === "Enter" || e.key === " ") {
+            const tagIds = tagIdsOrder;
+            const currentIndex = tagIds.indexOf(id);
+
+            // Navigation (Flèches)
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                 e.preventDefault();
 
-                if (!isSelectable) return;
-
-                const newSelectedIds = new Set(selectedIds);
-
-                if (selectionMode === "single") {
-                    if (isSelected) {
-                        newSelectedIds.delete(id);
-                    } else {
-                        newSelectedIds.clear();
-                        newSelectedIds.add(id);
-                    }
-                } else if (selectionMode === "multiple") {
-                    if (isSelected) {
-                        newSelectedIds.delete(id);
-                    } else {
-                        newSelectedIds.add(id);
-                    }
+                let nextIndex = currentIndex;
+                if (e.key === "ArrowRight") {
+                    nextIndex = currentIndex + 1;
+                    if (nextIndex >= tagIds.length) nextIndex = 0;
+                } else {
+                    nextIndex = currentIndex - 1;
+                    if (nextIndex < 0) nextIndex = tagIds.length - 1;
                 }
 
-                onSelectionChange?.(newSelectedIds);
+                if (tagIds[nextIndex]) {
+                    focusTag(tagIds[nextIndex]);
+                }
+                return;
             }
 
-            // Support de Delete/Backspace pour fermer
+            // Sélection (Enter/Space)
+            if ((e.key === "Enter" || e.key === " ") && isSelectable) {
+                e.preventDefault();
+                handleSelectionLogic();
+            }
+
+            // Suppression (Delete/Backspace)
             if ((e.key === "Delete" || e.key === "Backspace") && onClose) {
                 e.preventDefault();
+
+                const nextId = tagIds[currentIndex + 1] || tagIds[currentIndex - 1];
+
+                if (nextId) {
+                    focusTag(nextId);
+                }
                 onClose(id);
             }
         },
         [
+            onKeyDown,
             isDisabled,
             isSelectable,
-            selectedIds,
-            selectionMode,
-            isSelected,
-            id,
-            onSelectionChange,
+            handleSelectionLogic,
             onClose,
+            id,
+            tagIdsOrder,
+            focusTag,
         ]
     );
 
     const handleClose = React.useCallback(
         (e: React.MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation();
+
+            const tagIds = tagIdsOrder;
+            const currentIndex = tagIds.indexOf(id);
+            const nextId = tagIds[currentIndex + 1] || tagIds[currentIndex - 1];
+
+            if (nextId) {
+                focusTag(nextId);
+            }
+
             onClose?.(id);
         },
-        [onClose, id]
+        [onClose, id, focusTag, tagIdsOrder]
     );
 
     const leadingContent = hasAvatar ? (
@@ -302,18 +430,20 @@ export function Tag({
         <Dot className={cn("text-fg-success-secondary", dotClassName)} size="sm" />
     ) : null;
 
+    const isFocused = elementRef.current === document.activeElement;
+    const tabIndex = isSelectable ? (isDisabled ? undefined : 0) : isInteractive ? 0 : undefined;
+
     const commonProps = {
         id,
-        role: isSelectable ? "button" : undefined,
+        ref: setRef,
+        role: isSelectable ? "button" : isInteractive ? "listitem" : undefined,
         "aria-pressed": isSelectable ? isSelected : undefined,
-        tabIndex: isDisabled || !isSelectable ? undefined : 0,
+        "aria-label": typeof children === "string" ? children : undefined,
+        tabIndex: tabIndex,
+        onClick: handleSelectionClick,
+        onKeyDown: handleKeyDown,
         className: cn(
-            tagVariants({
-                size,
-                isSelectable,
-                isDisabled,
-                isSelected,
-            }),
+            tagVariants({ size, isSelectable, isDisabled, isSelected }),
             tagPaddingClasses,
             className
         ),
@@ -323,7 +453,12 @@ export function Tag({
         <>
             <div className={tagContentVariants({ size })}>
                 {isSelectable && (
-                    <TagCheckbox size={size} isSelected={isSelected} isDisabled={isDisabled} />
+                    <TagCheckbox
+                        size={size}
+                        isSelected={isSelected}
+                        isDisabled={isDisabled}
+                        isFocused={isFocused} // Passé pour l'anneau de focus
+                    />
                 )}
                 {leadingContent}
                 {children}
@@ -340,9 +475,8 @@ export function Tag({
         return (
             <button
                 type="button"
-                onClick={handleSelectionClick}
-                onKeyDown={handleKeyDown}
                 disabled={isDisabled}
+                // onClick et onKeyDown sont gérés par commonProps
                 {...commonProps}
                 {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
             >
@@ -353,8 +487,7 @@ export function Tag({
 
     return (
         <div
-            onClick={handleSelectionClick}
-            onKeyDown={handleKeyDown}
+            // onClick et onKeyDown sont gérés par commonProps
             {...commonProps}
             {...(props as React.HTMLAttributes<HTMLDivElement>)}
         >
@@ -394,5 +527,3 @@ export const TagsCustom = {
     List: TagList,
     Tag: Tag,
 };
-
-export type { TagsProps };
