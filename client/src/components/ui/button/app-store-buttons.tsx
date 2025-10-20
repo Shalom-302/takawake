@@ -1,21 +1,25 @@
+// Mon composant
+
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import type { AnchorHTMLAttributes } from "react";
+import Link, { type LinkProps } from "next/link";
 
 export const GooglePlayButton = ({
     size = "md",
+    href = "#",
+    className,
     ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: "md" | "lg" }) => {
+}: LinkProps & { size?: "md" | "lg"; className: string }) => {
     return (
-        <a
+        <Link
             aria-label="Get it on Google Play"
-            href="#"
-            {...props}
+            href={href}
             className={cn(
                 "rounded-[7px] bg-black ring-1 ring-app-store-badge-border outline-focus-ring ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
-                props.className
+                className
             )}
+            {...props}
         >
             <svg
                 width={size === "md" ? 135 : 149}
@@ -244,22 +248,24 @@ export const GooglePlayButton = ({
                     </linearGradient>
                 </defs>
             </svg>
-        </a>
+        </Link>
     );
 };
 
 export const GooglePlayWhiteButton = ({
     size = "md",
+    href = "#",
+    className,
     ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: "md" | "lg" }) => {
+}: LinkProps & { size?: "md" | "lg"; className: string }) => {
     return (
-        <a
+        <Link
             aria-label="Download on the App Store"
-            href="#"
+            href={href}
             {...props}
             className={cn(
                 "rounded-[7px] bg-black ring-1 ring-app-store-badge-border outline-focus-ring ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
-                props.className
+                className
             )}
         >
             <svg
@@ -347,23 +353,25 @@ export const GooglePlayWhiteButton = ({
                     fill="white"
                 />
             </svg>
-        </a>
+        </Link>
     );
 };
 
 export const AppStoreButton = ({
     size = "md",
+    href = "#",
+    className,
     ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: "md" | "lg" }) => {
+}: LinkProps & { size?: "md" | "lg"; className: string }) => {
     return (
-        <a
+        <Link
             aria-label="Download on the App Store"
-            href="#"
-            {...props}
+            href={href}
             className={cn(
                 "rounded-[7px] bg-black ring-1 ring-app-store-badge-border outline-focus-ring ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
-                props.className
+                className
             )}
+            {...props}
         >
             <svg
                 width={size === "md" ? 120 : 132}
@@ -461,23 +469,25 @@ export const AppStoreButton = ({
                     fill="white"
                 />
             </svg>
-        </a>
+        </Link>
     );
 };
 
 export const GalaxyStoreButton = ({
     size = "md",
+    href = "#",
+    className,
     ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: "md" | "lg" }) => {
+}: LinkProps & { size?: "md" | "lg"; className: string }) => {
     return (
-        <a
+        <Link
             aria-label="Available on Galaxy Store"
-            href="#"
-            {...props}
+            href={href}
             className={cn(
                 "rounded-[7px] bg-black ring-1 ring-app-store-badge-border outline-focus-ring ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
-                props.className
+                className
             )}
+            {...props}
         >
             <svg
                 width={size === "md" ? 147 : 162}
@@ -607,23 +617,25 @@ export const GalaxyStoreButton = ({
                     </radialGradient>
                 </defs>
             </svg>
-        </a>
+        </Link>
     );
 };
 
 export const AppGalleryButton = ({
     size = "md",
+    href = "#",
+    className,
     ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: "md" | "lg" }) => {
+}: LinkProps & { size?: "md" | "lg"; className: string }) => {
     return (
-        <a
+        <Link
             aria-label="Explore it on AppGallery"
-            href="#"
-            {...props}
+            href={href}
             className={cn(
                 "rounded-[7px] bg-black ring-1 ring-app-store-badge-border outline-focus-ring ring-inset focus-visible:outline-2 focus-visible:outline-offset-2",
-                props.className
+                className
             )}
+            {...props}
         >
             <svg
                 width={size === "md" ? 133 : 147}
@@ -727,6 +739,6 @@ export const AppGalleryButton = ({
                     fill="white"
                 />
             </svg>
-        </a>
+        </Link>
     );
 };

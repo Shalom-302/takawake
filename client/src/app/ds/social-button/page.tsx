@@ -224,14 +224,6 @@ export default function SocialButtonPage() {
                                 </td>
                             </tr>
                             <tr className="border-b border-tertiary">
-                                <td className="py-2 px-4 font-mono text-sm">asChild?</td>
-                                <td className="py-2 px-4 font-mono text-sm">boolean</td>
-                                <td className="py-2 px-4 font-mono text-sm">false</td>
-                                <td className="py-2 px-4">
-                                    Use Radix Slot for composition with custom components.
-                                </td>
-                            </tr>
-                            <tr className="border-b border-tertiary">
                                 <td className="py-2 px-4 font-mono text-sm">disabled?</td>
                                 <td className="py-2 px-4 font-mono text-sm">boolean</td>
                                 <td className="py-2 px-4 font-mono text-sm">false</td>
