@@ -1,5 +1,3 @@
-// ./tag-group.tsx
-
 "use client";
 
 import * as React from "react";
@@ -10,7 +8,6 @@ import { Dot } from "@/components/icons/dot-icon";
 import { getTagPaddingClasses } from "./tag-utils";
 import { TagCheckbox } from "./tag-checkbox";
 import { TagCloseButton } from "./tag-close-button";
-// Assurez-vous que useControlledState est bien défini ou importé
 import { useControlledState } from "@/lib/hooks/use-controlled-sate";
 
 // ============================================================================
@@ -85,7 +82,7 @@ const TagGroupContext = React.createContext<TagGroupContextValue>({
 const useTagGroup = () => React.useContext(TagGroupContext);
 
 // ============================================================================
-// CVA Variants (Reste inchangé)
+// CVA Variants
 // ============================================================================
 
 const tagVariants = cva(
@@ -275,7 +272,7 @@ export function Tag({
 }: TagProps) {
     const {
         selectionMode,
-        size,
+        size = "sm",
         selectedIds,
         onSelectionChange,
         registerTag,
@@ -457,7 +454,7 @@ export function Tag({
                         size={size}
                         isSelected={isSelected}
                         isDisabled={isDisabled}
-                        isFocused={isFocused} // Passé pour l'anneau de focus
+                        isFocused={isFocused}
                     />
                 )}
                 {leadingContent}
@@ -476,7 +473,6 @@ export function Tag({
             <button
                 type="button"
                 disabled={isDisabled}
-                // onClick et onKeyDown sont gérés par commonProps
                 {...commonProps}
                 {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
             >
@@ -486,11 +482,7 @@ export function Tag({
     }
 
     return (
-        <div
-            // onClick et onKeyDown sont gérés par commonProps
-            {...commonProps}
-            {...(props as React.HTMLAttributes<HTMLDivElement>)}
-        >
+        <div {...commonProps} {...(props as React.HTMLAttributes<HTMLDivElement>)}>
             {content}
         </div>
     );

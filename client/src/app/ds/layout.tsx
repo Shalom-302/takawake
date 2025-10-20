@@ -35,6 +35,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Radio Group", href: "/ds/radio-group" },
         { name: "Select", href: "/ds/select" },
         { name: "Slider", href: "/ds/slider" },
+        { name: "Social Button", href: "/ds/social-button" },
         { name: "Switch", href: "/ds/switch" },
         { name: "Table", href: "/ds/table" },
         { name: "Tabs", href: "/ds/tabs" },

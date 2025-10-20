@@ -180,8 +180,16 @@ export default function DesignSystemPage() {
             description: "Controls for selecting values from a range.",
             count: "6 Components",
             href: "/ds/slider",
-            isNew: true,
+            isNew: false,
             icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9",
+        },
+        {
+            name: "Socials Buttons",
+            description: "Pre-styled buttons for social media authentication.",
+            count: "6 Components",
+            href: "/ds/social-button",
+            isNew: true,
+            icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
         },
         {
             name: "Switch",

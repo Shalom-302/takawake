@@ -16,13 +16,14 @@ import {
     useState,
 } from "react";
 import { useCombobox, useMultipleSelection } from "downshift";
-import { SearchLg as SearchIcon, X as XIcon } from "@untitled-ui/icons-react";
+import { SearchLg as SearchIcon } from "@untitled-ui/icons-react";
 import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { useResizeObserver } from "@/lib/hooks/use-resize-observer";
+import { Tag } from "@/components/ui/tags";
 
 // ------------------------------------------------------------
 //  MultiSelect
@@ -384,23 +385,6 @@ export const MultiSelectInput = ({
         box: "border-box",
     });
 
-    // useEffect(() => {
-    //     const resizeObserver = new ResizeObserver(entries => {
-    //         for (const entry of entries) {
-    //             const newWidth = (entry.target as HTMLElement).offsetWidth;
-    //             if (newWidth) {
-    //                 setPopoverWidth?.(newWidth);
-    //             }
-    //         }
-    //     });
-    //     if (ref.current) {
-    //         resizeObserver.observe(ref.current);
-    //     }
-    //     return () => {
-    //         resizeObserver.disconnect();
-    //     };
-    // }, [setPopoverWidth]);
-
     const handleTagKeyDown = useCallback(
         (event: KeyboardEvent, item: MultiSelectItemBase, index: number) => {
             if (event.key === "Tab") {
@@ -468,43 +452,23 @@ export const MultiSelectInput = ({
                     <SearchIcon className="pointer-events-none size-5 text-fg-quaternary flex-shrink-0" />
 
                     <div className="relative flex w-full flex-wrap items-center gap-1.5">
-                        {/* Selected items as tags */}
+                        {/* Selected items using Tag component */}
                         {selectedItems.map((item, index) => (
-                            <div
+                            <Tag
                                 key={item.id}
+                                id={item.id}
+                                avatarSrc={item.avatarUrl}
+                                isDisabled={disabled}
+                                onClose={() => removeSelectedItem(item)}
                                 className={cn(
-                                    "flex items-center rounded-md bg-primary py-0.5 pr-1 pl-1.5 ring-1 ring-primary ring-inset",
+                                    "max-w-[180px]",
                                     activeIndex === index && "ring-2 ring-brand"
                                 )}
                                 tabIndex={-1}
                                 onKeyDown={e => handleTagKeyDown(e, item, index)}
                             >
-                                {item.avatarUrl && (
-                                    <Avatar
-                                        size="xxs"
-                                        alt={item.label}
-                                        src={item.avatarUrl}
-                                        className="mr-1"
-                                    />
-                                )}
-
-                                <span className="truncate text-sm font-medium text-secondary select-none max-w-[120px]">
-                                    {item.label}
-                                </span>
-
-                                <button
-                                    type="button"
-                                    disabled={disabled}
-                                    onClick={() => removeSelectedItem(item)}
-                                    // onKeyDown={e => handleTagKeyDown(e, item, index)}
-                                    className={cn(
-                                        "ml-1 flex-shrink-0 rounded p-0.5 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-brand",
-                                        disabled && "cursor-not-allowed opacity-50"
-                                    )}
-                                >
-                                    <XIcon className="h-3 w-3" />
-                                </button>
-                            </div>
+                                <span className="truncate">{item.label}</span>
+                            </Tag>
                         ))}
 
                         {/* Input */}
