@@ -104,16 +104,6 @@ export default function SocialButtonPage() {
                             </SocialButton>
                         ))}
                     </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                        {sizes.map(size => (
-                            <SocialButton
-                                key={size}
-                                social="google"
-                                variant="brand"
-                                size={size as SocialButtonVariants["size"]}
-                            />
-                        ))}
-                    </div>
                 </div>
                 <CodeBlock
                     className="mt-2"
