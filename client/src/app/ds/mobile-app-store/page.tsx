@@ -32,9 +32,9 @@ export default function MobileAppStorePage() {
                 <Link href="/ds" className="hover:underline mb-4 inline-block">
                     ← Back to Design System
                 </Link>
-                <h1 className="text-3xl font-bold mt-2">Store Badge</h1>
+                <h1 className="text-3xl font-bold mt-2">Mobile App Store Button</h1>
                 <p className="text-gray-600 mt-2">
-                    Download badges for app stores with multiple platforms, themes and sizes.
+                    Pre-styled buttons for linking to mobile app stores.
                 </p>
             </div>
 

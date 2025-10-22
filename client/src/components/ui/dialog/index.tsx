@@ -20,7 +20,7 @@ interface DialogProps extends React.ComponentProps<typeof DialogPrimitive.Root> 
     footerClassName?: string;
 }
 
-function Dialog({
+export function Dialog({
     trigger,
     title,
     description,
@@ -167,16 +167,15 @@ function DialogDescription({
     );
 }
 
-export {
-    Dialog,
-    DialogRoot,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogOverlay,
-    DialogPortal,
-    DialogTitle,
-    DialogTrigger,
+export const DialogCustom = {
+    Root: DialogRoot,
+    Close: DialogClose,
+    Content: DialogContent,
+    Description: DialogDescription,
+    Footer: DialogFooter,
+    Header: DialogHeader,
+    Overlay: DialogOverlay,
+    Portal: DialogPortal,
+    Title: DialogTitle,
+    Trigger: DialogTrigger,
 };

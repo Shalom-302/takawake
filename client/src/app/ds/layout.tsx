@@ -28,6 +28,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Dropdown", href: "/ds/dropdown" },
         { name: "File Upload", href: "/ds/file-upload" },
         { name: "Input", href: "/ds/input" },
+        { name: "Loading Indicator", href: "/ds/loading-indicator" },
         { name: "Mobile App Store", href: "/ds/mobile-app-store" },
         { name: "Pagination", href: "/ds/pagination" },
         { name: "Popover", href: "/ds/popover" },

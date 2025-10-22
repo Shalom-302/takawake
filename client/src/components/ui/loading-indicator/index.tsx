@@ -25,7 +25,7 @@ const styles = {
     },
 };
 
-interface LoadingIndicatorProps {
+export interface LoadingIndicatorProps {
     /**
      * The visual style of the loading indicator.
      * @default 'line-simple'

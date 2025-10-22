@@ -128,6 +128,14 @@ export default function DesignSystemPage() {
             icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
         },
         {
+            name: "Loading Indicator",
+            description: "Visual indicators for loading states.",
+            count: "5 Components",
+            href: "/ds/loading-indicator",
+            isNew: true,
+            icon: "M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z",
+        },
+        {
             name: "Mobile App Store",
             description: "App store badges for mobile applications.",
             count: "2 Components",

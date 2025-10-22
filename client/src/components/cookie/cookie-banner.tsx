@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
+import { Dialog } from "../ui/dialog";
 import { Switch } from "../ui/switch";
 import { useCookieConsent } from "../../lib/contexts/cookie-context";
 import { CookieConsentSubmission } from "../../lib/types/cookies";
@@ -168,7 +168,7 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
 
                     {/* Divider + Buttons */}
                     <div className="flex items-center justify-between pt-6 mt-6 border-t">
-                        <Button onClick={handleCloseModal} variant="outline">
+                        <Button onClick={handleCloseModal} variant="secondary">
                             Back
                         </Button>
                         <Button onClick={handleSavePreferences}>Done</Button>
@@ -215,7 +215,7 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
                             <Button
                                 onClick={handleRejectNonEssential}
                                 size="lg"
-                                variant="outline"
+                                variant="secondary"
                                 className="w-full sm:w-auto"
                             >
                                 No thanks
@@ -224,7 +224,7 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
                             <Button
                                 onClick={handleOpenModal}
                                 size="lg"
-                                variant="outline"
+                                variant="secondary"
                                 className="w-full sm:w-auto"
                             >
                                 I choose
@@ -243,18 +243,17 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
             </div>
 
             {/* Preferences Modal - Centered with X */}
-            <Dialog open={showPreferencesModal} onOpenChange={setShowPreferencesModal}>
-                <DialogContent className="max-w-md p-0 bg-white rounded-lg shadow-lg overflow-hidden border-none">
+            <Dialog
+                open={showPreferencesModal}
+                onOpenChange={setShowPreferencesModal}
+                title="Here are our cookies 🍪"
+                titleClassName="text-lg font-medium"
+                description={
+                    "On this site, we use cookies to measure our audience, to maintain your session with us and to occasionally send you content that might interest you."
+                }
+                descriptionClassName="text-sm text-gray-600 mb-6"
+                content={
                     <div className="p-5">
-                        <DialogTitle className="text-lg font-medium">
-                            Here are our cookies 🍪
-                        </DialogTitle>
-                        <p className="text-sm text-gray-600 mb-6">
-                            On this site, we use cookies to measure our audience, to maintain your
-                            session with us and to occasionally send you content that might interest
-                            you.
-                        </p>
-
                         <div className="space-y-5">
                             {/* Necessary cookies - always enabled */}
                             <div className="flex items-center justify-between">
@@ -325,14 +324,14 @@ export default function CookieBanner({ showAsModal, onClose }: CookieBannerProps
 
                         {/* Divider + Buttons */}
                         <div className="flex items-center justify-between pt-6 mt-6 border-t">
-                            <Button onClick={handleCloseModal} variant="outline">
+                            <Button onClick={handleCloseModal} variant="secondary">
                                 Back
                             </Button>
                             <Button onClick={handleSavePreferences}>Done</Button>
                         </div>
                     </div>
-                </DialogContent>
-            </Dialog>
+                }
+            />
         </>
     );
 }
