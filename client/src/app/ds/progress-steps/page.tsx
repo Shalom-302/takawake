@@ -1,9 +1,9 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
-import { CodeBlock } from "@/ds/components";
 import { ProgressSteps } from "@/components/ui/progress-steps";
 import { User01, Building01, Share01, Users01 } from "@untitled-ui/icons-react";
+import { CodeBlock } from "@/components/ui/code-block";
 
 const steps = [
     {
@@ -389,7 +389,7 @@ const stepsWithIcons = [
                                 </tr>
                                 <tr>
                                     <td className="py-3 px-4 font-mono text-sm">type</td>
-                                    <td className="py-3 px-4 text-sm font-mono text-xs">
+                                    <td className="py-3 px-4 text-sm font-mono">
                                         {`"icon-left" | "icon-top" | "number-left" | "number-top" | "featured-icon-left" | "featured-icon-top" | "text-line"`}
                                     </td>
                                     <td className="py-3 px-4 text-sm">-</td>

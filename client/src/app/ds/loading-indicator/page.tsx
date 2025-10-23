@@ -22,7 +22,7 @@ export default function LoadingIndicatorPage() {
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl">
             <div className="mb-8">
-                <Link href="/ds" className="text-blue-600 hover:underline mb-4 inline-block">
+                <Link href="/ds" className="hover:underline mb-4 inline-block">
                     ← Back to Design System
                 </Link>
                 <h1 className="text-3xl font-bold mt-2">Loading Indicator</h1>

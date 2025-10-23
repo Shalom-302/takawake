@@ -7,6 +7,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";
 import { FormFieldWrapper, FormFieldWrapperProps } from "@/components/ui/form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
+import { Kbd } from "../kbd";
 
 export const baseInputVariants = cva(
     "peer m-0 w-full bg-transparent text-md text-primary ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-primary",
@@ -62,6 +63,9 @@ const inputWrapperVariants = cva(
 // ============================================
 // 3. INPUT (standalone avec icônes et tooltip)
 // ============================================
+// ============================================
+// 3. INPUT (standalone avec icônes et tooltip)
+// ============================================
 export interface InputProps extends Omit<BaseInputProps, "className"> {
     /** Tooltip message on hover. */
     tooltip?: string;
@@ -69,6 +73,8 @@ export interface InputProps extends Omit<BaseInputProps, "className"> {
     leftIcon?: React.FC<React.HTMLAttributes<HTMLOrSVGElement>>;
     /** Icon component to display on the right side of the input. */
     rightIcon?: React.FC<React.HTMLAttributes<HTMLOrSVGElement>>;
+    /** Keyboard shortcut to display. */
+    shortcut?: string | boolean;
     /** Class name for the input wrapper. */
     inputWrapperClassName?: string;
     /** Class name for the input. */
@@ -77,6 +83,8 @@ export interface InputProps extends Omit<BaseInputProps, "className"> {
     iconClassName?: string;
     /** Class name for the tooltip. */
     tooltipClassName?: string;
+    /** Class name for the shortcut. */
+    shortcutClassName?: string;
 }
 
 export function Input({
@@ -85,10 +93,12 @@ export function Input({
     leftIcon: LeftIcon,
     rightIcon: RightIcon,
     tooltip,
+    shortcut,
     inputWrapperClassName,
     inputClassName,
     iconClassName,
     tooltipClassName,
+    shortcutClassName,
     ...props
 }: InputProps) {
     const isInvalid = props["aria-invalid"] === true;
@@ -97,6 +107,7 @@ export function Input({
 
     const hasLeftIcon = !!LeftIcon;
     const hasRightIcon = !!RightIcon || !!tooltip || isInvalid;
+    const hasShortcut = !!shortcut;
 
     return (
         <div className={cn(inputWrapperVariants({ state: wrapperState }), inputWrapperClassName)}>
@@ -106,6 +117,8 @@ export function Input({
                 className={cn(
                     hasLeftIcon && (size === "sm" ? "pl-10" : "pl-10.5"),
                     hasRightIcon && (size === "sm" ? "pr-10" : "pr-10.5"),
+                    // Ajouter du padding pour le shortcut
+                    hasShortcut && (size === "sm" ? "pr-16" : "pr-17"),
                     inputClassName
                 )}
                 {...props}
@@ -156,10 +169,23 @@ export function Input({
                     />
                 )
             )}
+
+            {/* Shortcut */}
+            {shortcut && (
+                <div
+                    className={cn(
+                        "pointer-events-none absolute inset-y-0.5 right-0.5 z-10 flex items-center rounded-r-[inherit] bg-linear-to-r from-transparent to-primary to-40% pl-8",
+                        size === "sm" ? "pr-2.5" : "pr-3"
+                    )}
+                >
+                    <Kbd aria-hidden="true" className={shortcutClassName}>
+                        {typeof shortcut === "string" ? shortcut : "⌘K"}
+                    </Kbd>
+                </div>
+            )}
         </div>
     );
 }
-
 // ============================================
 // 4. FORM INTEGRATION
 // ============================================

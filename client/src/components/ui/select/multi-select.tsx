@@ -17,7 +17,7 @@ import {
 } from "react";
 import { useCombobox, useMultipleSelection } from "downshift";
 import { SearchLg as SearchIcon } from "@untitled-ui/icons-react";
-import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { PopoverCustom as Popover } from "@/components/ui/popover";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
@@ -334,7 +334,7 @@ export const MultiSelectRoot = ({
                 highlightedIndex,
             }}
         >
-            <PopoverRoot open={isOpen}>{children}</PopoverRoot>
+            <Popover.Root open={isOpen}>{children}</Popover.Root>
         </MultiSelectRootContext.Provider>
     );
 };
@@ -436,7 +436,7 @@ export const MultiSelectInput = ({
 
     return (
         <div className="relative w-full" ref={ref}>
-            <PopoverAnchor asChild>
+            <Popover.Anchor asChild>
                 <div
                     className={cn(
                         "relative h-max text-md text-primary flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text focus-within:ring-2 focus-within:ring-brand",
@@ -507,7 +507,7 @@ export const MultiSelectInput = ({
                         </div>
                     </div>
                 </div>
-            </PopoverAnchor>
+            </Popover.Anchor>
         </div>
     );
 };
@@ -520,7 +520,7 @@ export const MultiSelectContent = ({
     children,
     className,
     ...props
-}: ComponentPropsWithoutRef<typeof PopoverContent>) => {
+}: ComponentPropsWithoutRef<typeof Popover.Content>) => {
     const { getMenuProps, isOpen, openedOnce, onItemsChange, popoverWidth } =
         useMultiSelectContext();
 
@@ -547,7 +547,7 @@ export const MultiSelectContent = ({
     }, [childItems, onItemsChange]);
 
     return (
-        <PopoverContent
+        <Popover.Content
             {...props}
             forceMount
             asChild
@@ -565,7 +565,7 @@ export const MultiSelectContent = ({
             {...getMenuProps?.({}, { suppressRefError: true })}
         >
             <div>{children}</div>
-        </PopoverContent>
+        </Popover.Content>
     );
 };
 

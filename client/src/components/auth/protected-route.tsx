@@ -3,7 +3,7 @@
 import { useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/contexts/auth-context";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -40,7 +40,7 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
     if (isLoading) {
         return (
             <div className="flex h-screen w-full items-center justify-center">
-                <Spinner size="large" />
+                <LoadingIndicator size="lg" />
             </div>
         );
     }

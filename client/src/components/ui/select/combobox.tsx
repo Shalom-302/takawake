@@ -16,11 +16,12 @@ import {
 } from "react";
 import { useCombobox, type UseComboboxProps, type UseComboboxReturnValue } from "downshift";
 import { SearchLg as SearchIcon } from "@untitled-ui/icons-react";
-import { PopoverRoot, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { PopoverCustom as Popover } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
 import { FieldPath, FieldValues } from "react-hook-form";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { useResizeObserver } from "@/lib/hooks/use-resize-observer";
+import { Kbd } from "../kbd";
 
 // ------------------------------------------------------------
 // Combobox
@@ -306,7 +307,7 @@ export const ComboboxRoot = ({
                 setPopoverWidth,
             }}
         >
-            <PopoverRoot open={isOpen}>{children}</PopoverRoot>
+            <Popover.Root open={isOpen}>{children}</Popover.Root>
         </ComboboxRootContext.Provider>
     );
 };
@@ -359,7 +360,7 @@ export const ComboboxInput = ({
 
     return (
         <div className="relative w-full">
-            <PopoverAnchor asChild>
+            <Popover.Anchor asChild>
                 <div
                     className={cn(
                         "relative h-max text-md text-primary flex w-full items-center gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary outline-hidden transition-shadow duration-100 ease-linear ring-inset cursor-text focus-within:ring-2 focus-within:ring-brand",
@@ -414,19 +415,11 @@ export const ComboboxInput = ({
                                 shortcutClassName
                             )}
                         >
-                            <span
-                                className={cn(
-                                    "pointer-events-none rounded px-1 py-px text-xs font-medium text-quaternary ring-1 ring-secondary select-none ring-inset",
-                                    disabled && "bg-transparent text-disabled"
-                                )}
-                                aria-hidden="true"
-                            >
-                                ⌘K
-                            </span>
+                            <Kbd aria-hidden="true">⌘K</Kbd>
                         </div>
                     )}
                 </div>
-            </PopoverAnchor>
+            </Popover.Anchor>
         </div>
     );
 };
@@ -439,7 +432,7 @@ export const ComboboxContent = ({
     children,
     className,
     ...props
-}: ComponentPropsWithoutRef<typeof PopoverContent>) => {
+}: ComponentPropsWithoutRef<typeof Popover.Content>) => {
     const { getMenuProps, isOpen, openedOnce, onItemsChange, popoverWidth } = useComboboxContext();
 
     const childItems = useMemo(
@@ -463,7 +456,7 @@ export const ComboboxContent = ({
     }, [childItems, onItemsChange]);
 
     return (
-        <PopoverContent
+        <Popover.Content
             {...props}
             forceMount
             asChild
@@ -481,7 +474,7 @@ export const ComboboxContent = ({
             {...getMenuProps?.({}, { suppressRefError: true })}
         >
             <div>{children}</div>
-        </PopoverContent>
+        </Popover.Content>
     );
 };
 

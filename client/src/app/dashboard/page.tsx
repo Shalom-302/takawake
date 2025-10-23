@@ -1,22 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress-indicators/progress";
-import { Button } from "@/components/ui/button/button";
+import { CardCustom as Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Clock, MessageSquare, Bell, Activity, RefreshCw, BarChart3 } from "lucide-react";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 import { formatRelativeTime } from "@/lib/utils/date-utils";
+import { ProgressBar } from "@/components/ui/progress-indicators";
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -139,71 +132,71 @@ export default function DashboardPage() {
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Unread messages</CardTitle>
+                    <Card.Root>
+                        <Card.Header className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Card.Title className="text-sm font-medium">Unread messages</Card.Title>
                             <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="text-2xl font-bold">{stats.messagesCount}</div>
                             <p className="text-xs text-muted-foreground">
                                 {stats.messagesCount > 0
                                     ? `${Math.min(stats.messagesCount, 5)} new since your last visit`
                                     : "No new messages"}
                             </p>
-                        </CardContent>
-                    </Card>
+                        </Card.Content>
+                    </Card.Root>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+                    <Card.Root>
+                        <Card.Header className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Card.Title className="text-sm font-medium">Notifications</Card.Title>
                             <Bell className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="text-2xl font-bold">{stats.notificationsCount}</div>
                             <p className="text-xs text-muted-foreground">Need your attention</p>
-                        </CardContent>
-                    </Card>
+                        </Card.Content>
+                    </Card.Root>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Last connection</CardTitle>
+                    <Card.Root>
+                        <Card.Header className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Card.Title className="text-sm font-medium">Last connection</Card.Title>
                             <Activity className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="text-md font-bold">{stats.lastConnection}</div>
                             <p className="text-xs text-muted-foreground">
                                 Active conversations: {stats.activitiesCount}
                             </p>
-                        </CardContent>
-                    </Card>
+                        </Card.Content>
+                    </Card.Root>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">Token status</CardTitle>
+                    <Card.Root>
+                        <Card.Header className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Card.Title className="text-sm font-medium">Token status</Card.Title>
                             <RefreshCw
                                 className={`h-4 w-4 ${tokenStatus === "refreshing" ? "animate-spin text-amber-500" : "text-green-500"}`}
                             />
-                        </CardHeader>
-                        <CardContent>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="text-md font-bold capitalize">
                                 {tokenStatus === "valid" ? "Valid" : "Refreshing"}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Last refresh: {lastRefresh || "N/A"}
                             </p>
-                        </CardContent>
-                    </Card>
+                        </Card.Content>
+                    </Card.Root>
 
                     {/* Carte d'aperçu des audits */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium">
+                    <Card.Root>
+                        <Card.Header className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Card.Title className="text-sm font-medium">
                                 Activités récentes
-                            </CardTitle>
+                            </Card.Title>
                             <Activity className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="text-2xl font-bold">
                                 <Link href="/audit" className="hover:underline">
                                     Audit Log
@@ -212,19 +205,19 @@ export default function DashboardPage() {
                             <p className="text-xs text-muted-foreground">
                                 Suivez et analysez toutes les activités système
                             </p>
-                        </CardContent>
-                    </Card>
+                        </Card.Content>
+                    </Card.Root>
                 </div>
 
                 {/* Main Content */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Recent Messages */}
-                    <Card className="col-span-1">
-                        <CardHeader>
-                            <CardTitle className="text-xl">Recent messages</CardTitle>
-                            <CardDescription>Your recent conversations</CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    <Card.Root className="col-span-1">
+                        <Card.Header>
+                            <Card.Title className="text-xl">Recent messages</Card.Title>
+                            <Card.Description>Your recent conversations</Card.Description>
+                        </Card.Header>
+                        <Card.Content>
                             <div className="space-y-4">
                                 {recentConversations.length > 0 ? (
                                     recentConversations.map(conversation => (
@@ -262,7 +255,7 @@ export default function DashboardPage() {
                                     <div className="text-center py-6 text-muted-foreground">
                                         <p>No recent conversations</p>
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             size="sm"
                                             className="mt-2"
                                             asChild
@@ -272,21 +265,21 @@ export default function DashboardPage() {
                                     </div>
                                 )}
                             </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button variant="outline" className="w-full" asChild>
+                        </Card.Content>
+                        <Card.Footer>
+                            <Button variant="secondary" className="w-full" asChild>
                                 <Link href="/messages">See all messages</Link>
                             </Button>
-                        </CardFooter>
-                    </Card>
+                        </Card.Footer>
+                    </Card.Root>
 
                     {/* Detailed Stats */}
-                    <Card className="col-span-1">
-                        <CardHeader>
-                            <CardTitle className="text-xl">System activity</CardTitle>
-                            <CardDescription>Information about the system state</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-8">
+                    <Card.Root className="col-span-1">
+                        <Card.Header>
+                            <Card.Title className="text-xl">System activity</Card.Title>
+                            <Card.Description>Information about the system state</Card.Description>
+                        </Card.Header>
+                        <Card.Content className="space-y-8">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <div className="flex items-center">
@@ -295,7 +288,7 @@ export default function DashboardPage() {
                                     </div>
                                     <span className="font-medium">Excellent</span>
                                 </div>
-                                <Progress value={92} className="h-2" />
+                                <ProgressBar value={92} className="h-2" />
                                 <p className="text-xs text-muted-foreground">
                                     The system is operating at 92% of its optimal capacity.
                                 </p>
@@ -315,7 +308,7 @@ export default function DashboardPage() {
                                             : "Connecting..."}
                                     </span>
                                 </div>
-                                <Progress
+                                <ProgressBar
                                     value={websocketStatus === "connected" ? 100 : 60}
                                     className="h-2"
                                 />
@@ -340,13 +333,13 @@ export default function DashboardPage() {
                                     </p>
                                 </div>
                             </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button variant="outline" className="w-full" asChild>
+                        </Card.Content>
+                        <Card.Footer>
+                            <Button variant="secondary" className="w-full" asChild>
                                 <Link href="/system-status">Check system status</Link>
                             </Button>
-                        </CardFooter>
-                    </Card>
+                        </Card.Footer>
+                    </Card.Root>
                 </div>
             </div>
         </ProtectedRoute>

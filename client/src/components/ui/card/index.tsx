@@ -16,7 +16,7 @@ type CardProps = Omit<React.ComponentProps<"div">, "content"> & {
     footerClassName?: string;
 };
 
-function Card({
+export function Card({
     title,
     description,
     action,
@@ -123,4 +123,12 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     );
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };
+export const CardCustom = {
+    Root: CardRoot,
+    Header: CardHeader,
+    Footer: CardFooter,
+    Title: CardTitle,
+    Action: CardAction,
+    Description: CardDescription,
+    Content: CardContent,
+};

@@ -260,22 +260,13 @@ export default function DesignSystemPage() {
     // Composite components - higher-level combinations of base components
     const compositeComponents = [
         {
-            name: "Group Card",
+            name: "Header Navigation Base",
+            href: "/ds/header-navigation-base",
             description:
-                "Card component for displaying savings group information with status and actions.",
-            count: "1 Component",
-            href: "/ds/group-card",
+                "A foundational header navigation component combining logo, links, and user actions.",
+            count: "2 Component",
             isNew: true,
-            icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12-1a1 1 0 00-1 1v6a1 1 0 001 1h4a1 1 0 001-1v-6a1 1 0 00-1-1h-4z",
-        },
-        {
-            name: "Member List",
-            description:
-                "List component for displaying member information with optional actions and pagination.",
-            count: "1 Component",
-            href: "/ds/member-list",
-            isNew: true,
-            icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+            icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12-1a1 1 0 00-1 1v6a1 1 0 001 1h4a1 1 0 001-1v-6a1 1 0
         },
     ];
 

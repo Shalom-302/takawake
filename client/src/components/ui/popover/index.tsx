@@ -14,7 +14,7 @@ interface PopoverProps extends PopoverRootProps {
     contentClassName?: string;
 }
 
-function Popover({
+export function Popover({
     trigger,
     content,
     align,
@@ -78,4 +78,9 @@ function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitiv
     return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
 }
 
-export { Popover, PopoverRoot, PopoverTrigger, PopoverContent, PopoverAnchor };
+export const PopoverCustom = {
+    Root: PopoverRoot,
+    Trigger: PopoverTrigger,
+    Content: PopoverContent,
+    Anchor: PopoverAnchor,
+};

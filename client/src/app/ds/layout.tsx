@@ -47,8 +47,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
     ].sort((a, b) => a.name.localeCompare(b.name));
 
     const compositeComponents = [
-        { name: "Group card", href: "/ds/group-card" },
-        { name: "Member list", href: "/ds/member-list" },
+        { name: "Header Navigation Base", href: "/ds/header-navigation-base" },
     ].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
