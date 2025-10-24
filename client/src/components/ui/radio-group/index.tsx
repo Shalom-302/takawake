@@ -80,7 +80,7 @@ export interface RadioGroupRootProps
     children: React.ReactNode;
 }
 
-export function RadioGroupRoot({ className, size = "sm", ...props }: RadioGroupRootProps) {
+function RadioGroupRoot({ className, size = "sm", ...props }: RadioGroupRootProps) {
     return (
         <RadioGroupPrimitive.Root
             className={cn("flex flex-col", size === "sm" ? "gap-2" : "gap-3", className)}
@@ -96,7 +96,7 @@ export interface RadioItemProps
     description?: React.ReactNode;
 }
 
-export function RadioItem({
+function RadioItem({
     className,
     size = "sm",
     label,
@@ -139,7 +139,6 @@ export function RadioItem({
                     {description && (
                         <span
                             className={cn("text-tertiary", size === "sm" ? "text-sm" : "text-md")}
-                            // onClick={e => e.stopPropagation()}
                         >
                             {description}
                         </span>
@@ -149,6 +148,11 @@ export function RadioItem({
         </label>
     );
 }
+
+export const RadioGroupCustom = {
+    Root: RadioGroupRoot,
+    Item: RadioItem,
+};
 
 export interface RadioGroupFormProps<
     TFieldValues extends FieldValues = FieldValues,

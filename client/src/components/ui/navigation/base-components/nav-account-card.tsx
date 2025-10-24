@@ -9,12 +9,13 @@ import {
     Settings01,
     User01,
 } from "@untitled-ui/icons-react";
-import { Avatar, AvatarLabel } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button/button";
+import { AvatarLabel } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useBreakpoint } from "@/lib/hooks/use-breakpoint";
 import { cn } from "@/lib/utils/cn";
 import { Kbd } from "@/components/ui/kbd";
-import { Popover } from "../../popover";
+import { Popover } from "@/components/ui/popover";
+import { RadioGroupCustom as RadioGroup } from "@/components/ui/radio-group";
 
 type NavAccountType = {
     id: string;
@@ -93,7 +94,7 @@ export const NavAccountMenu = ({
         >
             <div className="rounded-xl bg-primary ring-1 ring-secondary">
                 <div className="flex flex-col gap-0.5 py-1.5">
-                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K->P" />
+                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K-->P" />
                     <NavAccountCardMenuItem
                         label="Account settings"
                         icon={Settings01}
@@ -107,43 +108,33 @@ export const NavAccountMenu = ({
                     </div>
 
                     <div className="flex flex-col gap-0.5 px-1.5">
-                        {accounts.map(account => (
-                            <button
-                                key={account.id}
-                                className={cn(
-                                    "relative w-full cursor-pointer rounded-md px-2 py-1.5 text-left outline-focus-ring hover:bg-primary_hover focus:z-10 focus-visible:outline-2 focus-visible:outline-offset-2",
-                                    account.id === selectedAccountId && "bg-primary_hover"
-                                )}
-                            >
-                                <figure className="group flex min-w-0 flex-1 items-center gap-2">
-                                    <Avatar size="md" src={account.avatar} />
-                                    <figcaption className="min-w-0 flex-1">
-                                        <p className="text-sm text-primary font-semibold">
-                                            {account.name}
-                                        </p>
-                                        <p className="text-xs text-tertiary truncate">
-                                            {account.email}
-                                        </p>
-                                    </figcaption>
-                                </figure>
-
-                                <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary ring-1 ring-primary">
-                                    {account.id === selectedAccountId ? (
-                                        <span className="size-2 rounded-full bg-fg-white" />
-                                    ) : (
-                                        <span className="size-2 opacity-0" />
+                        <RadioGroup.Root defaultValue={selectedAccountId}>
+                            {accounts.map(account => (
+                                <label
+                                    key={account.id}
+                                    className={cn(
+                                        "relative w-full cursor-pointer rounded-md px-2 py-1.5 text-left outline-focus-ring hover:bg-primary_hover focus:z-10 focus-visible:outline-2 focus-visible:outline-offset-2",
+                                        account.id === selectedAccountId && "bg-primary_hover"
                                     )}
-                                </span>
-                            </button>
-                        ))}
+                                >
+                                    <AvatarLabel
+                                        size="md"
+                                        src={account.avatar}
+                                        alt={account.name}
+                                        title={account.name}
+                                        subtitle={account.email}
+                                        status={account.status}
+                                    />
+                                    <span className="absolute top-2 right-2 ">
+                                        <RadioGroup.Item value={account.id} />
+                                    </span>
+                                </label>
+                            ))}
+                        </RadioGroup.Root>
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 px-2 pt-0.5 pb-2">
-                    <Button
-                        leftIcon={Plus as unknown as React.FC<{ className?: string }>}
-                        variant="secondary"
-                        size="sm"
-                    >
+                    <Button leftIcon={Plus} variant="secondary" size="sm">
                         Add account
                     </Button>
                 </div>

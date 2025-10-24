@@ -5,50 +5,59 @@ import React from "react";
 import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
 import { Button } from "@/components/ui/button/button";
 import { cn } from "@/lib/utils/cn";
-import { DialogCustom as Dialog } from "@/components/ui/dialog";
+import { DrawerCustom as Drawer } from "@/components/ui/drawer";
 import { Menu02, X as CloseIcon } from "@untitled-ui/icons-react";
 
 export const MobileNavigationHeader = ({ children }: PropsWithChildren) => {
     return (
-        <Dialog.Root>
-            <header className="flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
-                <UntitledLogo />
+        <>
+            <Drawer.Root direction="left">
+                {/* Header fixe toujours visible sur mobile */}
+                <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between border-b border-secondary bg-primary py-3 pr-2 pl-4 lg:hidden">
+                    <UntitledLogo className="h-8" />
 
-                <Dialog.Trigger asChild>
-                    <Button
-                        variant="tertiary"
-                        size="sm"
-                        aria-label="Expand navigation menu"
-                        className="group relative flex items-center justify-center rounded-lg bg-primary p-2 text-fg-secondary outline-focus-ring hover:bg-primary_hover hover:text-fg-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
-                    >
-                        <Menu02 className="size-6" />
-                    </Button>
-                </Dialog.Trigger>
-            </header>
+                    <Drawer.Trigger asChild>
+                        <Button
+                            variant="tertiary"
+                            size="sm"
+                            aria-label="Open navigation menu"
+                            className="flex items-center justify-center rounded-lg p-2 text-fg-secondary outline-focus-ring hover:bg-primary_hover hover:text-fg-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+                        >
+                            <Menu02 className="size-6" />
+                        </Button>
+                    </Drawer.Trigger>
+                </header>
 
-            <Dialog.Content
-                showCloseButton={false}
-                className={cn(
-                    "fixed inset-0 z-50 bg-transparent border-0 p-0 shadow-none max-w-none lg:hidden"
-                )}
-            >
-                {/* Bouton de fermeture flottant */}
-                <Dialog.Close asChild>
-                    <Button
-                        variant="tertiary"
-                        size="sm"
-                        aria-label="Close navigation menu"
-                        className="fixed top-3 right-2 z-10 flex cursor-pointer items-center justify-center rounded-lg p-2 text-fg-white/70 outline-focus-ring hover:bg-white/10 hover:text-fg-white focus-visible:outline-2 focus-visible:outline-offset-2"
-                    >
-                        <CloseIcon className="size-6" />
-                    </Button>
-                </Dialog.Close>
+                {/* Spacer pour compenser le header fixe */}
+                <div className="h-16 lg:hidden" />
 
-                {/* Contenu du menu */}
-                <div className="w-full h-dvh cursor-auto will-change-transform pr-16">
-                    <div className="h-dvh outline-hidden focus:outline-hidden">{children}</div>
-                </div>
-            </Dialog.Content>
-        </Dialog.Root>
+                <Drawer.Content
+                    showCloseButton={false}
+                    className={cn(
+                        "flex flex-col border-secondary bg-primary p-0",
+                        "data-[vaul-drawer-direction=left]:w-[85%] data-[vaul-drawer-direction=left]:max-w-sm"
+                    )}
+                >
+                    {/* Header du drawer */}
+                    <div className="flex h-16 shrink-0 items-center justify-between border-b border-secondary px-4 py-3">
+                        <UntitledLogo className="h-8" />
+
+                        <Drawer.Close asChild>
+                            <Button
+                                variant="tertiary"
+                                size="sm"
+                                aria-label="Close navigation menu"
+                                className="flex items-center justify-center rounded-lg p-2 text-fg-secondary outline-focus-ring hover:bg-primary_hover hover:text-fg-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2"
+                            >
+                                <CloseIcon className="size-6" />
+                            </Button>
+                        </Drawer.Close>
+                    </div>
+
+                    {/* Contenu scrollable */}
+                    <div className="flex-1 overflow-auto">{children}</div>
+                </Drawer.Content>
+            </Drawer.Root>
+        </>
     );
 };

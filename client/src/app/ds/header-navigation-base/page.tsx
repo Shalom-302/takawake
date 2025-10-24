@@ -54,7 +54,7 @@ export default function HeaderNavigationBasePage() {
                 </div>
 
                 <CodeBlock
-                    code={`import { HeaderNavigationBase } from "@/components/application/app-navigation/header-navigation";
+                    code={`import { HeaderNavigationBase } from "@/components/ui/navigation/header-navigation";
 
 <HeaderNavigationBase
   items={[
@@ -118,9 +118,9 @@ export default function HeaderNavigationBasePage() {
                 </div>
 
                 <CodeBlock
-                    code={`import { Zap } from "@untitledui/icons";
-import { HeaderNavigationBase } from "@/components/application/app-navigation/header-navigation";
-import { Button } from "@/components/base/buttons/button";
+                    code={`import { Zap } from "@untitled-ui/icons-react";
+import { HeaderNavigationBase } from "@/components/ui/navigation/header-navigation";
+import { Button } from "@/components/base/button";
 
 <HeaderNavigationBase
   items={[
@@ -144,7 +144,7 @@ import { Button } from "@/components/base/buttons/button";
     { label: "Users", href: "/users" },
   ]}
   trailingContent={
-    <Button iconLeading={Zap} color="secondary" size="sm">
+    <Button leftIcon={Zap} variant="secondary" size="sm">
       Upgrade now
     </Button>
   }
