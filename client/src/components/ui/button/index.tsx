@@ -4,3 +4,4 @@ export * from "./button-group";
 export * from "./button-utility";
 export * from "./social-button";
 export * from "./app-store-button";
+export * from "./close-button";

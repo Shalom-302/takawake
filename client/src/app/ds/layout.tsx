@@ -48,6 +48,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
 
     const compositeComponents = [
         { name: "Header Navigation Base", href: "/ds/header-navigation-base" },
+        { name: "Sidebar Navigation", href: "/ds/sidebar-navigation" },
     ].sort((a, b) => a.name.localeCompare(b.name));
 
     return (

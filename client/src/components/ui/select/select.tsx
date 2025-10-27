@@ -1,5 +1,3 @@
-//Enhanced Shadcn UI Select Component - Fixed
-
 "use client";
 
 import * as React from "react";

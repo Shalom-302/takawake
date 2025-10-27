@@ -116,7 +116,7 @@ export default function DesignSystemPage() {
             description: "Components for uploading and managing files.",
             count: "4 Components",
             href: "/ds/file-upload",
-            isNew: true,
+            isNew: false,
             icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4 4m4-4v12",
         },
         {
@@ -148,7 +148,7 @@ export default function DesignSystemPage() {
             description: "Navigation for multi-page content.",
             count: "3 Components",
             href: "/ds/pagination",
-            isNew: true,
+            isNew: false,
             icon: "M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z",
         },
         {
@@ -156,7 +156,7 @@ export default function DesignSystemPage() {
             description: "Navigation for multi-page content.",
             count: "2 Components",
             href: "/ds/popover",
-            isNew: true,
+            isNew: false,
             icon: "M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z",
         },
         {
@@ -164,7 +164,7 @@ export default function DesignSystemPage() {
             description: "Visual indicators for operations status.",
             count: "6 Components",
             href: "/ds/progress",
-            isNew: true,
+            isNew: false,
             icon: "M13 10V3L4 14h7v7l9-11h-7z",
         },
         {
@@ -172,7 +172,7 @@ export default function DesignSystemPage() {
             description: "Visual indicators for operations steps status.",
             count: "6 Components",
             href: "/ds/progress-steps",
-            isNew: true,
+            isNew: false,
             icon: "M13 10V3L4 14h7v7l9-11h-7z",
         },
         {
@@ -180,7 +180,7 @@ export default function DesignSystemPage() {
             description: "Selection controls for single options.",
             count: "6 Components",
             href: "/ds/radio-group",
-            isNew: true,
+            isNew: false,
             icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
         },
         {
@@ -220,7 +220,7 @@ export default function DesignSystemPage() {
             description: "Structured data presentation with various features.",
             count: "8 Components",
             href: "/ds/table",
-            isNew: true,
+            isNew: false,
             icon: "M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z",
         },
         {
@@ -266,7 +266,16 @@ export default function DesignSystemPage() {
                 "A foundational header navigation component combining logo, links, and user actions.",
             count: "2 Component",
             isNew: true,
-            icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12-1a1 1 0 00-1 1v6a1 1 0 001 1h4a1 1 0 001-1v-6a1 1 0
+            icon: "M3 12h18M3 6h18M3 18h18",
+        },
+        {
+            name: "Sidebar Navigation",
+            href: "/ds/sidebar-navigation",
+            description:
+                "A versatile sidebar navigation component with support for multi-level menus and collapsible sections.",
+            count: "4 Components",
+            isNew: true,
+            icon: "M3 12h18M3 6h18M3 18h18",
         },
     ];
 
@@ -296,7 +305,7 @@ export default function DesignSystemPage() {
                     </h2>
                 </div>
                 {component.isNew && (
-                    <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+                    <span className="bg-success-100 text-success-700 text-xs px-2 py-0.5 rounded-full">
                         New
                     </span>
                 )}

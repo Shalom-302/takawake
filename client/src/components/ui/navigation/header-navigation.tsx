@@ -176,7 +176,7 @@ export const HeaderNavigationBase = ({
                                             alt="Olivia Rhye"
                                             src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0"
                                             size="md"
-                                            className="relative inline-flex cursor-pointer rounded-full p-0 hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                                            className="relative inline-flex cursor-pointer rounded-full p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                                         />
                                     }
                                     content={<NavAccountMenu />}

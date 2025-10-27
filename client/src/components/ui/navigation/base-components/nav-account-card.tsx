@@ -86,15 +86,10 @@ export const NavAccountMenu = ({
     selectedAccountId?: string;
 }) => {
     return (
-        <div
-            className={cn(
-                "w-66 rounded-xl bg-secondary_alt shadow-lg ring ring-secondary_alt outline-hidden",
-                className
-            )}
-        >
+        <div className={cn("w-66 rounded-xl bg-secondary_alt", className)}>
             <div className="rounded-xl bg-primary ring-1 ring-secondary">
                 <div className="flex flex-col gap-0.5 py-1.5">
-                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K-->P" />
+                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K->P" />
                     <NavAccountCardMenuItem
                         label="Account settings"
                         icon={Settings01}
@@ -188,7 +183,7 @@ export const NavAccountCard = ({
                     content={
                         <NavAccountMenu selectedAccountId={selectedAccountId} accounts={items} />
                     }
-                    contentClassName={cn(isDesktop ? "max-w-xs" : "max-w-sm", "p-0")}
+                    contentClassName={cn(isDesktop ? "max-w-xs" : "max-w-sm", "rounded-xl")}
                     align={"end"}
                     sideOffset={8}
                 />
