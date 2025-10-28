@@ -120,7 +120,7 @@ export default function HeaderNavigationBasePage() {
                 <CodeBlock
                     code={`import { Zap } from "@untitled-ui/icons-react";
 import { HeaderNavigationBase } from "@/components/ui/navigation/header-navigation";
-import { Button } from "@/components/base/button";
+import { Button } from "@/components/ui/button";
 
 <HeaderNavigationBase
   items={[

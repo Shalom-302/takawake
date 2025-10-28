@@ -183,7 +183,7 @@ export const NavAccountCard = ({
                     content={
                         <NavAccountMenu selectedAccountId={selectedAccountId} accounts={items} />
                     }
-                    contentClassName={cn(isDesktop ? "max-w-xs" : "max-w-sm", "rounded-xl")}
+                    contentClassName={cn(isDesktop ? "max-w-xs" : "max-w-sm", "w-full rounded-xl")}
                     align={"end"}
                     sideOffset={8}
                 />
