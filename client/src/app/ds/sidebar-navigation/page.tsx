@@ -1081,12 +1081,11 @@ const items = [
                     {/* Structure de simulation de page : Slim Sidebar + Contenu */}
                     <div className="flex h-full w-full border border-gray-300 rounded-lg shadow-xl overflow-hidden bg-white">
                         {/* La Slim Sidebar est étroite (environ 96px) */}
-                        <div className="h-full flex-shrink-0 w-24 relative overflow-hidden transform">
+                        <div className="h-full flex-shrink-0 w-24 relative transform">
                             <SidebarNavigationSlim
                                 activeUrl="/dashboard"
                                 items={navItemsDualTier}
                                 footerItems={footerItemsMinimal}
-                                // className="h-full"
                             />
                         </div>
 
@@ -1139,7 +1138,6 @@ const items = [
                             <SidebarNavigationSectionsSubheadings
                                 activeUrl="/"
                                 items={navItemsWithSections}
-                                // className="h-full"
                             />
                         </div>
 
@@ -1201,7 +1199,6 @@ const items = [
                             <SidebarNavigationSectionDividers
                                 activeUrl="/"
                                 items={navItemsWithDividers}
-                                // className="h-full"
                             />
                         </div>
 
@@ -1252,7 +1249,6 @@ const items = [
             {/* API Reference (Non modifié) */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">API Reference</h2>
-                {/* ... (votre tableau API) ... */}
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
@@ -1299,31 +1295,6 @@ const items = [
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                <div className="mt-6">
-                    <h3 className="text-lg font-semibold mb-3">NavItem Type</h3>
-                    <CodeBlock
-                        code={`type NavItem = {
-  label: string;
-  href: string;
-  current?: boolean;
-  icon?: FC<{ className?: string }>;
-  badge?: ReactNode | number;
-  items?: NavItem[];
-};
-
-// For section-based navigation
-type NavItemWithSection = {
-  label: string;
-  items: NavItem[];
-};
-
-// For divider-based navigation
-type NavItemDivider = {
-  divider: true;
-};`}
-                    />
                 </div>
             </div>
         </div>

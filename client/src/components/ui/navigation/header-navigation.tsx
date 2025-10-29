@@ -172,12 +172,13 @@ export const HeaderNavigationBase = ({
                                     sideOffset={8}
                                     contentClassName="w-auto p-0"
                                     trigger={
-                                        <Avatar
-                                            alt="Olivia Rhye"
-                                            src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0"
-                                            size="md"
-                                            className="relative inline-flex cursor-pointer rounded-full p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                                        />
+                                        <button className="group relative inline-flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring">
+                                            <Avatar
+                                                alt="Olivia Rhye"
+                                                src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0"
+                                                size="md"
+                                            />
+                                        </button>
                                     }
                                     content={<NavAccountMenu />}
                                 />

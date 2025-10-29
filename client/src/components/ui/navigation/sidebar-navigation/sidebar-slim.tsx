@@ -96,43 +96,19 @@ export const SidebarNavigationSlim = ({
                             ))}
                         </ul>
                     )}
-
-                    {/* <AriaDialogTrigger>
-                        <AriaButton
-                            className={({ isPressed, isFocused }) =>
-                                cx("group relative inline-flex rounded-full", (isPressed || isFocused) && "outline-2 outline-offset-2 outline-focus-ring")
-                            }
-                        >
-                            <Avatar status="online" src="https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80" size="md" alt="Olivia Rhye" />
-                        </AriaButton>
-                        <AriaPopover
-                            placement="right bottom"
-                            offset={8}
-                            crossOffset={6}
-                            className={({ isEntering, isExiting }) =>
-                                cx(
-                                    "will-change-transform",
-                                    isEntering &&
-                                        "duration-300 ease-out animate-in fade-in placement-right:slide-in-from-left-2 placement-top:slide-in-from-bottom-2 placement-bottom:slide-in-from-top-2",
-                                    isExiting &&
-                                        "duration-150 ease-in animate-out fade-out placement-right:slide-out-to-left-2 placement-top:slide-out-to-bottom-2 placement-bottom:slide-out-to-top-2",
-                                )
-                            }
-                        >
-                            <NavAccountMenu />
-                        </AriaPopover>
-                    </AriaDialogTrigger> */}
                     <Popover
-                        align="end"
+                        align="start"
                         sideOffset={8}
                         contentClassName="w-auto p-0"
                         trigger={
-                            <Avatar
-                                alt="Olivia Rhye"
-                                src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0"
-                                size="md"
-                                className="relative inline-flex cursor-pointer rounded-full p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                            />
+                            <button className="group relative inline-flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring">
+                                <Avatar
+                                    status="online"
+                                    src="https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80"
+                                    size="md"
+                                    alt="Olivia Rhye"
+                                />
+                            </button>
                         }
                         content={<NavAccountMenu />}
                     />
