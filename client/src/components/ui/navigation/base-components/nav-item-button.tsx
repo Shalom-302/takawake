@@ -3,6 +3,7 @@
 import type { FC, MouseEventHandler } from "react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
+import Link from "next/link";
 
 const styles = {
     md: {
@@ -49,8 +50,8 @@ export const NavItemButton = ({
     return (
         <Tooltip
             trigger={
-                <a
-                    href={href}
+                <Link
+                    href={href!}
                     aria-label={label}
                     onClick={onClick}
                     className={cn(
@@ -64,7 +65,7 @@ export const NavItemButton = ({
                         aria-hidden="true"
                         className={cn("shrink-0 transition-inherit-all", styles[size].icon)}
                     />
-                </a>
+                </Link>
             }
             title={label}
             side={tooltipPlacement}

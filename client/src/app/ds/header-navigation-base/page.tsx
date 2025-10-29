@@ -3,11 +3,34 @@
 import React from "react";
 import Link from "next/link";
 import { CodeBlock } from "@/components/ui/code-block";
-import { HeaderNavigationBase } from "@/components/ui/navigation/header-navigation";
+import {
+    HeaderNavigationBase,
+    HeaderNavigationMenu,
+    HeaderNavItem,
+} from "@/components/ui/navigation/header-navigation";
 import { Button } from "@/components/ui/button";
 import { Zap } from "@untitled-ui/icons-react";
+import { DropdownMenuSimple } from "@/components/ui/navigation/base-components";
 
-export default function HeaderNavigationBasePage() {
+export default function HeaderNavigationPage() {
+    const headerNavMenuItems: HeaderNavItem[] = [
+        { label: "Products", href: "/products", menu: <DropdownMenuSimple /> },
+        { label: "Services", href: "/Services", menu: <DropdownMenuSimple /> },
+        { label: "Pricing", href: "/pricing" },
+        { label: "Resources", href: "/resources", menu: <DropdownMenuSimple /> },
+        { label: "About", href: "/about" },
+    ];
+
+    const footerNavMenuItems: HeaderNavItem[] = [
+        { label: "About us", href: "/" },
+        { label: "Press", href: "/products" },
+        { label: "Careers", href: "/resources" },
+        { label: "Legal", href: "/pricing" },
+        { label: "Support", href: "/pricing" },
+        { label: "Contact", href: "/pricing" },
+        { label: "Sitemap", href: "/pricing" },
+        { label: "Cookie settings", href: "/pricing" },
+    ];
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl">
             {/* Header */}
@@ -29,7 +52,7 @@ export default function HeaderNavigationBasePage() {
                     A simple header navigation with top-level items and one dropdown menu.
                 </p>
 
-                <div className="border border-gray-200 rounded-lg p-8 mb-4">
+                <div className="border border-gray-200 rounded-lg p-8 mb-4 transform">
                     <HeaderNavigationBase
                         items={[
                             { label: "Home", href: "/" },
@@ -87,7 +110,7 @@ export default function HeaderNavigationBasePage() {
                     The navigation can include an action button or any custom trailing element.
                 </p>
 
-                <div className="border border-gray-200 rounded-lg p-8 mb-4">
+                <div className="border border-gray-200 rounded-lg p-8 mb-4 transform">
                     <HeaderNavigationBase
                         items={[
                             { label: "Home", href: "/" },
@@ -149,6 +172,48 @@ import { Button } from "@/components/ui/button";
     </Button>
   }
 />`}
+                />
+            </div>
+
+            <div className="mb-10">
+                <h2 className="text-2xl font-semibold mb-4 text-gray-800 pb-2">
+                    Dropdown Navigation Header
+                </h2>
+                <p className="text-sm text-gray-600 mb-6">
+                    A comprehensive header component featuring multi-level dropdowns for desktop and
+                    a full-screen drawer for mobile, using custom `NavigationMenu` and `Dialog`
+                    patterns.
+                </p>
+
+                <div className="border border-gray-200 h-screen rounded-lg p-0 mb-4 transform">
+                    <HeaderNavigationMenu
+                        items={headerNavMenuItems}
+                        footerItems={footerNavMenuItems}
+                        isFullWidth
+                    />
+                </div>
+
+                <CodeBlock
+                    code={`import { HeaderNavigationMenu } from "@/components/ui/navigation/header-navigation;
+const headerNavMenuItems: HeaderNavItem[] = [
+        { label: "Products", href: "/products", menu: <DropdownMenuSimple /> },
+        { label: "Services", href: "/Services", menu: <DropdownMenuSimple /> },
+        { label: "Pricing", href: "/pricing" },
+        { label: "Resources", href: "/resources", menu: <DropdownMenuSimple /> },
+        { label: "About", href: "/about" },
+];
+const footerNavMenuItems: HeaderNavItem[] = [
+        { label: "About us", href: "/" },
+        { label: "Press", href: "/products" },
+        { label: "Careers", href: "/resources" },
+        { label: "Legal", href: "/pricing" },
+        { label: "Support", href: "/pricing" },
+        { label: "Contact", href: "/pricing" },
+        { label: "Sitemap", href: "/pricing" },
+        { label: "Cookie settings", href: "/pricing" },
+];
+
+<HeaderNavigationMenu items={headerNavMenuItems} footerItems={footerNavMenuItems} isFullWidth={true} />`}
                 />
             </div>
 
