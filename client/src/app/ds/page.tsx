@@ -77,7 +77,15 @@ export default function DesignSystemPage() {
             count: "6 Components",
             href: "/ds/card",
             isNew: false,
-            icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z",
+            icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7a2 2 0 012-2h14a2 2 0 012 2M3 7l9 6 9-6",
+        },
+        {
+            name: "Carousel",
+            description: "Scrollable content sliders for showcasing items.",
+            count: "6 Components",
+            href: "/ds/carousel",
+            isNew: true,
+            icon: "M3 12h18M3 6h18M3 18h18",
         },
         {
             name: "Checkbox",
@@ -86,6 +94,15 @@ export default function DesignSystemPage() {
             href: "/ds/checkbox",
             isNew: false,
             icon: "M5 13l4 4L19 7",
+        },
+        {
+            name: "Credit Card",
+            description:
+                "Stylized credit card components with various visual variants and branding options.",
+            count: "8 Components",
+            href: "/ds/credit-card",
+            isNew: true,
+            icon: "M4 4h16v12H4z M20 8a4 4 0 01-4 4h-1a4 4 0 110-8h1a4 4 0 014 4z",
         },
         {
             name: "Date Pickers",
@@ -118,6 +135,14 @@ export default function DesignSystemPage() {
             href: "/ds/file-upload",
             isNew: false,
             icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4 4m4-4v12",
+        },
+        {
+            name: "Illustrations",
+            description: "Decorative SVG illustrations for enhancing UI.",
+            count: "5 Components",
+            href: "/ds/illustrations",
+            isNew: true,
+            icon: "M3 16.5v2.25A2.25 2.25 0 005.25 21h15a2.25 2.25 0 002.25-2.25V8.25A2.25 2.25 0 0019.5 6H12l-3-3H5.25A2.25 2.25 0 003 5.25v11.25zM14.25 18h-4.5m0 0l1.5-1.5m-1.5 1.5l1.5 1.5M6.75 10.5h.008v.008H6.75V10.5zm0 0h.008v.008H6.75V10.5z",
         },
         {
             name: "Input",
@@ -176,12 +201,28 @@ export default function DesignSystemPage() {
             icon: "M13 10V3L4 14h7v7l9-11h-7z",
         },
         {
+            name: "Qr Code",
+            description: "Components for generating and displaying QR codes.",
+            count: "4 Components",
+            href: "/ds/qr-code",
+            isNew: true,
+            icon: " M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm12-12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3z M8 7h2v2H8V7zm0 4h2v2H8v-2zm4-4h2v2h-2V7zm0 4h2v2h-2v-2z",
+        },
+        {
             name: "Radio Group",
             description: "Selection controls for single options.",
             count: "6 Components",
             href: "/ds/radio-group",
             isNew: false,
             icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+        },
+        {
+            name: "Rating",
+            description: "Components for displaying ratings with stars and badges.",
+            count: "2 Components",
+            href: "/ds/rating",
+            isNew: true,
+            icon: "M11.48 3.499a1.745 1.745 0 012.54 0l2.31 2.507c.464.502 1.18.61 1.74.26l2.773-1.602a1.745 1.745 0 012.06.28l2.092 2.093a1.745 1.745 0 01-.28 2.06l-1.602 2.773c-.35.56-.242 1.276.26 1.74l2.507 2.31a1.745 1.745 0 010 2.54l-2.507 2.31c-.502.464-1.276.61-1.74.",
         },
         {
             name: "Select",

@@ -92,7 +92,7 @@ const MobileFooter = ({ items }: { items: HeaderNavItem[] }) => {
 interface HeaderNavigationMenuProps {
     items?: HeaderNavItem[];
     footerItems?: HeaderNavItem[];
-    isFullWidth?: boolean;
+    viewport?: boolean;
     isFloating?: boolean;
     className?: string;
 }
@@ -100,7 +100,7 @@ interface HeaderNavigationMenuProps {
 export const HeaderNavigationMenu = ({
     items,
     footerItems,
-    isFullWidth,
+    viewport,
     isFloating,
     className,
 }: HeaderNavigationMenuProps) => {
@@ -125,7 +125,7 @@ export const HeaderNavigationMenu = ({
                         <UntitledLogoMinimal className="hidden h-8 md:inline-block lg:hidden" />
 
                         {/* Desktop navigation avec NavigationMenu */}
-                        <NavigationMenu className="max-md:hidden" viewport={!isFullWidth}>
+                        <NavigationMenu className="max-md:hidden" viewport={viewport}>
                             <NavigationMenuList>
                                 {items?.map(navItem => (
                                     <NavigationMenuItem key={navItem.label}>

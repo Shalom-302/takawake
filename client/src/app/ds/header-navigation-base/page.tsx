@@ -189,7 +189,7 @@ import { Button } from "@/components/ui/button";
                     <HeaderNavigationMenu
                         items={headerNavMenuItems}
                         footerItems={footerNavMenuItems}
-                        isFullWidth
+                        viewport={false}
                     />
                 </div>
 
@@ -213,7 +213,7 @@ const footerNavMenuItems: HeaderNavItem[] = [
         { label: "Cookie settings", href: "/pricing" },
 ];
 
-<HeaderNavigationMenu items={headerNavMenuItems} footerItems={footerNavMenuItems} isFullWidth={true} />`}
+<HeaderNavigationMenu items={headerNavMenuItems} footerItems={footerNavMenuItems} viewport={false} />`}
                 />
             </div>
 
