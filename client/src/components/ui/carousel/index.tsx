@@ -322,8 +322,10 @@ interface CarouselIndicatorGroupProps extends Omit<HTMLAttributes<HTMLDivElement
 const CarouselIndicatorGroup = ({ children, ...props }: CarouselIndicatorGroupProps) => {
     const { scrollSnaps } = useCarousel();
 
+    console.log("scrollSnaps", scrollSnaps);
+
     if (typeof children === "function") {
-        return <nav {...props}>{scrollSnaps.map(index => children({ index }))}</nav>;
+        return <nav {...props}>{scrollSnaps.map((_, index) => children({ index }))}</nav>;
     }
 
     return <nav {...props}>{children}</nav>;

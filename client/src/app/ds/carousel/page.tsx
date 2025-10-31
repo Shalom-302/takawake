@@ -56,11 +56,11 @@ export default function CarouselPage() {
                     code={`import { Carousel } from "@/components/ui/carousel";
 
 <Carousel
-  items={[
-    <div>Slide 1</div>,
-    <div>Slide 2</div>,
-    <div>Slide 3</div>,
-  ]}
+    items={[
+      <div>Slide 1</div>,
+      <div>Slide 2</div>,
+      <div>Slide 3</div>,
+    ]}
 />`}
                 />
             </div>
@@ -100,7 +100,6 @@ export default function CarouselPage() {
                                 />
                             </div>,
                         ]}
-                        className="relative aspect-[1.6] max-w-160"
                         contentClassName="gap-2"
                         itemClassName="overflow-hidden rounded-xl"
                     />
@@ -111,12 +110,13 @@ export default function CarouselPage() {
 import Image from "next/image";
 
 <Carousel
-  items={[
-    <div key={1} className="w-full h-[400px] relative"><Image src="/img1.webp" alt="Image 1" fill className="object-cover" /></div>,
-    <div key={2} className="w-full h-[400px] relative"><Image src="/img2.avif" alt="Image 2" fill className="object-cover" /></div>,
-    <div key={3} className="w-full h-[400px] relative"><Image src="/img3.avif" alt="Image 3" fill className="object-cover" /></div>,
-  ]}
-  opts={{ loop: true }}
+    items={[
+      <div key={1} className="w-full h-[400px] relative"><Image src="/img1.webp" alt="Image 1" fill className="object-cover" /></div>,
+      <div key={2} className="w-full h-[400px] relative"><Image src="/img2.avif" alt="Image 2" fill className="object-cover" /></div>,
+      <div key={3} className="w-full h-[400px] relative"><Image src="/img3.avif" alt="Image 3" fill className="object-cover" /></div>,
+    ]}
+    contentClassName="gap-2"
+    itemClassName="overflow-hidden rounded-xl"
 />`}
                 />
             </div>
