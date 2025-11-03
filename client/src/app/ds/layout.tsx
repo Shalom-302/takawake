@@ -22,6 +22,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Button Group", href: "/ds/button-group" },
         { name: "Card", href: "/ds/card" },
         { name: "Carousel", href: "/ds/carousel" },
+        { name: "Chart", href: "/ds/chart" },
         { name: "Checkbox", href: "/ds/checkbox" },
         { name: "Credit Card", href: "/ds/credit-card" },
         { name: "Composite", href: "/ds/composite" },

@@ -15,7 +15,7 @@ export function CodeBlock({ code, language = "tsx", className }: CodeBlockProps)
 
     return (
         <div className={cn("relative group", className)}>
-            <pre className="p-2  rounded-md text-xs overflow-auto">
+            <pre className="p-2 rounded-md text-xs overflow-auto">
                 <code className={`language-${language}`}>{code}</code>
             </pre>
             <button

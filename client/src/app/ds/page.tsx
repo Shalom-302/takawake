@@ -88,6 +88,14 @@ export default function DesignSystemPage() {
             icon: "M3 12h18M3 6h18M3 18h18",
         },
         {
+            name: "Chart",
+            description: "Data visualization components for various chart types.",
+            count: "6 Components",
+            href: "/ds/chart",
+            isNew: true,
+            icon: "M3 3v18h18 M18 9l-6 6-4-4-6 6",
+        },
+        {
             name: "Checkbox",
             description: "Selection controls for multiple options.",
             count: "8 Components",
