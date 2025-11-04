@@ -35,7 +35,7 @@ interface ActivityGaugeProps {
         value: number;
         className: string;
     }>;
-    size?: "xs" | "sm";
+    size?: "xs" | "sm" | "md" | "lg";
 }
 
 const sizeStyles = {
@@ -43,15 +43,37 @@ const sizeStyles = {
         height: 220,
         innerRadius: 52,
         outerRadius: 86,
-        subtitleSize: "-1.175em",
-        titleSize: "1.25em",
+        subtitledy: "-1.175em",
+        titledy: "1.25em",
+        subtitleFontSize: "text-xs",
+        titleFontSize: "text-xl",
     },
     sm: {
         height: 268,
         innerRadius: 61,
         outerRadius: 110,
-        subtitleSize: "-1.35em",
-        titleSize: "1.15em",
+        subtitledy: "-1.35em",
+        titledy: "1.15em",
+        subtitleFontSize: "text-xs",
+        titleFontSize: "text-display-xs",
+    },
+    md: {
+        height: 312,
+        innerRadius: 74,
+        outerRadius: 132,
+        subtitledy: "-1.45em",
+        titledy: "1.075em",
+        subtitleFontSize: "text-sm",
+        titleFontSize: "text-display-sm",
+    },
+    lg: {
+        height: 356,
+        innerRadius: 84,
+        outerRadius: 154,
+        subtitledy: "-1.4em",
+        titledy: "1em",
+        subtitleFontSize: "text-sm",
+        titleFontSize: "text-display-md",
     },
 };
 
@@ -105,8 +127,11 @@ export const ActivityGauge = ({
                         {subtitle && (
                             <tspan
                                 x="50%"
-                                dy={title ? "-1.175em" : "1%"}
-                                className={cn("fill-current text-tertiary", "text-xs font-medium")}
+                                dy={title ? sizeStyles[size].subtitledy : "1%"}
+                                className={cn(
+                                    "fill-current text-tertiary font-medium",
+                                    sizeStyles[size].subtitleFontSize
+                                )}
                             >
                                 {subtitle}
                             </tspan>
@@ -114,8 +139,11 @@ export const ActivityGauge = ({
                         {title && (
                             <tspan
                                 x="50%"
-                                dy={subtitle ? "1.25em" : "1%"}
-                                className={cn("fill-current text-primary", "text-xl font-semibold")}
+                                dy={subtitle ? sizeStyles[size].titledy : "1%"}
+                                className={cn(
+                                    "fill-current text-primary font-semibold",
+                                    sizeStyles[size].titleFontSize
+                                )}
                             >
                                 {title}
                             </tspan>

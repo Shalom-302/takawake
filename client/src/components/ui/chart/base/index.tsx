@@ -185,3 +185,39 @@ export const ChartActiveDot = ({ cx = 0, cy = 0 }: ChartActiveDotProps) => {
         </svg>
     );
 };
+
+interface CustomRadarChartTickProps {
+    x?: number;
+    y?: number;
+    payload?: {
+        value: number;
+    };
+    textAnchor?: string;
+    className?: string;
+}
+
+export const CustomRadarChartTick = ({
+    x = 0,
+    y = 0,
+    payload,
+    textAnchor = "middle",
+    ...props
+}: CustomRadarChartTickProps) => {
+    if (!payload) {
+        return null;
+    }
+
+    return (
+        <text
+            x={x}
+            y={y}
+            textAnchor={textAnchor}
+            {...props}
+            className={cn("recharts-text recharts-polar-radius-axis-tick-value", props.className)}
+        >
+            <tspan dy="0em" className="fill-utility-gray-700 text-xs font-medium">
+                {payload.value}
+            </tspan>
+        </text>
+    );
+};

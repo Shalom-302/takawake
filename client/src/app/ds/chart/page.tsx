@@ -9,6 +9,8 @@ import {
     LineChart01,
     LineChart02,
     LineChart03,
+    PieChart,
+    RadarChart,
 } from "@/components/ui/chart";
 
 export default function ChartDocsPage() {
@@ -1188,14 +1190,15 @@ export const BarChart02 = () => {
 
                         <CodeBlock
                             className="h-96 overflow-auto"
-                            code={`import {
-                                Legend,
-                                PolarAngleAxis,
-                                RadialBar,
-                                RadialBarChart,
-                                ResponsiveContainer,
-                                Tooltip,
-                            } from "recharts";
+                            code={`
+import {
+    Legend,
+    PolarAngleAxis,
+    RadialBar,
+    RadialBarChart,
+    ResponsiveContainer,
+    Tooltip,
+} from "recharts";
 import { ChartLegendContent, ChartTooltipContent } from "./base";
 import { cn } from "@/lib/utils/cn";
 
@@ -1225,7 +1228,7 @@ interface ActivityGaugeProps {
         value: number;
         className: string;
     }>;
-    size?: "xs" | "sm";
+    size?: "xs" | "sm" | "md" | "lg";
 }
 
 const sizeStyles = {
@@ -1233,15 +1236,37 @@ const sizeStyles = {
         height: 220,
         innerRadius: 52,
         outerRadius: 86,
-        subtitleSize: "-1.175em",
-        titleSize: "1.25em",
+        subtitledy: "-1.175em",
+        titledy: "1.25em",
+        subtitleFontSize: "text-xs",
+        titleFontSize: "text-xl",
     },
     sm: {
         height: 268,
         innerRadius: 61,
         outerRadius: 110,
-        subtitleSize: "-1.35em",
-        titleSize: "1.15em",
+        subtitledy: "-1.35em",
+        titledy: "1.15em",
+        subtitleFontSize: "text-xs",
+        titleFontSize: "text-display-xs",
+    },
+    md: {
+        height: 312,
+        innerRadius: 74,
+        outerRadius: 132,
+        subtitledy: "-1.45em",
+        titledy: "1.075em",
+        subtitleFontSize: "text-sm",
+        titleFontSize: "text-display-sm",
+    },
+    lg: {
+        height: 356,
+        innerRadius: 84,
+        outerRadius: 154,
+        subtitledy: "-1.4em",
+        titledy: "1em",
+        subtitleFontSize: "text-sm",
+        titleFontSize: "text-display-md",
     },
 };
 
@@ -1295,8 +1320,11 @@ export const ActivityGauge = ({
                         {subtitle && (
                             <tspan
                                 x="50%"
-                                dy={title ? "-1.175em" : "1%"}
-                                className={cn("fill-current text-tertiary", "text-xs font-medium")}
+                                dy={title ? sizeStyles[size].subtitledy : "1%"}
+                                className={cn(
+                                    "fill-current text-tertiary font-medium",
+                                    sizeStyles[size].subtitleFontSize
+                                )}
                             >
                                 {subtitle}
                             </tspan>
@@ -1304,8 +1332,11 @@ export const ActivityGauge = ({
                         {title && (
                             <tspan
                                 x="50%"
-                                dy={subtitle ? "1.25em" : "1%"}
-                                className={cn("fill-current text-primary", "text-xl font-semibold")}
+                                dy={subtitle ? sizeStyles[size].titledy : "1%"}
+                                className={cn(
+                                    "fill-current text-primary font-semibold",
+                                    sizeStyles[size].titleFontSize
+                                )}
                             >
                                 {title}
                             </tspan>
@@ -1316,6 +1347,324 @@ export const ActivityGauge = ({
         </ResponsiveContainer>
     );
 };
+                            `}
+                        />
+                    </div>
+                </section>
+                <section className="space-y-6">
+                    <h2 className="text-3xl font-bold mb-3 text-primary">Pie</h2>
+                    <div className="space-y-4">
+                        <div className="px-8 py-16 border border-tertiary rounded-xl">
+                            <PieChart size="sm" />
+                        </div>
+
+                        <CodeBlock
+                            className="h-96 overflow-auto"
+                            code={`
+import { Legend, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { ChartLegendContent, ChartTooltipContent } from "./base";
+
+interface PieChartProps {
+    data?: Array<{
+        name: string;
+        value: number;
+        className: string;
+    }>;
+    size: "xxs" | "xs" | "sm" | "md" | "lg";
+}
+
+const pieChartData = [
+    {
+        name: "Series 1",
+        value: 200,
+        className: "text-utility-brand-600",
+    },
+    {
+        name: "Series 2",
+        value: 350,
+        className: "text-utility-brand-500",
+    },
+    {
+        name: "Series 3",
+        value: 100,
+        className: "text-utility-brand-400",
+    },
+    {
+        name: "Series 4",
+        value: 120,
+        className: "text-utility-brand-300",
+    },
+    {
+        name: "Series 5",
+        value: 230,
+        className: "text-utility-gray-200",
+    },
+];
+
+const sizeStyles = {
+    xxs: {
+        height: 120,
+        with: "max-w-52.5",
+        innerRadius: 30,
+        outerRadius: 60,
+    },
+    xs: {
+        height: 160,
+        with: "max-w-62.5",
+        innerRadius: 40,
+        outerRadius: 80,
+    },
+    sm: {
+        height: 200,
+        with: "max-w-72.5",
+        innerRadius: 50,
+        outerRadius: 100,
+    },
+    md: {
+        height: 240,
+        with: "max-w-96",
+        innerRadius: 60,
+        outerRadius: 120,
+    },
+    lg: {
+        height: 280,
+        with: "max-w-96",
+        innerRadius: 70,
+        outerRadius: 140,
+    },
+};
+
+export const PieChart = ({ data = pieChartData, size = "sm" }: PieChartProps) => {
+    return (
+        <ResponsiveContainer height={sizeStyles[size].height} className={sizeStyles[size].with}>
+            <RechartsPieChart
+                margin={{
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                }}
+            >
+                <Legend
+                    verticalAlign="top"
+                    align="right"
+                    layout="vertical"
+                    content={ChartLegendContent}
+                />
+                <Tooltip content={<ChartTooltipContent isPieChart />} />
+
+                <Pie
+                    isAnimationActive={false}
+                    startAngle={-270}
+                    endAngle={-630}
+                    stroke="none"
+                    data={data}
+                    dataKey="value"
+                    nameKey="name"
+                    fill="currentColor"
+                    innerRadius={sizeStyles[size].innerRadius}
+                    outerRadius={sizeStyles[size].outerRadius}
+                />
+            </RechartsPieChart>
+        </ResponsiveContainer>
+    );
+};
+
+                            `}
+                        />
+                    </div>
+                </section>
+                <section className="space-y-6">
+                    <h2 className="text-3xl font-bold mb-3 text-primary">Radar</h2>
+                    <div className="space-y-4">
+                        <div className="px-8 py-16 border border-tertiary rounded-xl">
+                            <RadarChart />
+                        </div>
+
+                        <CodeBlock
+                            className="h-96 overflow-auto"
+                            code={`
+import {
+    Legend,
+    PolarAngleAxis,
+    PolarGrid,
+    PolarRadiusAxis,
+    Radar,
+    RadarChart as RechartsRadarChart,
+    ResponsiveContainer,
+    Tooltip,
+} from "recharts";
+import { ChartLegendContent, ChartTooltipContent, CustomRadarChartTick } from "./base";
+import { cn } from "@/lib/utils/cn";
+
+const radarData = [
+    {
+        subject: "Mon",
+        A: 800,
+        B: 400,
+        C: 600,
+    },
+    {
+        subject: "Tue",
+        A: 600,
+        B: 1000,
+        C: 800,
+    },
+    {
+        subject: "Wed",
+        A: 600,
+        B: 200,
+        C: 400,
+    },
+    {
+        subject: "Thu",
+        A: 200,
+        B: 600,
+        C: 800,
+    },
+    {
+        subject: "Fri",
+        A: 400,
+        B: 200,
+        C: 600,
+    },
+    {
+        subject: "Sat",
+        A: 1000,
+        B: 800,
+        C: 600,
+    },
+    {
+        subject: "Sun",
+        A: 400,
+        B: 1000,
+        C: 800,
+    },
+];
+
+export const RadarChart = () => {
+    const colors: Record<string, string> = {
+        A: "text-utility-brand-600",
+        B: "text-utility-pink-500",
+        C: "text-utility-blue-light-500",
+    };
+
+    return (
+        <ResponsiveContainer height={500} width="100%">
+            <RechartsRadarChart
+                cx="50%"
+                cy="50%"
+                outerRadius="80%"
+                data={radarData}
+                className="size-full font-medium text-tertiary [&_.recharts-polar-grid]:text-utility-gray-100 [&_.recharts-text]:text-sm"
+                margin={{
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                }}
+            >
+                <Legend
+                    verticalAlign="bottom"
+                    align="center"
+                    layout="horizontal"
+                    content={ChartLegendContent}
+                />
+
+                <PolarGrid stroke="currentColor" className="text-utility-gray-100" />
+                <PolarAngleAxis
+                    dataKey="subject"
+                    stroke="currentColor"
+                    tick={({ x, y, textAnchor, index, payload, ...props }) => (
+                        <text
+                            x={x}
+                            y={
+                                index === 0
+                                    ? Number(y) - 14
+                                    : index === 3 || index === 4
+                                      ? Number(y) + 10
+                                      : Number(y)
+                            }
+                            textAnchor={textAnchor}
+                            {...props}
+                            className={cn(
+                                "recharts-text recharts-polar-angle-axis-tick-value",
+                                props.className
+                            )}
+                        >
+                            <tspan dy="0em" className="fill-utility-gray-700 text-xs font-medium">
+                                {payload.value}
+                            </tspan>
+                        </text>
+                    )}
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <PolarRadiusAxis
+                    textAnchor="middle"
+                    tick={props => <CustomRadarChartTick {...props} />}
+                    axisLine={false}
+                    angle={90}
+                    domain={[0, 1000]}
+                />
+
+                <Tooltip
+                    content={<ChartTooltipContent />}
+                    cursor={{
+                        className: "stroke-utility-brand-600  stroke-2",
+                        style: {
+                            transform: "translateZ(0)",
+                        },
+                    }}
+                />
+
+                <Radar
+                    isAnimationActive={false}
+                    className={colors["A"]}
+                    dataKey="A"
+                    name="Series 1"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    fill="currentColor"
+                    fillOpacity={0.2}
+                    activeDot={{
+                        className: "fill-bg-primary stroke-utility-brand-600 stroke-2",
+                    }}
+                />
+                <Radar
+                    isAnimationActive={false}
+                    className={colors["B"]}
+                    dataKey="B"
+                    name="Series 2"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    fill="currentColor"
+                    fillOpacity={0.2}
+                    activeDot={{
+                        className: "fill-bg-primary stroke-utility-brand-600 stroke-2",
+                    }}
+                />
+                <Radar
+                    isAnimationActive={false}
+                    className={colors["C"]}
+                    dataKey="C"
+                    name="Series 3"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    fill="currentColor"
+                    fillOpacity={0.2}
+                    activeDot={{
+                        className: "fill-bg-primary stroke-utility-brand-600 stroke-2",
+                    }}
+                />
+            </RechartsRadarChart>
+        </ResponsiveContainer>
+    );
+};
+
                             `}
                         />
                     </div>
