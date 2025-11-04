@@ -241,6 +241,14 @@ export default function DesignSystemPage() {
             icon: "M8 9l4-4 4 4m0 6l-4 4-4-4",
         },
         {
+            name: "Slideout Menu",
+            description: "Off-canvas menus for navigation and actions.",
+            count: "4 Components",
+            href: "/ds/slideout-menu",
+            isNew: true,
+            icon: "M3 12h18M3 6h18M3 18h18",
+        },
+        {
             name: "Slider",
             description: "Controls for selecting values from a range.",
             count: "6 Components",
