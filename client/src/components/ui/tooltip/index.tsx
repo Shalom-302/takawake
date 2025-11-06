@@ -79,6 +79,7 @@ interface TooltipProps {
      */
     onOpenChange?: (open: boolean) => void;
     contentClassName?: string;
+    titleClassName?: string;
 }
 
 export function Tooltip({
@@ -98,6 +99,7 @@ export function Tooltip({
     align = "center",
     onOpenChange,
     contentClassName,
+    titleClassName,
 }: TooltipProps) {
     // Déterminer l'élément trigger
     const triggerElement = trigger || children;
@@ -124,7 +126,9 @@ export function Tooltip({
                     arrow={arrow}
                     className={cn(description ? "py-3" : "py-2", contentClassName)}
                 >
-                    <span className="text-xs font-semibold text-white">{title}</span>
+                    <span className={cn("text-xs font-semibold text-white", titleClassName)}>
+                        {title}
+                    </span>
 
                     {description && (
                         <span className="text-xs font-medium text-tooltip-supporting-text">
