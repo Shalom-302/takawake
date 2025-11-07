@@ -1,9 +1,10 @@
+"use client";
 import * as TogglePrimitive from "@radix-ui/react-toggle";
-import { Tooltip } from "../tooltip";
+// import { Tooltip } from "../tooltip";
 import {
     AlignCenter,
     AlignJustify,
-    AlignLeft01,
+    AlignLeft,
     AlignRight,
     Attachment01,
     Bold01,
@@ -41,7 +42,7 @@ type TextEditorIconProps = {
 };
 
 export function TextEditorIcon({ type, isActive, onClick, disabled }: TextEditorIconProps) {
-    const icon = (() => {
+    const getIcon = () => {
         switch (type) {
             case "bold":
                 return <Bold01 />;
@@ -52,7 +53,7 @@ export function TextEditorIcon({ type, isActive, onClick, disabled }: TextEditor
             case "dot-points":
                 return <Dotpoints01 />;
             case "left-align":
-                return <AlignLeft01 />;
+                return <AlignLeft />;
             case "center-align":
                 return <AlignCenter />;
             case "right-align":
@@ -72,22 +73,31 @@ export function TextEditorIcon({ type, isActive, onClick, disabled }: TextEditor
             default:
                 return null;
         }
-    })();
+    };
 
     return (
-        <Tooltip
-            trigger={
-                <TogglePrimitive.Root
-                    pressed={isActive}
-                    onPressedChange={onClick}
-                    disabled={disabled}
-                    className="rounded-md size-8 p-1.5 hover:bg-primary_hover [&_svg]:size-5 [&_svg]:text-fg-quaternary [&_svg]:hover:text-fg-quaternary_hover data-[state=on]:bg-primary_hover data-[state=on]:[&_svg]:text-fg-secondary transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50"
-                >
-                    {icon}
-                </TogglePrimitive.Root>
-            }
-            title={`${type.split("-").join(" ")}`}
-            titleClassName="first-letter:uppercase"
-        />
+        // <Tooltip
+        //     trigger={
+        //         <TogglePrimitive.Root
+        //             pressed={isActive}
+        //             onPressedChange={onClick}
+        //             disabled={disabled}
+        //             className="rounded-md size-8 p-1.5 hover:bg-primary_hover [&_svg]:size-5 [&_svg]:text-fg-quaternary [&_svg]:hover:text-fg-quaternary_hover data-[state=on]:bg-primary_hover data-[state=on]:[&_svg]:text-fg-secondary transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50"
+        //         >
+        //             {getIcon()}
+        //         </TogglePrimitive.Root>
+        //     }
+        //     title={`${type.split("-").join(" ")}`}
+        //     titleClassName="first-letter:uppercase"
+        // />
+
+        <TogglePrimitive.Root
+            pressed={isActive}
+            onPressedChange={onClick}
+            disabled={disabled}
+            className="rounded-md size-8 p-1.5 hover:bg-primary_hover [&_svg]:size-5 [&_svg]:text-fg-quaternary [&_svg]:hover:text-fg-quaternary_hover data-[state=on]:bg-primary_hover data-[state=on]:[&_svg]:text-fg-secondary transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50"
+        >
+            {getIcon()}
+        </TogglePrimitive.Root>
     );
 }
