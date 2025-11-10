@@ -133,7 +133,7 @@ function renderMenuItem(
     }
 }
 
-function DropdownMenu({
+export function DropdownMenu({
     // Props du Root
     defaultOpen,
     open,
@@ -481,21 +481,20 @@ export function DropdownDotsButton({ className, ...props }: React.ComponentProps
     );
 }
 
-export {
-    DropdownMenu,
-    DropdownMenuRoot,
-    DropdownMenuPortal,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuCheckboxItem,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuSub,
-    DropdownMenuSubTrigger,
-    DropdownMenuSubContent,
+export const DropdownMenuCustom = {
+    Root: DropdownMenuRoot,
+    Portal: DropdownMenuPortal,
+    Trigger: DropdownMenuTrigger,
+    Content: DropdownMenuContent,
+    Group: DropdownMenuGroup,
+    Item: DropdownMenuItem,
+    CheckboxItem: DropdownMenuCheckboxItem,
+    RadioGroup: DropdownMenuRadioGroup,
+    RadioItem: DropdownMenuRadioItem,
+    Label: DropdownMenuLabel,
+    Separator: DropdownMenuSeparator,
+    Shortcut: DropdownMenuShortcut,
+    Sub: DropdownMenuSub,
+    SubTrigger: DropdownMenuSubTrigger,
+    SubContent: DropdownMenuSubContent,
 };

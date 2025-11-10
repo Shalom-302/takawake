@@ -20,7 +20,6 @@ type TextColorProps = {
 };
 
 export function TextColor({ onColorSelect, currentColor }: TextColorProps) {
-    // const currentColorData = TEXT_COLORS.find(c => c.value === currentColor) || TEXT_COLORS[0];
     const [selected, setSelected] = useState(false);
     const handleClick = () => {};
 
@@ -62,6 +61,13 @@ export function TextColor({ onColorSelect, currentColor }: TextColorProps) {
                                 color.class,
                                 currentColor === color.value && "ring-2 ring-gray-900 ring-offset-2"
                             )}
+                            // className={`size-7 rounded-full cursor-pointer transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                            //     color.class
+                            // } ${
+                            //     currentColor === color.value
+                            //         ? "ring-2 ring-blue-600 ring-offset-2"
+                            //         : ""
+                            // }`}
                         />
                     ))}
                 </div>

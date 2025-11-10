@@ -49,6 +49,7 @@ export default function DesignSystemLayout({ children }: DesignSystemLayoutProps
         { name: "Table", href: "/ds/table" },
         { name: "Tabs", href: "/ds/tabs" },
         { name: "Tags", href: "/ds/tags" },
+        { name: "Text Editor", href: "/ds/text-editor" },
         { name: "Textarea", href: "/ds/textarea" },
         { name: "Tooltip", href: "/ds/tooltip" },
     ].sort((a, b) => a.name.localeCompare(b.name));

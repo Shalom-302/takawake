@@ -1,15 +1,8 @@
 import React, { useState } from "react";
-import { Bell, User, Menu, X, MessageSquare, Settings, LogOut } from "lucide-react";
+import { Bell, User, Menu, MessageSquare, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar/avatar";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuCustom as DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge/badge";
 import { cn } from "@/lib/utils/cn";
@@ -99,7 +92,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                             Messages
                             {unreadMessagesCount > 0 && (
                                 <Badge
-                                    variant="default"
+                                    variant="color"
                                     className="absolute -top-2 -right-4 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
                                 >
                                     {unreadMessagesCount}
@@ -121,13 +114,10 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                 <div className="flex items-center gap-2">
                     {/* Messages */}
                     <Link href="/messages">
-                        <Button variant="ghost" size="icon" className="relative mr-1 md:hidden">
+                        <Button className="relative mr-1 md:hidden">
                             <MessageSquare className="h-4 w-4" />
                             {unreadMessagesCount > 0 && (
-                                <Badge
-                                    variant="default"
-                                    className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-                                >
+                                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
                                     {unreadMessagesCount}
                                 </Badge>
                             )}
@@ -135,26 +125,22 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                     </Link>
 
                     {/* Notifications */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative">
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <Button className="relative">
                                 <Bell className="h-4 w-4" />
                                 {unreadCount > 0 && (
-                                    <Badge
-                                        variant="default"
-                                        className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-                                    >
+                                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
                                         {unreadCount}
                                     </Badge>
                                 )}
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-80">
-                            <DropdownMenuLabel className="flex items-center justify-between">
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content align="end" className="w-80">
+                            <DropdownMenu.Label className="flex items-center justify-between">
                                 Notifications
                                 {unreadCount > 0 && (
                                     <Button
-                                        variant="ghost"
                                         size="sm"
                                         onClick={markAllAsRead}
                                         className="text-xs h-7"
@@ -162,8 +148,8 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                                         Mark all as read
                                     </Button>
                                 )}
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                            </DropdownMenu.Label>
+                            <DropdownMenu.Separator />
                             {notifications.length === 0 ? (
                                 <div className="py-4 text-center text-muted-foreground">
                                     No notifications
@@ -171,7 +157,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                             ) : (
                                 <div className="max-h-[300px] overflow-y-auto">
                                     {notifications.map(notification => (
-                                        <DropdownMenuItem
+                                        <DropdownMenu.Item
                                             key={notification.id}
                                             className={cn(
                                                 "flex flex-col items-start p-3 cursor-pointer",
@@ -190,17 +176,17 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                                             <p className="text-sm text-muted-foreground mt-1">
                                                 {notification.message}
                                             </p>
-                                        </DropdownMenuItem>
+                                        </DropdownMenu.Item>
                                     ))}
                                 </div>
                             )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Root>
 
                     {/* User menu */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full">
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <Button className="rounded-full">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage
                                         src={user?.avatar || ""}
@@ -209,34 +195,34 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                                     <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                                 </Avatar>
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>My account</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content align="end">
+                            <DropdownMenu.Label>My account</DropdownMenu.Label>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item asChild>
                                 <Link href="/profile" className="cursor-pointer flex w-full">
                                     <User className="mr-2 h-4 w-4" />
                                     <span>Profile</span>
                                 </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item asChild>
                                 <Link href="/settings" className="cursor-pointer flex w-full">
                                     <Settings className="mr-2 h-4 w-4" />
                                     <span>Settings</span>
                                 </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item onClick={onLogout} className="cursor-pointer">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Logout</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Root>
 
                     {/* Mobile menu */}
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="md:hidden">
+                            <Button className="md:hidden">
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
@@ -260,7 +246,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                                     Messages
                                     {unreadMessagesCount > 0 && (
                                         <Badge
-                                            variant="destructive"
+                                            variant="modern"
                                             className="ml-auto h-4 px-1 text-[10px]"
                                         >
                                             {unreadMessagesCount}
@@ -274,7 +260,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                                 >
                                     Settings
                                 </Link>
-                                <Button variant="outline" onClick={onLogout} className="mt-6">
+                                <Button variant="secondary" onClick={onLogout} className="mt-6">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     Logout
                                 </Button>

@@ -98,7 +98,7 @@ function DefaultItemContent({ item }: { item: SelectItemData }) {
     );
 }
 
-function Select({
+export function Select({
     items,
     placeholder = "Select an option...",
     size = "sm",
@@ -136,7 +136,11 @@ function Select({
     return (
         <SelectRoot value={value} onValueChange={onValueChange} disabled={disabled}>
             <SelectTrigger className={triggerClassName} size={size} id={id} {...props}>
-                <SelectValue placeholder={placeholder} selectedItem={selectedItem} />
+                <SelectValue
+                    placeholder={placeholder}
+                    defaultValue={props.defaultValue}
+                    selectedItem={selectedItem}
+                />
             </SelectTrigger>
             <SelectContent className={contentClassName}>
                 {items.map(item => renderSelectItem(item, renderItem, itemClassName))}
@@ -153,7 +157,10 @@ interface SelectFormProps<
     // isRequired?: boolean;
 }
 
-function SelectForm<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function SelectForm<
+    TFieldValues extends FieldValues,
+    TName extends FieldPath<TFieldValues>,
+>({
     isRequired,
     control,
     name,
@@ -220,7 +227,7 @@ function SelectValue({ selectedItem, ...props }: SelectValueProps) {
                 )}
                 <span>{selectedItem.label}</span>
                 {selectedItem.supportingText && (
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="text-xs text-tertiary truncate">
                         {selectedItem.supportingText}
                     </div>
                 )}
@@ -235,13 +242,14 @@ type SelectTriggerProps = React.ComponentProps<typeof SelectPrimitive.Trigger> &
 
 function SelectTrigger({ className, size = "sm", children, ...props }: SelectTriggerProps) {
     const isInvalid = props["aria-invalid"] === true;
+
     return (
         <SelectPrimitive.Trigger
             data-slot="select-trigger"
             data-size={size}
             className={cn(
                 // Base styles
-                "flex w-full h-max text-md text-primary items-center justify-between gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
+                "flex max-w-full h-max text-md text-primary items-center justify-between gap-2 rounded-lg bg-primary shadow-xs ring-1 ring-primary transition-shadow duration-100 ease-linear ring-inset",
                 // Focus states
                 "focus:outline-none focus:ring-2 focus:ring-brand",
                 // Disabled states
@@ -277,7 +285,7 @@ function SelectContent({
                 data-slot="select-content"
                 className={cn(
                     // Base styles
-                    "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt",
+                    "relative z-50 max-h-96 max-w-full overflow-hidden rounded-lg bg-primary shadow-lg ring-1 ring-secondary_alt",
                     // Animation styles
                     "data-[state=open]:animate-in data-[state=closed]:animate-out",
                     "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -392,18 +400,15 @@ function SelectScrollDownButton({
     );
 }
 
-export {
-    Select,
-    SelectForm,
-    SelectRoot,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectScrollDownButton,
-    SelectScrollUpButton,
-    SelectSeparator,
-    SelectTrigger,
-    SelectValue,
-    DefaultItemContent,
+export const SelectCustom = {
+    Root: SelectRoot,
+    Content: SelectContent,
+    Group: SelectGroup,
+    Item: SelectItem,
+    Label: SelectLabel,
+    ScrollDownButton: SelectScrollDownButton,
+    ScrollUpButton: SelectScrollUpButton,
+    Separator: SelectSeparator,
+    Trigger: SelectTrigger,
+    Value: SelectValue,
 };

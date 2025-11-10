@@ -204,7 +204,7 @@ export default function SelectPage() {
     });
 
     function onSubmit(data: z.infer<typeof formSchema>) {
-        console.log("data", data);
+        // console.log("data", data);
         toast("You submitted the following values", {
             description: (
                 <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">

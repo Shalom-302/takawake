@@ -76,21 +76,6 @@ export function TextEditorIcon({ type, isActive, onClick, disabled }: TextEditor
     };
 
     return (
-        // <Tooltip
-        //     trigger={
-        //         <TogglePrimitive.Root
-        //             pressed={isActive}
-        //             onPressedChange={onClick}
-        //             disabled={disabled}
-        //             className="rounded-md size-8 p-1.5 hover:bg-primary_hover [&_svg]:size-5 [&_svg]:text-fg-quaternary [&_svg]:hover:text-fg-quaternary_hover data-[state=on]:bg-primary_hover data-[state=on]:[&_svg]:text-fg-secondary transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50"
-        //         >
-        //             {getIcon()}
-        //         </TogglePrimitive.Root>
-        //     }
-        //     title={`${type.split("-").join(" ")}`}
-        //     titleClassName="first-letter:uppercase"
-        // />
-
         <TogglePrimitive.Root
             pressed={isActive}
             onPressedChange={onClick}
