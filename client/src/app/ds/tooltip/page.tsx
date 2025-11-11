@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
-import { CodeBlock } from "@/ds/components";
+import { CodeBlock } from "@/components/ui/code-block";
 import { HelpCircle } from "@untitled-ui/icons-react";
 
 export default function TooltipPage() {

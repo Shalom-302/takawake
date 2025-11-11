@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC, ReactNode } from "react";
+import { useState, type FC, type ReactNode } from "react";
 import {
     MobileNavigationHeader,
     NavAccountCard,
@@ -60,6 +60,8 @@ export const HeaderNavigationBase = ({
         subItems || items.find(item => item.current && item.items && item.items.length > 0)?.items;
 
     const showSecondaryNav = activeSubNavItems && activeSubNavItems.length > 0;
+
+    const [selected, setSelected] = useState(false);
 
     return (
         <>
@@ -168,11 +170,18 @@ export const HeaderNavigationBase = ({
 
                             {showAvatarDropdown && (
                                 <Popover
+                                    open={selected}
+                                    onOpenChange={setSelected}
                                     align="end"
                                     sideOffset={8}
                                     contentClassName="w-auto p-0"
                                     trigger={
-                                        <button className="group relative inline-flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring">
+                                        <button
+                                            className={cn(
+                                                "group relative inline-flex rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-focus-ring",
+                                                selected && "ring-2 ring-focus-ring ring-offset-2"
+                                            )}
+                                        >
                                             <Avatar
                                                 alt="Olivia Rhye"
                                                 src="https://www.untitledui.com/images/avatars/olivia-rhye?bg=%23E0E0E0"

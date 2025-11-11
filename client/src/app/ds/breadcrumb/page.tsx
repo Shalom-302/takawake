@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 // Assurez-vous que ce chemin d'importation est correct
 
-import { CodeBlock } from "@/ds/components";
+import { CodeBlock } from "@/components/ui/code-block";
 
 export default function BreadcrumbPage() {
     return (

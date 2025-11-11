@@ -5,7 +5,7 @@ import { Popover } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { CodeBlock } from "@/ds/components";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Settings04 } from "@untitled-ui/icons-react";
 
 export default function PopoverPage() {
