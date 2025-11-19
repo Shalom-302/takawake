@@ -1,6 +1,8 @@
 import type { SVGProps } from "react";
 
-export const GridCheck = (props: Omit<SVGProps<SVGSVGElement>, "size"> & { size?: "sm" | "md" }) => {
+export const GridCheck = (
+    props: Omit<SVGProps<SVGSVGElement>, "size"> & { size?: "sm" | "md" }
+) => {
     const { size = "md", className } = props;
     const Pattern = sizes[size];
 
@@ -10,7 +12,15 @@ export const GridCheck = (props: Omit<SVGProps<SVGSVGElement>, "size"> & { size?
 const md = (props: SVGProps<SVGSVGElement>) => {
     return (
         <svg width="960" height="960" viewBox="0 0 960 960" fill="none" {...props}>
-            <mask id="mask0_4940_405685" style={{ maskType: "alpha" }} maskUnits="userSpaceOnUse" x="0" y="0" width="960" height="960">
+            <mask
+                id="mask0_4940_405685"
+                style={{ maskType: "alpha" }}
+                maskUnits="userSpaceOnUse"
+                x="0"
+                y="0"
+                width="960"
+                height="960"
+            >
                 <rect width="960" height="960" fill="url(#paint0_radial_4940_405685)" />
             </mask>
             <g mask="url(#mask0_4940_405685)">
@@ -18,47 +28,91 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-3-inside-1_4940_405685" fill="white">
                         <path d="M0 0H96V96H0V0Z" />
                     </mask>
-                    <path d="M96 96V97H97V96H96ZM95 0V96H97V0H95ZM96 95H0V97H96V95Z" fill="#D0D5DD" mask="url(#path-3-inside-1_4940_405685)" />
+                    <path
+                        d="M96 96V97H97V96H96ZM95 0V96H97V0H95ZM96 95H0V97H96V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-3-inside-1_4940_405685)"
+                    />
                     <mask id="path-5-inside-2_4940_405685" fill="white">
                         <path d="M96 0H192V96H96V0Z" />
                     </mask>
-                    <path d="M192 96V97H193V96H192ZM191 0V96H193V0H191ZM192 95H96V97H192V95Z" fill="#D0D5DD" mask="url(#path-5-inside-2_4940_405685)" />
+                    <path
+                        d="M192 96V97H193V96H192ZM191 0V96H193V0H191ZM192 95H96V97H192V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-5-inside-2_4940_405685)"
+                    />
                     <mask id="path-7-inside-3_4940_405685" fill="white">
                         <path d="M192 0H288V96H192V0Z" />
                     </mask>
-                    <path d="M288 96V97H289V96H288ZM287 0V96H289V0H287ZM288 95H192V97H288V95Z" fill="#D0D5DD" mask="url(#path-7-inside-3_4940_405685)" />
+                    <path
+                        d="M288 96V97H289V96H288ZM287 0V96H289V0H287ZM288 95H192V97H288V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-7-inside-3_4940_405685)"
+                    />
                     <mask id="path-9-inside-4_4940_405685" fill="white">
                         <path d="M288 0H384V96H288V0Z" />
                     </mask>
-                    <path d="M384 96V97H385V96H384ZM383 0V96H385V0H383ZM384 95H288V97H384V95Z" fill="#D0D5DD" mask="url(#path-9-inside-4_4940_405685)" />
+                    <path
+                        d="M384 96V97H385V96H384ZM383 0V96H385V0H383ZM384 95H288V97H384V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-9-inside-4_4940_405685)"
+                    />
                     <mask id="path-11-inside-5_4940_405685" fill="white">
                         <path d="M384 0H480V96H384V0Z" />
                     </mask>
-                    <path d="M480 96V97H481V96H480ZM479 0V96H481V0H479ZM480 95H384V97H480V95Z" fill="#D0D5DD" mask="url(#path-11-inside-5_4940_405685)" />
+                    <path
+                        d="M480 96V97H481V96H480ZM479 0V96H481V0H479ZM480 95H384V97H480V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-11-inside-5_4940_405685)"
+                    />
                     <mask id="path-13-inside-6_4940_405685" fill="white">
                         <path d="M480 0H576V96H480V0Z" />
                     </mask>
-                    <path d="M576 96V97H577V96H576ZM575 0V96H577V0H575ZM576 95H480V97H576V95Z" fill="#D0D5DD" mask="url(#path-13-inside-6_4940_405685)" />
+                    <path
+                        d="M576 96V97H577V96H576ZM575 0V96H577V0H575ZM576 95H480V97H576V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-13-inside-6_4940_405685)"
+                    />
                     <mask id="path-15-inside-7_4940_405685" fill="white">
                         <path d="M576 0H672V96H576V0Z" />
                     </mask>
-                    <path d="M672 96V97H673V96H672ZM671 0V96H673V0H671ZM672 95H576V97H672V95Z" fill="#D0D5DD" mask="url(#path-15-inside-7_4940_405685)" />
+                    <path
+                        d="M672 96V97H673V96H672ZM671 0V96H673V0H671ZM672 95H576V97H672V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-15-inside-7_4940_405685)"
+                    />
                     <mask id="path-17-inside-8_4940_405685" fill="white">
                         <path d="M672 0H768V96H672V0Z" />
                     </mask>
-                    <path d="M768 96V97H769V96H768ZM767 0V96H769V0H767ZM768 95H672V97H768V95Z" fill="#D0D5DD" mask="url(#path-17-inside-8_4940_405685)" />
+                    <path
+                        d="M768 96V97H769V96H768ZM767 0V96H769V0H767ZM768 95H672V97H768V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-17-inside-8_4940_405685)"
+                    />
                     <mask id="path-19-inside-9_4940_405685" fill="white">
                         <path d="M768 0H864V96H768V0Z" />
                     </mask>
-                    <path d="M864 96V97H865V96H864ZM863 0V96H865V0H863ZM864 95H768V97H864V95Z" fill="#D0D5DD" mask="url(#path-19-inside-9_4940_405685)" />
+                    <path
+                        d="M864 96V97H865V96H864ZM863 0V96H865V0H863ZM864 95H768V97H864V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-19-inside-9_4940_405685)"
+                    />
                     <mask id="path-21-inside-10_4940_405685" fill="white">
                         <path d="M864 0H960V96H864V0Z" />
                     </mask>
-                    <path d="M960 96V97H961V96H960ZM959 0V96H961V0H959ZM960 95H864V97H960V95Z" fill="#D0D5DD" mask="url(#path-21-inside-10_4940_405685)" />
+                    <path
+                        d="M960 96V97H961V96H960ZM959 0V96H961V0H959ZM960 95H864V97H960V95Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-21-inside-10_4940_405685)"
+                    />
                     <mask id="path-23-inside-11_4940_405685" fill="white">
                         <path d="M0 96H96V192H0V96Z" />
                     </mask>
-                    <path d="M96 192V193H97V192H96ZM95 96V192H97V96H95ZM96 191H0V193H96V191Z" fill="#D0D5DD" mask="url(#path-23-inside-11_4940_405685)" />
+                    <path
+                        d="M96 192V193H97V192H96ZM95 96V192H97V96H95ZM96 191H0V193H96V191Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-23-inside-11_4940_405685)"
+                    />
                     <mask id="path-25-inside-12_4940_405685" fill="white">
                         <path d="M96 96H192V192H96V96Z" />
                     </mask>
@@ -137,7 +191,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                         <path d="M0 192H96V288H0V192Z" />
                     </mask>
                     <path d="M0 192H96V288H0V192Z" fill="#F2F4F7" />
-                    <path d="M96 288V289H97V288H96ZM95 192V288H97V192H95ZM96 287H0V289H96V287Z" fill="#D0D5DD" mask="url(#path-43-inside-21_4940_405685)" />
+                    <path
+                        d="M96 288V289H97V288H96ZM95 192V288H97V192H95ZM96 287H0V289H96V287Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-43-inside-21_4940_405685)"
+                    />
                     <mask id="path-45-inside-22_4940_405685" fill="white">
                         <path d="M96 192H192V288H96V192Z" />
                     </mask>
@@ -214,7 +272,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-63-inside-31_4940_405685" fill="white">
                         <path d="M0 288H96V384H0V288Z" />
                     </mask>
-                    <path d="M96 384V385H97V384H96ZM95 288V384H97V288H95ZM96 383H0V385H96V383Z" fill="#D0D5DD" mask="url(#path-63-inside-31_4940_405685)" />
+                    <path
+                        d="M96 384V385H97V384H96ZM95 288V384H97V288H95ZM96 383H0V385H96V383Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-63-inside-31_4940_405685)"
+                    />
                     <mask id="path-65-inside-32_4940_405685" fill="white">
                         <path d="M96 288H192V384H96V288Z" />
                     </mask>
@@ -291,7 +353,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-83-inside-41_4940_405685" fill="white">
                         <path d="M0 384H96V480H0V384Z" />
                     </mask>
-                    <path d="M96 480V481H97V480H96ZM95 384V480H97V384H95ZM96 479H0V481H96V479Z" fill="#D0D5DD" mask="url(#path-83-inside-41_4940_405685)" />
+                    <path
+                        d="M96 480V481H97V480H96ZM95 384V480H97V384H95ZM96 479H0V481H96V479Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-83-inside-41_4940_405685)"
+                    />
                     <mask id="path-85-inside-42_4940_405685" fill="white">
                         <path d="M96 384H192V480H96V384Z" />
                     </mask>
@@ -369,7 +435,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                         <path d="M0 480H96V576H0V480Z" />
                     </mask>
                     <path d="M0 480H96V576H0V480Z" fill="#F2F4F7" />
-                    <path d="M96 576V577H97V576H96ZM95 480V576H97V480H95ZM96 575H0V577H96V575Z" fill="#D0D5DD" mask="url(#path-103-inside-51_4940_405685)" />
+                    <path
+                        d="M96 576V577H97V576H96ZM95 480V576H97V480H95ZM96 575H0V577H96V575Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-103-inside-51_4940_405685)"
+                    />
                     <mask id="path-105-inside-52_4940_405685" fill="white">
                         <path d="M96 480H192V576H96V480Z" />
                     </mask>
@@ -446,7 +516,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-123-inside-61_4940_405685" fill="white">
                         <path d="M0 576H96V672H0V576Z" />
                     </mask>
-                    <path d="M96 672V673H97V672H96ZM95 576V672H97V576H95ZM96 671H0V673H96V671Z" fill="#D0D5DD" mask="url(#path-123-inside-61_4940_405685)" />
+                    <path
+                        d="M96 672V673H97V672H96ZM95 576V672H97V576H95ZM96 671H0V673H96V671Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-123-inside-61_4940_405685)"
+                    />
                     <mask id="path-125-inside-62_4940_405685" fill="white">
                         <path d="M96 576H192V672H96V576Z" />
                     </mask>
@@ -522,7 +596,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-143-inside-71_4940_405685" fill="white">
                         <path d="M0 672H96V768H0V672Z" />
                     </mask>
-                    <path d="M96 768V769H97V768H96ZM95 672V768H97V672H95ZM96 767H0V769H96V767Z" fill="#D0D5DD" mask="url(#path-143-inside-71_4940_405685)" />
+                    <path
+                        d="M96 768V769H97V768H96ZM95 672V768H97V672H95ZM96 767H0V769H96V767Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-143-inside-71_4940_405685)"
+                    />
                     <mask id="path-145-inside-72_4940_405685" fill="white">
                         <path d="M96 672H192V768H96V672Z" />
                     </mask>
@@ -601,7 +679,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                         <path d="M0 768H96V864H0V768Z" />
                     </mask>
                     <path d="M0 768H96V864H0V768Z" fill="#F2F4F7" />
-                    <path d="M96 864V865H97V864H96ZM95 768V864H97V768H95ZM96 863H0V865H96V863Z" fill="#D0D5DD" mask="url(#path-163-inside-81_4940_405685)" />
+                    <path
+                        d="M96 864V865H97V864H96ZM95 768V864H97V768H95ZM96 863H0V865H96V863Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-163-inside-81_4940_405685)"
+                    />
                     <mask id="path-165-inside-82_4940_405685" fill="white">
                         <path d="M96 768H192V864H96V768Z" />
                     </mask>
@@ -678,7 +760,11 @@ const md = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-183-inside-91_4940_405685" fill="white">
                         <path d="M0 864H96V960H0V864Z" />
                     </mask>
-                    <path d="M96 960V961H97V960H96ZM95 864V960H97V864H95ZM96 959H0V961H96V959Z" fill="#D0D5DD" mask="url(#path-183-inside-91_4940_405685)" />
+                    <path
+                        d="M96 960V961H97V960H96ZM95 864V960H97V864H95ZM96 959H0V961H96V959Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-183-inside-91_4940_405685)"
+                    />
                     <mask id="path-185-inside-92_4940_405685" fill="white">
                         <path d="M96 864H192V960H96V864Z" />
                     </mask>
@@ -777,7 +863,15 @@ const md = (props: SVGProps<SVGSVGElement>) => {
 const sm = (props: SVGProps<SVGSVGElement>) => {
     return (
         <svg width="960" height="960" viewBox="0 0 960 960" fill="none" {...props}>
-            <mask id="mask0_4940_405682" style={{ maskType: "alpha" }} maskUnits="userSpaceOnUse" x="0" y="0" width="960" height="960">
+            <mask
+                id="mask0_4940_405682"
+                style={{ maskType: "alpha" }}
+                maskUnits="userSpaceOnUse"
+                x="0"
+                y="0"
+                width="960"
+                height="960"
+            >
                 <rect width="960" height="960" fill="url(#paint0_radial_4940_405682)" />
             </mask>
             <g mask="url(#mask0_4940_405682)">
@@ -785,67 +879,131 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-3-inside-1_4940_405682" fill="white">
                         <path d="M0 0H64V64H0V0Z" />
                     </mask>
-                    <path d="M64 64V65H65V64H64ZM63 0V64H65V0H63ZM64 63H0V65H64V63Z" fill="#D0D5DD" mask="url(#path-3-inside-1_4940_405682)" />
+                    <path
+                        d="M64 64V65H65V64H64ZM63 0V64H65V0H63ZM64 63H0V65H64V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-3-inside-1_4940_405682)"
+                    />
                     <mask id="path-5-inside-2_4940_405682" fill="white">
                         <path d="M64 0H128V64H64V0Z" />
                     </mask>
-                    <path d="M128 64V65H129V64H128ZM127 0V64H129V0H127ZM128 63H64V65H128V63Z" fill="#D0D5DD" mask="url(#path-5-inside-2_4940_405682)" />
+                    <path
+                        d="M128 64V65H129V64H128ZM127 0V64H129V0H127ZM128 63H64V65H128V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-5-inside-2_4940_405682)"
+                    />
                     <mask id="path-7-inside-3_4940_405682" fill="white">
                         <path d="M128 0H192V64H128V0Z" />
                     </mask>
-                    <path d="M192 64V65H193V64H192ZM191 0V64H193V0H191ZM192 63H128V65H192V63Z" fill="#D0D5DD" mask="url(#path-7-inside-3_4940_405682)" />
+                    <path
+                        d="M192 64V65H193V64H192ZM191 0V64H193V0H191ZM192 63H128V65H192V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-7-inside-3_4940_405682)"
+                    />
                     <mask id="path-9-inside-4_4940_405682" fill="white">
                         <path d="M192 0H256V64H192V0Z" />
                     </mask>
-                    <path d="M256 64V65H257V64H256ZM255 0V64H257V0H255ZM256 63H192V65H256V63Z" fill="#D0D5DD" mask="url(#path-9-inside-4_4940_405682)" />
+                    <path
+                        d="M256 64V65H257V64H256ZM255 0V64H257V0H255ZM256 63H192V65H256V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-9-inside-4_4940_405682)"
+                    />
                     <mask id="path-11-inside-5_4940_405682" fill="white">
                         <path d="M256 0H320V64H256V0Z" />
                     </mask>
-                    <path d="M320 64V65H321V64H320ZM319 0V64H321V0H319ZM320 63H256V65H320V63Z" fill="#D0D5DD" mask="url(#path-11-inside-5_4940_405682)" />
+                    <path
+                        d="M320 64V65H321V64H320ZM319 0V64H321V0H319ZM320 63H256V65H320V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-11-inside-5_4940_405682)"
+                    />
                     <mask id="path-13-inside-6_4940_405682" fill="white">
                         <path d="M320 0H384V64H320V0Z" />
                     </mask>
-                    <path d="M384 64V65H385V64H384ZM383 0V64H385V0H383ZM384 63H320V65H384V63Z" fill="#D0D5DD" mask="url(#path-13-inside-6_4940_405682)" />
+                    <path
+                        d="M384 64V65H385V64H384ZM383 0V64H385V0H383ZM384 63H320V65H384V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-13-inside-6_4940_405682)"
+                    />
                     <mask id="path-15-inside-7_4940_405682" fill="white">
                         <path d="M384 0H448V64H384V0Z" />
                     </mask>
-                    <path d="M448 64V65H449V64H448ZM447 0V64H449V0H447ZM448 63H384V65H448V63Z" fill="#D0D5DD" mask="url(#path-15-inside-7_4940_405682)" />
+                    <path
+                        d="M448 64V65H449V64H448ZM447 0V64H449V0H447ZM448 63H384V65H448V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-15-inside-7_4940_405682)"
+                    />
                     <mask id="path-17-inside-8_4940_405682" fill="white">
                         <path d="M448 0H512V64H448V0Z" />
                     </mask>
-                    <path d="M512 64V65H513V64H512ZM511 0V64H513V0H511ZM512 63H448V65H512V63Z" fill="#D0D5DD" mask="url(#path-17-inside-8_4940_405682)" />
+                    <path
+                        d="M512 64V65H513V64H512ZM511 0V64H513V0H511ZM512 63H448V65H512V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-17-inside-8_4940_405682)"
+                    />
                     <mask id="path-19-inside-9_4940_405682" fill="white">
                         <path d="M512 0H576V64H512V0Z" />
                     </mask>
-                    <path d="M576 64V65H577V64H576ZM575 0V64H577V0H575ZM576 63H512V65H576V63Z" fill="#D0D5DD" mask="url(#path-19-inside-9_4940_405682)" />
+                    <path
+                        d="M576 64V65H577V64H576ZM575 0V64H577V0H575ZM576 63H512V65H576V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-19-inside-9_4940_405682)"
+                    />
                     <mask id="path-21-inside-10_4940_405682" fill="white">
                         <path d="M576 0H640V64H576V0Z" />
                     </mask>
-                    <path d="M640 64V65H641V64H640ZM639 0V64H641V0H639ZM640 63H576V65H640V63Z" fill="#D0D5DD" mask="url(#path-21-inside-10_4940_405682)" />
+                    <path
+                        d="M640 64V65H641V64H640ZM639 0V64H641V0H639ZM640 63H576V65H640V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-21-inside-10_4940_405682)"
+                    />
                     <mask id="path-23-inside-11_4940_405682" fill="white">
                         <path d="M640 0H704V64H640V0Z" />
                     </mask>
-                    <path d="M704 64V65H705V64H704ZM703 0V64H705V0H703ZM704 63H640V65H704V63Z" fill="#D0D5DD" mask="url(#path-23-inside-11_4940_405682)" />
+                    <path
+                        d="M704 64V65H705V64H704ZM703 0V64H705V0H703ZM704 63H640V65H704V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-23-inside-11_4940_405682)"
+                    />
                     <mask id="path-25-inside-12_4940_405682" fill="white">
                         <path d="M704 0H768V64H704V0Z" />
                     </mask>
-                    <path d="M768 64V65H769V64H768ZM767 0V64H769V0H767ZM768 63H704V65H768V63Z" fill="#D0D5DD" mask="url(#path-25-inside-12_4940_405682)" />
+                    <path
+                        d="M768 64V65H769V64H768ZM767 0V64H769V0H767ZM768 63H704V65H768V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-25-inside-12_4940_405682)"
+                    />
                     <mask id="path-27-inside-13_4940_405682" fill="white">
                         <path d="M768 0H832V64H768V0Z" />
                     </mask>
-                    <path d="M832 64V65H833V64H832ZM831 0V64H833V0H831ZM832 63H768V65H832V63Z" fill="#D0D5DD" mask="url(#path-27-inside-13_4940_405682)" />
+                    <path
+                        d="M832 64V65H833V64H832ZM831 0V64H833V0H831ZM832 63H768V65H832V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-27-inside-13_4940_405682)"
+                    />
                     <mask id="path-29-inside-14_4940_405682" fill="white">
                         <path d="M832 0H896V64H832V0Z" />
                     </mask>
-                    <path d="M896 64V65H897V64H896ZM895 0V64H897V0H895ZM896 63H832V65H896V63Z" fill="#D0D5DD" mask="url(#path-29-inside-14_4940_405682)" />
+                    <path
+                        d="M896 64V65H897V64H896ZM895 0V64H897V0H895ZM896 63H832V65H896V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-29-inside-14_4940_405682)"
+                    />
                     <mask id="path-31-inside-15_4940_405682" fill="white">
                         <path d="M896 0H960V64H896V0Z" />
                     </mask>
-                    <path d="M960 64V65H961V64H960ZM959 0V64H961V0H959ZM960 63H896V65H960V63Z" fill="#D0D5DD" mask="url(#path-31-inside-15_4940_405682)" />
+                    <path
+                        d="M960 64V65H961V64H960ZM959 0V64H961V0H959ZM960 63H896V65H960V63Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-31-inside-15_4940_405682)"
+                    />
                     <mask id="path-33-inside-16_4940_405682" fill="white">
                         <path d="M0 64H64V128H0V64Z" />
                     </mask>
-                    <path d="M64 128V129H65V128H64ZM63 64V128H65V64H63ZM64 127H0V129H64V127Z" fill="#D0D5DD" mask="url(#path-33-inside-16_4940_405682)" />
+                    <path
+                        d="M64 128V129H65V128H64ZM63 64V128H65V64H63ZM64 127H0V129H64V127Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-33-inside-16_4940_405682)"
+                    />
                     <mask id="path-35-inside-17_4940_405682" fill="white">
                         <path d="M64 64H128V128H64V64Z" />
                     </mask>
@@ -963,7 +1121,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-63-inside-31_4940_405682" fill="white">
                         <path d="M0 128H64V192H0V128Z" />
                     </mask>
-                    <path d="M64 192V193H65V192H64ZM63 128V192H65V128H63ZM64 191H0V193H64V191Z" fill="#D0D5DD" mask="url(#path-63-inside-31_4940_405682)" />
+                    <path
+                        d="M64 192V193H65V192H64ZM63 128V192H65V128H63ZM64 191H0V193H64V191Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-63-inside-31_4940_405682)"
+                    />
                     <mask id="path-65-inside-32_4940_405682" fill="white">
                         <path d="M64 128H128V192H64V128Z" />
                     </mask>
@@ -1081,7 +1243,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-93-inside-46_4940_405682" fill="white">
                         <path d="M0 192H64V256H0V192Z" />
                     </mask>
-                    <path d="M64 256V257H65V256H64ZM63 192V256H65V192H63ZM64 255H0V257H64V255Z" fill="#D0D5DD" mask="url(#path-93-inside-46_4940_405682)" />
+                    <path
+                        d="M64 256V257H65V256H64ZM63 192V256H65V192H63ZM64 255H0V257H64V255Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-93-inside-46_4940_405682)"
+                    />
                     <mask id="path-95-inside-47_4940_405682" fill="white">
                         <path d="M64 192H128V256H64V192Z" />
                     </mask>
@@ -1199,7 +1365,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                         <path d="M0 256H64V320H0V256Z" />
                     </mask>
                     <path d="M0 256H64V320H0V256Z" fill="#F2F4F7" />
-                    <path d="M64 320V321H65V320H64ZM63 256V320H65V256H63ZM64 319H0V321H64V319Z" fill="#D0D5DD" mask="url(#path-123-inside-61_4940_405682)" />
+                    <path
+                        d="M64 320V321H65V320H64ZM63 256V320H65V256H63ZM64 319H0V321H64V319Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-123-inside-61_4940_405682)"
+                    />
                     <mask id="path-125-inside-62_4940_405682" fill="white">
                         <path d="M64 256H128V320H64V256Z" />
                     </mask>
@@ -1316,7 +1486,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-153-inside-76_4940_405682" fill="white">
                         <path d="M0 320H64V384H0V320Z" />
                     </mask>
-                    <path d="M64 384V385H65V384H64ZM63 320V384H65V320H63ZM64 383H0V385H64V383Z" fill="#D0D5DD" mask="url(#path-153-inside-76_4940_405682)" />
+                    <path
+                        d="M64 384V385H65V384H64ZM63 320V384H65V320H63ZM64 383H0V385H64V383Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-153-inside-76_4940_405682)"
+                    />
                     <mask id="path-155-inside-77_4940_405682" fill="white">
                         <path d="M64 320H128V384H64V320Z" />
                     </mask>
@@ -1435,7 +1609,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-183-inside-91_4940_405682" fill="white">
                         <path d="M0 384H64V448H0V384Z" />
                     </mask>
-                    <path d="M64 448V449H65V448H64ZM63 384V448H65V384H63ZM64 447H0V449H64V447Z" fill="#D0D5DD" mask="url(#path-183-inside-91_4940_405682)" />
+                    <path
+                        d="M64 448V449H65V448H64ZM63 384V448H65V384H63ZM64 447H0V449H64V447Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-183-inside-91_4940_405682)"
+                    />
                     <mask id="path-185-inside-92_4940_405682" fill="white">
                         <path d="M64 384H128V448H64V384Z" />
                     </mask>
@@ -1552,7 +1730,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-213-inside-106_4940_405682" fill="white">
                         <path d="M0 448H64V512H0V448Z" />
                     </mask>
-                    <path d="M64 512V513H65V512H64ZM63 448V512H65V448H63ZM64 511H0V513H64V511Z" fill="#D0D5DD" mask="url(#path-213-inside-106_4940_405682)" />
+                    <path
+                        d="M64 512V513H65V512H64ZM63 448V512H65V448H63ZM64 511H0V513H64V511Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-213-inside-106_4940_405682)"
+                    />
                     <mask id="path-215-inside-107_4940_405682" fill="white">
                         <path d="M64 448H128V512H64V448Z" />
                     </mask>
@@ -1670,7 +1852,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-243-inside-121_4940_405682" fill="white">
                         <path d="M0 512H64V576H0V512Z" />
                     </mask>
-                    <path d="M64 576V577H65V576H64ZM63 512V576H65V512H63ZM64 575H0V577H64V575Z" fill="#D0D5DD" mask="url(#path-243-inside-121_4940_405682)" />
+                    <path
+                        d="M64 576V577H65V576H64ZM63 512V576H65V512H63ZM64 575H0V577H64V575Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-243-inside-121_4940_405682)"
+                    />
                     <mask id="path-245-inside-122_4940_405682" fill="white">
                         <path d="M64 512H128V576H64V512Z" />
                     </mask>
@@ -1788,7 +1974,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-273-inside-136_4940_405682" fill="white">
                         <path d="M0 576H64V640H0V576Z" />
                     </mask>
-                    <path d="M64 640V641H65V640H64ZM63 576V640H65V576H63ZM64 639H0V641H64V639Z" fill="#D0D5DD" mask="url(#path-273-inside-136_4940_405682)" />
+                    <path
+                        d="M64 640V641H65V640H64ZM63 576V640H65V576H63ZM64 639H0V641H64V639Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-273-inside-136_4940_405682)"
+                    />
                     <mask id="path-275-inside-137_4940_405682" fill="white">
                         <path d="M64 576H128V640H64V576Z" />
                     </mask>
@@ -1905,7 +2095,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-303-inside-151_4940_405682" fill="white">
                         <path d="M0 640H64V704H0V640Z" />
                     </mask>
-                    <path d="M64 704V705H65V704H64ZM63 640V704H65V640H63ZM64 703H0V705H64V703Z" fill="#D0D5DD" mask="url(#path-303-inside-151_4940_405682)" />
+                    <path
+                        d="M64 704V705H65V704H64ZM63 640V704H65V640H63ZM64 703H0V705H64V703Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-303-inside-151_4940_405682)"
+                    />
                     <mask id="path-305-inside-152_4940_405682" fill="white">
                         <path d="M64 640H128V704H64V640Z" />
                     </mask>
@@ -2023,7 +2217,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-333-inside-166_4940_405682" fill="white">
                         <path d="M0 704H64V768H0V704Z" />
                     </mask>
-                    <path d="M64 768V769H65V768H64ZM63 704V768H65V704H63ZM64 767H0V769H64V767Z" fill="#D0D5DD" mask="url(#path-333-inside-166_4940_405682)" />
+                    <path
+                        d="M64 768V769H65V768H64ZM63 704V768H65V704H63ZM64 767H0V769H64V767Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-333-inside-166_4940_405682)"
+                    />
                     <mask id="path-335-inside-167_4940_405682" fill="white">
                         <path d="M64 704H128V768H64V704Z" />
                     </mask>
@@ -2141,7 +2339,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-363-inside-181_4940_405682" fill="white">
                         <path d="M0 768H64V832H0V768Z" />
                     </mask>
-                    <path d="M64 832V833H65V832H64ZM63 768V832H65V768H63ZM64 831H0V833H64V831Z" fill="#D0D5DD" mask="url(#path-363-inside-181_4940_405682)" />
+                    <path
+                        d="M64 832V833H65V832H64ZM63 768V832H65V768H63ZM64 831H0V833H64V831Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-363-inside-181_4940_405682)"
+                    />
                     <mask id="path-365-inside-182_4940_405682" fill="white">
                         <path d="M64 768H128V832H64V768Z" />
                     </mask>
@@ -2258,7 +2460,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-393-inside-196_4940_405682" fill="white">
                         <path d="M0 832H64V896H0V832Z" />
                     </mask>
-                    <path d="M64 896V897H65V896H64ZM63 832V896H65V832H63ZM64 895H0V897H64V895Z" fill="#D0D5DD" mask="url(#path-393-inside-196_4940_405682)" />
+                    <path
+                        d="M64 896V897H65V896H64ZM63 832V896H65V832H63ZM64 895H0V897H64V895Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-393-inside-196_4940_405682)"
+                    />
                     <mask id="path-395-inside-197_4940_405682" fill="white">
                         <path d="M64 832H128V896H64V832Z" />
                     </mask>
@@ -2376,7 +2582,11 @@ const sm = (props: SVGProps<SVGSVGElement>) => {
                     <mask id="path-423-inside-211_4940_405682" fill="white">
                         <path d="M0 896H64V960H0V896Z" />
                     </mask>
-                    <path d="M64 960V961H65V960H64ZM63 896V960H65V896H63ZM64 959H0V961H64V959Z" fill="#D0D5DD" mask="url(#path-423-inside-211_4940_405682)" />
+                    <path
+                        d="M64 960V961H65V960H64ZM63 896V960H65V896H63ZM64 959H0V961H64V959Z"
+                        fill="#D0D5DD"
+                        mask="url(#path-423-inside-211_4940_405682)"
+                    />
                     <mask id="path-425-inside-212_4940_405682" fill="white">
                         <path d="M64 896H128V960H64V896Z" />
                     </mask>

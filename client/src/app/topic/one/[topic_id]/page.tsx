@@ -1,14 +1,13 @@
 "use client";
 
 import MainLayout from "@/components/layouts/main-layout";
-import ContentSection from "@/components/sections/landing/content";
 import HeroSection from "@/components/sections/landing/hero";
+import Topic from "@/components/sections/topic/topic";
 
 export default function Home() {
     return (
         <MainLayout>
-            <HeroSection />
-            <ContentSection />
+            <Topic />
         </MainLayout>
     );
 }

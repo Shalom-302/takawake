@@ -11,9 +11,9 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="min-h-screen">
             <Navbar />
-            <main className="flex-grow pt-16">{children}</main>
+            <main className="pt-[90px] ">{children}</main>
             <Footer />
             <CookieManager />
         </div>

@@ -3,200 +3,142 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button/button";
 import { useAuth } from "@/lib/contexts/auth-context";
+import { LinkButton } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { isAuthenticated, logout } = useAuth();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
 
+    const toggleDropdown = () => {
+        setIsDropdownOpen(prev => !prev);
+    };
+
+    const closeDropdown = () => {
+        setIsDropdownOpen(false);
+    };
+
     return (
-        <motion.header
-            className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm dark:bg-neutral-950/80 border-b"
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.5 }}
-        >
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center">
-                        <Link href="/" className="flex items-center space-x-2">
-                            <Image
-                                src="/logo.svg"
-                                alt="Kaapi Logo"
-                                width={32}
-                                height={32}
-                                className="h-8 w-auto"
-                            />
-                            <span className="text-xl font-bold">Kaapi</span>
-                        </Link>
-                    </div>
-
-                    {/* Desktop menu */}
-                    <nav className="hidden md:flex items-center space-x-8">
-                        <Link href="/features" className="text-sm font-medium hover:text-primary">
-                            Features
-                        </Link>
-                        <Link href="/pricing" className="text-sm font-medium hover:text-primary">
-                            Pricing
-                        </Link>
-                        <Link href="/docs" className="text-sm font-medium hover:text-primary">
-                            Documentation
-                        </Link>
-                        <Link href="/blog" className="text-sm font-medium hover:text-primary">
-                            Blog
-                        </Link>
-                        <Link
-                            href="/cookie-status"
-                            className="text-sm font-medium hover:text-primary"
-                        >
-                            Cookies
-                        </Link>
-                    </nav>
-
-                    {/* Authentication links */}
-                    <div className="hidden md:flex items-center space-x-4">
-                        {isAuthenticated ? (
-                            <>
-                                <Link href="/dashboard">
-                                    <Button variant="outline" size="sm">
-                                        Dashboard
-                                    </Button>
-                                </Link>
-                                <Button variant="ghost" size="sm" onClick={() => logout()}>
-                                    Sign Out
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Link href="/auth/login">
-                                    <Button variant="ghost" size="sm">
-                                        Sign In
-                                    </Button>
-                                </Link>
-                                <Link href="/auth/register">
-                                    <Button size="sm">Sign Up</Button>
-                                </Link>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Mobile menu button */}
-                    <button
-                        className="md:hidden text-neutral-700 dark:text-neutral-200"
-                        onClick={toggleMenu}
-                        aria-label="Toggle menu"
-                    >
-                        {isMenuOpen ? (
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        ) : (
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <line x1="4" y1="12" x2="20" y2="12"></line>
-                                <line x1="4" y1="6" x2="20" y2="6"></line>
-                                <line x1="4" y1="18" x2="20" y2="18"></line>
-                            </svg>
-                        )}
-                    </button>
-                </div>
-
-                {/* Mobile menu */}
-                {isMenuOpen && (
+        <>
+            {/* Overlay */}
+            <AnimatePresence>
+                {isDropdownOpen && (
                     <motion.div
-                        className="md:hidden py-4 border-t"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <nav className="flex flex-col space-y-4 pb-4">
-                            <Link
-                                href="/features"
-                                className="text-sm font-medium hover:text-primary"
-                            >
-                                Features
+                        key="navbar-overlay"
+                        className="fixed inset-0 z-40 bg-black/40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={closeDropdown}
+                    />
+                )}
+            </AnimatePresence>
+
+            <section className="bg-white fixed top-0 z-50 w-full">
+                <div className="bg-white relative">
+                    <div className="main-container py-5">
+                        <div className="flex items-center justify-between gap-5">
+                            <Link href={"/"}>
+                                <div className="h-12 w-48 bg-black/10 relative shrink-0"></div>
                             </Link>
-                            <Link
-                                href="/pricing"
-                                className="text-sm font-medium hover:text-primary"
-                            >
-                                Pricing
-                            </Link>
-                            <Link href="/docs" className="text-sm font-medium hover:text-primary">
-                                Documentation
-                            </Link>
-                            <Link href="/blog" className="text-sm font-medium hover:text-primary">
-                                Blog
-                            </Link>
-                            <Link
-                                href="/cookie-status"
-                                className="text-sm font-medium hover:text-primary"
-                            >
-                                Cookies
-                            </Link>
-                        </nav>
-                        <div className="pt-4 border-t flex flex-col space-y-3">
-                            {isAuthenticated ? (
-                                <>
-                                    <Link href="/dashboard" className="w-full">
-                                        <Button variant="outline" size="sm" className="w-full">
-                                            Dashboard
-                                        </Button>
-                                    </Link>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full"
-                                        onClick={() => logout()}
+                            <ul className="flex items-center gap-2">
+                                <li className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={toggleDropdown}
+                                        className="py-2 px-4 cursor-pointer flex items-center gap-2 relative"
                                     >
-                                        Sign Out
+                                        <span className="font-medium text-sm">{"S'éveiller"}</span>
+                                        <div className="h-6 w-6 shrink-0 bg-black/5"></div>
+                                    </button>
+                                </li>
+                                <li>
+                                    <div className="py-2 px-4 cursor-pointer relative">
+                                        <span className="font-medium text-sm">{"Vidéos"}</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div className="py-2 px-4 cursor-pointer relative">
+                                        <span className="font-medium text-sm">{"Le Média"}</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div className="py-2 px-4 cursor-pointer relative space-x-2 flex items-center">
+                                        <span className="font-medium text-sm">{"Apprendre"}</span>
+                                        <div className="pb-4">
+                                            <Badge variant="pill-color" size={"sm"}>
+                                                Bientôt
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div className="flex items-center gap-7">
+                                <div className="border border-black/30 rounded-full shrink-0 h-11 px-4 cursor-pointer flex items-center gap-4">
+                                    <div className="h-6 w-6 shrink-0 bg-black/5"></div>
+                                    <span className="text-sm opacity-60">{"Rechercher"}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {/* <Button variant="secondary">Button secondary</Button> */}
+                                    <Button size={"md"} variant="tertiary" asChild>
+                                        <Link href={"#"}>{"Se connecter"}</Link>
                                     </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Link href="/auth/login" className="w-full">
-                                        <Button variant="ghost" size="sm" className="w-full">
-                                            Sign In
-                                        </Button>
+                                    <Button size={"md"} variant="secondary" asChild>
+                                        <Link href={"#"}>{"S'inscrire"}</Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Dropdown */}
+            <AnimatePresence mode="wait">
+                {isDropdownOpen && (
+                    <motion.div
+                        key="navbar-dropdown"
+                        initial={{ opacity: 0, y: -12, scaleY: 1 }}
+                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                        exit={{ opacity: 0, y: -10, scaleY: 1 }}
+                        transition={{
+                            duration: 0.25,
+                            ease: [0.23, 1, 0.32, 1],
+                        }}
+                        style={{ originY: 0 }}
+                        className="fixed left-0 pt-[100px] w-full z-40 bg-white shadow-xl overflow-hidden"
+                    >
+                        <div className="main-container py-5">
+                            <div className="grid grid-cols-3 gap-x-10">
+                                {Array.from({ length: 14 }).map((_, i) => (
+                                    <Link href={`/topic/one/robotique-ia`} key={i}>
+                                        <div className="flex items-center p-4 rounded-md justify-between gap-4 cursor-pointer sm:hover:bg-black/5">
+                                            <div className="flex items-center gap-2 truncate">
+                                                <div className="h-12 w-12 shrink-0 bg-black/5"></div>
+                                                <span className="font-medium block truncate w-full text-sm">
+                                                    {
+                                                        "Mariam joue à la balle tous les jours de la semaine devant la maison de son père"
+                                                    }
+                                                </span>
+                                            </div>
+                                            <div className="h-6 w-6 flex items-center justify-center shrink-0 bg-black/10 "></div>
+                                        </div>
                                     </Link>
-                                    <Link href="/auth/register" className="w-full">
-                                        <Button size="sm" className="w-full">
-                                            Sign Up
-                                        </Button>
-                                    </Link>
-                                </>
-                            )}
+                                ))}
+                            </div>
                         </div>
                     </motion.div>
                 )}
-            </div>
-        </motion.header>
+            </AnimatePresence>
+        </>
     );
 }

@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
             "avatars.githubusercontent.com",
             "images.pexels.com",
             "images.unsplash.com",
-            "kaanari.com"
+            "kaanari.com",
         ],
         remotePatterns: [
             {

@@ -5,7 +5,10 @@ import type { SVGProps } from "react";
 const AmexIcon = (props: SVGProps<SVGSVGElement>) => {
     return (
         <svg width="34" height="24" viewBox="0 0 34 24" fill="none" {...props}>
-            <path d="M0 4C0 1.79086 1.79086 0 4 0H30C32.2091 0 34 1.79086 34 4V20C34 22.2091 32.2091 24 30 24H4C1.79086 24 0 22.2091 0 20V4Z" fill="#1F72CD" />
+            <path
+                d="M0 4C0 1.79086 1.79086 0 4 0H30C32.2091 0 34 1.79086 34 4V20C34 22.2091 32.2091 24 30 24H4C1.79086 24 0 22.2091 0 20V4Z"
+                fill="#1F72CD"
+            />
             <path
                 fillRule="evenodd"
                 clipRule="evenodd"

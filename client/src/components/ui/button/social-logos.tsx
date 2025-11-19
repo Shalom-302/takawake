@@ -2,7 +2,10 @@
 
 import type { SVGProps } from "react";
 
-export const GoogleLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
+export const GoogleLogo = ({
+    colorful,
+    ...props
+}: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" {...props}>
             <path
@@ -25,14 +28,20 @@ export const GoogleLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { c
     );
 };
 
-export const FigmaLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
+export const FigmaLogo = ({
+    colorful,
+    ...props
+}: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" {...props}>
             <path
                 d="M8.00006 24.0001C10.2081 24.0001 12.0001 22.208 12.0001 20V16H8.00006C5.79205 16 4 17.792 4 20C4 22.208 5.79205 24.0001 8.00006 24.0001Z"
                 fill={colorful ? "#24CB71" : "currentColor"}
             />
-            <path d="M4 12C4 9.79203 5.79205 8 8.00006 8H12.0001V16H8.00006C5.79205 16.0001 4 14.208 4 12Z" fill={colorful ? "#874FFF" : "currentColor"} />
+            <path
+                d="M4 12C4 9.79203 5.79205 8 8.00006 8H12.0001V16H8.00006C5.79205 16.0001 4 14.208 4 12Z"
+                fill={colorful ? "#874FFF" : "currentColor"}
+            />
             <path
                 d="M4 4.00003C4 1.79203 5.79205 0 8.00006 0H12.0001V7.99997H8.00006C5.79205 7.99997 4 6.20803 4 4.00003Z"
                 fill={colorful ? "#FF3737" : "currentColor"}
@@ -62,7 +71,10 @@ export const FigmaLogoOutlined = (props: SVGProps<SVGSVGElement>) => {
     );
 };
 
-export const DribbleLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
+export const DribbleLogo = ({
+    colorful,
+    ...props
+}: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" {...props}>
             <path
@@ -79,7 +91,10 @@ export const DribbleLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { 
     );
 };
 
-export const FacebookLogo = ({ colorful, ...props }: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
+export const FacebookLogo = ({
+    colorful,
+    ...props
+}: SVGProps<SVGSVGElement> & { colorful?: boolean }) => {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" {...props}>
             <path

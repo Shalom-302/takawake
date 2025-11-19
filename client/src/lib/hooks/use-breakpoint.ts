@@ -19,7 +19,11 @@ const screens = {
  * @returns A boolean indicating whether the viewport size applies.
  */
 export const useBreakpoint = (size: "sm" | "md" | "lg" | "xl" | "2xl") => {
-    const [matches, setMatches] = useState(typeof window !== "undefined" ? window.matchMedia(`(min-width: ${screens[size]})`).matches : true);
+    const [matches, setMatches] = useState(
+        typeof window !== "undefined"
+            ? window.matchMedia(`(min-width: ${screens[size]})`).matches
+            : true
+    );
 
     useEffect(() => {
         const breakpoint = window.matchMedia(`(min-width: ${screens[size]})`);
