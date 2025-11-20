@@ -4,7 +4,7 @@ import * as React from "react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { Check } from "@untitled-ui/icons-react";
-import { FeaturedIcon } from "@/components/icons/featured-icons";
+import { FeaturedIcon } from "@/components/icons/_old/featured-icons";
 
 export type StepIconType = "radio" | "number" | "featured-icon";
 export type StepIconStatus = "incomplete" | "current" | "complete";

@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button, ButtonUtility } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-indicators";
 import { cn } from "@/lib/utils/cn";
-import { FeaturedIcon } from "@/components/icons/featured-icons";
+import { FeaturedIcon } from "@/components/icons/_old/featured-icons";
 import { FormFieldWrapper, type FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 import { createFileItem, getReadableFileSize, isFileTypeAccepted } from "@/lib/utils/file-upload";

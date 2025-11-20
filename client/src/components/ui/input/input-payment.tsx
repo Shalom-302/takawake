@@ -6,7 +6,7 @@ import {
     MastercardIcon,
     UnionPayIcon,
     VisaIcon,
-} from "@/components/icons/payment-icons";
+} from "@/components/icons/_old/payment-icons";
 import { FormFieldWrapper, FormFieldWrapperProps } from "../form";
 import { type FieldPath, type FieldValues } from "react-hook-form";
 import { HelpCircle, InfoCircle } from "@untitled-ui/icons-react";

@@ -15,7 +15,7 @@ import { isReactComponent } from "@/lib/utils/is-react-component";
 
 const buttonVariants = cva(
     [
-        "group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2",
+        " group relative inline-flex h-max cursor-pointer items-center justify-center whitespace-nowrap outline-brand transition duration-100 ease-linear before:absolute focus-visible:outline-2 focus-visible:outline-offset-2",
         // InputGroup integration
         "in-data-input-wrapper:shadow-xs in-data-input-wrapper:focus:!z-50 in-data-input-wrapper:in-data-left:-mr-px in-data-input-wrapper:in-data-left:rounded-r-none in-data-input-wrapper:in-data-left:before:rounded-r-none in-data-input-wrapper:in-data-right:-ml-px in-data-input-wrapper:in-data-right:rounded-l-none in-data-input-wrapper:in-data-right:before:rounded-l-none",
         // Disabled state
@@ -71,10 +71,10 @@ const buttonVariants = cva(
                 ],
             },
             size: {
-                sm: "gap-1 rounded-lg px-3 py-2 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2",
-                md: "gap-1 rounded-lg px-3.5 py-2.5 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2.5",
-                lg: "gap-1.5 rounded-lg px-4 py-2.5 text-md font-semibold before:rounded-[7px] data-icon-only:p-3",
-                xl: "gap-1.5 rounded-lg px-4.5 py-3 text-md font-semibold before:rounded-[7px] data-icon-only:p-3.5",
+                sm: "gap-1 rounded-full px-3 py-2 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2",
+                md: "gap-1 rounded-full px-3.5 py-2.5 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2.5",
+                lg: "gap-1.5 rounded-full px-4 py-2.5 text-md font-semibold before:rounded-[7px] data-icon-only:p-3",
+                xl: "gap-1.5 rounded-full px-4.5 py-3 text-md font-semibold before:rounded-[7px] data-icon-only:p-3.5",
             },
         },
         defaultVariants: {

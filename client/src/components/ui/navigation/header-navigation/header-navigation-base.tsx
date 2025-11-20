@@ -9,7 +9,7 @@ import {
     NavItemButton,
     NavList,
 } from "../base-components";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 import { Input } from "@/components/ui/input";
 import { Bell01, LifeBuoy01, SearchLg, Settings01 } from "@untitled-ui/icons-react";
 import { BadgeWithDot } from "@/components/ui/badge";

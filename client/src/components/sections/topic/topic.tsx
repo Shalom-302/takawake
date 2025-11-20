@@ -6,13 +6,14 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button/button";
 import { LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import LikeCommentSaveBar from "@/components/composites/like-comment-save-bar";
 
 export default function Topic() {
     return (
         <>
             <section className=" relative before:content-[''] before:absolute before:h-[480px] before:w-full before:bg-black/5 ">
                 <div className="main-container">
-                    <div className="grid grid-cols-2 gap-6 pt-[100px]">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-[70px] md:pt-[100px]">
                         <div className=" w-full max-w-[400px] ">
                             <h1 className="text-3xl md:text-4xl leading-[140%] font-bold ">
                                 {"Robotique"}
@@ -32,13 +33,13 @@ export default function Topic() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6 pt-[100px] relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10 lg:pt-[100px] relative z-10">
                         <Link href={`/topic/article/lorem-ipsum-lodor-sit-amet`}>
                             <div>
-                                <div className="h-[400px] bg-black/5 rounded-lg "></div>
+                                <div className="h-[300px] md:h-[400px] bg-black rounded-lg "></div>
                                 <div className="mt-6">
                                     <div className="w-full">
-                                        <span className="block line-clamp-2 font-bold text-xl">
+                                        <span className="block line-clamp-2 font-bold text-lg sm:text-xl">
                                             {
                                                 "Un étudiant Béninois aux États-Unis a créé une IA qui révolutionne l'apprentissage"
                                             }
@@ -48,25 +49,13 @@ export default function Topic() {
                                                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur imperdiet tellus odio, non ullamcorper nibh accumsan a. Cras ligula nibh, molestie tempor dolor eget, aliquet auctor augue"
                                             }
                                         </p>
-                                        <div className="flex items-center gap-4 mt-4">
-                                            <span className="font-medium inline-block text-sm">
-                                                {"Il y a 45 minutes"}
-                                            </span>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                <span className="font-medium inline-block text-sm">
-                                                    {"53"}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                <span className="font-medium inline-block text-sm">
-                                                    {"245"}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                            </div>
+                                        <div className="mt-4">
+                                            <LikeCommentSaveBar
+                                                like={123}
+                                                comment={43}
+                                                article_id={""}
+                                                time={"Il y a 45 minutes"}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -74,10 +63,10 @@ export default function Topic() {
                         </Link>
                         <Link href={`/topic/article/lorem-ipsum-lodor-sit-amet`}>
                             <div>
-                                <div className="h-[400px] bg-black/5 rounded-lg "></div>
+                                <div className="h-[300px] md:h-[400px] bg-black rounded-lg "></div>
                                 <div className="mt-6">
                                     <div className="w-full">
-                                        <span className="block line-clamp-2 font-bold text-xl">
+                                        <span className="block line-clamp-2 font-bold text-lg sm:text-xl">
                                             {
                                                 "Un étudiant Béninois aux États-Unis a créé une IA qui révolutionne l'apprentissage"
                                             }
@@ -87,25 +76,13 @@ export default function Topic() {
                                                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur imperdiet tellus odio, non ullamcorper nibh accumsan a. Cras ligula nibh, molestie tempor dolor eget, aliquet auctor augue"
                                             }
                                         </p>
-                                        <div className="flex items-center gap-4 mt-4">
-                                            <span className="font-medium inline-block text-sm">
-                                                {"Il y a 45 minutes"}
-                                            </span>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                <span className="font-medium inline-block text-sm">
-                                                    {"53"}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                <span className="font-medium inline-block text-sm">
-                                                    {"245"}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                            </div>
+                                        <div className="mt-4">
+                                            <LikeCommentSaveBar
+                                                like={123}
+                                                comment={43}
+                                                article_id={""}
+                                                time={"Il y a 45 minutes"}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -115,10 +92,10 @@ export default function Topic() {
                 </div>
             </section>
 
-            <section className="mt-16 pb-28">
+            <section className="mt-10 lg:mt-16 pb-28">
                 <div className="main-container">
-                    <div className="grid grid-cols-3 gap-6">
-                        <div className="col-span-2 py-6 ">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 py-6 ">
                             <div className="border-l-3 pl-3 border-black flex items-center gap-4">
                                 <span className="font-medium text-sm block shrink-0">
                                     {"Les articles récents"}
@@ -128,9 +105,9 @@ export default function Topic() {
                             <div className="mt-6">
                                 <ul className="space-y-6">
                                     {Array.from({ length: 5 }).map((_, i) => (
-                                        <li key={i} className="not-last:border-b">
-                                            <div className="gap-4 flex items-center  py-4">
-                                                <div className=" h-40 w-3xs shrink-0 bg-black/5 rounded-lg"></div>
+                                        <li key={i} className="sm:not-last:border-b">
+                                            <div className="gap-4 flex flex-col sm:flex-row sm:items-center  sm:py-4">
+                                                <div className="h-52 sm:h-40 w-full sm:w-[190px] md:w-3xs shrink-0 bg-black/5 rounded-lg"></div>
                                                 <div className="w-full">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="font-medium inline-block text-sm">
@@ -143,7 +120,7 @@ export default function Topic() {
                                                             {"9 déc. 2026"}
                                                         </span>
                                                     </div>
-                                                    <h2 className="block line-clamp-2 font-bold text-xl">
+                                                    <h2 className="block line-clamp-2 font-bold text-lg sm:text-xl">
                                                         {
                                                             "Un étudiant Béninois aux États-Unis a créé une IA qui révolutionne l'apprentissage"
                                                         }
@@ -153,25 +130,13 @@ export default function Topic() {
                                                             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur imperdiet tellus odio, non ullamcorper nibh accumsan a. Cras ligula nibh, molestie tempor dolor eget, aliquet auctor augue"
                                                         }
                                                     </p>
-                                                    <div className="flex items-center gap-4 mt-4">
-                                                        <span className="font-medium inline-block text-sm">
-                                                            {"Il y a 45 minutes"}
-                                                        </span>
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                            <span className="font-medium inline-block text-sm">
-                                                                {"53"}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                            <span className="font-medium inline-block text-sm">
-                                                                {"245"}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="h-6 w-6 shrink-0 flex items-center justify-center bg-black/5"></div>
-                                                        </div>
+                                                    <div className="mt-4">
+                                                        <LikeCommentSaveBar
+                                                            like={123}
+                                                            comment={43}
+                                                            article_id={""}
+                                                            time={"Il y a 45 minutes"}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -184,14 +149,13 @@ export default function Topic() {
                                         className="w-full"
                                         size={"xl"}
                                         variant="primary"
-                                        leftIcon={<>dd</>}
                                     >
                                         Charger plus d'articles
                                     </Button>
                                 </div>
                             </div>
                         </div>
-                        <div className="col-span-1 space-y-4 ">
+                        <div className="lg:col-span-1 space-y-4 ">
                             <div className="bg-black/5 rounded-lg px-6 pt-6 pb-2">
                                 <div className="border-l-3 pl-3 border-black flex items-center gap-4">
                                     <span className="font-medium text-sm block shrink-0">
@@ -202,8 +166,8 @@ export default function Topic() {
                                 <ul className=" mt-6">
                                     {Array.from({ length: 4 }).map((_, i) => (
                                         <li key={i} className="not-last:border-b">
-                                            <div className="gap-4 flex items-center py-4">
-                                                <div className="h-24 w-24 shrink-0 bg-black/5 rounded-lg"></div>
+                                            <div className="gap-3 sm:gap-4 flex items-center py-4">
+                                                <div className="h-16 sm:h-24 w-16 sm:w-24 shrink-0 bg-black/5 rounded-lg"></div>
                                                 <div className="w-full">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="font-medium inline-block text-sm">

@@ -10,12 +10,12 @@ import { NavItemButton } from "../base-components/nav-item-button";
 import { NavList } from "../base-components/nav-list";
 import type { NavItemType } from "../config";
 import { cn } from "@/lib/utils/cn";
-import { UntitledLogoMinimal } from "@/components/icons/logo/untitledui-logo-minimal";
+import { UntitledLogoMinimal } from "@/components/icons/_old/logo/untitledui-logo-minimal";
 import { Avatar, AvatarLabel } from "../../avatar";
 import { Popover } from "../../popover";
 import { Button, ButtonUtility } from "../../button";
 import { LifeBuoy01, LogOut01, Settings01 } from "@untitled-ui/icons-react";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 
 interface SidebarNavigationSlimProps {
     /** URL of the currently active item. */

@@ -4,7 +4,7 @@ import * as React from "react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { Avatar } from "../avatar";
-import { Dot } from "@/components/icons/dot-icon";
+import { Dot } from "@/components/icons/_old/dot-icon";
 import { getTagPaddingClasses } from "./tag-utils";
 import { TagCheckbox } from "./tag-checkbox";
 import { TagCloseButton } from "./tag-close-button";

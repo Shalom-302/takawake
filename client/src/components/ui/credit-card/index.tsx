@@ -1,6 +1,10 @@
 "use client";
 
-import { MastercardIcon, MastercardIconWhite, PaypassIcon } from "@/components/icons/credit-card";
+import {
+    MastercardIcon,
+    MastercardIconWhite,
+    PaypassIcon,
+} from "@/components/icons/_old/credit-card";
 import { cn } from "@/lib/utils/cn";
 import { useMemo } from "react";
 

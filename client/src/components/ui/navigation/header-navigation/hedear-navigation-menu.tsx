@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { ChevronDown } from "@untitled-ui/icons-react";
 import { Button } from "@/components/ui/button/button";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
-import { UntitledLogoMinimal } from "@/components/icons/logo/untitledui-logo-minimal";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
+import { UntitledLogoMinimal } from "@/components/icons/_old/logo/untitledui-logo-minimal";
 import { cn } from "@/lib/utils/cn";
 import {
     NavigationMenu,

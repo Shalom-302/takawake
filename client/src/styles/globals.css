@@ -36,8 +36,8 @@ body {
     font-variant-ligatures: contextual;
     -webkit-font-kerning: normal;
     font-kerning: normal;
-    background-color: var(--color-alpha-white);
-    color: var(--color-alpha-black);
+    /* background-color: var(--color-alpha-white); */
+    color: var(--black-tekawake-500);
 }
 
 /* Hide the default expand arrow on Safari.  */

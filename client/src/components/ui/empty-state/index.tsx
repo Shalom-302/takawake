@@ -4,7 +4,7 @@ import type { ComponentProps, ComponentPropsWithRef, FC, ReactNode } from "react
 import { Children, createContext, isValidElement, useContext } from "react";
 import { FileIcon } from "@untitledui/file-icons";
 import { SearchLg } from "@untitled-ui/icons-react";
-import { FeaturedIcon as FeaturedIconBase } from "@/components/icons/featured-icons";
+import { FeaturedIcon as FeaturedIconBase } from "@/components/icons/_old/featured-icons";
 import { BackgroundPattern, type BackgroundPatternProps } from "@/components/background-patterns";
 import { Illustration as Illustrations } from "@/components/illustrations";
 import { cn } from "@/lib/utils/cn";

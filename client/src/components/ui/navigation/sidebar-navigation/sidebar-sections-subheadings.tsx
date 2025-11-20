@@ -1,6 +1,6 @@
 "use client";
 
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 import { MobileNavigationHeader } from "../base-components/mobile-header";
 import { NavAccountCard } from "../base-components/nav-account-card";
 import { NavItemBase } from "../base-components/nav-item";

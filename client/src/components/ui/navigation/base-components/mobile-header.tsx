@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren } from "react";
 import React from "react";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 import { Button } from "@/components/ui/button/button";
 import { cn } from "@/lib/utils/cn";
 import { DrawerCustom as Drawer } from "@/components/ui/drawer";

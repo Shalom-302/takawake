@@ -3,7 +3,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 import { FlagTypes, IconComponentType, Sizes } from "./badge-types";
-import { Dot } from "@/components/icons/dot-icon";
+import { Dot } from "@/components/icons/_old/dot-icon";
 import Image from "next/image";
 import { XClose } from "@untitled-ui/icons-react";
 

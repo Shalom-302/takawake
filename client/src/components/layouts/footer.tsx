@@ -57,10 +57,10 @@ export default function Footer() {
     return (
         <>
             <section className="bg-black">
-                <div className="main-container text-white py-28 ">
-                    <div className="grid grid-cols-5 gap-6">
-                        <div className="col-span-3">
-                            <div className="bg-white/10 border border-white/20 grid grid-cols-2 gap-4 rounded-lg p-8">
+                <div className="main-container text-white pt-20 sm:pt-28 pb-10 md:pb-28 ">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 md:gap-20 lg:gap-6">
+                        <div className="lg:col-span-3">
+                            <div className="bg-white/10 border border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg p-8">
                                 <div>
                                     <span className="block font-bold text-xl">{"Newsletter"}</span>
                                     <p className="mt-4 text-sm leading-[150%] max-w-md opacity-60">
@@ -69,13 +69,16 @@ export default function Footer() {
                                         aliquet auctor augue
                                     </p>
                                 </div>
+                                <div>
+                                    ...
+                                </div>
                             </div>
                         </div>
-                        <div className="col-span-2">
+                        <div className="lg:col-span-2">
                             <h3 className="font-semibold first-letter:capitalize text-sm">
                                 {"Séveiller sur un sujet"}
                             </h3>
-                            <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                 {/* Footer links */}
                                 {footerCategories.map(group => (
                                     <div key={group.id}>
@@ -102,7 +105,14 @@ export default function Footer() {
                         {/* Logo and description */}
                         <div className="md:col-span-2">
                             <Link href={"/"}>
-                                <div className="h-12 w-48 bg-white/10 relative shrink-0"></div>
+                                <div className="h-8 md:h-10 w-32 sm:w-36 md:w-40 relative shrink-0">
+                                    <Image
+                                        src={"/logo_white.png"}
+                                        fill
+                                        alt="logo TEKAWAKE"
+                                        className="object-contain"
+                                    />
+                                </div>
                             </Link>
                             <p className="mt-4 text-sm max-w-md">
                                 Média d’éveil sur la tech en Afrique

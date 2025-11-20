@@ -5,7 +5,7 @@ import { MobileNavigationHeader } from "../base-components/mobile-header";
 import { NavAccountCard } from "../base-components/nav-account-card";
 import { NavList } from "../base-components/nav-list";
 import type { NavItemDividerType, NavItemType } from "../config";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 import { Input } from "@/components/ui/input";
 
 interface SidebarNavigationSectionDividersProps {

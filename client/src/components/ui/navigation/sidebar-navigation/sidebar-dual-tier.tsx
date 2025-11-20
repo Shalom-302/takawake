@@ -9,7 +9,7 @@ import { NavItemBase } from "../base-components/nav-item";
 import { NavList } from "../base-components/nav-list";
 import type { NavItemType } from "../config";
 import { cn } from "@/lib/utils/cn";
-import { UntitledLogo } from "@/components/icons/logo/untitledui-logo";
+import { UntitledLogo } from "@/components/icons/_old/logo/untitledui-logo";
 import { Input } from "../../input";
 import { SearchLg } from "@untitled-ui/icons-react";
 
