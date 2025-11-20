@@ -8,7 +8,7 @@ import React from "react";
 import { Metadata } from "next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import AdminLayout from "@/components/layouts/admin-layout";
+import AdminLayout from "@/components/layouts/_old/admin-layout";
 import AnalyticsOverview from "@/components/analytics/analytics-overview";
 import HeatmapViewer from "@/components/analytics/heatmap-viewer";
 import UserJourneyViewer from "@/components/analytics/user-journey-viewer";
