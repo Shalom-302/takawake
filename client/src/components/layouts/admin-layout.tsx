@@ -1,17 +1,42 @@
 "use client";
 
 import { ReactNode } from "react";
-import Navbar from "@/components/layouts/navbar";
-import Footer from "@/components/layouts/footer";
-import CookieManager from "@/components/cookie/cookie-manager";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
 
 interface MainLayoutProps {
     children: ReactNode;
 }
 
+const navigationItems = [
+    { id: "aa", label: "Tableau de bord", href: "/dashboard" },
+    { id: "bb", label: "Veilles", href: "/dashboard/tech-monitoring" },
+    { id: "dd", label: "Sujets générés", href: "/dashboard/topics" },
+    { id: "cc", label: "Articles", href: "/dashboard/scraping-articles" },
+    { id: "ff", label: "Publications", href: "/dashboard/publications" },
+];
+
 export default function AdminLayout({ children }: MainLayoutProps) {
+    const pathname = usePathname();
+
+    const isActive = (href: string) => {
+        if (!pathname) return false;
+
+        const normalize = (path: string) =>
+            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
+
+        const current = normalize(pathname);
+        const target = normalize(href);
+
+        if (target === "/dashboard") {
+            return current === target;
+        }
+
+        return current === target || current.startsWith(`${target}/`);
+    };
+
     return (
         <div className="min-h-screen">
             <div className="h-screen bg-white z-10 flex flex-col justify-between fixed top-0 left-0 w-[300px] border-r border-black/10 ">
@@ -31,22 +56,30 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                             <span className="block text-xs opacity-60 font-medium">
                                 {"Tekawake"}
                             </span>
-                            <ul className="mt-2">
-                                {[
-                                    { id: "aa", label: "Tableau de bord" },
-                                    { id: "bb", label: "Veilles" },
-                                    { id: "bb", label: "Clusters générés" },
-                                    { id: "cc", label: "Articles" },
-                                ]?.map((item: any) => (
-                                    <li key={item?.id}>
-                                        <div className="flex items-center gap-4 p-2 cursor-pointer sm:hover:bg-black/5 rounded-md">
-                                            <div className="h-6 w-6 bg-black/10 shrink-0"></div>
-                                            <span className="block truncate text-sm font-medium">
-                                                {item?.label}
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
+                            <ul className="mt-2 space-y-1">
+                                {navigationItems.map((item) => {
+                                    const isCurrent = isActive(item.href);
+
+                                    return (
+                                        <li key={item.id}>
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    "flex items-center gap-4 p-2 rounded-md cursor-pointer",
+                                                    isCurrent
+                                                        ? "bg-black/5"
+                                                        : "sm:hover:bg-black/5",
+                                                )}
+                                                aria-current={isCurrent ? "page" : undefined}
+                                            >
+                                                <div className="h-6 w-6 bg-black/10 shrink-0"></div>
+                                                <span className="block truncate text-sm font-medium">
+                                                    {item.label}
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </section>
                         <section>
@@ -90,7 +123,7 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                     </div>
                 </div>
             </div>
-            <main className="">{children}</main>
+            <main className="pl-[300px]">{children}</main>
         </div>
     );
 }
