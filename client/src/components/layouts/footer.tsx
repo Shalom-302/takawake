@@ -56,11 +56,11 @@ export default function Footer() {
 
     return (
         <>
-            <section className="bg-black">
+            <section className="bg-(--blue-tekawake-900) ">
                 <div className="main-container text-white pt-20 sm:pt-28 pb-10 md:pb-28 ">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 md:gap-20 lg:gap-6">
                         <div className="lg:col-span-3">
-                            <div className="bg-white/10 border border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg p-8">
+                            <div className="bg-(--blue-tekawake-800) border border-(--blue-tekawake-600) grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg p-8">
                                 <div>
                                     <span className="block font-bold text-xl">{"Newsletter"}</span>
                                     <p className="mt-4 text-sm leading-[150%] max-w-md opacity-60">
@@ -75,7 +75,7 @@ export default function Footer() {
                             </div>
                         </div>
                         <div className="lg:col-span-2">
-                            <h3 className="font-semibold first-letter:capitalize text-sm">
+                            <h3 className="font-semibold first-letter:capitalize text-(--blue-tekawake-200)">
                                 {"Séveiller sur un sujet"}
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
@@ -125,13 +125,13 @@ export default function Footer() {
                         {/* Footer links */}
                         {footerLinks.map(group => (
                             <div key={group.title}>
-                                <h3 className="font-semibold first-letter:capitalize text-sm">
+                                <h3 className="font-semibold first-letter:capitalize text-(--blue-tekawake-200)">
                                     {group.title}
                                 </h3>
                                 <ul className="mt-4 space-y-3">
                                     {group.links.map(link => (
                                         <li key={link.name}>
-                                            <Link href={link.href} className="text-sm  opacity-60">
+                                            <Link href={link.href} className="text-sm">
                                                 {link.name}
                                             </Link>
                                         </li>
@@ -141,7 +141,7 @@ export default function Footer() {
                         ))}
                     </div>
                 </div>
-                <div className="py-5 border-t border-white/10">
+                <div className="py-5 border-t border-(--blue-tekawake-800)">
                     <p className="text-center text-xs text-white">
                         &copy; TEKAWAKE {currentYear} &nbsp; Inc. All rights reserved.
                     </p>

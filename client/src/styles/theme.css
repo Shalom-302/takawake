@@ -134,17 +134,18 @@
     --color-white: rgb(255 255 255);
     --color-black: rgb(0 0 0);
 
+    --purple-dreams-100: rgb(225 214 248);
+    --purple-dreams-500: rgb(159 122 234);
 
+    --black-tekawake-200: rgb(150 151 153);
     --black-tekawake-500: rgb(27 28 34);
 
-
-
-
-
-
-
-
-
+    --blue-tekawake-50: rgb(239 241 254);
+    --blue-tekawake-200:  rgb(182 191 250);
+    --blue-tekawake-500: rgb(97 115 244);
+    --blue-tekawake-600: rgb(88 105 222);
+    --blue-tekawake-800: rgb(53 63 134);
+    --blue-tekawake-900: rgb(41 48 102);
 
     /* OLD ---------- */
 

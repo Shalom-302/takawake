@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button/button";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { LinkButton } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { ChevronDownIcon, SearchMdIcon } from "../icons";
+import { ArrowNarrowRightIcon, ChevronDownIcon, SearchMdIcon } from "../icons";
 import { cn } from "@/lib/utils/cn";
 import { Slideout } from "../ui/slideout-menu";
 
@@ -168,13 +168,15 @@ export default function Navbar() {
                                         <div className="flex items-center p-4 rounded-md justify-between gap-4 cursor-pointer sm:hover:bg-black/5">
                                             <div className="flex items-center gap-2 truncate">
                                                 <div className="h-12 w-12 shrink-0 bg-black/5"></div>
-                                                <span className="font-medium block truncate w-full text-sm">
+                                                <span className="font-medium block truncate w-full text-sm text-(--black-tekawake-200)">
                                                     {
                                                         "Mariam joue à la balle tous les jours de la semaine devant la maison de son père"
                                                     }
                                                 </span>
                                             </div>
-                                            <div className="h-6 w-6 flex items-center justify-center shrink-0 bg-black/10 "></div>
+                                            <div className="h-6 w-6 flex items-center justify-center shrink-0 text-(--black-tekawake-200) ">
+                                                <ArrowNarrowRightIcon size={20} />
+                                            </div>
                                         </div>
                                     </Link>
                                 ))}

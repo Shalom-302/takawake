@@ -11,7 +11,7 @@ import { BookmarkIcon } from "lucide-react";
 export default function Article() {
     return (
         <>
-            <section className=" relative before:content-[''] before:absolute before:h-[500px] lg:before:h-[430px] before:w-full before:bg-black/5 ">
+            <section className=" relative before:content-[''] before:absolute before:h-[500px] lg:before:h-[430px] before:w-full before:bg-(--blue-tekawake-50) ">
                 <div className="main-container relative">
                     <div className="grid grid-cols-1 lg:grid-cols-2">
                         <div className="lg:pr-10">

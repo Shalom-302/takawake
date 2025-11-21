@@ -6,6 +6,7 @@ import { BookmarkIcon } from "./bookmark";
 import { ChevronRightIcon } from "./chevron-right";
 import { ArrowUpRightIcon } from "./arrow-up-right";
 import { ShareSixIcon } from "./share-six";
+import { ArrowNarrowRightIcon } from "./arrow-narrow-right";
 
 export {
     ChevronDownIcon,
@@ -15,5 +16,6 @@ export {
     BookmarkIcon,
     ChevronRightIcon,
     ArrowUpRightIcon,
-    ShareSixIcon
+    ShareSixIcon,
+    ArrowNarrowRightIcon
 }

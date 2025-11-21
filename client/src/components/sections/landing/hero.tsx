@@ -11,7 +11,7 @@ import { ArrowUpRightIcon, ChevronRightIcon } from "@/components/icons";
 export default function HeroSection() {
     return (
         <>
-            <section className=" relative before:content-[''] before:absolute before:h-80 md:before:h-[400px] lg:before:h-[480px] before:w-full before:bg-black/5 ">
+            <section className=" relative before:content-[''] before:absolute before:h-80 md:before:h-[400px] lg:before:h-[480px] before:w-full before:bg-(--blue-tekawake-50) ">
                 <div className="main-container relative">
                     <div className="grid grid-cols-1 lg:grid-cols-2">
                         <div className="">
@@ -29,18 +29,26 @@ export default function HeroSection() {
                                 </div>
                             </div>
                             <div className="pt-10 lg:pr-20">
-                                <div className="border-l-3 pl-3 border-black flex items-center gap-4">
+                                <div className="border-l-3 pl-3 border-(--purple-dreams-500) flex items-center gap-4">
                                     <span className="font-medium text-sm block shrink-0">
                                         {"Les récents sujets"}
                                     </span>
-                                    <div className="h-0.5 w-full bg-black"></div>
-                                    <LinkButton href={"#"} variant="link-color" rightIcon={<><ArrowUpRightIcon/></>}>
-                                        <span>{"Voir plus"}</span>
+                                    <div className="h-0.5 w-full bg-(--purple-dreams-100)"></div>
+                                    <LinkButton
+                                        href={"#"}
+                                        variant="link-color"
+                                        rightIcon={
+                                            <>
+                                                <ArrowUpRightIcon />
+                                            </>
+                                        }
+                                    >
+                                        <span className="text-(--black-tekawake-500) ">{"Voir plus"}</span>
                                     </LinkButton>
                                 </div>
 
                                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 md:gap-10 lg:gap-0">
-                                    <div className="gap-3 sm:gap-4 flex items-center border-b md:border-none lg:border-b py-4">
+                                    <div className="gap-3 sm:gap-4 flex items-center border-b border-black/0 lg:border-(--purple-dreams-100) py-4">
                                         <div className="h-16 sm:h-20 w-16 sm:w-20 shrink-0 bg-black/5 rounded-lg"></div>
                                         <div className="w-full">
                                             <div className="flex items-center gap-2 mb-1">
@@ -61,7 +69,7 @@ export default function HeroSection() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="gap-4 flex items-center border-b md:border-none lg:border-b py-4">
+                                    <div className="gap-4 flex items-center border-b border-black/0 lg:border-(--purple-dreams-100) py-4">
                                         <div className="h-16 sm:h-20 w-16 sm:w-20 shrink-0 bg-black/5 rounded-lg"></div>
                                         <div className="w-full">
                                             <div className="flex items-center gap-2 mb-1">

@@ -11,8 +11,8 @@ import LikeCommentSaveBar from "@/components/composites/like-comment-save-bar";
 export default function Topic() {
     return (
         <>
-            <section className=" relative before:content-[''] before:absolute before:h-[480px] before:w-full before:bg-black/5 ">
-                <div className="main-container">
+            <section className=" relative before:content-[''] before:absolute before:h-[480px] before:w-full before:bg-(--blue-tekawake-50) ">
+                <div className="main-container relative">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-[70px] md:pt-[100px]">
                         <div className=" w-full max-w-[400px] ">
                             <h1 className="text-3xl md:text-4xl leading-[140%] font-bold ">
@@ -96,16 +96,16 @@ export default function Topic() {
                 <div className="main-container">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 py-6 ">
-                            <div className="border-l-3 pl-3 border-black flex items-center gap-4">
+                            <div className="border-l-3 pl-3 border-(--purple-dreams-500) flex items-center gap-4">
                                 <span className="font-medium text-sm block shrink-0">
                                     {"Les articles récents"}
                                 </span>
-                                <div className="h-0.5 w-full bg-black"></div>
+                                <div className="h-0.5 w-full bg-(--purple-dreams-100)"></div>
                             </div>
                             <div className="mt-6">
                                 <ul className="space-y-6">
                                     {Array.from({ length: 5 }).map((_, i) => (
-                                        <li key={i} className="sm:not-last:border-b">
+                                        <li key={i} className="sm:not-last:border-b border-(--purple-dreams-100)">
                                             <div className="gap-4 flex flex-col sm:flex-row sm:items-center  sm:py-4">
                                                 <div className="h-52 sm:h-40 w-full sm:w-[190px] md:w-3xs shrink-0 bg-black/5 rounded-lg"></div>
                                                 <div className="w-full">
@@ -156,16 +156,16 @@ export default function Topic() {
                             </div>
                         </div>
                         <div className="lg:col-span-1 space-y-4 ">
-                            <div className="bg-black/5 rounded-lg px-6 pt-6 pb-2">
-                                <div className="border-l-3 pl-3 border-black flex items-center gap-4">
+                            <div className="bg-[#F6F6F6] rounded-lg px-6 pt-6 pb-2">
+                                <div className="border-l-3 pl-3 border-(--purple-dreams-500) flex items-center gap-4">
                                     <span className="font-medium text-sm block shrink-0">
-                                        {"Récommandé"}
+                                        {"Recommandé"}
                                     </span>
-                                    <div className="h-0.5 w-full bg-black"></div>
+                                    <div className="h-0.5 w-full bg-(--purple-dreams-100)"></div>
                                 </div>
                                 <ul className=" mt-6">
                                     {Array.from({ length: 4 }).map((_, i) => (
-                                        <li key={i} className="not-last:border-b">
+                                        <li key={i} className="not-last:border-b border-(--purple-dreams-100)">
                                             <div className="gap-3 sm:gap-4 flex items-center py-4">
                                                 <div className="h-16 sm:h-24 w-16 sm:w-24 shrink-0 bg-black/5 rounded-lg"></div>
                                                 <div className="w-full">
@@ -185,7 +185,7 @@ export default function Topic() {
                                     ))}
                                 </ul>
                             </div>
-                            <div className="bg-black/5 rounded-lg p-6">
+                            <div className="bg-[#F6F6F6] rounded-lg p-6">
                                 <span className="font-medium block">
                                     {"Ces sujets pourraient vous intéresser"}
                                 </span>
