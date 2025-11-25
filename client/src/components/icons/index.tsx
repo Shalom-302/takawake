@@ -7,6 +7,10 @@ import { ChevronRightIcon } from "./chevron-right";
 import { ArrowUpRightIcon } from "./arrow-up-right";
 import { ShareSixIcon } from "./share-six";
 import { ArrowNarrowRightIcon } from "./arrow-narrow-right";
+import { HomeLineIcon } from "./home-line";
+import { EyeIcon } from "./eye";
+import { FileTwoIcon } from "./file-two";
+import { StarSixIcon } from "./star-six";
 
 export {
     ChevronDownIcon,
@@ -17,5 +21,9 @@ export {
     ChevronRightIcon,
     ArrowUpRightIcon,
     ShareSixIcon,
-    ArrowNarrowRightIcon
+    ArrowNarrowRightIcon,
+    HomeLineIcon,
+    EyeIcon,
+    FileTwoIcon,
+    StarSixIcon
 }

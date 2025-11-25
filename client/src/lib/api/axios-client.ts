@@ -2,8 +2,8 @@ import axios from "axios";
 
 // Create a configurable axios instance
 const axiosClient = axios.create({
-    baseURL: "",
-    // baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+    baseURL: "https://scrapy.kaanari.com/api",
+    // baseURL: process.env.NEXT_PUBLIC_API_URL || "https://scrapy.kaanari.com/api",
     headers: {
         "Content-Type": "application/json",
     },

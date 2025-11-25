@@ -5,17 +5,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { BookmarkIcon, EyeIcon, FileTwoIcon, HomeLineIcon, StarSixIcon } from "../icons";
 
 interface MainLayoutProps {
     children: ReactNode;
 }
 
 const navigationItems = [
-    { id: "aa", label: "Tableau de bord", href: "/dashboard" },
-    { id: "bb", label: "Veilles", href: "/dashboard/tech-monitoring" },
-    { id: "dd", label: "Sujets générés", href: "/dashboard/topics" },
-    { id: "cc", label: "Articles", href: "/dashboard/scraping-articles" },
-    { id: "ff", label: "Publications", href: "/dashboard/publications" },
+    { id: "aa", icon:<><HomeLineIcon size={22} /></>, label: "Tableau de bord", href: "/dashboard" },
+    { id: "bb", icon:<><EyeIcon size={22} /></>, label: "Veilles", href: "/dashboard/tech-monitoring" },
+    { id: "dd", icon:<><StarSixIcon size={22} /></>, label: "Sujets générés", href: "/dashboard/topics" },
+    { id: "cc", icon:<><FileTwoIcon size={22} /></>, label: "Articles", href: "/dashboard/scraping-articles" },
+    { id: "ff", icon:<><BookmarkIcon size={22} /></>, label: "Categories", href: "/dashboard/categories" },
 ];
 
 export default function AdminLayout({ children }: MainLayoutProps) {
@@ -72,7 +73,9 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                                                 )}
                                                 aria-current={isCurrent ? "page" : undefined}
                                             >
-                                                <div className="h-6 w-6 bg-black/10 shrink-0"></div>
+                                                <div className="h-6 w-6 shrink-0">
+                                                    {item?.icon}
+                                                </div>
                                                 <span className="block truncate text-sm font-medium">
                                                     {item.label}
                                                 </span>

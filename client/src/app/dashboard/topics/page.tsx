@@ -1,10 +1,9 @@
-
-import AllTopics from "@/components/sections/dashboard/topics/all-topics";
-
 export default function Home() {
     return (
         <>
-            <AllTopics />
+            <section className="h-screen  px-4 flex items-center justify-center">
+                artilces sdvsd
+            </section>
         </>
     );
 }

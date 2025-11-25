@@ -13,8 +13,12 @@ import {
 } from "@/components/icons";
 import { BookmarkIcon } from "lucide-react";
 import { Carousel } from "@/components/ui/carousel";
+import veilleService from "@/lib/api/veille.service";
 
 export default function AllTopics() {
+    const { clusters, error, isLoading } = veilleService.useClusters();
+    const clusterList = clusters ?? [];
+
     return (
         <>
             <section className="flex">
@@ -30,20 +34,31 @@ export default function AllTopics() {
                                 </p>
                             </div>
                             <ul className="space-y-1 h-full px-4">
-                                {Array.from({ length: 34 }).map((_, i) => (
-                                    <li key={i}>
+                                {isLoading && (
+                                    <li className="text-sm text-black/60 px-2 py-3">
+                                        {"Chargement des sujets..."}
+                                    </li>
+                                )}
+                                {error && (
+                                    <li className="text-sm text-red-600 px-2 py-3">
+                                        {"Impossible de charger les sujets."}
+                                    </li>
+                                )}
+                                {!isLoading && !error && clusterList.length === 0 && (
+                                    <li className="text-sm text-black/60 px-2 py-3">
+                                        {"Aucun sujet disponible pour le moment."}
+                                    </li>
+                                )}
+                                {clusterList.map((cluster, i) => (
+                                    <li key={`${cluster.sujet_cluster}-${i}`}>
                                         <div className="gap-3 sm:gap-4 flex items-center sm:hover:bg-black/5 rounded-lg p-4 cursor-pointer">
                                             <div className="h-16 sm:h-24 w-16 sm:w-24 shrink-0 bg-black/5 rounded-lg"></div>
                                             <div className="w-full">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-medium inline-block text-xs">
-                                                        {"Il y 28 minutes"}
-                                                    </span>
-                                                </div>
+                                                <span className="text-xs font-medium text-black/60">
+                                                    {"Il y a 35 minutes"}
+                                                </span>
                                                 <p className="block line-clamp-2 w-full font-semibold text-md">
-                                                    {
-                                                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut vel tincidunt diam"
-                                                    }
+                                                    {cluster.sujet_cluster || "Sujet de cluster"}
                                                 </p>
                                             </div>
                                         </div>
@@ -58,7 +73,7 @@ export default function AllTopics() {
                         <div className="text-center space-y-2">
                             <h2 className="text-lg sm:text-xl md:text-2xl leading-[140%] font-bold">
                                 {
-                                    "In eget enim non nisl hendrerit ornare. Suspendisse turpis turpis, fringilla ut dolor non, accumsan rutrum neque"
+                                    "aIn eget enim non nisl hendrerit ornare. Suspendisse turpis turpis, fringilla ut dolor non, accumsan rutrum neque"
                                 }
                             </h2>
                             <div className="flex items-center justify-center gap-2 mb-1">
@@ -136,7 +151,6 @@ export default function AllTopics() {
                     </div>
                 </div>
             </section>
-
         </>
     );
 }

@@ -1,18 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button/button";
-import { ButtonUtility, LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import LikeCommentSaveBar from "@/components/composites/like-comment-save-bar";
-import {
-    ArrowUpRightIcon,
-    ChevronRightIcon,
-    HeartIcon,
-    MessageCircleTwoIcon,
-    ShareSixIcon,
-} from "@/components/icons";
+
+import { DropdownDotsButton, DropdownMenu } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
+
 export default function AllScapingArticles() {
+        const router = useRouter();
+    
     return (
         <>
             <section className="main-container pt-10 pb-16">
@@ -50,15 +45,40 @@ export default function AllScapingArticles() {
                                     </div>
                                 </div>
                                 <div className="shrink-0 flex items-center gap-6">
-                                    
+                                    <div>
+                                        <Badge color="success">Complet</Badge>
+                                        <Badge color="warning">Incomplet</Badge>
+                                    </div>
                                     <div>
                                         <Badge color="blue">En ligne</Badge>
+                                        <Badge color="gray">Hors ligne</Badge>
                                     </div>
-                                    
+
                                     <div className="flex items-center gap-1">
-                                        <div className="h-6 w-6 shrink-0 flex cursor-pointer items-center justify-center">
+                                        <DropdownMenu
+                                            trigger={<DropdownDotsButton />}
+                                            align="end"
+                                            contentClassName="min-w-[100px]"
+                                            items={[
+                                                {
+                                                    id: "view",
+                                                    label: "Informations de l'article",
+                                                    onClick: () => {
+                                                        router.push(
+                                                            `/dashboard/scraping-articles/one/id-here`
+                                                        );
+                                                    },
+                                                },
+                                                {
+                                                    id: "archive",
+                                                    label: "Lire l'article source",
+                                                    onClick: () => {},
+                                                },
+                                            ]}
+                                        />
+                                        {/* <div className="h-6 w-6 shrink-0 flex cursor-pointer items-center justify-center">
                                             <ChevronRightIcon size={20} />
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                             </div>
