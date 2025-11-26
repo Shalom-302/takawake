@@ -11,6 +11,7 @@ interface MainLayoutProps {
     children: ReactNode;
 }
 
+
 const navigationItems = [
     { id: "aa", icon:<><HomeLineIcon size={22} /></>, label: "Tableau de bord", href: "/dashboard" },
     { id: "bb", icon:<><EyeIcon size={22} /></>, label: "Veilles", href: "/dashboard/tech-monitoring" },
