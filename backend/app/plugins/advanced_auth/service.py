@@ -70,7 +70,7 @@ class AuthService:
         # Get default role if not specified
         role_id = user_data.role_id
         if role_id is None:
-            default_role = self.db.query(Role).filter(Role.name == "User").first()
+            default_role = self.db.query(Role).filter(Role.name == "admin").first()
             if default_role:
                 role_id = default_role.id
             else:

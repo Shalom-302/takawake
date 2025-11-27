@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: b3410f65ad70
+Revision ID: 7ab8086e9328
 Revises: 
-Create Date: 2025-06-18 10:28:18.491791
+Create Date: 2025-07-23 16:01:55.274527
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b3410f65ad70'
+revision: str = '7ab8086e9328'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -557,6 +557,16 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('test',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    with op.batch_alter_table('test', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_test_id'), ['id'], unique=False)
+
     op.create_table('user_sessions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -1980,6 +1990,10 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_user_sessions_id'))
 
     op.drop_table('user_sessions')
+    with op.batch_alter_table('test', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_test_id'))
+
+    op.drop_table('test')
     op.drop_table('scheduled_jobs')
     with op.batch_alter_table('recommendation_user_preferences', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_recommendation_user_preferences_user_id'))

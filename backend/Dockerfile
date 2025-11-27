@@ -1,46 +1,60 @@
+# ===================================================================
+# STAGE 1: Le "Builder" - Optimisé pour le cache pip
+# ===================================================================
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Installer les dépendances système
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Mettre à jour pip
+RUN pip install --upgrade pip
+
+# Copier UNIQUEMENT les fichiers de dépendances
+COPY requirements.txt .
+COPY install_plugin_requirements.py .
+
+# Installer les dépendances. Cette couche sera maintenant correctement mise en cache !
+# Si requirements.txt ne change pas, cette étape sera sautée.
+# Si requirements.txt change, pip installera SEULEMENT les nouvelles dépendances.
+RUN pip install --no-cache-dir -r requirements.txt
+RUN python install_plugin_requirements.py
+
+
+# ===================================================================
+# STAGE 2: L'image Finale - Légère
+# ===================================================================
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Set environment variables
+# Installer UNIQUEMENT les dépendances système nécessaires à l'exécution
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les paquets Python pré-installés depuis le "builder"
+# C'est beaucoup plus efficace que de recréer un venv.
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Définir les variables d'environnement
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Install system dependencies and build tools
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    libc6-dev \
-    python3-dev \
-    libpq-dev \
-    linux-libc-dev \
-    make \
-    curl \
-    gnupg \
-    git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Use pip to install wheels where possible instead of building from source
-RUN pip install --upgrade pip setuptools wheel
-
-# Install psutil and other problematic packages with binary wheels where possible
-RUN pip install --no-cache-dir --only-binary=:all: psutil
-
-# Copy requirements.txt and install dependencies
-COPY ./requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the application first
+# Copier le code source de l'application
 COPY . .
 
-# Install all plugin requirements with error handling
-RUN python install_plugin_requirements.py
-
-# Expose the port the app runs on
+# Exposer le port
 EXPOSE 8000
 
-# Command to run the application
+# Commande par défaut
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # Script to manage Docker operations for Kaapi API

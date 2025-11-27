@@ -1,8 +1,10 @@
+# Fichier .dockerignore
+
 # Version control
 .git
 .gitignore
 
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -11,41 +13,34 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Virtual environment
 venv/
 env/
 ENV/
-
-# Development/IDE files
+node_modules/
+# IDE & OS files
 .idea/
 .vscode/
 *.swp
 *.swo
+.DS_Store
 
-# Docker files
+# Fichiers de configuration Docker
 Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# Local data
+# Données locales, logs et uploads
 *.sqlite3
 *.db
+dev.db
+tests.db
 data/
-
-# Logs
+uploads/
 logs/
 *.log
 
-# Documentation
-docs/
-README.md
-
-# Node.js (if any)
-node_modules/
-npm-debug.log
-
-# Build artifacts
+# Artefacts de build et documentation
 build/
 dist/
 *.egg-info/
+docs/

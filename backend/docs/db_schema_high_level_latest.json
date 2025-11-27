@@ -2,12 +2,14 @@
   "tables": [
     "offline_sync_configs",
     "alembic_version",
-    "privacy_data_processing_records",
     "alert_rules",
     "audit_logs",
     "business_alerts",
     "digital_timestamps",
     "file_storage_folders",
+    "matomo_embed_configs",
+    "matomo_settings",
+    "privacy_data_processing_records",
     "pwa_settings",
     "recommendation_interactions",
     "recommendation_item_features",
@@ -16,6 +18,7 @@
     "recommendation_similarity_matrices",
     "recommendation_user_preferences",
     "scheduled_jobs",
+    "test",
     "user_sessions",
     "webhooks",
     "ai_providers",
@@ -67,13 +70,14 @@
     "file_storage_thumbnails",
     "i18n_translation_history",
     "kyc_verifications",
+    "matomo_user_mappings",
     "messaging_attachments",
     "messaging_message_delivery_status",
     "messaging_reactions",
     "messaging_receipts",
     "messaging_user_blocks",
-    "payment_subscriptions",
     "messaging_user_conversation_settings",
+    "payment_subscriptions",
     "privacy_anonymization_logs",
     "privacy_data_requests",
     "privacy_policies",
@@ -99,7 +103,11 @@
     "workflow_step_roles",
     "workflow_transitions",
     "step_approvals",
-    "workflow_history"
+    "workflow_history",
+    "categories",
+    "clusters",
+    "articles",
+    "veilles"
   ],
   "relationships": [
     {
@@ -287,6 +295,10 @@
       "target": "kyc_regions"
     },
     {
+      "source": "matomo_user_mappings",
+      "target": "user"
+    },
+    {
       "source": "messaging_attachments",
       "target": "messaging_messages"
     },
@@ -323,19 +335,19 @@
       "target": "user"
     },
     {
-      "source": "payment_subscriptions",
-      "target": "user"
-    },
-    {
-      "source": "payment_subscriptions",
-      "target": "user"
-    },
-    {
       "source": "messaging_user_conversation_settings",
       "target": "messaging_conversations"
     },
     {
       "source": "messaging_user_conversation_settings",
+      "target": "user"
+    },
+    {
+      "source": "payment_subscriptions",
+      "target": "user"
+    },
+    {
+      "source": "payment_subscriptions",
       "target": "user"
     },
     {
@@ -533,6 +545,18 @@
     {
       "source": "workflow_history",
       "target": "user"
+    },
+    {
+      "source": "clusters",
+      "target": "categories"
+    },
+    {
+      "source": "articles",
+      "target": "clusters"
+    },
+    {
+      "source": "articles",
+      "target": "veilles"
     }
   ]
 }

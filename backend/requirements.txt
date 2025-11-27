@@ -35,7 +35,7 @@ sqlalchemy
 pydantic>=2.0.0
 pydantic-settings
 pandas>=2.0.0
-
+scikit-learn
 # Messaging & Queue
 celery
 redis
@@ -45,7 +45,8 @@ pika==1.3.2
 # Security
 pyjwt
 python-jose>=3.3.0
-passlib>=1.7.4
+bcrypt==3.2.0
+passlib[bcrypt]==1.7.4
 casbin
 casbin_sqlalchemy_adapter
 cryptography==44.0.2
@@ -68,7 +69,9 @@ slack-sdk==3.27.1
 pyyaml==6.0.2
 dicttoxml==1.7.16
 jinja2>=3.1.2
-typer==0.15.2
+typer[all]
+click
+scipy
 
 matplotlib
 sqlalchemy_schemadisplay
@@ -83,3 +86,34 @@ sqlalchemy_schemadisplay
 #
 # To generate a consolidated requirements file with all plugin dependencies:
 # $ python install_plugin_requirements.py --generate
+langchain_google_genai
+streamlit
+langchain
+python-dotenv
+langchain-community
+google-generativeai
+langgraph  
+tavily-python 
+beautifulsoup4 
+requests 
+pandas 
+numpy 
+plotly
+tavily-python
+trafilatura
+watchdog
+langchain-deepseek
+playwright
+
+# Ajoutez ces dépendances pour le plugin Scraap
+beautifulsoup4>=4.12.2
+requests>=2.31.0
+trafilatura>=1.6.3
+langchain-deepseek>=0.1.0
+langgraph>=0.1.0
+python-multipart
+pywebpush
+minio
+boto3
+google-cloud-storage
+firebase-admin

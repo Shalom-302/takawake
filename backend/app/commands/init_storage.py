@@ -15,10 +15,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from sqlalchemy import create_engine
+from app.core.config import settings
 from sqlalchemy.orm import declarative_base, scoped_session
 from sqlalchemy.orm.session import sessionmaker
 
-engine = create_engine('postgresql://user:password@host:port/dbname')
+engine = create_engine(settings.DB_URL)
 Base = declarative_base()
 
 Base.metadata.create_all(engine)

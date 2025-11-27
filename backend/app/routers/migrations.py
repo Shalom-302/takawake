@@ -7,7 +7,7 @@ import subprocess, os, uuid
 from pathlib import Path
 import uuid
 from app.core.db import get_db
-from .auth import get_current_user
+from app.plugins.advanced_auth.utils.security import get_current_user
 from app.core.config import settings
 
 router = APIRouter()

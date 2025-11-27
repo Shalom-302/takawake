@@ -62,6 +62,15 @@ from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_
 import psutil
 
 from app.routers.test import test_site_router
+from app.routers import veille_router
+from app.routers import veille
+from app.routers import article
+from app.routers import cluster
+from app.routers import category
+
+# Ajoutez ces imports en haut du fichier
+
+from app.logger import logger
 
 # Define simple metrics with unique prefixes to avoid conflicts
 MAIN_REQUEST_COUNT = Counter('kaapi_http_requests_total', 'Total count of requests', ['method', 'endpoint', 'status'])
@@ -439,6 +448,12 @@ api_router.include_router(push_router, tags=["push"])
 
 # Business Routes
 api_router.include_router(test_site_router, prefix='/tests')
+api_router.include_router(veille_router.router, prefix="/veille", tags=["Veille"])
+api_router.include_router(veille.router, prefix="/veille", tags=["Tekawake"])
+api_router.include_router(cluster.router, prefix="/clusters", tags=["Tekawake"])
+api_router.include_router(category.router, prefix="/categories", tags=["Tekawake"])
+api_router.include_router(article.router, prefix="/articles", tags=["Tekawake"])
+
 
 # Include the main API router in the application
 app.include_router(api_router)
@@ -569,7 +584,26 @@ from fastapi.openapi.utils import get_openapi
 
 @app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint():
-    return get_openapi(title=settings.PROJECT_NAME, version="1.0.0", routes=app.routes)
+    # Étape 1: Obtenir le schéma OpenAPI généré par défaut
+    openapi_schema = get_openapi(
+        title=settings.PROJECT_NAME,
+        version="1.0.0",
+        routes=app.routes,
+    )
+
+    # --- L'EXORCISME FINAL EST ICI ---
+    # Étape 2: Trouver et corriger l'URL du token dans le schéma
+    # Le nom du schéma de sécurité peut varier, on le cherche dynamiquement
+    if "components" in openapi_schema and "securitySchemes" in openapi_schema["components"]:
+        for scheme in openapi_schema["components"]["securitySchemes"].values():
+            if scheme.get("type") == "oauth2" and "password" in scheme.get("flows", {}):
+                # ON FORCE LA BONNE URL !
+                scheme["flows"]["password"]["tokenUrl"] = "/api/auth/login"
+                print("✅ Corrected OpenAPI tokenUrl to /api/auth/login")
+    # ------------------------------------
+
+    # Étape 3: Renvoyer le schéma corrigé
+    return openapi_schema
 
 @app.get("/docs", include_in_schema=False)
 async def get_docs():
@@ -593,3 +627,4 @@ async def shutdown():
     print("🔄 Closing database connections...")
     
     print("✅ Shutdown complete")
+

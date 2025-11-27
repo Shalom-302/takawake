@@ -163,3 +163,4 @@ cython_debug/
 
 
 changelog.config.js
+docs/db_schema_*.json

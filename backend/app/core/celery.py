@@ -1,39 +1,32 @@
+# backend/app/core/celery.py
 from celery import Celery
-from app.core.config import settings
+from .config import settings
+import os
 
-# Create a Celery instance
+# Create Celery instance
 celery_app = Celery(
-    "kaapi",
+    "worker",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["app.tasks"]
+    # Tell Celery where to find tasks
+    include=["app.tasks.veille_tasks"]
 )
 
-# Configure Celery
+# Set LangSmith environment variables if configured
+from pydantic import SecretStr
+
+if settings.LANGSMITH_TRACING_V2:
+    os.environ["LANGCHAIN_TRACING_V2"] = settings.LANGSMITH_TRACING_V2
+if settings.LANGSMITH_ENDPOINT:
+    os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGSMITH_ENDPOINT
+if settings.LANGSMITH_API_KEY:
+    os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY
+if settings.LANGSMITH_PROJECT:
+    os.environ["LANGCHAIN_PROJECT"] = settings.LANGSMITH_PROJECT
+
 celery_app.conf.update(
-    task_serializer="json",
-    accept_content=["json"],
-    result_serializer="json",
-    timezone="UTC",
-    enable_utc=True,
-    worker_concurrency=2,
+    task_track_started=True,
 )
 
-# Optional: Define default queue
-celery_app.conf.task_default_queue = "default"
-
-# Create a base task class that all other tasks will inherit from
-class BaseTask(celery_app.Task):
-    abstract = True
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        # Log task failure
-        print(f"Task {task_id} failed: {exc}")
-        super().on_failure(exc, task_id, args, kwargs, einfo)
-
-    def on_success(self, retval, task_id, args, kwargs):
-        # Log task success
-        print(f"Task {task_id} completed successfully")
-        super().on_success(retval, task_id, args, kwargs)
-
-celery_app.Task = BaseTask
+if __name__ == "__main__":
+    celery_app.start()

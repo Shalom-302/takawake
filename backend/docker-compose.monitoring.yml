@@ -1,14 +1,18 @@
 # This file extends your main docker-compose with the monitoring services
 services:
-  # Your API needs to be accessible from the monitoring services
+  # IMPORTANT (MODIFICATION 1): On ajoute le service 'api' ici
+  # uniquement pour le connecter au réseau de monitoring.
+  # Docker Compose fusionnera cette configuration avec celle du fichier principal.
   api:
     networks:
       - kaapi-network
       - monitoring-network
 
-  # Dedicated metrics service - bypasses security middleware problems
+  # IMPORTANT (MODIFICATION 2): Le service 'metrics' est redéfini ici.
+  # La directive "build: ." a été RETIRÉE pour ne pas déclencher un build inutile.
+  # On lui dit d'utiliser l'image que l'on a déjà construite.
   metrics:
-    build: .
+    image: kaapi-app:latest # On utilise l'image déjà construite, PAS DE BUILD ICI !
     container_name: kaapi-metrics
     command: python app/metrics_server.py
     ports:
@@ -22,7 +26,10 @@ services:
       - kaapi-network
       - monitoring-network
 
-  # Monitoring services
+  # ------------------------------------------------------------------
+  # Les services de monitoring ci-dessous ne changent pas.
+  # Ils utilisent déjà des images publiques et sont corrects.
+  # ------------------------------------------------------------------
   alertmanager:
     image: prom/alertmanager:latest
     ports:
@@ -117,8 +124,12 @@ services:
     restart: unless-stopped
 
 networks:
+  # IMPORTANT (MODIFICATION 3): On déclare que kaapi-network est "externe".
+  # Cela signifie que ce fichier ne le crée pas, mais s'attend à ce
+  # que le fichier docker-compose.yml principal l'ait déjà créé.
   kaapi-network:
-    external: false
-    name: kaapi-network
+    external: true
+  
+  # Ce réseau est propre à la stack de monitoring, sa définition est correcte.
   monitoring-network:
     driver: bridge

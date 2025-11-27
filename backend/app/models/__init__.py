@@ -79,3 +79,4 @@ from app.plugins.matomo_integration.models import MatomoSettings, MatomoUserMapp
 
 ## Specif Models
 from .test import Test
+from .veille import Article

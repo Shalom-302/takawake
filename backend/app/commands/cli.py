@@ -7,13 +7,21 @@ from typing import Optional
 
 # Import sub-commands
 from app.commands.migrate import app as migrate_app
+from app.commands.init_auth_simple import init_auth_simple
 
 # Main app
 app = typer.Typer(help="Kaapi - Management CLI")
+auth_app = typer.Typer(help="Authentication commands")
 console = Console()
+
+@auth_app.command("init-simple")
+def auth_init_simple_cmd():
+    """Initializes basic authentication components."""
+    init_auth_simple()
 
 # Add sub-commands
 app.add_typer(migrate_app, name="db", help="Database migration commands")
+app.add_typer(auth_app, name="auth", help="Authentication commands")
 
 @app.command()
 def info():

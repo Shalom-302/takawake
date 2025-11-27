@@ -51,9 +51,6 @@ class RabbitMQHandler:
         # Exchange name
         self.exchange = config.get("exchange", "push_notifications")
         
-        # Connect on initialization
-        self._connect()
-        logger.info("RabbitMQ handler initialized")
     
     def _connect(self) -> bool:
         """

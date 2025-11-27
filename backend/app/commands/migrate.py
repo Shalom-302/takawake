@@ -58,7 +58,7 @@ def generate_cmd(
     """Generate a new migration using alembic autogenerate."""
     console.print("[bold blue]Generating migration...[/bold blue]")
     
-    result = generate_migration(message)
+    result = generate_migration(message, use_docker=False)
     
     if result["success"]:
         console.print(Panel(
@@ -79,7 +79,7 @@ def apply_cmd():
     """Apply pending migrations to upgrade to the latest version."""
     console.print("[bold blue]Applying migrations...[/bold blue]")
     
-    result = apply_migrations()
+    result = apply_migrations(use_docker=False)
     
     if result["success"]:
         console.print(Panel(

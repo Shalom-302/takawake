@@ -23,3 +23,4 @@ redirect_uri = os.getenv("FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI")
 print(f"FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI est {'défini' if redirect_uri else 'non défini'}")
 if redirect_uri:
     print(f"FACEBOOK_WEBHOOK_OAUTH_REDIRECT_URI: {redirect_uri}")
+

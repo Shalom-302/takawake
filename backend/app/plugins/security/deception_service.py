@@ -1,47 +1,40 @@
-# /backend/app/plugins/security/deception_service.py
-
+# backend/app/plugins/security/deception_service.py
 from fastapi import Request
-import random
 import logging
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 class DeceptionService:
+    """
+    A service to create honeypots and deception mechanisms to trap and identify attackers.
+    """
     def __init__(self):
         self.fake_db = {
-            "users": ["admin", "root", "postgres"],
-            "endpoints": [
-                "/internal/users",
-                "/admin/backup",
-                "/.git/config"
+            "users": [
+                {"id": 1, "username": "admin", "email": "admin@example.com"},
+                {"id": 2, "username": "support", "email": "support@example.com"}
             ]
         }
-        self.honeytokens = {
-            "aws_keys": [
-                "AKIAXXXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
-            ],
-            "db_creds": [
-                "postgres://admin:password@localhost:5432"
-            ]
-        }
+        self.deception_events = []
 
-    async def log_deception_event(self, request: Request, trap_type: str):
-        attacker_ip = request.client.host
-        user_agent = request.headers.get("User-Agent", "")
-        payload = await request.body()
-        
-        logging.warning(f"""
-        🕵️ DECEPTION TRAP TRIGGERED!
-        Type: {trap_type}
-        IP: {attacker_ip}
-        User-Agent: {user_agent}
-        Payload: {payload[:500]}
-        Timestamp: {datetime.utcnow().isoformat()}
-        """)
+    async def log_deception_event(self, request: Request, event_type: str):
+        """Logs a deception event with detailed information from the request"""
+        event = {
+            "timestamp": datetime.now().isoformat(),
+            "event_type": event_type,
+            "source_ip": request.client.host,
+            "user_agent": request.headers.get("user-agent", "N/A"),
+            "path": request.url.path,
+            "headers": dict(request.headers),
+        }
+        self.deception_events.append(event)
+        logger.warning(f"Deception Event Triggered: {event_type} from {request.client.host}")
 
     def generate_credential_leak(self):
-        return random.choice([
-            "<?php system($_GET['cmd']); ?>",
-            "ENV DB_PASSWORD='s3cr3t'",
-            "ssh-rsa AAAAB3NzaC1yc2E...",
-            "X-Api-Key: abcdef123456"
-        ])
+        """Generates fake credential data for honeypot endpoints"""
+        return {
+            "DATABASE_URL": f"postgres://user:{random.randint(1000, 9999)}@db.internal:5432/main_db",
+            "S3_ACCESS_KEY": f"AKIA{random.randint(100000, 999999)}",
+        }

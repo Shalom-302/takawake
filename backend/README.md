@@ -4,7 +4,7 @@
 
 The backend Kaapi is a RESTful API built with FastAPI, designed to be extensible via a plugin system. This architecture allows easily adding new features without modifying the core application.
 
-## Quick Start
+## To install Kaapi locally Quick Start
 
 ```bash
 

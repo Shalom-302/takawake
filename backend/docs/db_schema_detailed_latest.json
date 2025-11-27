@@ -102,103 +102,6 @@
       ],
       "indices": []
     },
-    "privacy_data_processing_records": {
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "nullable": false,
-          "primary_key": false,
-          "default": "nextval('privacy_data_processing_records_id_seq'::regclass)"
-        },
-        {
-          "name": "activity_name",
-          "type": "VARCHAR(255)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "purpose",
-          "type": "TEXT",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "data_categories",
-          "type": "TEXT",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "data_subjects",
-          "type": "TEXT",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "recipients",
-          "type": "TEXT",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "transfers",
-          "type": "TEXT",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "retention_period",
-          "type": "VARCHAR(255)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "security_measures",
-          "type": "TEXT",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "legal_basis",
-          "type": "VARCHAR(255)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "created_at",
-          "type": "TIMESTAMP",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "updated_at",
-          "type": "TIMESTAMP",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        }
-      ],
-      "indices": [
-        {
-          "name": "ix_privacy_data_processing_records_id",
-          "unique": false,
-          "columns": [
-            "id"
-          ]
-        }
-      ]
-    },
     "alert_rules": {
       "columns": [
         {
@@ -631,6 +534,253 @@
         }
       ],
       "indices": []
+    },
+    "matomo_embed_configs": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "embed_type",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "embed_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "date_range",
+          "type": "VARCHAR",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "filters",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "position",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "visible",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "matomo_settings": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "matomo_url",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "site_id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "auth_token",
+          "type": "VARCHAR",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "track_admin_users",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "heartbeat_timer",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "additional_settings",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
+    "privacy_data_processing_records": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('privacy_data_processing_records_id_seq'::regclass)"
+        },
+        {
+          "name": "activity_name",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "purpose",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "data_categories",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "data_subjects",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "recipients",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "transfers",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "retention_period",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "security_measures",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "legal_basis",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_privacy_data_processing_records_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
     },
     "pwa_settings": {
       "columns": [
@@ -1443,6 +1593,47 @@
         }
       ],
       "indices": []
+    },
+    "test": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_test_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "test_name_key",
+          "unique": true,
+          "columns": [
+            "name"
+          ]
+        }
+      ]
     },
     "user_sessions": {
       "columns": [
@@ -6053,6 +6244,67 @@
         }
       ]
     },
+    "matomo_user_mappings": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "kaapi_user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "matomo_user_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "matomo_login",
+          "type": "VARCHAR",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "access_level",
+          "type": "VARCHAR",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "last_sync",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
     "messaging_attachments": {
       "columns": [
         {
@@ -6331,6 +6583,116 @@
         }
       ]
     },
+    "messaging_user_conversation_settings": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "VARCHAR(36)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "conversation_id",
+          "type": "VARCHAR(36)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_muted",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_pinned",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_archived",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_deleted",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "custom_name",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "theme_color",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "notification_level",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "last_read_message_id",
+          "type": "VARCHAR(36)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "unread_count",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": []
+    },
     "payment_subscriptions": {
       "columns": [
         {
@@ -6511,116 +6873,6 @@
           ]
         }
       ]
-    },
-    "messaging_user_conversation_settings": {
-      "columns": [
-        {
-          "name": "id",
-          "type": "VARCHAR(36)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "user_id",
-          "type": "UUID",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "conversation_id",
-          "type": "VARCHAR(36)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "is_muted",
-          "type": "BOOLEAN",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "is_pinned",
-          "type": "BOOLEAN",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "is_archived",
-          "type": "BOOLEAN",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "custom_name",
-          "type": "VARCHAR(255)",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "theme_color",
-          "type": "VARCHAR(20)",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "notification_level",
-          "type": "VARCHAR(20)",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "last_read_message_id",
-          "type": "VARCHAR(36)",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "role",
-          "type": "VARCHAR(20)",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "created_at",
-          "type": "TIMESTAMP",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "updated_at",
-          "type": "TIMESTAMP",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "is_deleted",
-          "type": "BOOLEAN",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
-          "name": "unread_count",
-          "type": "INTEGER",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        }
-      ],
-      "indices": []
     },
     "privacy_anonymization_logs": {
       "columns": [
@@ -8593,6 +8845,310 @@
           ]
         }
       ]
+    },
+    "categories": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('categories_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "categories_name_key",
+          "unique": true,
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "ix_categories_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    "clusters": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('clusters_id_seq'::regclass)"
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "summary_article",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "slides",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_published",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_clusters_category_id",
+          "unique": false,
+          "columns": [
+            "category_id"
+          ]
+        },
+        {
+          "name": "ix_clusters_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_clusters_is_published",
+          "unique": false,
+          "columns": [
+            "is_published"
+          ]
+        }
+      ]
+    },
+    "articles": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('articles_id_seq'::regclass)"
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "score_pertinence",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "analysis",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "pertinence_cluster",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "publication_date",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "image_urls",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "veille_id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "cluster_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "source_url",
+          "type": "VARCHAR(1024)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "source_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "scraping_date",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        },
+        {
+          "name": "is_processed",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": false,
+          "default": "false"
+        },
+        {
+          "name": "processing_error",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_articles_cluster_id",
+          "unique": false,
+          "columns": [
+            "cluster_id"
+          ]
+        },
+        {
+          "name": "ix_articles_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_articles_is_processed",
+          "unique": false,
+          "columns": [
+            "is_processed"
+          ]
+        },
+        {
+          "name": "ix_articles_publication_date",
+          "unique": false,
+          "columns": [
+            "publication_date"
+          ]
+        },
+        {
+          "name": "ix_articles_score_pertinence",
+          "unique": false,
+          "columns": [
+            "score_pertinence"
+          ]
+        },
+        {
+          "name": "ix_articles_source_url",
+          "unique": true,
+          "columns": [
+            "source_url"
+          ]
+        },
+        {
+          "name": "ix_articles_veille_id",
+          "unique": false,
+          "columns": [
+            "veille_id"
+          ]
+        }
+      ]
+    },
+    "veilles": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('veilles_id_seq'::regclass)"
+        },
+        {
+          "name": "prompt",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_veilles_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
     }
   },
   "relationships": [
@@ -9057,6 +9613,16 @@
       ]
     },
     {
+      "source_table": "matomo_user_mappings",
+      "source_columns": [
+        "kaapi_user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
       "source_table": "messaging_attachments",
       "source_columns": [
         "message_id"
@@ -9147,26 +9713,6 @@
       ]
     },
     {
-      "source_table": "payment_subscriptions",
-      "source_columns": [
-        "created_by_id"
-      ],
-      "target_table": "user",
-      "target_columns": [
-        "id"
-      ]
-    },
-    {
-      "source_table": "payment_subscriptions",
-      "source_columns": [
-        "customer_id"
-      ],
-      "target_table": "user",
-      "target_columns": [
-        "id"
-      ]
-    },
-    {
       "source_table": "messaging_user_conversation_settings",
       "source_columns": [
         "conversation_id"
@@ -9180,6 +9726,26 @@
       "source_table": "messaging_user_conversation_settings",
       "source_columns": [
         "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "payment_subscriptions",
+      "source_columns": [
+        "created_by_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "payment_subscriptions",
+      "source_columns": [
+        "customer_id"
       ],
       "target_table": "user",
       "target_columns": [
@@ -9672,6 +10238,36 @@
         "user_id"
       ],
       "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "clusters",
+      "source_columns": [
+        "category_id"
+      ],
+      "target_table": "categories",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "articles",
+      "source_columns": [
+        "cluster_id"
+      ],
+      "target_table": "clusters",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "articles",
+      "source_columns": [
+        "veille_id"
+      ],
+      "target_table": "veilles",
       "target_columns": [
         "id"
       ]

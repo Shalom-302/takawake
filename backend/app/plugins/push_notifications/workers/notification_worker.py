@@ -41,20 +41,23 @@ class NotificationWorker:
         self.redis_handler = None
         self.rabbitmq_handler = None
         
-        # Initialize Redis if available
         try:
+            # Initialize Redis if available
             self.redis_handler = RedisHandler()
             logger.info("Redis handler initialized successfully")
         except Exception as e:
-            logger.warning(f"Redis handler initialization failed: {str(e)}")
+            # Log as a warning, as Redis might not be essential for all operations
+            logger.warning(f"Could not initialize Redis handler: {e}. Scheduled notifications might not work.")
         
-        # Initialize RabbitMQ handler
         try:
+            # Initialize RabbitMQ handler
             self.rabbitmq_handler = RabbitMQHandler()
             logger.info("RabbitMQ handler initialized successfully")
         except Exception as e:
-            logger.error(f"RabbitMQ handler initialization failed: {str(e)}")
-            raise RuntimeError("Failed to initialize RabbitMQ handler, worker cannot start")
+            # This is critical for the worker, so we log an error and raise an exception
+            logger.error(f"Fatal: RabbitMQ handler initialization failed: {e}")
+            # The worker cannot run without RabbitMQ, so we stop initialization.
+            raise RuntimeError("Failed to initialize RabbitMQ handler. Worker cannot start.") from e
         
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self.shutdown)

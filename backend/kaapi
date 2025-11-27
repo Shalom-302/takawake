@@ -11,4 +11,5 @@ if ! docker-compose ps | grep -q 'api.*Up'; then
 fi
 
 # Transfer all arguments to the script
-docker-compose exec api python /app/kaapi_cli.py "$@"
+export COMPOSE_CONVERT_WINDOWS_PATHS=0
+docker-compose exec api python //app/app/commands/cli.py "$@"

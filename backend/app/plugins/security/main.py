@@ -16,9 +16,9 @@ from .intrusion_detection import IntrusionDetector
 from .waf import ThreatIntelFeed
 from fastapi.responses import JSONResponse
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload
-from app.core.db import engine, async_session
+from app.core.db import engine, AsyncSessionFactory as async_session
 from app.logger import logger
 from .models import UserSession
 from .deception_service import DeceptionService
@@ -44,6 +44,7 @@ def get_router() -> APIRouter:
     
     # Services
     deception_service = DeceptionService()
+    
 
     # Setting limits
     DECRYPT_RATE_LIMIT = "10/minute"  # 10 requests/min for /decrypt
@@ -73,6 +74,7 @@ def get_router() -> APIRouter:
                 logger.critical(f"WAF updater crash : {str(e)}")
                 break
 
+
     ## Deception Service endpoints ------------------------
     @deception_router.get("/internal/users")
     async def fake_users_endpoint(request: Request):
@@ -89,16 +91,15 @@ def get_router() -> APIRouter:
         await deception_service.log_deception_event(request, "fake_env_file")
         return {"error": "Unauthorized", "debug_info": deception_service.generate_credential_leak()}
 
-    ## Session Management endpoints ----------------------
-    @session_router.post("/revoke/{session_id}")
-    async def revoke_session(session_id: UUID):
+    @router.get("/health-check")
+    async def health_check():
+        """Endpoint de vérification de l'état de santé du plugin de sécurité."""
         async with async_session() as session:
-            user_session = await session.get(UserSession, session_id)
-            if user_session:
-                user_session.revoked = True
-                await session.commit()
-                return {"status": "Session revoked"}
-            raise HTTPException(404, "Session not found")
+            try:
+                await session.execute(text("SELECT 1"))
+                return {"status": "ok", "database_connection": "successful"}
+            except Exception as e:
+                return {"status": "error", "database_connection": "failed", "detail": str(e)}
 
     @session_router.get("/active")
     async def list_active_sessions(request: Request):

@@ -8,7 +8,7 @@ import traceback
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-
+from .utils.security import oauth2_scheme 
 from app.core.db import get_db
 from app.core.config import settings
 from .service import AuthService
@@ -41,7 +41,7 @@ async def register(
     return user
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     remember_me: bool = False,
@@ -65,11 +65,7 @@ async def login(
         tokens = await auth_service.create_tokens(user, remember_me)
         logger.info(f"Tokens created for user: {user.email}")
         
-        return AuthResponse(
-            user=user,
-            token=Token(**tokens),
-            requires_mfa=False  # Implement MFA check here if needed
-        )
+        return tokens
     except HTTPException as e:
         # Re-raise HTTP exceptions
         raise
@@ -155,7 +151,7 @@ async def logout(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserResponse, dependencies=[Depends(oauth2_scheme)])
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
 ):
@@ -163,6 +159,7 @@ async def get_current_user_info(
     Get information about the currently authenticated user.
     """
     return current_user
+
 
 
 @router.put("/me", response_model=UserResponse)

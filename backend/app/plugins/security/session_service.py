@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
-from app.core.db import async_session, get_async_db
+from app.core.db import AsyncSessionFactory as async_session, get_async_db
 from .models import UserSession
 from fastapi import Request
 

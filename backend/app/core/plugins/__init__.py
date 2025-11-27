@@ -5,7 +5,12 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List, Optional
 
+import sys
+from pathlib import Path
 
+# Ajouter le répertoire parent au PYTHONPATH pour résoudre les imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 class PluginInfo(BaseModel):
     """Informations de base sur un plugin."""
     name: str

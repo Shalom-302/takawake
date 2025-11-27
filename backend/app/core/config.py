@@ -11,8 +11,11 @@ class Settings(BaseSettings):
     """Application settings."""
     
     # Database
-    POSTGRES_HOST: str = "kaapi-db"  # Updated to use the renamed container
-    
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_HOST: str = "kaapi-db"
+    POSTGRES_DB: str = "kaapi"
+    POSTGRES_ECHO: bool = False
     # Basic Configuration
     PROJECT_NAME: str = "KAAPI Backend"
     ENVIRONMENT: str = "development"
@@ -44,13 +47,13 @@ class Settings(BaseSettings):
     }
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000", "http://localhost:9000"]  # Explicitly allow localhost frontend
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000", "http://localhost:9000", "http://localhost:8501"]  # Explicitly allow localhost frontend
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
     
     # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+    CELERY_BROKER_REDIS_DATABASE: int = 0
+    CELERY_BACKEND_REDIS_DATABASE: int = 1
     
     # Messaging
     GMAIL_USERNAME: Optional[str] = None
@@ -71,16 +74,41 @@ class Settings(BaseSettings):
     RABBITMQ_HOST: str = "localhost"
     RABBITMQ_PORT: int = 5672
     
+
+    # Env Redis
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str | None = None
+    REDIS_DATABASE: int = 0
+
+
+    DEEPSEEK_API_KEY: str = ""
+    # Configuration optionnelle pour LangSmith
+    LANGSMITH_TRACING_V2: Optional[str] = "true"
+    LANGSMITH_ENDPOINT: Optional[str] = "https://api.smith.langchain.com"
+    LANGSMITH_API_KEY: str = ""
+    LANGSMITH_PROJECT: str = ""
+
     # Logging
     LOKI_URL: str = "http://loki:3100"
     
     @property
+    def CELERY_BROKER_URL(self) -> str:
+        password = f":{self.REDIS_PASSWORD}" if self.REDIS_PASSWORD else ""
+        return f"redis://{password}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.CELERY_BROKER_REDIS_DATABASE}"
+
+    @property
+    def CELERY_RESULT_BACKEND(self) -> str:
+        password = f":{self.REDIS_PASSWORD}" if self.REDIS_PASSWORD else ""
+        return f"redis://{password}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.CELERY_BACKEND_REDIS_DATABASE}"
+    
+    @property
     def DB_URL(self) -> str:
-        return f"postgresql://postgres:postgres@{self.POSTGRES_HOST}:5432/kaapi"
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:5432/{self.POSTGRES_DB}"
     
     @property
     def ASYNC_DB_URL(self) -> str:
-        return f"postgresql+asyncpg://postgres:postgres@{self.POSTGRES_HOST}:5432/kaapi"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:5432/{self.POSTGRES_DB}"
     
     # Configuration for environment variable analysis
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
