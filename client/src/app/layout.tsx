@@ -21,8 +21,6 @@ const inter = Inter({
     variable: "--font-inter",
 });
 
-
-
 export const metadata: Metadata = {
     title: "Kaapi - Application de messagerie",
     description: "Une application de messagerie moderne avec support PWA",
