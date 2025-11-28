@@ -1,4 +1,5 @@
 import datetime
+import enum
 from typing import List, Dict, Optional, Any
 
 from sqlalchemy import String, Text, DateTime, Boolean, JSON, ForeignKey, Integer
@@ -6,6 +7,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func
 
 from app.core.db import Base 
+
+# --- Enums pour les statuts ---
+class VeilleStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+
+class ArticleStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PROCESSED = "PROCESSED"
+    FAILED = "FAILED"
 
 # --- Modèle Category ---
 class Category(Base):
@@ -26,10 +38,12 @@ class Veille(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     prompt: Mapped[str] = mapped_column(Text, nullable=False) # Le prompt qui a initié la veille
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    status: Mapped[VeilleStatus] = mapped_column(String(50), default=VeilleStatus.PENDING, nullable=False)
+    status_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relation One-to-Many avec Article
     # "veille" fait référence à l'attribut de relation dans le modèle Article
-    articles: Mapped[List["Article"]] = relationship(back_populates="veille")
+    articles: Mapped[List["Article"]] = relationship(back_populates="veille", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Veille(id={self.id}, prompt='{self.prompt[:50]}...')>"
@@ -56,6 +70,7 @@ class Cluster(Base):
     def __repr__(self) -> str:
         return f"<Cluster(id={self.id}, title='{self.title[:50]}...')>"
 
+
 # --- Modèle Article ---
 class Article(Base):
     __tablename__ = "articles"
@@ -72,16 +87,15 @@ class Article(Base):
     publication_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True, index=True)
     scraping_date: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False) # Date de traitement de l'article
 
-    # Contenu et état de traitement
+    # Contenu et état de traitement (MODIFIÉ)
     image_urls: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True) # URLs des images
     content: Mapped[Optional[str]] = mapped_column(Text, default=None) # Contenu textuel extrait
-    is_processed: Mapped[bool] = mapped_column(Boolean, default=False, index=True) # Traitement initial réussi
-    processing_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Message d'erreur si échec
+    status: Mapped[ArticleStatus] = mapped_column(String(50), default=ArticleStatus.PENDING, nullable=False, index=True)
+    status_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Analyse LLM
+    # Analyse LLM (MODIFIÉ)
     analysis: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, default=None) # L'objet d'analyse LLM complet
     pertinence_cluster: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # Justification du cluster
-    score_pertinence: Mapped[Optional[int]] = mapped_column(Integer, index=True, default=None) # Score extrait pour indexation/tri
 
     # Relations Many-to-One
     veille: Mapped["Veille"] = relationship(back_populates="articles")

@@ -38,10 +38,14 @@ class CRUDVeille:
         await db.refresh(db_veille)
         return db_veille
 
-    async def delete(self, db: AsyncSession, veille_id: int) -> Optional[int]:
-        stmt = delete(Veille).where(Veille.id == veille_id)
-        result = await db.execute(stmt)
-        await db.commit()
-        return result.rowcount
+    async def remove(self, db: AsyncSession, *, veille_id: int) -> Optional[Veille]:
+        """
+        Supprime une veille et ses articles associés (grâce à la cascade).
+        """
+        db_veille = await self.get(db, veille_id)
+        if db_veille:
+            await db.delete(db_veille)
+            await db.commit()
+        return db_veille
 
 crud_veille = CRUDVeille()

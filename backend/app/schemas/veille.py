@@ -1,6 +1,9 @@
 import datetime
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
+
+# Importez les Enums du modèle SQLAlchemy pour les utiliser dans Pydantic
+from app.models.veille import VeilleStatus, ArticleStatus 
 
 # --- Schemas pour les données d'analyse LLM ---
 
@@ -50,11 +53,10 @@ class ImageInfo(BaseModel):
     Utile pour des vues agrégées (ex: galerie des images les plus pertinentes).
     """
     image_url: str
-    score_pertinence: Optional[int] = None
+    score_pertinence: Optional[int] = None 
     article_title: str
     article_id: int
 
-# --- Schemas pour les entités du modèle de données (Veille, Category, Cluster, Article) ---
 
 # --- Category Schemas ---
 class CategoryBase(BaseModel):
@@ -63,7 +65,6 @@ class CategoryBase(BaseModel):
 class CategoryCreate(CategoryBase):
     pass
 
-# --- Nouveau: CategoryUpdate ---
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
 
@@ -77,15 +78,18 @@ class VeilleBase(BaseModel):
     prompt: str
 
 class VeilleCreate(VeilleBase):
-    pass # Pas de champs supplémentaires pour la création
+    pass
 
-# --- Nouveau: VeilleUpdate ---
 class VeilleUpdate(BaseModel):
     prompt: Optional[str] = None
+    status: Optional[VeilleStatus] = None 
+    status_message: Optional[str] = None 
 
 class VeilleResponse(VeilleBase):
     id: int
     created_at: datetime.datetime
+    status: VeilleStatus 
+    status_message: Optional[str] = None 
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -105,7 +109,7 @@ class ArticleCreate(ArticleBase):
     """
     veille_id: int
 
-# --- Nouveau: ArticleUpdate ---
+# --- Nouveau: ArticleUpdate (MODIFIÉ) ---
 class ArticleUpdate(BaseModel):
     """
     Schéma pour la mise à jour d'un article existant.
@@ -122,13 +126,13 @@ class ArticleUpdate(BaseModel):
     image_urls: Optional[List[str]] = None
     content: Optional[str] = None
     
-    is_processed: Optional[bool] = None
-    processing_error: Optional[str] = None
+    status: Optional[ArticleStatus] = None 
+    status_message: Optional[str] = None 
     
-    score_pertinence: Optional[int] = None
+    #
     pertinence_cluster: Optional[str] = None
     
-    analysis: Optional[ArticleAnalysis] = None # L'objet d'analyse LLM complet
+    analysis: Optional[ArticleAnalysis] = None 
 
 class ArticleResponse(ArticleBase):
     """
@@ -144,10 +148,9 @@ class ArticleResponse(ArticleBase):
     image_urls: Optional[List[str]] = None
     content: Optional[str] = None
     
-    is_processed: bool
-    processing_error: Optional[str] = None
+    status: ArticleStatus 
+    status_message: Optional[str] = None 
     
-    score_pertinence: Optional[int] = None
     pertinence_cluster: Optional[str] = None
     
     analysis: Optional[ArticleAnalysis] = None
@@ -162,7 +165,6 @@ class ClusterBase(BaseModel):
 class ClusterCreate(ClusterBase):
     pass
 
-# --- Nouveau: ClusterUpdate ---
 class ClusterUpdate(BaseModel):
     """
     Schéma pour la mise à jour d'un cluster existant.
@@ -177,24 +179,30 @@ class ClusterUpdate(BaseModel):
 class ClusterResponse(ClusterBase):
     id: int
     category_id: Optional[int] = None
-    category: Optional[CategoryResponse] = None # Si la catégorie est chargée
+    category: Optional[CategoryResponse] = None 
     
     summary_article: Optional[str] = None
     slides: Optional[List[Slide]] = None
     is_published: bool
     created_at: datetime.datetime
-
+    
+    
     model_config = ConfigDict(from_attributes=True)
 
-# --- Schéma pour des vues agrégées (ex: un cluster avec une liste d'articles simplifiés) ---
 
-class ArticleInClusterResponse(ArticleBase):
+
+class ArticleTrueResponse(ArticleBase):
+    
+    score_pertinence : Optional[int] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class ArticleInClusterResponse(ArticleResponse):
     """
     Version simplifiée d'un article quand il est listé dans le cadre d'un cluster.
     """
     id: int
     publication_date: Optional[datetime.datetime] = None
-    score_pertinence: Optional[int] = None
     image_urls: Optional[List[str]] = None
     
     model_config = ConfigDict(from_attributes=True)
@@ -209,11 +217,9 @@ class ClusterWithArticlesResponse(ClusterResponse):
     model_config = ConfigDict(from_attributes=True)
 
 
-# --- ClusterInfo (ajouté pour être utilisé comme type de retour) ---
 class ClusterInfo(BaseModel):
     """
     Schéma pour retourner des informations agrégées sur un cluster.
     """
-    title: str # Le titre/question du cluster (correspond à Cluster.title)
-    pertinences: List[str] # Les justifications des articles liés
-
+    title: str 
+    pertinences: List[str] 

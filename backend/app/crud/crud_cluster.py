@@ -21,12 +21,12 @@ class CRUDCluster:
         await db.refresh(db_cluster)
         return db_cluster
 
-    async def get(self, db: AsyncSession, cluster_id: int, load_category: bool = False, load_articles: bool = False) -> Optional[Cluster]:
+    async def get(self, db: AsyncSession, cluster_id: int, load_category: bool = False) -> Optional[Cluster]:
         query = select(Cluster).filter(Cluster.id == cluster_id)
         if load_category:
             query = query.options(selectinload(Cluster.category))
-        if load_articles:
-            query = query.options(selectinload(Cluster.articles)) 
+        # Toujours charger les articles pour correspondre aux schémas de réponse
+        query = query.options(selectinload(Cluster.articles)) 
         result = await db.execute(query)
         return result.scalars().first()
     
@@ -42,7 +42,7 @@ class CRUDCluster:
         is_published: Optional[bool] = None, 
         category_id: Optional[int] = None
     ) -> List[Cluster]:
-        query = select(Cluster)
+        query = select(Cluster).options(selectinload(Cluster.articles))
         if is_published is not None:
             query = query.filter(Cluster.is_published == is_published)
         if category_id is not None:

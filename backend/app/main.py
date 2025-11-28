@@ -62,7 +62,6 @@ from prometheus_client import generate_latest, Counter, Summary, Gauge, CONTENT_
 import psutil
 
 from app.routers.test import test_site_router
-from app.routers import veille_router
 from app.routers import veille
 from app.routers import article
 from app.routers import cluster
@@ -448,7 +447,7 @@ api_router.include_router(push_router, tags=["push"])
 
 # Business Routes
 api_router.include_router(test_site_router, prefix='/tests')
-api_router.include_router(veille_router.router, prefix="/veille", tags=["Veille"])
+#api_router.include_router(veille_router.router, prefix="/veille", tags=["Veille"])
 api_router.include_router(veille.router, prefix="/veille", tags=["Tekawake"])
 api_router.include_router(cluster.router, prefix="/clusters", tags=["Tekawake"])
 api_router.include_router(category.router, prefix="/categories", tags=["Tekawake"])

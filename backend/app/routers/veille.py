@@ -1,6 +1,6 @@
 # app/api/routers/veille.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, cast
 from celery import Task
@@ -71,4 +71,15 @@ async def get_single_veille(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session de veille non trouvée")
     return veille
 
-# Ajoutez d'autres endpoints CRUD pour Veille si nécessaire (update, delete)
+@router.delete("/{veille_id}", status_code=status.HTTP_200_OK, summary="Supprimer une veille et ses articles")
+async def delete_veille(
+    veille_id: int = Path(..., description="L'ID de la veille à supprimer."),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """
+    Supprime une veille spécifique et tous ses articles associés grâce à la suppression en cascade.
+    """
+    deleted_veille = await crud_veille.remove(db=db, veille_id=veille_id)
+    if not deleted_veille:
+        raise HTTPException(status_code=404, detail=f"Veille avec l'ID {veille_id} non trouvée.")
+    return {"message": f"Veille ID {veille_id} et ses articles associés ont été supprimés avec succès."}

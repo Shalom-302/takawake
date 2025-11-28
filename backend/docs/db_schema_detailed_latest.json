@@ -8980,13 +8980,6 @@
           "default": null
         },
         {
-          "name": "score_pertinence",
-          "type": "INTEGER",
-          "nullable": true,
-          "primary_key": false,
-          "default": null
-        },
-        {
           "name": "analysis",
           "type": "JSON",
           "nullable": true,
@@ -9050,14 +9043,14 @@
           "default": "now()"
         },
         {
-          "name": "is_processed",
-          "type": "BOOLEAN",
+          "name": "status",
+          "type": "VARCHAR(50)",
           "nullable": false,
           "primary_key": false,
-          "default": "false"
+          "default": null
         },
         {
-          "name": "processing_error",
+          "name": "status_message",
           "type": "TEXT",
           "nullable": true,
           "primary_key": false,
@@ -9080,13 +9073,6 @@
           ]
         },
         {
-          "name": "ix_articles_is_processed",
-          "unique": false,
-          "columns": [
-            "is_processed"
-          ]
-        },
-        {
           "name": "ix_articles_publication_date",
           "unique": false,
           "columns": [
@@ -9094,17 +9080,17 @@
           ]
         },
         {
-          "name": "ix_articles_score_pertinence",
-          "unique": false,
-          "columns": [
-            "score_pertinence"
-          ]
-        },
-        {
           "name": "ix_articles_source_url",
           "unique": true,
           "columns": [
             "source_url"
+          ]
+        },
+        {
+          "name": "ix_articles_status",
+          "unique": false,
+          "columns": [
+            "status"
           ]
         },
         {
@@ -9138,6 +9124,20 @@
           "nullable": false,
           "primary_key": false,
           "default": "now()"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "status_message",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
         }
       ],
       "indices": [

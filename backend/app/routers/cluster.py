@@ -8,118 +8,57 @@ from celery import Task
 from app.core.db import get_async_db
 from app.schemas.veille import (
     ClusterResponse, ClusterCreate, ClusterUpdate,
-    Slide, ImageInfo, ClusterInfo, # ClusterInfo est maintenant bien défini
+    Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse 
 )
-from app.crud.crud_cluster import crud_cluster # Nouvelle instance CRUD
-from app.crud.crud_article import crud_article # Pour les agrégations d'images/summaries
-from app.tasks.veille_tasks import ( # Assurez-vous que cela pointe vers vos tâches Celery
-    backfill_clusters_task,
-    backfill_pertinence_task,
-    generate_summary_article_task,
-    generate_slides_task,
+from app.crud.crud_cluster import crud_cluster 
+from app.crud.crud_article import crud_article 
+from app.tasks.veille_tasks import (
+    run_full_backfill_task,       
+    generate_cluster_content_task, 
 )
-
 
 router = APIRouter()
 
 # --- Opérations de Backfill (tâches Celery) ---
 
 @router.post(
-    "/backfill-assign", # Renommé pour plus de clarté
+    "/backfill-assign",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Étape 1: Assigner les clusters aux articles"
+    summary="Déclencher le backfill complet des clusters et de la pertinence" 
 )
-def run_backfill_clusters_assign():
+def run_full_backfill_endpoint(): 
     """
-    Déclenche une tâche de fond pour analyser les articles existants sans cluster
-    et leur assigner un `cluster_id`. C'est la première étape du backfill.
+    Déclenche une tâche de fond pour exécuter toutes les étapes du backfill :
+    assignation des clusters aux articles et génération des justifications de pertinence.
     """
     try:
-        print("Envoi de la tâche de backfill des clusters à Celery.")
-        cast(Task, backfill_clusters_task).delay()
-        return {"message": "Tâche de clustering lancée en arrière-plan."}
+        print("Envoi de la tâche de backfill complet à Celery.")
+        cast(Task, run_full_backfill_task).delay() 
+        return {"message": "Tâche de backfill complet lancée en arrière-plan."}
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
-
-
 @router.post(
-    "/backfill-pertinence",
+    "/{cluster_id}/generate-content", 
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Étape 2: Générer la pertinence pour chaque article"
+    summary="Générer l'article de synthèse et les slides pour un cluster"
 )
-def run_backfill_pertinence_generate():
-    """
-    Déclenche une tâche de fond pour générer une justification unique (`pertinence_cluster`)
-    pour chaque article qui a déjà un cluster. C'est la deuxième étape du backfill.
-    """
-    try:
-        print("Envoi de la tâche de backfill de pertinence à Celery.")
-        cast(Task, backfill_pertinence_task).delay()
-        return {"message": "Tâche de génération de pertinence lancée en arrière-plan."}
-    except Exception as e:
-        print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
-
-
-@router.post(
-    "/{cluster_id}/generate-summary", # Utilisation de cluster_id
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="Étape 3: Générer un article de synthèse par cluster"
-)
-def generate_cluster_summary_task(
-    cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer la synthèse.")
+def generate_cluster_full_content_endpoint( 
+    cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer le contenu.")
 ):
     """
-    Déclenche une tâche de fond pour générer un article de synthèse basé sur tous les
-    articles appartenant au cluster spécifié.
+    Déclenche une tâche de fond pour générer séquentiellement l'article de synthèse
+    et le carrousel de slides pour le cluster spécifié.
     """
     try:
-        print(f"Envoi de la tâche de génération de synthèse pour le cluster ID '{cluster_id}' à Celery.")
-        cast(Task, generate_summary_article_task).delay(cluster_id)
-        return {"message": f"Tâche de génération de synthèse pour le cluster ID '{cluster_id}' lancée en arrière-plan."}
-    except Exception as e:
-        print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
-
-
-@router.post(
-    "/{cluster_id}/generate-slides", # Utilisation de cluster_id
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="Étape 4: Générer un carrousel de slides pour un cluster"
-)
-def generate_cluster_slides_task(
-    cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer les slides.")
-):
-    """
-    Déclenche une tâche de fond pour générer un carrousel de slides basé sur l'article
-    de synthèse du cluster spécifié.
-    """
-    try:
-        print(f"Envoi de la tâche de génération de slides pour le cluster ID '{cluster_id}' à Celery.")
-        cast(Task, generate_slides_task).delay(cluster_id)
-        return {"message": f"Tâche de génération de slides pour le cluster ID '{cluster_id}' lancée en arrière-plan."}
+        print(f"Envoi de la tâche de génération de contenu pour le cluster ID '{cluster_id}' à Celery.")
+        cast(Task, generate_cluster_content_task).delay(cluster_id) 
+        return {"message": f"Tâche de génération de contenu pour le cluster ID '{cluster_id}' lancée en arrière-plan."}
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
 
 # --- Endpoints CRUD de base pour Cluster ---
-
-@router.post(
-    "/",
-    response_model=ClusterResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Créer un nouveau cluster"
-)
-async def create_new_cluster(
-    cluster_in: ClusterCreate,
-    db: AsyncSession = Depends(get_async_db)
-):
-    """
-    Crée une nouvelle entrée de cluster.
-    """
-    db_cluster = await crud_cluster.create(db, cluster_in)
-    return db_cluster
 
 @router.get(
     "/",
@@ -139,9 +78,25 @@ async def get_all_clusters(
     clusters = await crud_cluster.get_all(db, skip=skip, limit=limit, is_published=is_published, category_id=category_id)
     return clusters
 
+# --- Endpoints d'agrégation et de gestion de contenu du Cluster ---
+
+@router.get(
+    "/all-with-pertinences", 
+    response_model=List[ClusterInfo],
+    summary="Lister tous les clusters avec les pertinences de leurs articles"
+)
+async def get_all_clusters_with_pertinences(db: AsyncSession = Depends(get_async_db)):
+    """
+    Récupère la liste de tous les clusters uniques pour peupler les filtres,
+    en incluant la justification de la pertinence pour chaque article du cluster.
+    """
+    clusters = await crud_cluster.get_distinct_clusters_with_pertinences(db=db)
+    return clusters
+
+
 @router.get(
     "/{cluster_id}",
-    response_model=ClusterResponse,
+    response_model=ClusterWithArticlesResponse,
     summary="Récupérer un cluster par ID"
 )
 async def get_single_cluster(
@@ -174,42 +129,11 @@ async def update_cluster_partial(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé.")
     return updated_cluster
 
-@router.delete(
-    "/{cluster_id}",
-    status_code=status.HTTP_200_OK,
-    summary="Supprimer un cluster par ID"
-)
-async def delete_single_cluster(
-    cluster_id: int,
-    db: AsyncSession = Depends(get_async_db)
-):
-    """
-    Supprime un cluster spécifique de la base de données par son ID.
-    """
-    deleted_count = await crud_cluster.delete(db, cluster_id)
-    if deleted_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé.")
-    return {"message": f"Cluster {cluster_id} supprimé avec succès."}
-
-# --- Endpoints d'agrégation et de gestion de contenu du Cluster ---
-
-@router.get(
-    "/all-with-pertinences", # Renommé pour éviter la confusion avec GET /
-    response_model=List[ClusterInfo],
-    summary="Lister tous les clusters avec les pertinences de leurs articles"
-)
-async def get_all_clusters_with_pertinences(db: AsyncSession = Depends(get_async_db)):
-    """
-    Récupère la liste de tous les clusters uniques pour peupler les filtres,
-    en incluant la justification de la pertinence pour chaque article du cluster.
-    """
-    clusters = await crud_cluster.get_distinct_clusters_with_pertinences(db=db)
-    return clusters
 
 
 @router.get(
-    "/{cluster_id}/summary", # Utilisation de cluster_id
-    response_model=ClusterResponse, # Retourne le Cluster, incluant summary_article
+    "/{cluster_id}/summary", 
+    response_model=ClusterResponse, 
     summary="Récupérer l'article de synthèse d'un cluster"
 )
 async def get_cluster_summary_content(
@@ -226,7 +150,7 @@ async def get_cluster_summary_content(
 
 
 @router.get(
-    "/{cluster_id}/slides", # Utilisation de cluster_id
+    "/{cluster_id}/slides", 
     response_model=List[Slide],
     summary="Récupérer les slides d'un cluster"
 )
@@ -237,15 +161,15 @@ async def get_cluster_slides_content(
     """
     Récupère le carrousel de slides généré par l'IA pour un cluster spécifique.
     """
-    slides = await crud_cluster.get_slides_by_cluster_id(db, cluster_id) # Correction: `get_slides_by_cluster` n'existe plus directement
-    if slides is None: # Si aucun cluster trouvé ou slides est None
+    slides = await crud_cluster.get_slides_by_cluster_id(db, cluster_id) 
+    if slides is None: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aucun slide trouvé pour ce cluster. Avez-vous lancé la génération ?")
     return slides
 
 
 @router.get(
-    "/{cluster_id}/image", # Utilisation de cluster_id
-    response_model=Optional[List[str]], # Peut retourner une liste de strings
+    "/{cluster_id}/image", 
+    response_model=Optional[List[str]], 
     summary="Récupérer les URLs d'images de l'article le plus pertinent pour un cluster"
 )
 async def get_cluster_best_image_urls(
@@ -262,7 +186,7 @@ async def get_cluster_best_image_urls(
 
 
 @router.get(
-    "/{cluster_id}/images", # Utilisation de cluster_id
+    "/{cluster_id}/images", 
     response_model=List[ImageInfo],
     summary="Récupérer les images pertinentes pour un cluster"
 )
@@ -283,7 +207,7 @@ async def get_cluster_relevant_images(
 # --- Endpoints de suppression de contenu du Cluster ---
 
 @router.delete(
-    "/{cluster_id}/summary", # Utilisation de cluster_id
+    "/{cluster_id}/summary", 
     status_code=status.HTTP_200_OK,
     summary="Supprimer l'article de synthèse d'un cluster"
 )
@@ -301,7 +225,7 @@ async def clear_cluster_summary_endpoint(
 
 
 @router.delete(
-    "/{cluster_id}/slides", # Utilisation de cluster_id
+    "/{cluster_id}/slides",
     status_code=status.HTTP_200_OK,
     summary="Supprimer les slides d'un cluster"
 )
@@ -316,3 +240,20 @@ async def clear_cluster_slides_endpoint(
     if updated_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé ou aucune slide à supprimer.")
     return {"message": f"Slides du cluster {cluster_id} supprimés avec succès."}
+
+@router.delete(
+    "/{cluster_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Supprimer un cluster par ID"
+)
+async def delete_single_cluster(
+    cluster_id: int,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """
+    Supprime un cluster spécifique de la base de données par son ID.
+    """
+    deleted_count = await crud_cluster.delete(db, cluster_id)
+    if deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé.")
+    return {"message": f"Cluster {cluster_id} supprimé avec succès."}

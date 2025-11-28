@@ -113,8 +113,8 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_ai_providers_id | id | No |
-| ix_ai_providers_provider_type | provider_type | No |
 | ix_ai_providers_name | name | No |
+| ix_ai_providers_provider_type | provider_type | No |
 
 ## ai_text_analysis_results
 
@@ -267,8 +267,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_endpoints_id | id | No |
 | ix_api_endpoints_path | path | No |
+| ix_api_endpoints_id | id | No |
 | ix_api_endpoints_method | method | No |
 
 ## api_gateway_audit_logs
@@ -305,8 +305,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_gateway_audit_logs_request_id | request_id | No |
 | ix_api_gateway_audit_logs_id | id | No |
+| ix_api_gateway_audit_logs_request_id | request_id | No |
 
 ## api_gateway_keys
 
@@ -335,9 +335,9 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| ix_api_gateway_keys_id | id | No |
 | ix_api_gateway_keys_prefix | prefix | Yes |
 | ix_api_gateway_keys_owner_id | owner_id | No |
-| ix_api_gateway_keys_id | id | No |
 
 ## api_gateway_permissions
 
@@ -389,9 +389,9 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_api_gateway_rate_limits_id | id | No |
+| ix_api_gateway_rate_limits_window_start | window_start | No |
 | ix_api_gateway_rate_limits_path_pattern | path_pattern | No |
 | ix_api_gateway_rate_limits_window_size | window_size | No |
-| ix_api_gateway_rate_limits_window_start | window_start | No |
 
 ## api_versions
 
@@ -421,7 +421,6 @@
 | id | INTEGER | No | nextval('articles_id_seq'::regclass) | Yes |
 | title | TEXT | No | - | No |
 | content | TEXT | Yes | - | No |
-| score_pertinence | INTEGER | Yes | - | No |
 | analysis | JSON | Yes | - | No |
 | pertinence_cluster | TEXT | Yes | - | No |
 | publication_date | TIMESTAMP | Yes | - | No |
@@ -431,8 +430,8 @@
 | source_url | VARCHAR(1024) | No | - | No |
 | source_name | VARCHAR(100) | No | - | No |
 | scraping_date | TIMESTAMP | No | now() | No |
-| is_processed | BOOLEAN | No | false | No |
-| processing_error | TEXT | Yes | - | No |
+| status | VARCHAR(50) | No | - | No |
+| status_message | TEXT | Yes | - | No |
 
 ### Foreign Keys
 
@@ -445,13 +444,12 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_articles_publication_date | publication_date | No |
-| ix_articles_cluster_id | cluster_id | No |
 | ix_articles_id | id | No |
-| ix_articles_score_pertinence | score_pertinence | No |
+| ix_articles_publication_date | publication_date | No |
 | ix_articles_source_url | source_url | Yes |
+| ix_articles_cluster_id | cluster_id | No |
 | ix_articles_veille_id | veille_id | No |
-| ix_articles_is_processed | is_processed | No |
+| ix_articles_status | status | No |
 
 ## audit_logs
 
@@ -721,8 +719,8 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_clusters_id | id | No |
-| ix_clusters_is_published | is_published | No |
 | ix_clusters_category_id | category_id | No |
+| ix_clusters_is_published | is_published | No |
 
 ## data_exchange_jobs
 
@@ -884,8 +882,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_digital_signature_evidence_id | id | No |
 | ix_digital_signature_evidence_signature_id | signature_id | No |
+| ix_digital_signature_evidence_id | id | No |
 
 ## digital_signatures
 
@@ -911,9 +909,9 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| ix_digital_signatures_user_id | user_id | No |
 | ix_digital_signatures_document_hash | document_hash | No |
 | ix_digital_signatures_id | id | No |
-| ix_digital_signatures_user_id | user_id | No |
 
 ## digital_timestamps
 
@@ -940,8 +938,8 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_digital_timestamps_data_hash | data_hash | No |
-| ix_digital_timestamps_id | id | No |
 | ix_digital_timestamps_user_id | user_id | No |
+| ix_digital_timestamps_id | id | No |
 
 ## file_storage_files
 
@@ -1500,8 +1498,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_messaging_user_blocks_blocked_id | blocked_id | No |
 | ix_messaging_user_blocks_blocker_id | blocker_id | No |
+| ix_messaging_user_blocks_blocked_id | blocked_id | No |
 
 ## messaging_user_conversation_settings
 
@@ -1627,10 +1625,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_offline_sync_batches_id | id | No |
-| ix_sync_batches_status_priority | status, priority | No |
-| ix_offline_sync_batches_user_id | user_id | No |
 | ix_sync_batches_user_id_status | user_id, status | No |
+| ix_offline_sync_batches_user_id | user_id | No |
+| ix_sync_batches_status_priority | status, priority | No |
+| ix_offline_sync_batches_id | id | No |
 
 ## offline_sync_configs
 
@@ -1693,9 +1691,9 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_offline_sync_operations_id | id | No |
+| ix_offline_sync_operations_user_id | user_id | No |
 | ix_sync_operations_user_id_status | user_id, status | No |
 | ix_sync_operations_status_priority | status, priority | No |
-| ix_offline_sync_operations_user_id | user_id | No |
 
 ## payment_approval_steps
 
@@ -1772,8 +1770,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_payment_refunds_reference | reference | Yes |
 | ix_payment_refunds_id | id | No |
+| ix_payment_refunds_reference | reference | Yes |
 
 ## payment_subscription_history
 
@@ -1903,8 +1901,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_payment_transactions_reference | reference | Yes |
 | ix_payment_transactions_id | id | No |
+| ix_payment_transactions_reference | reference | Yes |
 
 ## payments
 
@@ -2261,11 +2259,11 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| idx_user_item | user_id, item_id | No |
-| idx_interaction_type | interaction_type | No |
-| ix_recommendation_interactions_item_id | item_id | No |
 | ix_recommendation_interactions_user_id | user_id | No |
+| idx_interaction_type | interaction_type | No |
 | ix_recommendation_interactions_id | id | No |
+| ix_recommendation_interactions_item_id | item_id | No |
+| idx_user_item | user_id, item_id | No |
 
 ## recommendation_item_features
 
@@ -2294,10 +2292,10 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | idx_item_type_popularity | item_type, popularity_score | No |
-| ix_recommendation_item_features_item_id | item_id | Yes |
 | idx_item_type_rating | item_type, average_rating | No |
-| ix_recommendation_item_features_id | id | No |
+| ix_recommendation_item_features_item_id | item_id | Yes |
 | ix_recommendation_item_features_item_type | item_type | No |
+| ix_recommendation_item_features_id | id | No |
 
 ## recommendation_item_similarities
 
@@ -2318,12 +2316,12 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_item_similarities_id | id | No |
-| idx_item_similar | item_id, similar_item_id | No |
 | ix_recommendation_item_similarities_item_id | item_id | No |
-| idx_item_algorithm_score | item_id, algorithm, similarity_score | No |
 | ix_recommendation_item_similarities_similar_item_id | similar_item_id | No |
+| ix_recommendation_item_similarities_id | id | No |
 | ix_recommendation_item_similarities_algorithm | algorithm | No |
+| idx_item_similar | item_id, similar_item_id | No |
+| idx_item_algorithm_score | item_id, algorithm, similarity_score | No |
 
 ## recommendation_results
 
@@ -2348,11 +2346,11 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | idx_algorithm_score | algorithm, score | No |
-| ix_recommendation_results_algorithm | algorithm | No |
 | idx_user_context | user_id, context | No |
-| ix_recommendation_results_item_id | item_id | No |
 | ix_recommendation_results_id | id | No |
 | ix_recommendation_results_user_id | user_id | No |
+| ix_recommendation_results_algorithm | algorithm | No |
+| ix_recommendation_results_item_id | item_id | No |
 | idx_created_expires | created_at, expires_at | No |
 
 ## recommendation_similarity_matrices
@@ -2376,8 +2374,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_similarity_matrices_matrix_type | matrix_type | No |
 | ix_recommendation_similarity_matrices_algorithm | algorithm | No |
+| ix_recommendation_similarity_matrices_matrix_type | matrix_type | No |
 | ix_recommendation_similarity_matrices_id | id | No |
 
 ## recommendation_user_preferences
@@ -2402,8 +2400,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_user_preferences_user_id | user_id | Yes |
 | ix_recommendation_user_preferences_id | id | No |
+| ix_recommendation_user_preferences_user_id | user_id | Yes |
 
 ## scheduled_jobs
 
@@ -2448,8 +2446,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_step_approvals_status | status | No |
 | ix_step_approvals_id | id | No |
+| ix_step_approvals_status | status | No |
 
 ## subscription_segment_association
 
@@ -2576,6 +2574,8 @@
 | id | INTEGER | No | nextval('veilles_id_seq'::regclass) | Yes |
 | prompt | TEXT | No | - | No |
 | created_at | TIMESTAMP | No | now() | No |
+| status | VARCHAR(50) | No | - | No |
+| status_message | TEXT | Yes | - | No |
 
 ### Indexes
 
