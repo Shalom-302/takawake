@@ -8,7 +8,7 @@ services:
     image: kaapi-app:latest # Il construit et nomme l'image
     container_name: kaapi-api
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - .:/app
     environment:
@@ -59,7 +59,7 @@ services:
     container_name: kaapi-metrics
     command: python app/metrics_server.py
     ports:
-      - "8001:8001"
+      - "8002:8002"
     volumes:
       - .:/app
     environment:
