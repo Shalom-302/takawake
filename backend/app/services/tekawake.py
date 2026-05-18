@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict, TypedDict, Optional, Any
 from urllib.parse import urljoin
-import requests
+import httpx
 from bs4 import BeautifulSoup, Tag
 import trafilatura
 import asyncio
@@ -30,6 +30,13 @@ from app.core.config import settings
 
 # Initialisation du LLM en utilisant la configuration centrale
 llm = ChatDeepSeek(api_key=SecretStr(settings.DEEPSEEK_API_KEY), model="deepseek-chat", temperature=0)
+
+# Concurrence : listings (httpx) / fetch articles (httpx + trafilatura) / LLM analyse
+LISTING_CONCURRENCY = 5
+FETCH_CONCURRENCY = 20
+LLM_CONCURRENCY = 8
+
+DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; TekawakeBot/1.0)"}
 
 # --- Fonctions de Scraping et Registre (Inchangé, supposé être défini ailleurs ou complet) ---
 class FoundArticle(TypedDict):
@@ -213,80 +220,17 @@ def extract_publication_date(soup: BeautifulSoup, metadata=None) -> Optional[dat
     return None
 
 # --- Logique LangGraph interne au service ---
-class AgentState(TypedDict):
+class AgentState(TypedDict, total=False):
     db_session: AsyncSession
     veille_id: int
     query: str
-    sites_to_process: List[str]
-    current_site: str
+    http_client: httpx.AsyncClient
     found_articles: List[FoundArticle]
-
-# --- Nœuds du Graphe (inchangé) ---
-async def plan_next_site(state: AgentState) -> dict:
-    sites = state.get("sites_to_process", []).copy()
-    if sites:
-        return {"current_site": sites.pop(0), "sites_to_process": sites}
-    else:
-        return {"current_site": ""}
-
-async def scraper_dispatcher(state: AgentState) -> dict:
-    site_url = state.get("current_site")
-    if not site_url:
-        return {"found_articles": state.get("found_articles", [])}
-
-    scraper_function = SCRAPER_REGISTRY.get(site_url)
-    if not scraper_function:
-        return {"found_articles": state.get("found_articles", [])}
-
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(site_url, headers=headers, timeout=20)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        new_articles: List[FoundArticle] = await scraper_function(soup, site_url)
-
-        cleaned_articles: List[FoundArticle] = []
-        for art in new_articles:
-            url = art.get("url")
-            title = art.get("title")
-            source = art.get("source")
-
-            if isinstance(url, list):
-                url = url[0] if url else None
-
-            if not (url and isinstance(url, str) and title and source):
-                continue
-
-            cleaned_articles.append({
-                "url": urljoin(site_url, url),
-                "title": str(title),
-                "source": str(source)
-            })
-
-        current_articles = state.get("found_articles", [])
-        return {"found_articles": current_articles + cleaned_articles}
-
-    except Exception as e:
-        print(f"ERREUR lors du scraping de {site_url}: {e}")
-        return {"found_articles": state.get("found_articles", [])}
+    prepared_articles: List[Dict[str, Any]]
 
 
-# --- NŒUD CRITIQUE : extract_analyze_and_save (MIS À JOUR) ---
-async def extract_analyze_and_save(state: AgentState) -> dict:
-    print("\n--- NŒUD FINAL : Extraction, Analyse et Sauvegarde ---")
-    all_found_articles = state.get("found_articles", [])
-    veille_id = state["veille_id"]
-    db = state["db_session"]
-
-    if not all_found_articles:
-        print("Aucun article trouvé pour traitement.")
-        return {}
-
-    unique_articles_list = list({article['url']: article for article in all_found_articles}.values())
-    print(f"Traitement de {len(unique_articles_list)} articles uniques.")
-
-    analysis_prompt_template = """Vous êtes un analyste technologique mondial doublé d'un stratège pour l'Afrique. Pour l'article fourni, effectuez une analyse complète en deux temps : une analyse globale et neutre, puis une analyse stratégique spécifique à l'Afrique.
+# Prompt extrait au niveau module (recompilé une seule fois)
+ANALYSIS_PROMPT_TEMPLATE = """Vous êtes un analyste technologique mondial doublé d'un stratège pour l'Afrique. Pour l'article fourni, effectuez une analyse complète en deux temps : une analyse globale et neutre, puis une analyse stratégique spécifique à l'Afrique.
 
 **Partie 1 : Analyse Globale (Neutre)**
 1.  **Résumé Neutre :** Rédigez un résumé factuel et dense de l'article, de style journalistique (type agence de presse), strictement compris entre 700 et 800 caractères.
@@ -298,131 +242,219 @@ async def extract_analyze_and_save(state: AgentState) -> dict:
 5.  **Éveil de Conscience :** Quelle est la leçon critique pour les acteurs de la tech africaine ?
 6.  **Piste d'Opportunité :** Quelle opportunité concrète cela crée-t-il ?
 7.  **Score de Pertinence :** Attribuez un score de 1 à 10 sur l'importance de cette nouvelle pour l'Afrique.
-    
+
 Article à analyser : <article_text>{content}</article_text>"""
 
-    analysis_prompt = ChatPromptTemplate.from_template(analysis_prompt_template)
-    analysis_chain = analysis_prompt | llm.with_structured_output(veille_schema.ArticleAnalysis)
+_analysis_prompt = ChatPromptTemplate.from_template(ANALYSIS_PROMPT_TEMPLATE)
+_analysis_chain = _analysis_prompt | llm.with_structured_output(veille_schema.ArticleAnalysis)
 
-    processed_articles_count = 0
-    for article_found in unique_articles_list:
-        # Initialiser les données pour le CRUD d'article avec les champs du nouveau modèle
-        article_data_for_crud = {
+
+async def parallel_scrape_node(state: AgentState) -> dict:
+    """Scrape les pages d'index des 5 sites en parallèle via httpx."""
+    client = state["http_client"]
+    sem = asyncio.Semaphore(LISTING_CONCURRENCY)
+
+    async def scrape_one(site_url: str) -> List[FoundArticle]:
+        async with sem:
+            try:
+                resp = await client.get(site_url, headers=DEFAULT_HEADERS)
+                resp.raise_for_status()
+            except Exception as e:
+                print(f"ERREUR lors du scraping de {site_url}: {e}")
+                return []
+
+            scraper_function = SCRAPER_REGISTRY.get(site_url)
+            if not scraper_function:
+                return []
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            new_articles: List[FoundArticle] = await scraper_function(soup, site_url)
+
+            cleaned: List[FoundArticle] = []
+            for art in new_articles:
+                url = art.get("url")
+                title = art.get("title")
+                source = art.get("source")
+                if isinstance(url, list):
+                    url = url[0] if url else None
+                if not (url and isinstance(url, str) and title and source):
+                    continue
+                cleaned.append({
+                    "url": urljoin(site_url, url),
+                    "title": str(title),
+                    "source": str(source),
+                })
+            return cleaned
+
+    results = await asyncio.gather(
+        *(scrape_one(site) for site in SCRAPER_REGISTRY.keys()),
+        return_exceptions=False,
+    )
+    all_found: List[FoundArticle] = [a for sub in results for a in sub]
+    print(f"--- parallel_scrape : {len(all_found)} articles bruts trouvés sur {len(SCRAPER_REGISTRY)} sites ---")
+    return {"found_articles": all_found}
+
+
+async def fetch_articles_node(state: AgentState) -> dict:
+    """Télécharge et extrait le contenu des articles en parallèle (httpx + trafilatura)."""
+    all_found = state.get("found_articles", [])
+    veille_id = state["veille_id"]
+    client = state["http_client"]
+
+    if not all_found:
+        return {"prepared_articles": []}
+
+    unique_articles = list({a["url"]: a for a in all_found}.values())
+    print(f"--- fetch_articles : extraction parallèle de {len(unique_articles)} articles uniques ---")
+
+    sem = asyncio.Semaphore(FETCH_CONCURRENCY)
+
+    async def fetch_one(art: FoundArticle) -> Dict[str, Any]:
+        data: Dict[str, Any] = {
             "veille_id": veille_id,
-            "source_url": article_found['url'],
-            "source_name": article_found['source'],
-            "title": article_found['title'],
-            "status": ArticleStatus.PENDING, # Initialement en attente de traitement
-            "status_message": None,          # Aucun message d'erreur initial
+            "source_url": art["url"],
+            "source_name": art["source"],
+            "title": art["title"],
+            "status": ArticleStatus.PENDING,
+            "status_message": None,
             "publication_date": None,
             "image_urls": [],
             "content": None,
             "analysis": None,
             "pertinence_cluster": None,
-            "cluster_id": None
+            "cluster_id": None,
         }
-        
-        try:
-            downloaded = trafilatura.fetch_url(article_found['url'])
-            if not downloaded:
-                article_data_for_crud["status"] = ArticleStatus.FAILED
-                article_data_for_crud["status_message"] = "Téléchargement échoué"
-            else:
-                content = trafilatura.extract(downloaded, favor_recall=True)
-                metadata = trafilatura.extract_metadata(downloaded)
-                soup = BeautifulSoup(downloaded, 'html.parser')
+        async with sem:
+            try:
+                resp = await client.get(art["url"], headers=DEFAULT_HEADERS)
+                resp.raise_for_status()
+                html = resp.text
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Téléchargement échoué: {e}"
+                return data
 
-                publication_date = extract_publication_date(soup, metadata)
-                if publication_date is None:
-                    print(f"AVERTISSEMENT: Aucune date de publication trouvée pour {article_found['url']}. Utilisation de la date de scraping.")
-                    publication_date = datetime.datetime.utcnow()
+            try:
+                content = trafilatura.extract(html, favor_recall=True)
+                metadata = trafilatura.extract_metadata(html)
+                soup = BeautifulSoup(html, "html.parser")
 
-                image_urls = extract_main_images(soup, metadata, base_url=article_found["url"])
+                pub_date = extract_publication_date(soup, metadata)
+                if pub_date is None:
+                    pub_date = datetime.datetime.utcnow()
 
-                article_data_for_crud.update({
-                    "publication_date": publication_date,
+                image_urls = extract_main_images(soup, metadata, base_url=art["url"])
+
+                data.update({
+                    "publication_date": pub_date,
                     "image_urls": image_urls,
-                    "content": content
+                    "content": content,
                 })
 
-                if content and len(content) > 250:
-                    try:
-                        analysis_result_raw = await analysis_chain.ainvoke({"content": content[:8000]})
-                        # Assurez-vous que l'objet est bien validé par Pydantic ArticleAnalysis
-                        analysis_result_obj = veille_schema.ArticleAnalysis.model_validate(analysis_result_raw)
-                        
-                        article_data_for_crud["analysis"] = analysis_result_obj.model_dump()
-                        article_data_for_crud["pertinence_cluster"] = analysis_result_obj.pertinence_cluster
-                        # `score_pertinence` est maintenant dans `analysis_result_obj.model_dump()` et non un champ direct.
+                if not content or len(content) <= 250:
+                    data["status"] = ArticleStatus.FAILED
+                    data["status_message"] = "Contenu insuffisant"
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Erreur d'extraction: {e}"
+        return data
 
-                        article_data_for_crud["status"] = ArticleStatus.PROCESSED # Marquer comme traité si tout s'est bien passé
-                        processed_articles_count += 1
+    prepared = await asyncio.gather(*(fetch_one(a) for a in unique_articles))
+    ok = sum(1 for d in prepared if d["status"] == ArticleStatus.PENDING)
+    print(f"--- fetch_articles : {ok}/{len(prepared)} articles avec contenu exploitable ---")
+    return {"prepared_articles": prepared}
 
-                    except Exception as llm_error:
-                        article_data_for_crud["status"] = ArticleStatus.FAILED
-                        article_data_for_crud["status_message"] = f"Erreur du LLM: {llm_error}"
-                else:
-                    article_data_for_crud["status"] = ArticleStatus.FAILED
-                    article_data_for_crud["status_message"] = "Contenu insuffisant"
 
+async def analyze_articles_node(state: AgentState) -> dict:
+    """Analyse LLM en parallèle (Semaphore LLM_CONCURRENCY), puis persistance séquentielle."""
+    prepared = state.get("prepared_articles", [])
+    db = state["db_session"]
+
+    if not prepared:
+        print("Aucun article préparé à analyser.")
+        return {"status": "SUCCESS", "processed_articles": 0}
+
+    sem = asyncio.Semaphore(LLM_CONCURRENCY)
+
+    async def analyze_one(data: Dict[str, Any]) -> Dict[str, Any]:
+        # On skip ceux qui ont déjà échoué au fetch
+        if data["status"] != ArticleStatus.PENDING or not data.get("content"):
+            return data
+        async with sem:
+            try:
+                raw = await _analysis_chain.ainvoke({"content": data["content"][:8000]})
+                obj = veille_schema.ArticleAnalysis.model_validate(raw)
+                data["analysis"] = obj.model_dump()
+                data["pertinence_cluster"] = obj.pertinence_cluster
+                data["status"] = ArticleStatus.PROCESSED
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Erreur du LLM: {e}"
+        return data
+
+    finalized = await asyncio.gather(*(analyze_one(d) for d in prepared))
+
+    # Persistance séquentielle : AsyncSession n'est pas thread-safe.
+    processed = 0
+    for data in finalized:
+        try:
+            await crud_article.create_or_update(db=db, article_data=data)
+            if data["status"] == ArticleStatus.PROCESSED:
+                processed += 1
         except Exception as e:
-            article_data_for_crud["status"] = ArticleStatus.FAILED
-            article_data_for_crud["status_message"] = f"Erreur d'extraction ou inattendue: {e}"
-        
-        # Sauvegarde en base via le nouveau crud_article
-        await crud_article.create_or_update(db=db, article_data=article_data_for_crud)
+            print(f"[WARN] Persistance KO pour {data.get('source_url')}: {e}")
 
-    print(f"Traitement et sauvegarde terminés pour {processed_articles_count}/{len(unique_articles_list)} articles.")
-    return {"status": "SUCCESS", "processed_articles": processed_articles_count}
+    print(f"--- analyze_articles : {processed}/{len(finalized)} articles processed ---")
+    return {"status": "SUCCESS", "processed_articles": processed}
 
 
-# --- Logique de Routage et Construction (inchangé) ---
-async def should_continue(state: AgentState) -> str:
-    return "continue_scraping" if state.get("current_site") else "end_scraping"
-
-def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]: # <-- AJOUTÉ L'ANNOTATION
+def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]:
     workflow = StateGraph(AgentState)
-    workflow.add_node("planner", plan_next_site)
-    workflow.add_node("dispatcher", scraper_dispatcher)
-    workflow.add_node("analyze_and_save", extract_analyze_and_save)
-    workflow.set_entry_point("planner")
-    workflow.add_conditional_edges("planner", should_continue, {"continue_scraping": "dispatcher", "end_scraping": "analyze_and_save"})
-    workflow.add_edge("dispatcher", "planner")
-    workflow.add_edge("analyze_and_save", END)
+    workflow.add_node("scrape", parallel_scrape_node)
+    workflow.add_node("fetch", fetch_articles_node)
+    workflow.add_node("analyze", analyze_articles_node)
+    workflow.set_entry_point("scrape")
+    workflow.add_edge("scrape", "fetch")
+    workflow.add_edge("fetch", "analyze")
+    workflow.add_edge("analyze", END)
     return workflow.compile()
 
-langgraph_app: Runnable[AgentState, Dict[str, Any]] = create_langgraph_app() # <-- AJOUTÉ L'ANNOTATION
+langgraph_app: Runnable[AgentState, Dict[str, Any]] = create_langgraph_app()
+
 
 # --- Fonction principale du Service (MIS À JOUR) ---
 async def run_veille_workflow(db: AsyncSession, query: str, veille_id: int):
     # Le statut PENDING est défini avant d'appeler ce service (dans la tâche Celery/routeur)
 
-    initial_state = AgentState(
-        db_session=db,
-        veille_id=veille_id,
-        query=query,
-        sites_to_process=list(SCRAPER_REGISTRY.keys()),
-        current_site="",
-        found_articles=[],
-    )
-    
+    limits = httpx.Limits(max_connections=50, max_keepalive_connections=20)
+    timeout = httpx.Timeout(30.0, connect=15.0)
+
     print(f"Lancement du workflow de veille pour la requête : '{query}' (Veille ID: {veille_id})")
-    try:
-        result = await langgraph_app.ainvoke(initial_state, recursion_limit=15)
-        
-        # Mettre à jour le statut de la veille à SUCCESS
-        veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.SUCCESS)
-        await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
-        
-        print(f"Workflow de veille terminé pour ID {veille_id}. Statut mis à jour à SUCCESS.")
-        return result
-    except Exception as e:
-        # Mettre à jour le statut de la veille à FAILED en cas d'erreur
-        error_message = f"Échec du workflow de veille : {e}"
-        print(f"--- ERREUR dans le workflow de veille (ID: {veille_id}) : {error_message} ---")
-        veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.FAILED, status_message=error_message)
-        await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
-        raise # Relaisser l'exception pour que Celery la capture aussi
+
+    async with httpx.AsyncClient(limits=limits, timeout=timeout, follow_redirects=True) as http_client:
+        initial_state: AgentState = {
+            "db_session": db,
+            "veille_id": veille_id,
+            "query": query,
+            "http_client": http_client,
+            "found_articles": [],
+            "prepared_articles": [],
+        }
+
+        try:
+            result = await langgraph_app.ainvoke(initial_state)
+
+            veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.SUCCESS)
+            await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
+
+            print(f"Workflow de veille terminé pour ID {veille_id}. Statut mis à jour à SUCCESS.")
+            return result
+        except Exception as e:
+            error_message = f"Échec du workflow de veille : {e}"
+            print(f"--- ERREUR dans le workflow de veille (ID: {veille_id}) : {error_message} ---")
+            veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.FAILED, status_message=error_message)
+            await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
+            raise
 
 # --- NOUVEAU : Orchestrateur de Backfill (MIS À JOUR) ---
 async def run_full_backfill_service(db: AsyncSession): # Plus besoin de 'steps', on fait tout d'un coup
