@@ -89,6 +89,16 @@ class Settings(BaseSettings):
     LANGSMITH_API_KEY: str = ""
     LANGSMITH_PROJECT: str = ""
 
+    # Gemini (embeddings text-embedding-004)
+    GEMINI_API_KEY: str = ""
+    GEMINI_EMBED_MODEL: str = "models/text-embedding-004"
+    EMBED_DIM: int = 768
+
+    # Qdrant (vector DB) — instance partagée, voir https://qdrant-client.kortexai.dev/dashboard
+    QDRANT_URL: str = "https://qdrant-client.kortexai.dev"
+    QDRANT_API_KEY: Optional[str] = None
+    QDRANT_COLLECTION: str = "tekawake_articles"
+
     # Logging
     LOKI_URL: str = "http://loki:3100"
     

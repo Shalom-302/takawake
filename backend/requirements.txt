@@ -117,3 +117,6 @@ minio
 boto3
 google-cloud-storage
 firebase-admin
+
+# Vector DB (PR3). hdbscan ajouté en PR5 quand le clustering vectoriel sera activé.
+qdrant-client>=1.9.0

@@ -8,7 +8,7 @@ services:
     image: kaapi-app:latest # Il construit et nomme l'image
     container_name: kaapi-api
     ports:
-      - "8001:8001"
+      - "8000:8000"
     volumes:
       - .:/app
     environment:
@@ -22,6 +22,9 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
     tty: true
     depends_on:
@@ -45,6 +48,9 @@ services:
       - ENVIRONMENT=development
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=dev-token
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       - api # S'assure que 'api' est prêt avant de démarrer
       - kaapi-db
@@ -59,7 +65,7 @@ services:
     container_name: kaapi-metrics
     command: python app/metrics_server.py
     ports:
-      - "8002:8002"
+      - "8001:8001"
     volumes:
       - .:/app
     environment:

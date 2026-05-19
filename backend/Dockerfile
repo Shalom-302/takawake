@@ -1,60 +1,59 @@
+# syntax=docker/dockerfile:1.7
 # ===================================================================
-# STAGE 1: Le "Builder" - Optimisé pour le cache pip
+# STAGE 1 : Builder — installe les deps Python avec cache pip persistant
 # ===================================================================
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Installer les dépendances système
+# Deps système pour compiler les paquets Python qui n'ont pas de wheels
+# (libpq pour psycopg, build-essential pour hdbscan/Cython si pas de wheel)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    && apt-get clean \
+       build-essential \
+       libpq-dev \
+       gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Mettre à jour pip
 RUN pip install --upgrade pip
 
-# Copier UNIQUEMENT les fichiers de dépendances
-COPY requirements.txt .
-COPY install_plugin_requirements.py .
+# Copier UNIQUEMENT les manifestes de deps : la layer suivante n'est invalidée
+# que si requirements.txt ou install_plugin_requirements.py changent.
+COPY requirements.txt install_plugin_requirements.py ./
 
-# Installer les dépendances. Cette couche sera maintenant correctement mise en cache !
-# Si requirements.txt ne change pas, cette étape sera sautée.
-# Si requirements.txt change, pip installera SEULEMENT les nouvelles dépendances.
-RUN pip install --no-cache-dir -r requirements.txt
-RUN python install_plugin_requirements.py
+# Cache mount BuildKit : /root/.cache/pip est partagé entre builds.
+# Premier build : télécharge tout (~8 min).
+# Rebuilds suivants : ne télécharge que les wheels manquantes (~30s).
+# IMPORTANT : pas de --no-cache-dir, sinon le mount ne sert à rien.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python install_plugin_requirements.py
 
 
 # ===================================================================
-# STAGE 2: L'image Finale - Légère
+# STAGE 2 : Runtime — image légère, copie le site-packages du builder
 # ===================================================================
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Installer UNIQUEMENT les dépendances système nécessaires à l'exécution
+# libpq pour psycopg en runtime. build-essential reste dans le builder.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copier les paquets Python pré-installés depuis le "builder"
-# C'est beaucoup plus efficace que de recréer un venv.
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Définir les variables d'environnement
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
-# Copier le code source de l'application
 COPY . .
 
-# Exposer le port
-EXPOSE 8001
+EXPOSE 8000
 
-# Commande par défaut
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+# --reload pour dev. À retirer pour la prod (cf. INSPECTION_RAPPORT §3.E).
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
