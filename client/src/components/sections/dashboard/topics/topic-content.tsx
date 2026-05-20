@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { ArrowUpRightIcon } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import veilleService from "@/lib/api/veille.service";
 
@@ -10,8 +13,25 @@ export default function TopicContent() {
     const topicParam = params?.topic_id;
     const clusterId = Array.isArray(topicParam) ? topicParam[0] : topicParam;
 
-    const { cluster, error, isLoading } = veilleService.useClusterDetail(clusterId);
+    const { cluster, error, isLoading, refreshCluster } =
+        veilleService.useClusterDetail(clusterId);
     const { imageUrls } = veilleService.useClusterImage(clusterId);
+    const [publishing, setPublishing] = useState(false);
+
+    async function togglePublish() {
+        if (!cluster) return;
+        setPublishing(true);
+        try {
+            await veilleService.updateCluster(cluster.id, {
+                is_published: !cluster.is_published,
+            });
+            await refreshCluster();
+        } catch {
+            window.alert("Impossible de mettre à jour la publication du sujet.");
+        } finally {
+            setPublishing(false);
+        }
+    }
 
     const slides = cluster?.slides ?? [];
     const articles = cluster?.articles ?? [];
@@ -60,7 +80,24 @@ export default function TopicContent() {
 
     return (
         <div className="w-full mx-auto max-w-3xl py-16 px-10 space-y-10">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
+                <div className="flex items-center justify-center gap-3">
+                    <Badge color={cluster.is_published ? "success" : "gray"}>
+                        {cluster.is_published ? "Publié" : "Brouillon"}
+                    </Badge>
+                    <Button
+                        size="sm"
+                        variant={cluster.is_published ? "secondary" : "primary"}
+                        disabled={publishing}
+                        onClick={togglePublish}
+                    >
+                        {publishing
+                            ? "..."
+                            : cluster.is_published
+                              ? "Dépublier"
+                              : "Publier sur le site"}
+                    </Button>
+                </div>
                 <h2 className="text-lg sm:text-xl md:text-2xl leading-[140%] font-bold">
                     {cluster.title}
                 </h2>
