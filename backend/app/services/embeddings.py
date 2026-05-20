@@ -1,24 +1,50 @@
 """
-Service d'embeddings via Gemini (text-embedding-004).
+Service d'embeddings via sentence-transformers (`intfloat/multilingual-e5-base`).
 
-Utilisé en aval de l'analyse LLM pour vectoriser chaque article, puis indexer
-dans Qdrant et clusteriser par similarité (HDBSCAN).
+768 dim, tourne en CPU, multilingue FR/EN, gratuit. Matche la collection
+Qdrant `tekawake_articles` (768 / cosine).
+
+Convention E5 : les textes doivent être préfixés
+  - `query: ...`   pour une requête de recherche
+  - `passage: ...` pour un document à indexer / regrouper / comparer
+Le clustering et la similarité symétrique utilisent `passage:` des deux côtés.
 """
 
+from __future__ import annotations
+
 import asyncio
+import threading
 from typing import Any, Dict, List, Optional
 
-import google.generativeai as genai
+try:
+    from sentence_transformers import SentenceTransformer
+    ST_AVAILABLE = True
+except ImportError:
+    SentenceTransformer = None  # type: ignore
+    ST_AVAILABLE = False
 
 from app.core.config import settings
 
-# Configuration globale du SDK (idempotent : safe à appeler plusieurs fois)
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+_MAX_TEXT_CHARS = 8000  # tronquage défensif, le modèle accepte 512 tokens (~2k chars)
+_BATCH_SIZE = 32        # batch interne du encode(); bonne valeur pour CPU
 
-# Limites pratiques de l'API Gemini embed_content
-_BATCH_SIZE = 100  # max 100 contents par appel
-_MAX_TEXT_CHARS = 8000  # tronquage défensif (le modèle accepte ~2k tokens)
+_model: Optional["SentenceTransformer"] = None  # type: ignore
+_model_lock = threading.Lock()
+
+
+def _get_model() -> "SentenceTransformer":  # type: ignore
+    """Singleton thread-safe. Le 1er appel télécharge le modèle (~500 MB)."""
+    global _model
+    if not ST_AVAILABLE:
+        raise RuntimeError(
+            "sentence-transformers n'est pas installé. "
+            "Exécute `pip install sentence-transformers` dans le container."
+        )
+    if _model is None:
+        with _model_lock:
+            if _model is None:
+                _model = SentenceTransformer(settings.EMBED_MODEL, device="cpu")
+    return _model
 
 
 def build_embedding_text(
@@ -26,12 +52,7 @@ def build_embedding_text(
     resume_neutre: Optional[str],
     problematique_africaine: Optional[str],
 ) -> str:
-    """
-    Concatène les champs pertinents avec des séparateurs explicites.
-
-    Le séparateur '\\n\\n' donne au modèle un signal clair de structure
-    sans introduire de tokens parasites. Champs absents → ignorés.
-    """
+    """Concatène les champs pertinents avec des séparateurs explicites."""
     parts: List[str] = []
     if title:
         parts.append(f"TITRE: {title.strip()}")
@@ -53,21 +74,28 @@ def build_text_from_analysis(title: Optional[str], analysis: Optional[Dict[str, 
     )
 
 
+def _prefix_for(task_type: str) -> str:
+    # Seule la query de recherche utilise `query:`. Tout le reste (clustering,
+    # similarité symétrique, indexation) utilise `passage:`.
+    return "query: " if task_type.upper() == "RETRIEVAL_QUERY" else "passage: "
+
+
 def _embed_batch_sync(texts: List[str], task_type: str) -> List[List[float]]:
-    """Appel synchrone à Gemini. Encapsulé pour pouvoir être run dans un thread."""
+    """Appel synchrone à sentence-transformers. Encapsulé pour run dans un thread."""
     if not texts:
         return []
-    result = genai.embed_content(
-        model=settings.GEMINI_EMBED_MODEL,
-        content=texts,
-        task_type=task_type,
+    model = _get_model()
+    prefix = _prefix_for(task_type)
+    prefixed = [prefix + t for t in texts]
+    # normalize_embeddings=True → vecteurs unitaires, compatible Distance.COSINE
+    vectors = model.encode(
+        prefixed,
+        batch_size=_BATCH_SIZE,
+        show_progress_bar=False,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
     )
-    # L'API retourne {"embedding": [...]} pour un seul input, {"embedding": [[...], [...]]} pour une liste
-    embeddings = result.get("embedding", [])
-    if embeddings and isinstance(embeddings[0], (int, float)):
-        # Un seul vecteur retourné (cas où texts n'avait qu'un élément)
-        return [list(embeddings)]
-    return [list(v) for v in embeddings]
+    return [v.tolist() for v in vectors]
 
 
 async def embed_texts(
@@ -75,36 +103,20 @@ async def embed_texts(
     task_type: str = "CLUSTERING",
 ) -> List[List[float]]:
     """
-    Embed une liste de textes en batchs de 100, retourne les vecteurs dans l'ordre.
+    Embed une liste de textes, retourne les vecteurs dans l'ordre.
 
-    task_type :
-      - "CLUSTERING"           : pour le pipeline veille (regroupement par similarité)
-      - "SEMANTIC_SIMILARITY"  : pour la dédup avant LLM
-      - "RETRIEVAL_DOCUMENT"   : pour indexer en vue d'une recherche future
-      - "RETRIEVAL_QUERY"      : pour la query au moment d'une recherche
+    task_type (héritage de l'API Gemini, conservé pour compat) :
+      - "RETRIEVAL_QUERY"   → préfixe `query: ` (recherche)
+      - tout le reste       → préfixe `passage: ` (indexation / clustering / similarité)
 
-    Le task_type DOIT être identique entre indexation et query, sinon
-    la similarité est dégradée.
+    Le préfixe DOIT être identique entre indexation et query pour préserver
+    la qualité de similarité.
     """
     if not texts:
         return []
-    if not settings.GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY n'est pas configuré.")
-
-    vectors: List[List[float]] = []
-    for i in range(0, len(texts), _BATCH_SIZE):
-        batch = texts[i : i + _BATCH_SIZE]
-        try:
-            batch_vecs = await asyncio.to_thread(_embed_batch_sync, batch, task_type)
-        except Exception as e:
-            # Une seule tentative de retry après backoff léger
-            await asyncio.sleep(1.0)
-            try:
-                batch_vecs = await asyncio.to_thread(_embed_batch_sync, batch, task_type)
-            except Exception:
-                raise RuntimeError(f"Echec embeddings Gemini sur batch [{i}:{i+len(batch)}]: {e}")
-        vectors.extend(batch_vecs)
-    return vectors
+    if not ST_AVAILABLE:
+        raise RuntimeError("sentence-transformers n'est pas installé.")
+    return await asyncio.to_thread(_embed_batch_sync, texts, task_type)
 
 
 async def embed_single(text: str, task_type: str = "CLUSTERING") -> List[float]:

@@ -2,16 +2,18 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import delete
+from sqlalchemy import delete, desc, func
 from typing import List, Optional
-from sqlalchemy import func
 
 from app.models.veille import Veille
 from app.schemas.veille import VeilleCreate, VeilleUpdate
 
 class CRUDVeille:
     async def create(self, db: AsyncSession, veille_in: VeilleCreate) -> Veille:
-        db_veille = Veille(prompt=veille_in.prompt) # created_at est server_default
+        db_veille = Veille(
+            prompt=veille_in.prompt,
+            llm_provider=veille_in.llm_provider,
+        )  # created_at est server_default
         db.add(db_veille)
         await db.commit()
         await db.refresh(db_veille)
@@ -22,8 +24,13 @@ class CRUDVeille:
         return result.scalars().first()
 
     async def get_all(self, db: AsyncSession, skip: int = 0, limit: int = 100) -> List[Veille]:
-        result = await db.execute(select(Veille).offset(skip).limit(limit))
+        query = select(Veille).order_by(desc(Veille.created_at)).offset(skip).limit(limit)
+        result = await db.execute(query)
         return list((result.scalars().all()))
+
+    async def count(self, db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(Veille))
+        return int(result.scalar_one())
 
     async def update(self, db: AsyncSession, veille_id: int, veille_in: VeilleUpdate) -> Optional[Veille]:
         db_veille = await self.get(db, veille_id)

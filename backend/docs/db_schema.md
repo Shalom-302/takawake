@@ -87,8 +87,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_ai_models_model_type | model_type | No |
 | ix_ai_models_id | id | No |
+| ix_ai_models_model_type | model_type | No |
 
 ## ai_providers
 
@@ -112,9 +112,9 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_ai_providers_id | id | No |
-| ix_ai_providers_name | name | No |
 | ix_ai_providers_provider_type | provider_type | No |
+| ix_ai_providers_name | name | No |
+| ix_ai_providers_id | id | No |
 
 ## ai_text_analysis_results
 
@@ -267,8 +267,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_endpoints_path | path | No |
 | ix_api_endpoints_id | id | No |
+| ix_api_endpoints_path | path | No |
 | ix_api_endpoints_method | method | No |
 
 ## api_gateway_audit_logs
@@ -335,8 +335,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_gateway_keys_id | id | No |
 | ix_api_gateway_keys_prefix | prefix | Yes |
+| ix_api_gateway_keys_id | id | No |
 | ix_api_gateway_keys_owner_id | owner_id | No |
 
 ## api_gateway_permissions
@@ -388,10 +388,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_gateway_rate_limits_id | id | No |
 | ix_api_gateway_rate_limits_window_start | window_start | No |
-| ix_api_gateway_rate_limits_path_pattern | path_pattern | No |
+| ix_api_gateway_rate_limits_id | id | No |
 | ix_api_gateway_rate_limits_window_size | window_size | No |
+| ix_api_gateway_rate_limits_path_pattern | path_pattern | No |
 
 ## api_versions
 
@@ -409,8 +409,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_versions_id | id | No |
 | ix_api_versions_version | version | Yes |
+| ix_api_versions_id | id | No |
 
 ## articles
 
@@ -446,10 +446,10 @@
 |------|---------|--------|
 | ix_articles_id | id | No |
 | ix_articles_publication_date | publication_date | No |
+| ix_articles_status | status | No |
+| ix_articles_veille_id | veille_id | No |
 | ix_articles_source_url | source_url | Yes |
 | ix_articles_cluster_id | cluster_id | No |
-| ix_articles_veille_id | veille_id | No |
-| ix_articles_status | status | No |
 
 ## audit_logs
 
@@ -626,8 +626,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_auth_session_token | token | Yes |
 | ix_auth_session_refresh_token | refresh_token | Yes |
+| ix_auth_session_token | token | Yes |
 
 ## auth_verification_code
 
@@ -675,9 +675,9 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| ix_business_alerts_entity_type | entity_type | No |
 | ix_business_alerts_entity_id | entity_id | No |
 | ix_business_alerts_alert_type | alert_type | No |
-| ix_business_alerts_entity_type | entity_type | No |
 
 ## categories
 
@@ -718,8 +718,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_clusters_id | id | No |
 | ix_clusters_category_id | category_id | No |
+| ix_clusters_id | id | No |
 | ix_clusters_is_published | is_published | No |
 
 ## data_exchange_jobs
@@ -937,8 +937,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_digital_timestamps_data_hash | data_hash | No |
 | ix_digital_timestamps_user_id | user_id | No |
+| ix_digital_timestamps_data_hash | data_hash | No |
 | ix_digital_timestamps_id | id | No |
 
 ## file_storage_files
@@ -1156,8 +1156,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_kyc_regions_name | name | Yes |
 | ix_kyc_regions_country_code | country_code | No |
+| ix_kyc_regions_name | name | Yes |
 
 ## kyc_user_profiles
 
@@ -1498,8 +1498,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_messaging_user_blocks_blocker_id | blocker_id | No |
 | ix_messaging_user_blocks_blocked_id | blocked_id | No |
+| ix_messaging_user_blocks_blocker_id | blocker_id | No |
 
 ## messaging_user_conversation_settings
 
@@ -1625,10 +1625,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_sync_batches_user_id_status | user_id, status | No |
-| ix_offline_sync_batches_user_id | user_id | No |
 | ix_sync_batches_status_priority | status, priority | No |
+| ix_offline_sync_batches_user_id | user_id | No |
 | ix_offline_sync_batches_id | id | No |
+| ix_sync_batches_user_id_status | user_id, status | No |
 
 ## offline_sync_configs
 
@@ -1651,8 +1651,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_offline_sync_configs_id | id | No |
 | ix_offline_sync_configs_user_id | user_id | Yes |
+| ix_offline_sync_configs_id | id | No |
 
 ## offline_sync_operations
 
@@ -1691,9 +1691,9 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_offline_sync_operations_id | id | No |
-| ix_offline_sync_operations_user_id | user_id | No |
-| ix_sync_operations_user_id_status | user_id, status | No |
 | ix_sync_operations_status_priority | status, priority | No |
+| ix_sync_operations_user_id_status | user_id, status | No |
+| ix_offline_sync_operations_user_id | user_id | No |
 
 ## payment_approval_steps
 
@@ -2259,11 +2259,11 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_interactions_user_id | user_id | No |
-| idx_interaction_type | interaction_type | No |
 | ix_recommendation_interactions_id | id | No |
 | ix_recommendation_interactions_item_id | item_id | No |
 | idx_user_item | user_id, item_id | No |
+| idx_interaction_type | interaction_type | No |
+| ix_recommendation_interactions_user_id | user_id | No |
 
 ## recommendation_item_features
 
@@ -2291,10 +2291,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| idx_item_type_popularity | item_type, popularity_score | No |
-| idx_item_type_rating | item_type, average_rating | No |
 | ix_recommendation_item_features_item_id | item_id | Yes |
 | ix_recommendation_item_features_item_type | item_type | No |
+| idx_item_type_popularity | item_type, popularity_score | No |
+| idx_item_type_rating | item_type, average_rating | No |
 | ix_recommendation_item_features_id | id | No |
 
 ## recommendation_item_similarities
@@ -2316,12 +2316,12 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_item_similarities_item_id | item_id | No |
-| ix_recommendation_item_similarities_similar_item_id | similar_item_id | No |
 | ix_recommendation_item_similarities_id | id | No |
 | ix_recommendation_item_similarities_algorithm | algorithm | No |
-| idx_item_similar | item_id, similar_item_id | No |
 | idx_item_algorithm_score | item_id, algorithm, similarity_score | No |
+| ix_recommendation_item_similarities_item_id | item_id | No |
+| idx_item_similar | item_id, similar_item_id | No |
+| ix_recommendation_item_similarities_similar_item_id | similar_item_id | No |
 
 ## recommendation_results
 
@@ -2345,13 +2345,13 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| ix_recommendation_results_item_id | item_id | No |
+| ix_recommendation_results_user_id | user_id | No |
 | idx_algorithm_score | algorithm, score | No |
+| idx_created_expires | created_at, expires_at | No |
+| ix_recommendation_results_algorithm | algorithm | No |
 | idx_user_context | user_id, context | No |
 | ix_recommendation_results_id | id | No |
-| ix_recommendation_results_user_id | user_id | No |
-| ix_recommendation_results_algorithm | algorithm | No |
-| ix_recommendation_results_item_id | item_id | No |
-| idx_created_expires | created_at, expires_at | No |
 
 ## recommendation_similarity_matrices
 
@@ -2400,8 +2400,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_user_preferences_id | id | No |
 | ix_recommendation_user_preferences_user_id | user_id | Yes |
+| ix_recommendation_user_preferences_id | id | No |
 
 ## scheduled_jobs
 
@@ -2576,11 +2576,13 @@
 | created_at | TIMESTAMP | No | now() | No |
 | status | VARCHAR(50) | No | - | No |
 | status_message | TEXT | Yes | - | No |
+| llm_provider | VARCHAR(20) | Yes | - | No |
 
 ### Indexes
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| ix_veilles_llm_provider | llm_provider | No |
 | ix_veilles_id | id | No |
 
 ## webhooks
@@ -2792,7 +2794,7 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_workflows_id | id | No |
 | ix_workflows_target_type | target_type | No |
+| ix_workflows_id | id | No |
 | ix_workflows_name | name | No |
 

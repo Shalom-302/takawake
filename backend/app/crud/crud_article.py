@@ -3,6 +3,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete, desc, update, func, join
+from sqlalchemy.orm import selectinload
 from typing import List, Optional, Dict, Any
 
 from app.models.veille import Article, Cluster # Importez Cluster pour les jointures
@@ -22,11 +23,21 @@ class CRUDArticle:
         return db_article
 
     async def get(self, db: AsyncSession, article_id: int) -> Optional[Article]:
-        result = await db.execute(select(Article).filter(Article.id == article_id))
+        # eager-load `veille` pour exposer prompt + llm_provider dans ArticleResponse
+        # sans déclencher de lazy-load (interdit en async).
+        result = await db.execute(
+            select(Article)
+            .options(selectinload(Article.veille))
+            .filter(Article.id == article_id)
+        )
         return result.scalars().first()
 
     async def get_by_url(self, db: AsyncSession, url: str) -> Optional[Article]:
-        result = await db.execute(select(Article).filter(Article.source_url == url))
+        result = await db.execute(
+            select(Article)
+            .options(selectinload(Article.veille))
+            .filter(Article.source_url == url)
+        )
         return result.scalars().first()
 
     async def get_all(
@@ -44,7 +55,7 @@ class CRUDArticle:
         Récupère une liste d'articles avec filtres.
         Le score est maintenant lu depuis le champ JSON 'analysis'.
         """
-        query = select(Article)
+        query = select(Article).options(selectinload(Article.veille))
 
         if veille_id is not None:
             query = query.filter(Article.veille_id == veille_id)
@@ -61,11 +72,31 @@ class CRUDArticle:
         else:
             # Trier sur le score dans le champ JSON
             query = query.order_by(desc(Article.analysis['score_pertinence'].as_integer()))
-            
+
         query = query.offset(skip).limit(limit)
-            
+
         result = await db.execute(query)
         return list(result.scalars().all())
+
+    async def count(
+        self,
+        db: AsyncSession,
+        veille_id: Optional[int] = None,
+        status: Optional[ArticleStatus] = None,
+        score_min: Optional[int] = None,
+        cluster_title: Optional[str] = None,
+    ) -> int:
+        query = select(func.count()).select_from(Article)
+        if veille_id is not None:
+            query = query.filter(Article.veille_id == veille_id)
+        if cluster_title:
+            query = query.join(Cluster, Article.cluster_id == Cluster.id).filter(Cluster.title == cluster_title)
+        if status is not None:
+            query = query.filter(Article.status == status)
+        if score_min is not None:
+            query = query.filter(Article.analysis['score_pertinence'].as_integer() >= score_min)
+        result = await db.execute(query)
+        return int(result.scalar_one())
 
     async def update(self, db: AsyncSession, article_id: int, article_in: ArticleUpdate) -> Optional[Article]:
         db_article = await self.get(db, article_id)
@@ -135,6 +166,35 @@ class CRUDArticle:
         ).limit(limit)
         result = await db.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_clusterable_articles(self, db: AsyncSession, veille_id: int, limit: int = 1000) -> List[Article]:
+        """
+        Articles d'une veille éligibles au clustering v2 : PROCESSED, analysés,
+        et pas encore rattachés à un cluster (cluster_id NULL — typiquement
+        après purge des clusters non publiés).
+        """
+        stmt = (
+            select(Article)
+            .where(
+                Article.veille_id == veille_id,
+                Article.status == ArticleStatus.PROCESSED,
+                Article.cluster_id.is_(None),
+                Article.analysis.is_not(None),
+            )
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def assign_cluster(self, db: AsyncSession, article_ids: List[int], cluster_id: int) -> int:
+        """Rattache en masse une liste d'articles à un cluster (UPDATE unique)."""
+        if not article_ids:
+            return 0
+        result = await db.execute(
+            update(Article).where(Article.id.in_(article_ids)).values(cluster_id=cluster_id)
+        )
+        await db.commit()
+        return result.rowcount or 0
 
     async def get_articles_needing_pertinence(self, db: AsyncSession, limit: int = 500) -> List[Article]:
         stmt = select(Article).where(

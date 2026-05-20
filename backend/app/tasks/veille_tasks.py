@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 from app.core.celery import celery_app
 from app.services import tekawake as veille_service # <- Renommé de 'tekawake' à 'veille_service' pour plus de clarté
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -14,7 +15,7 @@ from app.models.veille import VeilleStatus
 # 1️⃣ Tâche principale : exécuter un workflow de veille
 # ============================================================
 @celery_app.task(name="veille.run_workflow")
-def run_veille_workflow_task(query: str):
+def run_veille_workflow_task(query: str, llm_provider: str = "deepseek"):
     """
     Tâche Celery qui orchestre le workflow de veille.
     1. Crée un objet Veille pour le suivi.
@@ -23,7 +24,7 @@ def run_veille_workflow_task(query: str):
     4. Gère les états SUCCESS ou FAILED.
     """
     async def async_workflow():
-        print(f"--- Tâche Celery Démarrée : Veille pour '{query}' ---")
+        print(f"--- Tâche Celery Démarrée : Veille pour '{query}' (LLM: {llm_provider}) ---")
 
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
@@ -33,16 +34,16 @@ def run_veille_workflow_task(query: str):
         try:
             async with AsyncSessionFactory() as session:
                 # 1. Créer la session de veille pour obtenir un ID et définir le statut PENDING
-                veille_create_data = VeilleCreate(prompt=query)
+                veille_create_data = VeilleCreate(prompt=query, llm_provider=llm_provider)
                 new_veille = await crud_veille.create(session, veille_create_data)
                 veille_id = new_veille.id
-                
+
                 # Mettre à jour le statut initial à PENDING (même si le default est PENDING, c'est pour être explicite)
                 await crud_veille.update(session, veille_id=veille_id, veille_in=VeilleUpdate(status=VeilleStatus.PENDING))
                 print(f"Veille ID:{veille_id} créée avec statut PENDING.")
-                
+
                 # 2. Lancer le workflow avec l'ID (veille_service gérera la mise à jour finale de SUCCESS/FAILED)
-                await veille_service.run_veille_workflow(db=session, query=query, veille_id=veille_id)
+                await veille_service.run_veille_workflow(db=session, query=query, veille_id=veille_id, llm_provider=llm_provider)
 
             print(f"--- Tâche de veille pour '{query}' (ID:{veille_id}) terminée avec succès. ---")
             return {"status": "SUCCESS", "message": "Veille terminée."}
@@ -78,13 +79,15 @@ def run_veille_workflow_task(query: str):
 # 2️⃣ NOUVELLE TÂCHE : Orchestrateur de Backfill Complet
 # ============================================================
 @celery_app.task(name="veille.run_full_backfill")
-def run_full_backfill_task():
+def run_full_backfill_task(llm_provider: str = "deepseek", veille_id: Optional[int] = None):
     """
     Tâche Celery qui orchestre l'exécution séquentielle du backfill des clusters
     et du backfill de la pertinence.
+
+    veille_id fourni → ne traite que cette veille ; None → toutes les veilles.
     """
     async def async_full_backfill():
-        print("--- Tâche Celery Démarrée : Backfill Complet Orchestré ---")
+        print(f"--- Tâche Celery Démarrée : Backfill Complet Orchestré (LLM: {llm_provider}, veille: {veille_id or 'toutes'}) ---")
 
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
@@ -93,7 +96,7 @@ def run_full_backfill_task():
         try:
             async with AsyncSessionFactory() as session:
                 # CORRECTION : Appelle la fonction de service avec le bon nom
-                await veille_service.run_full_backfill_service(db=session)
+                await veille_service.run_full_backfill_service(db=session, llm_provider=llm_provider, veille_id=veille_id)
             print("--- Backfill Complet terminé avec succès ---")
             return {"status": "SUCCESS", "message": "Backfill complet terminé."}
         except Exception as e:
@@ -113,13 +116,13 @@ def run_full_backfill_task():
 # 3️⃣ NOUVELLE TÂCHE : Orchestrateur de Génération de Contenu de Cluster
 # =================================================================
 @celery_app.task(name="veille.generate_cluster_content")
-def generate_cluster_content_task(cluster_id: int):
+def generate_cluster_content_task(cluster_id: int, llm_provider: str = "deepseek"):
     """
     Tâche Celery qui orchestre la génération de l'article de synthèse et des slides
     pour un cluster donné.
     """
     async def async_generate_content():
-        print(f"--- Tâche Celery Démarrée : Génération de contenu pour le cluster ID '{cluster_id}' ---")
+        print(f"--- Tâche Celery Démarrée : Génération de contenu pour le cluster ID '{cluster_id}' (LLM: {llm_provider}) ---")
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -127,7 +130,7 @@ def generate_cluster_content_task(cluster_id: int):
         try:
             async with AsyncSessionFactory() as session:
                 # CORRECTION : Appelle la fonction de service avec le bon nom
-                await veille_service.generate_cluster_content_service(db=session, cluster_id=cluster_id)
+                await veille_service.generate_cluster_content_service(db=session, cluster_id=cluster_id, llm_provider=llm_provider)
             print(f"--- Génération de contenu pour le cluster ID '{cluster_id}' terminée avec succès ---")
             return {"status": "SUCCESS", "message": "Génération de contenu du cluster terminée."}
         except Exception as e:

@@ -7,6 +7,7 @@ from typing import List, Optional
 from app.core.db import get_async_db
 from app.schemas.veille import ArticleResponse, ArticleUpdate, ArticleStatus # Utilisez ArticleUpdate et ArticleStatus
 from app.crud.crud_article import crud_article # Nouvelle instance CRUD
+from app.plugins.advanced_auth.utils.security import require_superuser
 
 
 router = APIRouter()
@@ -40,6 +41,24 @@ async def get_articles_list(
         limit=limit
     )
     return articles
+
+@router.get("/count", summary="Compter les articles")
+async def count_articles(
+    veille_id: Optional[int] = Query(None),
+    status: Optional[ArticleStatus] = Query(None),
+    score_min: Optional[int] = Query(None, ge=1, le=10),
+    cluster_title: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_async_db),
+):
+    return {
+        "count": await crud_article.count(
+            db,
+            veille_id=veille_id,
+            status=status,
+            score_min=score_min,
+            cluster_title=cluster_title,
+        )
+    }
 
 @router.get(
     "/{article_id}",
@@ -84,7 +103,8 @@ async def update_article_partial(
     summary="Supprimer tous les articles (Admin, DANGEREUX)"
 )
 async def delete_all_articles_endpoint(
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db),
+    _: object = Depends(require_superuser),
 ):
     """
     Supprime **tous** les articles de la base de données.

@@ -2,30 +2,42 @@
 Service Qdrant : collection unique `articles`.
 
 Chaque point a pour ID l'article_id Postgres → join trivial.
-Vecteur : 768 dim (Gemini text-embedding-004), distance cosine.
+Vecteur : 768 dim (sentence-transformers multilingual-e5-base), distance cosine.
 Payload : métadonnées utiles aux filtres + au debug.
 """
+
+from __future__ import annotations  # toutes les annotations sont des strings (PEP 563)
 
 import asyncio
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from qdrant_client import QdrantClient
-from qdrant_client.http import models as qm
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as qm
+    QDRANT_AVAILABLE = True
+except ImportError:
+    # Module pas installé — l'app démarre quand même, le pipeline d'index sera skippé.
+    # Utile en dev quand `pip install qdrant-client` n'a pas encore été fait.
+    QdrantClient = None  # type: ignore
+    qm = None  # type: ignore
+    QDRANT_AVAILABLE = False
 
 from app.core.config import settings
 
 
-_client: Optional[QdrantClient] = None
+_client: Optional["QdrantClient"] = None  # type: ignore
 
 
-def get_client() -> QdrantClient:
+def get_client() -> "QdrantClient":
     """Singleton léger. QdrantClient est thread-safe (HTTP).
 
     Note : on parse l'URL et on passe host/port/https explicitement.
     qdrant-client 1.18 ignore le scheme dans `url=` et tape sur 6333 par défaut,
     ce qui casse les déploiements HTTPS derrière un reverse-proxy sur 443.
     """
+    if not QDRANT_AVAILABLE:
+        raise RuntimeError("qdrant-client n'est pas installé. Exécute `pip install qdrant-client` dans le container.")
     global _client
     if _client is None:
         parsed = urlparse(settings.QDRANT_URL)
@@ -183,6 +195,30 @@ async def set_cluster_for_articles(article_ids: List[int], cluster_id: int) -> N
     BATCH = 512
     for i in range(0, len(article_ids), BATCH):
         await asyncio.to_thread(_set_cluster_sync, article_ids[i : i + BATCH], cluster_id)
+
+
+def _clear_cluster_sync(article_ids: List[int]) -> None:
+    """Remet le payload cluster_id à None (article repassé non-clusterisé)."""
+    client = get_client()
+    client.set_payload(
+        collection_name=settings.QDRANT_COLLECTION,
+        payload={"cluster_id": None},
+        points=[int(i) for i in article_ids],
+        wait=True,
+    )
+
+
+async def clear_cluster_for_articles(article_ids: List[int]) -> None:
+    """
+    Réinitialise le cluster_id Qdrant d'un ensemble d'articles. À appeler avant
+    un re-clustering : sinon un article qui sort du clustering garderait un
+    cluster_id obsolète dans son payload.
+    """
+    if not article_ids:
+        return
+    BATCH = 512
+    for i in range(0, len(article_ids), BATCH):
+        await asyncio.to_thread(_clear_cluster_sync, article_ids[i : i + BATCH])
 
 
 def _search_sync(vector: List[float], top_k: int, flt: Optional[qm.Filter]) -> List[qm.ScoredPoint]:

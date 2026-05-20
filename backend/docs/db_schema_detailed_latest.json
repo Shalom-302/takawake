@@ -9138,6 +9138,13 @@
           "nullable": true,
           "primary_key": false,
           "default": null
+        },
+        {
+          "name": "llm_provider",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
         }
       ],
       "indices": [
@@ -9146,6 +9153,13 @@
           "unique": false,
           "columns": [
             "id"
+          ]
+        },
+        {
+          "name": "ix_veilles_llm_provider",
+          "unique": false,
+          "columns": [
+            "llm_provider"
           ]
         }
       ]
