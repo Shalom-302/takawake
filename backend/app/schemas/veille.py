@@ -179,7 +179,9 @@ class ClusterBase(BaseModel):
     title: str
 
 class ClusterCreate(ClusterBase):
-    pass
+    # category_id : suggestion posée par le clustering (cf. services/clustering.py),
+    # corrigeable ensuite par l'éditeur via PATCH /clusters/{id}.
+    category_id: Optional[int] = None
 
 class ClusterUpdate(BaseModel):
     """

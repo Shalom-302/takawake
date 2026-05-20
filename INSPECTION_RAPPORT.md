@@ -155,10 +155,12 @@ Les catégories (`Category 1-N Cluster`) sont un niveau **au-dessus** des cluste
 4. Si aucune catégorie n'existe → `category_id = NULL`, assignation 100% manuelle.
 5. Re-clustering : la suggestion est refaite à chaque backfill ; un cluster publié garde sa catégorie validée par l'humain.
 
-**Reste à câbler** :
-1. Backend : `clustering.py` charge les catégories existantes et le prompt de nommage renvoie aussi la catégorie ; `category_id` posé à la création du cluster. (Option : sync `category_id` vers le payload Qdrant — l'index payload existe déjà.)
-2. UI dashboard `/dashboard/topics/[id]` : sélecteur de catégorie (override de la suggestion).
-3. Site public : navigation top par catégorie (ex: `Fintech / IA / Cybersécurité`).
+**État du câblage** :
+1. ✅ **Backend (2026-05-20)** : `clustering.py` charge les catégories existantes ; le LLM suggère une catégorie par cluster dans le même appel que le nommage ; `category_id` posé à la création du cluster, exposé dans `ClusterResponse.category`. Taxonomie de départ (6 catégories) semée en base. `PATCH /clusters/{id}` permet déjà l'override éditeur.
+2. ⏳ UI dashboard `/dashboard/topics/[id]` : sélecteur de catégorie (override de la suggestion).
+3. ⏳ Site public : navigation top par catégorie (ex: `Fintech / IA / Cybersécurité`).
+
+Option non faite : sync `category_id` vers le payload Qdrant — utile seulement pour une future recherche sémantique filtrée par catégorie.
 
 ### D. Nettoyage repo (avant push public)
 - `.env` à retirer du tracking : `git rm --cached backend/.env` + ajouter `.env` à `.gitignore`

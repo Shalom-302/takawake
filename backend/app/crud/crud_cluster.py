@@ -14,6 +14,7 @@ class CRUDCluster:
     async def create(self, db: AsyncSession, cluster_in: ClusterCreate) -> Cluster:
         db_cluster = Cluster(
             title=cluster_in.title,
+            category_id=cluster_in.category_id,
             # created_at est server_default, is_published par défaut à False
         )
         db.add(db_cluster)

@@ -7,9 +7,9 @@ Pipeline (cf. décision d'archi du 2026-05-20), exécuté **par veille** :
      partition stricte : chaque article appartient à exactement un groupe.
   3. Cap `CLUSTER_MAX_SIZE` : si un groupe dépasse, on garde le top-N par
      `score_pertinence`, le surplus repasse non-clusterisé.
-  4. Le LLM **nomme** chaque cluster (1 question-titre, 1 appel/cluster). Il ne
-     regroupe plus rien — c'est ce qui rend le résultat déterministe et
-     supprime les doublons / hallucinations de l'ancienne approche.
+  4. Le LLM **nomme et catégorise** chaque cluster — en un seul appel pour tous
+     les clusters. Il ne regroupe plus rien : le résultat reste déterministe.
+     La catégorie est choisie parmi une taxonomie fixe (table `categories`).
   5. Persiste `cluster_id` dans Postgres ET dans Qdrant, puis nettoie les
      clusters vides.
 
@@ -24,7 +24,7 @@ import asyncio
 import json
 import re
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud.crud_article import crud_article
+from app.crud.crud_category import crud_category
 from app.crud.crud_cluster import crud_cluster
 from app.models.veille import Article
 from app.schemas.veille import ClusterCreate
@@ -45,23 +46,28 @@ from app.services.qdrant_service import (
 # Nombre d'articles représentatifs (les mieux scorés) montrés au LLM par groupe.
 _NAMING_SAMPLE_SIZE = 4
 
-# Nommage de TOUS les clusters en un seul appel : le LLM voit tous les groupes
-# d'un coup, ce qui force des titres différenciés. Un nommage cluster-par-cluster
-# produit des questions stratégiques génériques quasi identiques.
+# Nommage + catégorisation de TOUS les clusters en un seul appel : le LLM voit
+# tous les groupes d'un coup, ce qui force des titres différenciés. Un nommage
+# cluster-par-cluster produit des questions génériques quasi identiques.
 _NAMING_PROMPT = """Tu es un expert en stratégie numérique africaine.
 On a regroupé des articles en {n} groupes thématiques DISTINCTS. Pour chaque
 groupe, voici un échantillon d'articles (titre + problématique) :
 
 {groupes}
 
-Pour CHAQUE groupe, génère une question-titre :
-- percutante et synthétique, qui pousse à la réflexion stratégique pour l'Afrique ;
-- fidèle au thème SPÉCIFIQUE du groupe (fintech, cybersécurité, IA, énergie...) ;
-- nettement DIFFÉRENCIÉE des autres — chaque groupe traite d'un sujet distinct,
-  les titres ne doivent surtout pas se ressembler.
+Catégories éditoriales disponibles :
+{categories}
 
-Réponds UNIQUEMENT par un tableau JSON de {n} chaînes, dans l'ordre des groupes,
-sans clé ni texte autour. Exemple : ["Question du groupe 1 ?", "Question du groupe 2 ?"]"""
+Pour CHAQUE groupe, produis :
+- "titre" : une question-titre percutante et synthétique, fidèle au thème
+  SPÉCIFIQUE du groupe, nettement DIFFÉRENCIÉE des autres titres ;
+- "categorie" : le nom EXACT d'une catégorie de la liste ci-dessus qui
+  correspond le mieux au groupe, ou null si aucune ne convient (ou si la
+  liste est vide).
+
+Réponds UNIQUEMENT par un tableau JSON de {n} objets, dans l'ordre des groupes,
+sans texte autour. Exemple :
+[{{"titre": "Question du groupe 1 ?", "categorie": "Fintech"}}, {{"titre": "Question du groupe 2 ?", "categorie": null}}]"""
 
 
 # --- Helpers ----------------------------------------------------------------
@@ -130,8 +136,12 @@ def _format_group(index: int, articles: List[Article]) -> str:
     return f"Groupe {index} ({len(articles)} articles) :\n{lignes}"
 
 
-def _parse_title_list(raw: str, expected: int) -> Optional[List[str]]:
-    """Extrait de la réponse LLM un tableau JSON d'exactement `expected` titres."""
+def _parse_naming(raw: str, expected: int) -> Optional[List[Tuple[str, Optional[str]]]]:
+    """
+    Extrait de la réponse LLM un tableau JSON de `expected` objets
+    {titre, categorie}. `categorie` peut être nulle. Tolère l'ancien format
+    (tableau de chaînes = titres seuls).
+    """
     match = re.search(r"\[.*\]", raw or "", re.DOTALL)
     if not match:
         return None
@@ -141,27 +151,52 @@ def _parse_title_list(raw: str, expected: int) -> Optional[List[str]]:
         return None
     if not isinstance(data, list) or len(data) != expected:
         return None
-    titles = [_clean_title(str(t)) for t in data]
-    return titles if all(titles) else None
+    out: List[Tuple[str, Optional[str]]] = []
+    for item in data:
+        if isinstance(item, dict):
+            title = _clean_title(str(item.get("titre") or ""))
+            cat = item.get("categorie")
+            cat = str(cat).strip() if cat not in (None, "", "null") else None
+        elif isinstance(item, str):
+            title, cat = _clean_title(item), None
+        else:
+            return None
+        if not title:
+            return None
+        out.append((title, cat))
+    return out
 
 
-async def _name_all_clusters(groups: List[List[Article]], llm_provider: str) -> List[str]:
+async def _name_all_clusters(
+    groups: List[List[Article]],
+    llm_provider: str,
+    categories: List[Any],
+) -> List[Tuple[str, Optional[int]]]:
     """
-    Nomme tous les clusters en UN SEUL appel LLM : le modèle voit tous les
-    groupes à la fois, ce qui garantit des titres différenciés. Repli sur un
-    titre par défaut (sujet/titre de l'article le plus pertinent) si échec.
+    Nomme et catégorise tous les clusters en UN SEUL appel LLM : le modèle voit
+    tous les groupes + la taxonomie d'un coup → titres différenciés et catégorie
+    cohérente. Repli : titre par défaut + catégorie None si échec.
+
+    Retourne une liste de (titre, category_id) — category_id None si le LLM ne
+    propose aucune catégorie connue.
     """
+    cat_by_name = {c.name.strip().lower(): c.id for c in categories}
+    cat_list = "\n".join(f"- {c.name}" for c in categories) or "(aucune catégorie définie)"
     groupes_str = "\n\n".join(_format_group(i, g) for i, g in enumerate(groups, start=1))
     chain = ChatPromptTemplate.from_template(_NAMING_PROMPT) | get_llm(llm_provider) | StrOutputParser()
     try:
-        raw = await chain.ainvoke({"n": len(groups), "groupes": groupes_str})
-        titles = _parse_title_list(raw, len(groups))
-        if titles:
-            return titles
+        raw = await chain.ainvoke({
+            "n": len(groups),
+            "groupes": groupes_str,
+            "categories": cat_list,
+        })
+        parsed = _parse_naming(raw, len(groups))
+        if parsed:
+            return [(title, cat_by_name.get((cat or "").lower())) for title, cat in parsed]
         print("  [WARN] réponse de nommage inexploitable → titres de repli.")
     except Exception as e:  # noqa: BLE001 — le nommage ne doit pas casser le clustering
         print(f"  [WARN] nommage groupé échoué ({e}) → titres de repli.")
-    return [_fallback_title(g) for g in groups]
+    return [(_fallback_title(g), None) for g in groups]
 
 
 # --- Orchestrateur ----------------------------------------------------------
@@ -189,6 +224,7 @@ async def cluster_articles_for_veille(
         return {
             "veille_id": veille_id,
             "clusters_crees": 0,
+            "clusters_categorises": 0,
             "articles_clusterises": 0,
             "articles_isoles": isoles,
         }
@@ -243,14 +279,19 @@ async def cluster_articles_for_veille(
 
     print(f"  {len(final_groups)} cluster(s) détecté(s), {isoles} article(s) isolé(s).")
 
-    # 6. Nommage LLM (parallèle).
-    titles = await _name_all_clusters(final_groups, llm_provider)
+    # 6. Nommage + catégorisation LLM (un seul appel) sur la taxonomie fixe.
+    categories = await crud_category.get_all(db, limit=1000)
+    naming = await _name_all_clusters(final_groups, llm_provider, categories)
+    cat_label = {c.id: c.name for c in categories}
 
     # 7. Persistance Postgres + Qdrant.
     clusters_crees = 0
+    clusters_categorises = 0
     articles_clusterises = 0
-    for arts, title in zip(final_groups, titles):
-        cluster = await crud_cluster.create(db, ClusterCreate(title=title))
+    for arts, (title, category_id) in zip(final_groups, naming):
+        cluster = await crud_cluster.create(
+            db, ClusterCreate(title=title, category_id=category_id)
+        )
         ids = [a.id for a in arts]
         await crud_article.assign_cluster(db, ids, cluster.id)
         try:
@@ -259,7 +300,12 @@ async def cluster_articles_for_veille(
             print(f"  [WARN] sync Qdrant du cluster {cluster.id} échouée : {e}")
         clusters_crees += 1
         articles_clusterises += len(ids)
-        print(f"  Cluster #{cluster.id} « {title[:60]} » — {len(ids)} articles")
+        if category_id is not None:
+            clusters_categorises += 1
+        print(
+            f"  Cluster #{cluster.id} « {title[:55]} » "
+            f"[{cat_label.get(category_id, '— non catégorisé')}] — {len(ids)} articles"
+        )
 
     # 8. Nettoyage des clusters devenus vides.
     await crud_cluster.delete_empty_clusters(db)
@@ -267,6 +313,7 @@ async def cluster_articles_for_veille(
     summary = {
         "veille_id": veille_id,
         "clusters_crees": clusters_crees,
+        "clusters_categorises": clusters_categorises,
         "articles_clusterises": articles_clusterises,
         "articles_isoles": isoles,
     }
