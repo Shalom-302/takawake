@@ -39,6 +39,7 @@
   - `app/routers/cluster.py` → `GET /clusters/`, `GET /clusters/count`, `GET /clusters/all-with-pertinences`, `GET /clusters/{id}`, `PATCH /clusters/{id}`, `DELETE /clusters/{id}`, `GET /clusters/{id}/summary`, `GET /clusters/{id}/slides`, `GET /clusters/{id}/image[s]`, `POST /clusters/backfill-assign` (🔒), `POST /clusters/{id}/generate-content` (🔒)
   - `app/routers/article.py` → CRUD complet + `GET /articles/count` + `DELETE /articles/all` (🔒)
   - `app/routers/category.py` → CRUD catégories
+  - `app/routers/qdrant.py` → `GET /qdrant/collections`, `GET /qdrant/collections/{name}` (inspection vectorielle depuis Swagger)
   - `app/routers/migrations.py` → `GET /changes` (🔒), `POST /apply` (🔒)
 - **Modèles** : `Veille` 1-N `Article`, `Cluster` 1-N `Article`, `Category` 1-N `Cluster`
 - **Tâches Celery** : `run_veille_workflow_task`, `run_full_backfill_task`, `generate_cluster_content_task`
@@ -190,7 +191,7 @@ Les catégories (`Category 1-N Cluster`) sont un niveau **au-dessus** des cluste
 
 **Bugs corrigés au passage** : `MissingGreenlet` (HTTP 500 sur `GET /clusters/{id}` — `selectinload` manquant sur `Article.veille`/`Cluster.category`) ; clusters orphelins vides jamais nettoyés ; `cluster_id` Qdrant obsolètes après re-clustering.
 
-**⚠️ Limitation connue** : la suppression d'une veille nettoie Postgres (articles + clusters vides) mais **PAS les vecteurs Qdrant** → points orphelins qui s'accumulent. À combler (`delete_vectors_for_veille`).
+**Suppression de veille** : `DELETE /veille/{id}` nettoie désormais Postgres (articles via cascade + clusters devenus vides) **et** les vecteurs Qdrant de la veille (`delete_vectors_for_veille`, filtre sur `veille_id`) — plus de points orphelins.
 
 **Tuning** : seuil 0.86 calé empiriquement sur la veille 15 (38 articles → 8 clusters, 33 clusterisés, 5 isolés). À re-vérifier si le volume d'articles change beaucoup.
 

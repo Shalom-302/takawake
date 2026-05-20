@@ -9,6 +9,7 @@ from app.core.db import get_async_db # Assurez-vous d'avoir ceci
 from app.schemas.veille import VeilleCreate, VeilleResponse, TriggerVeilleRequest
 from app.crud.crud_veille import crud_veille
 from app.crud.crud_cluster import crud_cluster
+from app.services.qdrant_service import delete_vectors_for_veille
 from app.tasks.veille_tasks import run_veille_workflow_task # Assurez-vous que cela pointe vers vos tâches Celery
 from app.plugins.advanced_auth.utils.security import require_superuser
 
@@ -99,7 +100,15 @@ async def delete_veille(
         raise HTTPException(status_code=404, detail=f"Veille avec l'ID {veille_id} non trouvée.")
     # La cascade supprime les articles ; on nettoie les clusters devenus vides.
     removed_clusters = await crud_cluster.delete_empty_clusters(db)
+    # On purge aussi les vecteurs Qdrant de la veille (sinon points orphelins).
+    # Qdrant indisponible ne doit pas faire échouer la suppression déjà commitée.
+    try:
+        removed_vectors = await delete_vectors_for_veille(veille_id)
+    except Exception as e:  # noqa: BLE001
+        removed_vectors = None
+        print(f"[WARN] purge des vecteurs Qdrant de la veille {veille_id} échouée : {e}")
     return {
         "message": f"Veille ID {veille_id} et ses articles associés ont été supprimés avec succès.",
         "clusters_vides_supprimes": removed_clusters,
+        "vecteurs_qdrant_supprimes": removed_vectors,
     }

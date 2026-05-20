@@ -221,6 +221,111 @@ async def clear_cluster_for_articles(article_ids: List[int]) -> None:
         await asyncio.to_thread(_clear_cluster_sync, article_ids[i : i + BATCH])
 
 
+def _delete_by_veille_sync(veille_id: int) -> int:
+    """Supprime tous les points d'une veille. Retourne le nombre supprimé."""
+    client = get_client()
+    flt = qm.Filter(
+        must=[qm.FieldCondition(key="veille_id", match=qm.MatchValue(value=int(veille_id)))]
+    )
+    # delete() ne renvoie pas de compteur → on compte avant.
+    n = client.count(
+        collection_name=settings.QDRANT_COLLECTION,
+        count_filter=flt,
+        exact=True,
+    ).count
+    if n:
+        client.delete(
+            collection_name=settings.QDRANT_COLLECTION,
+            points_selector=qm.FilterSelector(filter=flt),
+            wait=True,
+        )
+    return n
+
+
+async def delete_vectors_for_veille(veille_id: int) -> int:
+    """
+    Supprime de Qdrant tous les vecteurs d'une veille. À appeler à la
+    suppression de la veille : sinon les points deviennent orphelins et
+    polluent la collection (et faussent les tests). Retourne le nombre
+    de points supprimés.
+    """
+    return await asyncio.to_thread(_delete_by_veille_sync, veille_id)
+
+
+# --- Inspection (exposée via le router /qdrant) ---
+
+def _list_collections_sync() -> List[Dict[str, Any]]:
+    client = get_client()
+    out: List[Dict[str, Any]] = []
+    for col in client.get_collections().collections:
+        try:
+            info = client.get_collection(col.name)
+            out.append({
+                "name": col.name,
+                "points_count": info.points_count,
+                "status": str(info.status),
+            })
+        except Exception as e:  # noqa: BLE001
+            out.append({"name": col.name, "points_count": None, "status": f"error: {e}"})
+    return out
+
+
+async def list_collections() -> List[Dict[str, Any]]:
+    """Liste les collections Qdrant avec leur nombre de points."""
+    return await asyncio.to_thread(_list_collections_sync)
+
+
+def _collection_stats_sync(collection_name: str) -> Dict[str, Any]:
+    client = get_client()
+    info = client.get_collection(collection_name)
+
+    # Config du vecteur (collection à vecteur unique non nommé).
+    try:
+        params = info.config.params.vectors
+        vector_cfg: Dict[str, Any] = {"size": params.size, "distance": str(params.distance)}
+    except Exception:  # noqa: BLE001
+        vector_cfg = {"info": "indisponible"}
+
+    # Répartition des points par veille_id et cluster_id (scroll du payload).
+    by_veille: Dict[Any, int] = {}
+    by_cluster: Dict[Any, int] = {}
+    offset = None
+    while True:
+        points, offset = client.scroll(
+            collection_name=collection_name,
+            with_payload=True,
+            with_vectors=False,
+            limit=256,
+            offset=offset,
+        )
+        for p in points:
+            payload = p.payload or {}
+            v = payload.get("veille_id")
+            c = payload.get("cluster_id")
+            by_veille[v] = by_veille.get(v, 0) + 1
+            by_cluster[c] = by_cluster.get(c, 0) + 1
+        if offset is None:
+            break
+
+    def _sorted(d: Dict[Any, int]) -> Dict[str, int]:
+        items = sorted(d.items(), key=lambda kv: (kv[0] is None, kv[0] if kv[0] is not None else -1))
+        return {str(k): v for k, v in items}
+
+    return {
+        "name": collection_name,
+        "status": str(info.status),
+        "points_count": info.points_count,
+        "vector_config": vector_cfg,
+        "points_par_veille_id": _sorted(by_veille),
+        "points_par_cluster_id": _sorted(by_cluster),
+    }
+
+
+async def collection_stats(collection_name: str) -> Dict[str, Any]:
+    """Stats d'une collection : config + répartition des points par veille/cluster."""
+    return await asyncio.to_thread(_collection_stats_sync, collection_name)
+
+
 def _search_sync(vector: List[float], top_k: int, flt: Optional[qm.Filter]) -> List[qm.ScoredPoint]:
     client = get_client()
     return client.search(
