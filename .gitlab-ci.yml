@@ -1,5 +1,8 @@
+stages:
+  - debug:norepo
+  
 debug:norepo:
-  stage: lint
+  stage: debug:norepo
   image: alpine
   variables:
     GIT_STRATEGY: none
