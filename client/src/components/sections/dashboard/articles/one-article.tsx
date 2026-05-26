@@ -92,7 +92,7 @@ export default function OneArticle() {
                     content={
                         <>
                             <h1 className="font-bold text-xl">{formatDate(article.scraping_date)}</h1>
-                            <p className="text-sm">Date de récupération</p>
+                            <p className="text-sm">Date de la récupération</p>
                         </>
                     }
                 />
