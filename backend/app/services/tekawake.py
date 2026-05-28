@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict, TypedDict, Optional, Any
 from urllib.parse import urljoin
-import requests
+import httpx
 from bs4 import BeautifulSoup, Tag
 import trafilatura
 import asyncio
@@ -11,11 +11,9 @@ import json
 import datetime
 # from sqlalchemy.orm import Session # Plus utilisé directement ici
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph, END
 from sqlalchemy.ext.asyncio import AsyncSession
 from langchain_core.output_parsers import StrOutputParser
-from pydantic import SecretStr
 from langchain_core.runnables import Runnable # Correction Pylance pour LangGraph
 
 # Imports depuis notre module `veille`, corrigés
@@ -27,9 +25,20 @@ from app.crud.crud_cluster import crud_cluster
 from app.models.veille import ArticleStatus, VeilleStatus # NOUVEAUX IMPORTS
 
 from app.core.config import settings
+from app.services.embeddings import build_text_from_analysis, embed_texts
+from app.services.qdrant_service import ensure_collection, upsert_article_vectors
+from app.services.llm_factory import get_llm
+from app.services.clustering import cluster_articles_for_veille
 
-# Initialisation du LLM en utilisant la configuration centrale
-llm = ChatDeepSeek(api_key=SecretStr(settings.DEEPSEEK_API_KEY), model="deepseek-chat", temperature=0)
+# Provider LLM par défaut. Override par requête via llm_provider="openai" ou "anthropic".
+DEFAULT_LLM_PROVIDER = "deepseek"
+
+# Concurrence : listings (httpx) / fetch articles (httpx + trafilatura) / LLM analyse
+LISTING_CONCURRENCY = 5
+FETCH_CONCURRENCY = 20
+LLM_CONCURRENCY = 8
+
+DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; TekawakeBot/1.0)"}
 
 # --- Fonctions de Scraping et Registre (Inchangé, supposé être défini ailleurs ou complet) ---
 class FoundArticle(TypedDict):
@@ -213,80 +222,18 @@ def extract_publication_date(soup: BeautifulSoup, metadata=None) -> Optional[dat
     return None
 
 # --- Logique LangGraph interne au service ---
-class AgentState(TypedDict):
+class AgentState(TypedDict, total=False):
     db_session: AsyncSession
     veille_id: int
     query: str
-    sites_to_process: List[str]
-    current_site: str
+    llm_provider: str
+    http_client: httpx.AsyncClient
     found_articles: List[FoundArticle]
-
-# --- Nœuds du Graphe (inchangé) ---
-async def plan_next_site(state: AgentState) -> dict:
-    sites = state.get("sites_to_process", []).copy()
-    if sites:
-        return {"current_site": sites.pop(0), "sites_to_process": sites}
-    else:
-        return {"current_site": ""}
-
-async def scraper_dispatcher(state: AgentState) -> dict:
-    site_url = state.get("current_site")
-    if not site_url:
-        return {"found_articles": state.get("found_articles", [])}
-
-    scraper_function = SCRAPER_REGISTRY.get(site_url)
-    if not scraper_function:
-        return {"found_articles": state.get("found_articles", [])}
-
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(site_url, headers=headers, timeout=20)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        new_articles: List[FoundArticle] = await scraper_function(soup, site_url)
-
-        cleaned_articles: List[FoundArticle] = []
-        for art in new_articles:
-            url = art.get("url")
-            title = art.get("title")
-            source = art.get("source")
-
-            if isinstance(url, list):
-                url = url[0] if url else None
-
-            if not (url and isinstance(url, str) and title and source):
-                continue
-
-            cleaned_articles.append({
-                "url": urljoin(site_url, url),
-                "title": str(title),
-                "source": str(source)
-            })
-
-        current_articles = state.get("found_articles", [])
-        return {"found_articles": current_articles + cleaned_articles}
-
-    except Exception as e:
-        print(f"ERREUR lors du scraping de {site_url}: {e}")
-        return {"found_articles": state.get("found_articles", [])}
+    prepared_articles: List[Dict[str, Any]]
 
 
-# --- NŒUD CRITIQUE : extract_analyze_and_save (MIS À JOUR) ---
-async def extract_analyze_and_save(state: AgentState) -> dict:
-    print("\n--- NŒUD FINAL : Extraction, Analyse et Sauvegarde ---")
-    all_found_articles = state.get("found_articles", [])
-    veille_id = state["veille_id"]
-    db = state["db_session"]
-
-    if not all_found_articles:
-        print("Aucun article trouvé pour traitement.")
-        return {}
-
-    unique_articles_list = list({article['url']: article for article in all_found_articles}.values())
-    print(f"Traitement de {len(unique_articles_list)} articles uniques.")
-
-    analysis_prompt_template = """Vous êtes un analyste technologique mondial doublé d'un stratège pour l'Afrique. Pour l'article fourni, effectuez une analyse complète en deux temps : une analyse globale et neutre, puis une analyse stratégique spécifique à l'Afrique.
+# Prompt extrait au niveau module (recompilé une seule fois)
+ANALYSIS_PROMPT_TEMPLATE = """Vous êtes un analyste technologique mondial doublé d'un stratège pour l'Afrique. Pour l'article fourni, effectuez une analyse complète en deux temps : une analyse globale et neutre, puis une analyse stratégique spécifique à l'Afrique.
 
 **Partie 1 : Analyse Globale (Neutre)**
 1.  **Résumé Neutre :** Rédigez un résumé factuel et dense de l'article, de style journalistique (type agence de presse), strictement compris entre 700 et 800 caractères.
@@ -298,146 +245,325 @@ async def extract_analyze_and_save(state: AgentState) -> dict:
 5.  **Éveil de Conscience :** Quelle est la leçon critique pour les acteurs de la tech africaine ?
 6.  **Piste d'Opportunité :** Quelle opportunité concrète cela crée-t-il ?
 7.  **Score de Pertinence :** Attribuez un score de 1 à 10 sur l'importance de cette nouvelle pour l'Afrique.
-    
+
 Article à analyser : <article_text>{content}</article_text>"""
 
-    analysis_prompt = ChatPromptTemplate.from_template(analysis_prompt_template)
-    analysis_chain = analysis_prompt | llm.with_structured_output(veille_schema.ArticleAnalysis)
+_analysis_prompt = ChatPromptTemplate.from_template(ANALYSIS_PROMPT_TEMPLATE)
+# La chaîne d'analyse est construite par-requête dans analyze_articles_node
+# (dépend de state["llm_provider"]).
 
-    processed_articles_count = 0
-    for article_found in unique_articles_list:
-        # Initialiser les données pour le CRUD d'article avec les champs du nouveau modèle
-        article_data_for_crud = {
+
+async def parallel_scrape_node(state: AgentState) -> dict:
+    """Scrape les pages d'index des 5 sites en parallèle via httpx."""
+    client = state["http_client"]
+    sem = asyncio.Semaphore(LISTING_CONCURRENCY)
+
+    async def scrape_one(site_url: str) -> List[FoundArticle]:
+        async with sem:
+            try:
+                resp = await client.get(site_url, headers=DEFAULT_HEADERS)
+                resp.raise_for_status()
+            except Exception as e:
+                print(f"ERREUR lors du scraping de {site_url}: {e}")
+                return []
+
+            scraper_function = SCRAPER_REGISTRY.get(site_url)
+            if not scraper_function:
+                return []
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            new_articles: List[FoundArticle] = await scraper_function(soup, site_url)
+
+            cleaned: List[FoundArticle] = []
+            for art in new_articles:
+                url = art.get("url")
+                title = art.get("title")
+                source = art.get("source")
+                if isinstance(url, list):
+                    url = url[0] if url else None
+                if not (url and isinstance(url, str) and title and source):
+                    continue
+                cleaned.append({
+                    "url": urljoin(site_url, url),
+                    "title": str(title),
+                    "source": str(source),
+                })
+            return cleaned
+
+    results = await asyncio.gather(
+        *(scrape_one(site) for site in SCRAPER_REGISTRY.keys()),
+        return_exceptions=False,
+    )
+    all_found: List[FoundArticle] = [a for sub in results for a in sub]
+    print(f"--- parallel_scrape : {len(all_found)} articles bruts trouvés sur {len(SCRAPER_REGISTRY)} sites ---")
+    return {"found_articles": all_found}
+
+
+async def fetch_articles_node(state: AgentState) -> dict:
+    """Télécharge et extrait le contenu des articles en parallèle (httpx + trafilatura)."""
+    all_found = state.get("found_articles", [])
+    veille_id = state["veille_id"]
+    client = state["http_client"]
+
+    if not all_found:
+        return {"prepared_articles": []}
+
+    unique_articles = list({a["url"]: a for a in all_found}.values())
+    print(f"--- fetch_articles : extraction parallèle de {len(unique_articles)} articles uniques ---")
+
+    sem = asyncio.Semaphore(FETCH_CONCURRENCY)
+
+    async def fetch_one(art: FoundArticle) -> Dict[str, Any]:
+        data: Dict[str, Any] = {
             "veille_id": veille_id,
-            "source_url": article_found['url'],
-            "source_name": article_found['source'],
-            "title": article_found['title'],
-            "status": ArticleStatus.PENDING, # Initialement en attente de traitement
-            "status_message": None,          # Aucun message d'erreur initial
+            "source_url": art["url"],
+            "source_name": art["source"],
+            "title": art["title"],
+            "status": ArticleStatus.PENDING,
+            "status_message": None,
             "publication_date": None,
             "image_urls": [],
             "content": None,
             "analysis": None,
             "pertinence_cluster": None,
-            "cluster_id": None
+            "cluster_id": None,
         }
-        
-        try:
-            downloaded = trafilatura.fetch_url(article_found['url'])
-            if not downloaded:
-                article_data_for_crud["status"] = ArticleStatus.FAILED
-                article_data_for_crud["status_message"] = "Téléchargement échoué"
-            else:
-                content = trafilatura.extract(downloaded, favor_recall=True)
-                metadata = trafilatura.extract_metadata(downloaded)
-                soup = BeautifulSoup(downloaded, 'html.parser')
+        async with sem:
+            try:
+                resp = await client.get(art["url"], headers=DEFAULT_HEADERS)
+                resp.raise_for_status()
+                html = resp.text
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Téléchargement échoué: {e}"
+                return data
 
-                publication_date = extract_publication_date(soup, metadata)
-                if publication_date is None:
-                    print(f"AVERTISSEMENT: Aucune date de publication trouvée pour {article_found['url']}. Utilisation de la date de scraping.")
-                    publication_date = datetime.datetime.utcnow()
+            try:
+                content = trafilatura.extract(html, favor_recall=True)
+                metadata = trafilatura.extract_metadata(html)
+                soup = BeautifulSoup(html, "html.parser")
 
-                image_urls = extract_main_images(soup, metadata, base_url=article_found["url"])
+                pub_date = extract_publication_date(soup, metadata)
+                if pub_date is None:
+                    pub_date = datetime.datetime.utcnow()
 
-                article_data_for_crud.update({
-                    "publication_date": publication_date,
+                image_urls = extract_main_images(soup, metadata, base_url=art["url"])
+
+                data.update({
+                    "publication_date": pub_date,
                     "image_urls": image_urls,
-                    "content": content
+                    "content": content,
                 })
 
-                if content and len(content) > 250:
-                    try:
-                        analysis_result_raw = await analysis_chain.ainvoke({"content": content[:8000]})
-                        # Assurez-vous que l'objet est bien validé par Pydantic ArticleAnalysis
-                        analysis_result_obj = veille_schema.ArticleAnalysis.model_validate(analysis_result_raw)
-                        
-                        article_data_for_crud["analysis"] = analysis_result_obj.model_dump()
-                        article_data_for_crud["pertinence_cluster"] = analysis_result_obj.pertinence_cluster
-                        # `score_pertinence` est maintenant dans `analysis_result_obj.model_dump()` et non un champ direct.
+                if not content or len(content) <= 250:
+                    data["status"] = ArticleStatus.FAILED
+                    data["status_message"] = "Contenu insuffisant"
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Erreur d'extraction: {e}"
+        return data
 
-                        article_data_for_crud["status"] = ArticleStatus.PROCESSED # Marquer comme traité si tout s'est bien passé
-                        processed_articles_count += 1
+    prepared = await asyncio.gather(*(fetch_one(a) for a in unique_articles))
+    ok = sum(1 for d in prepared if d["status"] == ArticleStatus.PENDING)
+    print(f"--- fetch_articles : {ok}/{len(prepared)} articles avec contenu exploitable ---")
+    return {"prepared_articles": prepared}
 
-                    except Exception as llm_error:
-                        article_data_for_crud["status"] = ArticleStatus.FAILED
-                        article_data_for_crud["status_message"] = f"Erreur du LLM: {llm_error}"
-                else:
-                    article_data_for_crud["status"] = ArticleStatus.FAILED
-                    article_data_for_crud["status_message"] = "Contenu insuffisant"
 
+async def analyze_articles_node(state: AgentState) -> dict:
+    """Analyse LLM en parallèle (Semaphore LLM_CONCURRENCY), puis persistance séquentielle."""
+    prepared = state.get("prepared_articles", [])
+    db = state["db_session"]
+    provider = state.get("llm_provider") or DEFAULT_LLM_PROVIDER
+
+    if not prepared:
+        print("Aucun article préparé à analyser.")
+        return {"status": "SUCCESS", "processed_articles": 0}
+
+    print(f"--- analyze_articles : provider LLM = '{provider}' ---")
+    # `method="function_calling"` est le seul commun dénominateur supporté par
+    # les 3 providers : DeepSeek a désactivé `response_format=json_schema`
+    # ("This response_format type is unavailable now"), OpenAI et Anthropic
+    # acceptent tous deux le tool-calling pour la sortie structurée.
+    analysis_chain = _analysis_prompt | get_llm(provider).with_structured_output(
+        veille_schema.ArticleAnalysis,
+        method="function_calling",
+    )
+    sem = asyncio.Semaphore(LLM_CONCURRENCY)
+
+    async def analyze_one(data: Dict[str, Any]) -> Dict[str, Any]:
+        # On skip ceux qui ont déjà échoué au fetch
+        if data["status"] != ArticleStatus.PENDING or not data.get("content"):
+            return data
+        async with sem:
+            try:
+                raw = await analysis_chain.ainvoke({"content": data["content"][:8000]})
+                obj = veille_schema.ArticleAnalysis.model_validate(raw)
+                data["analysis"] = obj.model_dump()
+                data["pertinence_cluster"] = obj.pertinence_cluster
+                data["status"] = ArticleStatus.PROCESSED
+            except Exception as e:
+                data["status"] = ArticleStatus.FAILED
+                data["status_message"] = f"Erreur du LLM: {e}"
+                print(f"[LLM ERROR] {data.get('source_url')} ({type(e).__name__}): {e}")
+        return data
+
+    finalized = await asyncio.gather(*(analyze_one(d) for d in prepared))
+
+    # Persistance séquentielle : AsyncSession n'est pas thread-safe.
+    processed = 0
+    for data in finalized:
+        try:
+            await crud_article.create_or_update(db=db, article_data=data)
+            if data["status"] == ArticleStatus.PROCESSED:
+                processed += 1
         except Exception as e:
-            article_data_for_crud["status"] = ArticleStatus.FAILED
-            article_data_for_crud["status_message"] = f"Erreur d'extraction ou inattendue: {e}"
-        
-        # Sauvegarde en base via le nouveau crud_article
-        await crud_article.create_or_update(db=db, article_data=article_data_for_crud)
+            print(f"[WARN] Persistance KO pour {data.get('source_url')}: {e}")
 
-    print(f"Traitement et sauvegarde terminés pour {processed_articles_count}/{len(unique_articles_list)} articles.")
-    return {"status": "SUCCESS", "processed_articles": processed_articles_count}
+    print(f"--- analyze_articles : {processed}/{len(finalized)} articles processed ---")
+    return {"status": "SUCCESS", "processed_articles": processed}
 
 
-# --- Logique de Routage et Construction (inchangé) ---
-async def should_continue(state: AgentState) -> str:
-    return "continue_scraping" if state.get("current_site") else "end_scraping"
+async def index_articles_node(state: AgentState) -> dict:
+    """Embed les articles PROCESSED via Gemini puis upsert dans Qdrant.
 
-def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]: # <-- AJOUTÉ L'ANNOTATION
+    Tolérant aux pannes : si Gemini ou Qdrant fail, on log et on retourne
+    sans casser le workflow de veille (les articles restent en DB).
+    Le cluster_id sera assigné en PR5 (HDBSCAN sur les vecteurs).
+    """
+    db = state["db_session"]
+    veille_id = state["veille_id"]
+
+    try:
+        articles = await crud_article.get_all(
+            db=db,
+            veille_id=veille_id,
+            status=ArticleStatus.PROCESSED,
+            limit=1000,
+        )
+        if not articles:
+            print(f"--- index_articles : aucun article processed à indexer ---")
+            return {"indexed_articles": 0}
+
+        items_with_text = []
+        for art in articles:
+            text = build_text_from_analysis(art.title, art.analysis)
+            if text.strip():
+                items_with_text.append((art, text))
+
+        if not items_with_text:
+            print(f"--- index_articles : pas de texte exploitable ---")
+            return {"indexed_articles": 0}
+
+        print(f"--- index_articles : embedding de {len(items_with_text)} articles via multilingual-e5-base ---")
+
+        await ensure_collection()
+        texts = [t for _, t in items_with_text]
+        vectors = await embed_texts(texts, task_type="CLUSTERING")
+
+        if len(vectors) != len(items_with_text):
+            print(f"[WARN] mismatch vecteurs/articles ({len(vectors)} vs {len(items_with_text)}), abandon de l'upsert")
+            return {"indexed_articles": 0}
+
+        items = []
+        for (art, _), vec in zip(items_with_text, vectors):
+            analysis = art.analysis or {}
+            pub = art.publication_date or datetime.datetime.utcnow()
+            payload = {
+                "veille_id": art.veille_id,
+                "cluster_id": art.cluster_id,
+                "title": art.title,
+                "source_url": art.source_url,
+                "source_name": art.source_name,
+                "score_pertinence": analysis.get("score_pertinence"),
+                "created_at": pub.isoformat(),
+            }
+            items.append({
+                "article_id": art.id,
+                "vector": vec,
+                "payload": payload,
+            })
+
+        count = await upsert_article_vectors(items)
+        print(f"--- index_articles : {count} vecteurs upsertés dans Qdrant ---")
+        return {"indexed_articles": count}
+
+    except Exception as e:
+        print(f"[ERROR] index_articles a échoué (workflow continue) : {e}")
+        return {"indexed_articles": 0}
+
+
+def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]:
     workflow = StateGraph(AgentState)
-    workflow.add_node("planner", plan_next_site)
-    workflow.add_node("dispatcher", scraper_dispatcher)
-    workflow.add_node("analyze_and_save", extract_analyze_and_save)
-    workflow.set_entry_point("planner")
-    workflow.add_conditional_edges("planner", should_continue, {"continue_scraping": "dispatcher", "end_scraping": "analyze_and_save"})
-    workflow.add_edge("dispatcher", "planner")
-    workflow.add_edge("analyze_and_save", END)
+    workflow.add_node("scrape", parallel_scrape_node)
+    workflow.add_node("fetch", fetch_articles_node)
+    workflow.add_node("analyze", analyze_articles_node)
+    workflow.add_node("index", index_articles_node)
+    workflow.set_entry_point("scrape")
+    workflow.add_edge("scrape", "fetch")
+    workflow.add_edge("fetch", "analyze")
+    workflow.add_edge("analyze", "index")
+    workflow.add_edge("index", END)
     return workflow.compile()
 
-langgraph_app: Runnable[AgentState, Dict[str, Any]] = create_langgraph_app() # <-- AJOUTÉ L'ANNOTATION
+langgraph_app: Runnable[AgentState, Dict[str, Any]] = create_langgraph_app()
+
 
 # --- Fonction principale du Service (MIS À JOUR) ---
-async def run_veille_workflow(db: AsyncSession, query: str, veille_id: int):
+async def run_veille_workflow(
+    db: AsyncSession,
+    query: str,
+    veille_id: int,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+):
     # Le statut PENDING est défini avant d'appeler ce service (dans la tâche Celery/routeur)
 
-    initial_state = AgentState(
-        db_session=db,
-        veille_id=veille_id,
-        query=query,
-        sites_to_process=list(SCRAPER_REGISTRY.keys()),
-        current_site="",
-        found_articles=[],
-    )
-    
-    print(f"Lancement du workflow de veille pour la requête : '{query}' (Veille ID: {veille_id})")
-    try:
-        result = await langgraph_app.ainvoke(initial_state, recursion_limit=15)
-        
-        # Mettre à jour le statut de la veille à SUCCESS
-        veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.SUCCESS)
-        await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
-        
-        print(f"Workflow de veille terminé pour ID {veille_id}. Statut mis à jour à SUCCESS.")
-        return result
-    except Exception as e:
-        # Mettre à jour le statut de la veille à FAILED en cas d'erreur
-        error_message = f"Échec du workflow de veille : {e}"
-        print(f"--- ERREUR dans le workflow de veille (ID: {veille_id}) : {error_message} ---")
-        veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.FAILED, status_message=error_message)
-        await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
-        raise # Relaisser l'exception pour que Celery la capture aussi
+    limits = httpx.Limits(max_connections=50, max_keepalive_connections=20)
+    timeout = httpx.Timeout(30.0, connect=15.0)
+
+    print(f"Lancement du workflow de veille pour la requête : '{query}' (Veille ID: {veille_id}, LLM: {llm_provider})")
+
+    async with httpx.AsyncClient(limits=limits, timeout=timeout, follow_redirects=True) as http_client:
+        initial_state: AgentState = {
+            "db_session": db,
+            "veille_id": veille_id,
+            "query": query,
+            "llm_provider": llm_provider,
+            "http_client": http_client,
+            "found_articles": [],
+            "prepared_articles": [],
+        }
+
+        try:
+            result = await langgraph_app.ainvoke(initial_state)
+
+            veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.SUCCESS)
+            await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
+
+            print(f"Workflow de veille terminé pour ID {veille_id}. Statut mis à jour à SUCCESS.")
+            return result
+        except Exception as e:
+            error_message = f"Échec du workflow de veille : {e}"
+            print(f"--- ERREUR dans le workflow de veille (ID: {veille_id}) : {error_message} ---")
+            veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.FAILED, status_message=error_message)
+            await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
+            raise
 
 # --- NOUVEAU : Orchestrateur de Backfill (MIS À JOUR) ---
-async def run_full_backfill_service(db: AsyncSession): # Plus besoin de 'steps', on fait tout d'un coup
+async def run_full_backfill_service(db: AsyncSession, llm_provider: str = DEFAULT_LLM_PROVIDER, veille_id: Optional[int] = None):
     """
     Orchestre l'exécution de toutes les étapes du backfill (clustering et pertinence).
+
+    veille_id fourni → ne traite que cette veille ; None → toutes les veilles.
     """
-    print(f"--- Démarrage du service de backfill complet orchestré ---")
-    
+    print(f"--- Démarrage du service de backfill complet orchestré (LLM: {llm_provider}, veille: {veille_id or 'toutes'}) ---")
+
     try:
         print("Étape 1: Exécution du backfill des clusters.")
-        await backfill_clusters_service(db)
+        await backfill_clusters_service(db, llm_provider=llm_provider, veille_id=veille_id)
         print("Étape 1: Backfill des clusters terminé.")
-        
+
         print("Étape 2: Exécution du backfill de la pertinence.")
-        await backfill_pertinence_service(db)
+        await backfill_pertinence_service(db, llm_provider=llm_provider)
         print("Étape 2: Backfill de la pertinence terminé.")
         
         print(f"--- Fin du service de backfill complet orchestré. ---")
@@ -448,107 +574,37 @@ async def run_full_backfill_service(db: AsyncSession): # Plus besoin de 'steps',
         raise # Relaisser l'exception pour que Celery la capture
 
 
-# --- backfill_clusters_service (MIS À JOUR) ---
-async def backfill_clusters_service(db: AsyncSession):
+# --- backfill_clusters_service (clustering v2 — agglomératif sur vecteurs) ---
+async def backfill_clusters_service(
+    db: AsyncSession,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+    veille_id: Optional[int] = None,
+):
     """
-    Service de backfill pour générer et assigner des clusters de manière non supervisée.
+    Backfill du clustering. Délègue au moteur v2 (regroupement agglomératif sur
+    les vecteurs Qdrant, cf. app/services/clustering.py) : le LLM ne fait que
+    nommer les clusters, le regroupement est déterministe.
+
+    veille_id fourni → clusterise cette veille.
+    veille_id None   → rétro-compat : clusterise chaque veille existante.
     """
-    print("--- Démarrage du service de backfill des clusters (non supervisé) ---")
+    if veille_id is not None:
+        return await cluster_articles_for_veille(db, veille_id, llm_provider)
 
-    # 1. Récupérer tous les articles sans cluster via crud_article
-    articles_to_process = await crud_article.get_articles_without_cluster(db)
-    if not articles_to_process:
-        print("Aucun article à traiter pour le clustering. Fin du backfill.")
-        return
-
-    print(f"Trouvé {len(articles_to_process)} articles à traiter pour le clustering.")
-
-    # 2. Préparer les données pour le prompt
-    articles_data_for_prompt = []
-    for article_db_obj in articles_to_process:
-        # S'assurer que analysis est un dict et contient la problématique
-        if article_db_obj.analysis and "problematique_africaine" in article_db_obj.analysis:
-            articles_data_for_prompt.append({
-                "id": article_db_obj.id,
-                "problematique": article_db_obj.analysis["problematique_africaine"]
-            })
-
-    # Si après filtrage il n'y a plus d'articles avec une problématique, sortir
-    if not articles_data_for_prompt:
-        print("Aucun article avec problématique africaine à clusteriser. Fin du backfill.")
-        return
-
-    articles_str = "\n".join([f"ID: {a['id']}, Problématique: {a['problematique']}" for a in articles_data_for_prompt])
-
-    cluster_prompt_template = """
-    Tu es un expert en stratégie numérique africaine.
-    Ta mission est d'analyser la liste de problématiques suivante et de les regrouper en clusters pertinents.
-
-    **Instructions :**
-    1.  Analyse l'ensemble des problématiques ci-dessous.
-    2.  Identifie des thèmes communs et crée des clusters pour regrouper les articles.
-    3.  **Contrainte importante :** Chaque cluster ne doit pas contenir plus de 10 articles.
-    4.  Le nom de chaque cluster doit être une question qui synthétise la problématique sous-jacente et pousse à la réflexion (ex: "Comment l'Afrique peut-elle bâtir sa souveraineté technologique face aux géants étrangers ?", "Quelle régulation pour une finance inclusive et innovante en Afrique ?", "Comment réduire la fracture numérique dans les zones rurales ?").
-    5.  Ta réponse doit être **uniquement un objet JSON valide**.
-    6.  L'objet JSON doit avoir pour clés les questions des clusters que tu as créées, et pour valeurs une liste des IDs des articles appartenant à ce cluster.
-
-    **Exemple de format de sortie :**
-    {{
-      "Quelle régulation pour une finance inclusive et innovante en Afrique ?": [15, 22, 43],
-      "Comment l'Afrique peut-elle bâtir sa souveraineté technologique face aux géants étrangers ?": [12, 34, 56, 89]
-    }}
-
-    **Liste des problématiques à analyser :**
-    {articles_to_cluster}
-    """
-    cluster_prompt = ChatPromptTemplate.from_template(cluster_prompt_template)
-    cluster_chain = cluster_prompt | llm | StrOutputParser()
-
-    print("Appel au LLM pour la clusterisation...")
-    llm_response_str = await cluster_chain.ainvoke({"articles_to_cluster": articles_str})
-    print("Réponse du LLM reçue.")
-
-    updated_count = 0
-    try:
-        json_match = re.search(r"\{.*\}", llm_response_str, re.DOTALL)
-
-        if not json_match:
-            raise json.JSONDecodeError("Aucun objet JSON trouvé dans la réponse du LLM.", llm_response_str, 0)
-
-        json_str = json_match.group(0)
-        cluster_results: Dict[str, List[int]] = json.loads(json_str)
-
-        for cluster_title, article_ids in cluster_results.items():
-            db_cluster = await crud_cluster.get_by_title(db, cluster_title)
-            if not db_cluster:
-                new_cluster_data = veille_schema.ClusterCreate(title=cluster_title)
-                db_cluster = await crud_cluster.create(db, new_cluster_data)
-                print(f"Nouveau cluster créé: '{cluster_title}' (ID: {db_cluster.id})")
-            
-            for article_id in article_ids:
-                article_update_data = veille_schema.ArticleUpdate(cluster_id=db_cluster.id)
-                updated_article = await crud_article.update(db, article_id=article_id, article_in=article_update_data)
-                
-                if updated_article:
-                    updated_count += 1
-                    print(f"Article {article_id} → Cluster assigné: '{cluster_title}' (ID: {db_cluster.id})")
-                else:
-                    print(f"[WARNING] Article ID {article_id} retourné par le LLM mais non trouvé dans la liste initiale lors de l'assignation du cluster.")
-
-    except json.JSONDecodeError:
-        print(f"[ERREUR] La réponse du LLM n'est pas un JSON valide (après nettoyage) : {llm_response_str}")
-    except Exception as e:
-        print(f"[ERREUR] Une erreur est survenue lors de la mise à jour des articles : {e}")
-
-    print(f"--- Backfill terminé : {updated_count} articles mis à jour avec des clusters. ---")
+    veilles = await crud_session_veille.get_all(db, limit=1000)
+    print(f"--- Backfill clustering : {len(veilles)} veille(s) à traiter ---")
+    details = []
+    for v in veilles:
+        details.append(await cluster_articles_for_veille(db, v.id, llm_provider))
+    return {"status": "SUCCESS", "veilles_traitees": len(details), "details": details}
 
 
 # --- backfill_pertinence_service (MIS À JOUR) ---
-async def backfill_pertinence_service(db: AsyncSession):
+async def backfill_pertinence_service(db: AsyncSession, llm_provider: str = DEFAULT_LLM_PROVIDER):
     """
     Service de backfill pour générer la justification de pertinence pour chaque article.
     """
-    print("--- Démarrage du service de backfill de pertinence (Étape 2 : Justification) ---")
+    print(f"--- Démarrage du service de backfill de pertinence (Étape 2 : Justification, LLM: {llm_provider}) ---")
 
     articles_to_process = await crud_article.get_articles_needing_pertinence(db)
     if not articles_to_process:
@@ -569,7 +625,7 @@ async def backfill_pertinence_service(db: AsyncSession):
     Cet article traite de la levée de fonds d'une startup de paiement, illustrant directement les défis de la régulation financière en Afrique.
     """
     pertinence_prompt = ChatPromptTemplate.from_template(pertinence_prompt_template)
-    pertinence_chain = pertinence_prompt | llm | StrOutputParser()
+    pertinence_chain = pertinence_prompt | get_llm(llm_provider) | StrOutputParser()
 
     updated_count = 0
     for article_db_obj in articles_to_process:
@@ -604,23 +660,27 @@ async def backfill_pertinence_service(db: AsyncSession):
 
 
 # --- NOUVEL ORCHESTRATEUR : Génération de Contenu de Cluster ---
-async def generate_cluster_content_service(db: AsyncSession, cluster_id: int):
+async def generate_cluster_content_service(
+    db: AsyncSession,
+    cluster_id: int,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+):
     """
     Orchestre la génération du contenu complet pour un cluster :
     1.  Génère l'article de synthèse.
     2.  Génère les slides à partir de la synthèse.
     """
-    print(f"--- Démarrage de l'orchestrateur de génération de contenu pour le cluster ID : '{cluster_id}' ---")
-    
+    print(f"--- Démarrage de l'orchestrateur de génération de contenu pour le cluster ID : '{cluster_id}' (LLM: {llm_provider}) ---")
+
     try:
         # Étape 1 : Générer l'article de synthèse
         print(f"Étape 1 : Génération de l'article de synthèse pour le cluster ID '{cluster_id}'.")
-        await generate_article_by_cluster_belong(db, cluster_id)
+        await generate_article_by_cluster_belong(db, cluster_id, llm_provider=llm_provider)
         print(f"Étape 1 : Article de synthèse pour le cluster ID '{cluster_id}' généré avec succès.")
 
         # Étape 2 : Générer les slides à partir de l'article
         print(f"Étape 2 : Génération des slides pour le cluster ID '{cluster_id}'.")
-        await generate_slides_for_summary_article(db, cluster_id)
+        await generate_slides_for_summary_article(db, cluster_id, llm_provider=llm_provider)
         print(f"Étape 2 : Slides pour le cluster ID '{cluster_id}' générés avec succès.")
         
         print(f"--- Fin de l'orchestrateur de génération de contenu pour le cluster ID '{cluster_id}'. ---")
@@ -634,11 +694,15 @@ async def generate_cluster_content_service(db: AsyncSession, cluster_id: int):
 
 
 # --- generate_article_by_cluster_belong (MIS À JOUR) ---
-async def generate_article_by_cluster_belong(db: AsyncSession, cluster_id: int):
+async def generate_article_by_cluster_belong(
+    db: AsyncSession,
+    cluster_id: int,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+):
     """
     Génère un article de synthèse basé sur les résumés neutres de tous les articles d'un cluster.
     """
-    print(f"--- Démarrage de la génération d'article de synthèse pour le cluster ID : '{cluster_id}' ---")
+    print(f"--- Démarrage de la génération d'article de synthèse pour le cluster ID : '{cluster_id}' (LLM: {llm_provider}) ---")
 
     db_cluster = await crud_cluster.get(db, cluster_id)
     if not db_cluster:
@@ -670,7 +734,7 @@ async def generate_article_by_cluster_belong(db: AsyncSession, cluster_id: int):
     {summaries}
     """
     synthesis_prompt = ChatPromptTemplate.from_template(synthesis_prompt_template)
-    synthesis_chain = synthesis_prompt | llm | StrOutputParser()
+    synthesis_chain = synthesis_prompt | get_llm(llm_provider) | StrOutputParser()
 
     try:
         print("Appel au LLM pour la génération de l'article de synthèse...")
@@ -695,11 +759,15 @@ async def generate_article_by_cluster_belong(db: AsyncSession, cluster_id: int):
 
 
 # --- generate_slides_for_summary_article (MIS À JOUR) ---
-async def generate_slides_for_summary_article(db: AsyncSession, cluster_id: int):
+async def generate_slides_for_summary_article(
+    db: AsyncSession,
+    cluster_id: int,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+):
     """
     Génère un carrousel de 10 slides à partir de l'article de synthèse d'un cluster.
     """
-    print(f"--- Démarrage de la génération de slides pour le cluster ID : '{cluster_id}' ---")
+    print(f"--- Démarrage de la génération de slides pour le cluster ID : '{cluster_id}' (LLM: {llm_provider}) ---")
 
     db_cluster = await crud_cluster.get_summary_article_by_cluster(db, cluster_id)
     if not db_cluster or not db_cluster.summary_article:
@@ -753,7 +821,7 @@ async def generate_slides_for_summary_article(db: AsyncSession, cluster_id: int)
     {summary_article}
     """
     slides_prompt = ChatPromptTemplate.from_template(slides_prompt_template)
-    slides_chain = slides_prompt | llm | StrOutputParser()
+    slides_chain = slides_prompt | get_llm(llm_provider) | StrOutputParser()
 
     llm_response_str = ""
     try:

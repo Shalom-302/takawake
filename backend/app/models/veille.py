@@ -40,6 +40,10 @@ class Veille(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     status: Mapped[VeilleStatus] = mapped_column(String(50), default=VeilleStatus.PENDING, nullable=False)
     status_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Provider LLM utilisé pour l'analyse — sert au "human in the loop" pour
+    # comparer la qualité entre deepseek / openai / anthropic. Nullable pour
+    # les anciennes veilles antérieures à cette colonne.
+    llm_provider: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
 
     # Relation One-to-Many avec Article
     # "veille" fait référence à l'attribut de relation dans le modèle Article

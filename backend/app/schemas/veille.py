@@ -78,19 +78,31 @@ class VeilleBase(BaseModel):
     prompt: str
 
 class VeilleCreate(VeilleBase):
-    pass
+    llm_provider: Optional[str] = None  # deepseek | openai | anthropic | ollama
 
 class VeilleUpdate(BaseModel):
     prompt: Optional[str] = None
-    status: Optional[VeilleStatus] = None 
-    status_message: Optional[str] = None 
+    status: Optional[VeilleStatus] = None
+    status_message: Optional[str] = None
+    llm_provider: Optional[str] = None
 
 class VeilleResponse(VeilleBase):
     id: int
     created_at: datetime.datetime
-    status: VeilleStatus 
-    status_message: Optional[str] = None 
-    
+    status: VeilleStatus
+    status_message: Optional[str] = None
+    llm_provider: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VeilleContext(BaseModel):
+    """Sous-schéma léger embarqué dans ArticleResponse pour rappeler à quelle
+    veille (et donc quel LLM provider) l'article appartient."""
+    id: int
+    prompt: str
+    llm_provider: Optional[str] = None
+
     model_config = ConfigDict(from_attributes=True)
 
 # --- Article Schemas ---
@@ -142,18 +154,22 @@ class ArticleResponse(ArticleBase):
     id: int
     veille_id: int
     cluster_id: Optional[int] = None
-    
+
     publication_date: Optional[datetime.datetime] = None
     scraping_date: datetime.datetime
     image_urls: Optional[List[str]] = None
     content: Optional[str] = None
-    
-    status: ArticleStatus 
-    status_message: Optional[str] = None 
-    
+
+    status: ArticleStatus
+    status_message: Optional[str] = None
+
     pertinence_cluster: Optional[str] = None
-    
+
     analysis: Optional[ArticleAnalysis] = None
+
+    # Contexte de la veille parente : permet au front (human-in-the-loop)
+    # de savoir quel LLM provider a analysé l'article sans seconde requête.
+    veille: Optional[VeilleContext] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -163,7 +179,9 @@ class ClusterBase(BaseModel):
     title: str
 
 class ClusterCreate(ClusterBase):
-    pass
+    # category_id : suggestion posée par le clustering (cf. services/clustering.py),
+    # corrigeable ensuite par l'éditeur via PATCH /clusters/{id}.
+    category_id: Optional[int] = None
 
 class ClusterUpdate(BaseModel):
     """

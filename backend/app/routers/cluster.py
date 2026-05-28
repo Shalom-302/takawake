@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional, cast
+from typing import List, Literal, Optional, cast
 from celery import Task
 
 from app.core.db import get_async_db
@@ -13,9 +13,11 @@ from app.schemas.veille import (
 from app.crud.crud_cluster import crud_cluster 
 from app.crud.crud_article import crud_article 
 from app.tasks.veille_tasks import (
-    run_full_backfill_task,       
-    generate_cluster_content_task, 
+    run_full_backfill_task,
+    generate_cluster_content_task,
 )
+from app.services.llm_factory import OllamaModel
+from app.plugins.advanced_auth.utils.security import require_superuser
 
 router = APIRouter()
 
@@ -24,17 +26,41 @@ router = APIRouter()
 @router.post(
     "/backfill-assign",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Déclencher le backfill complet des clusters et de la pertinence" 
+    summary="Déclencher le backfill complet des clusters et de la pertinence"
 )
-def run_full_backfill_endpoint(): 
+def run_full_backfill_endpoint(
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
+        "deepseek",
+        description="Provider LLM utilisé pour cette tâche.",
+    ),
+    veille_id: Optional[int] = Query(
+        None,
+        description="ID de la veille à clusteriser. Si omis, toutes les veilles sont traitées.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama').",
+    ),
+    _: object = Depends(require_superuser),
+):
     """
     Déclenche une tâche de fond pour exécuter toutes les étapes du backfill :
     assignation des clusters aux articles et génération des justifications de pertinence.
     """
     try:
-        print("Envoi de la tâche de backfill complet à Celery.")
-        cast(Task, run_full_backfill_task).delay() 
-        return {"message": "Tâche de backfill complet lancée en arrière-plan."}
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        print(f"Envoi de la tâche de backfill complet à Celery (LLM: {llm_provider}, model: {effective_model or 'default'}, veille: {veille_id or 'toutes'}).")
+        cast(Task, run_full_backfill_task).delay(
+            llm_provider=llm_provider,
+            veille_id=veille_id,
+            ollama_model=effective_model,
+        )
+        return {
+            "message": "Tâche de backfill complet lancée en arrière-plan.",
+            "llm_provider": llm_provider,
+            "ollama_model": effective_model,
+            "veille_id": veille_id,
+        }
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
@@ -43,17 +69,31 @@ def run_full_backfill_endpoint():
     status_code=status.HTTP_202_ACCEPTED,
     summary="Générer l'article de synthèse et les slides pour un cluster"
 )
-def generate_cluster_full_content_endpoint( 
-    cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer le contenu.")
+def generate_cluster_full_content_endpoint(
+    cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer le contenu."),
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
+        "deepseek",
+        description="Provider LLM utilisé pour cette tâche.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama').",
+    ),
+    _: object = Depends(require_superuser),
 ):
     """
     Déclenche une tâche de fond pour générer séquentiellement l'article de synthèse
     et le carrousel de slides pour le cluster spécifié.
     """
     try:
-        print(f"Envoi de la tâche de génération de contenu pour le cluster ID '{cluster_id}' à Celery.")
-        cast(Task, generate_cluster_content_task).delay(cluster_id) 
-        return {"message": f"Tâche de génération de contenu pour le cluster ID '{cluster_id}' lancée en arrière-plan."}
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        print(f"Envoi de la tâche de génération de contenu pour le cluster ID '{cluster_id}' à Celery (LLM: {llm_provider}, model: {effective_model or 'default'}).")
+        cast(Task, generate_cluster_content_task).delay(cluster_id, llm_provider, effective_model)
+        return {
+            "message": f"Tâche de génération de contenu pour le cluster ID '{cluster_id}' lancée en arrière-plan.",
+            "llm_provider": llm_provider,
+            "ollama_model": effective_model,
+        }
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
@@ -80,8 +120,20 @@ async def get_all_clusters(
 
 # --- Endpoints d'agrégation et de gestion de contenu du Cluster ---
 
+@router.get("/count", summary="Compter les clusters")
+async def count_clusters(
+    is_published: Optional[bool] = Query(None),
+    category_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_async_db),
+):
+    return {
+        "count": await crud_cluster.count(
+            db, is_published=is_published, category_id=category_id
+        )
+    }
+
 @router.get(
-    "/all-with-pertinences", 
+    "/all-with-pertinences",
     response_model=List[ClusterInfo],
     summary="Lister tous les clusters avec les pertinences de leurs articles"
 )

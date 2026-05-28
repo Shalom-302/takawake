@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils/cn";
-import { Button } from "@/ds/components/button";
-import { Tabs } from "@/ds/components/tabs";
+import { Button } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/tabs";
 import { Copy } from "lucide-react";
 
 interface ComponentExampleProps {
@@ -48,7 +48,7 @@ export function ComponentExample({
                 <Tabs
                     defaultValue="preview"
                     className="relative"
-                    tabs={[
+                    items={[
                         {
                             value: "preview",
                             label: "Preview",

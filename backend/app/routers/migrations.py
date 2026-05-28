@@ -67,7 +67,7 @@ def preview_autogenerate_changes():
     return content  # or parse this further
 
 @router.get("/changes")
-def get_pending_migrations():
+def get_pending_migrations(current_user=Depends(get_current_user)):
     try:
         revision_script = preview_autogenerate_changes()
         return {"changes": revision_script}

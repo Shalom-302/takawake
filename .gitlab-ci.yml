@@ -1,0 +1,10 @@
+stages:
+  - debug:norepo
+  
+debug:norepo:
+  stage: debug:norepo
+  image: alpine
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "runner OK, sans clone"

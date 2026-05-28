@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pwd; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"landing|sections.topic|format-date|veille.service\" } | Select-Object -First 60)"
+    ]
+  }
+}

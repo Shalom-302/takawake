@@ -1,13 +1,5 @@
-"use client";
-
-import MainLayout from "@/components/layouts/main-layout";
-import ContentSection from "@/components/sections/landing/content";
-import HeroSection from "@/components/sections/landing/hero";
+import DashboardHome from "@/components/sections/dashboard/home/dashboard-home";
 
 export default function Home() {
-    return (
-        <>
-        tableau de bord
-        </>
-    );
+    return <DashboardHome />;
 }

@@ -1207,7 +1207,7 @@ function DisabledExample() {
     );
 }
 
-export const ExampleForm = () => {
+const ExampleForm = () => {
     const fileUploadSchema = z.object({
         documents: z.array(z.file()).min(1, "Upload at least one doc"),
         profileImage: z.array(z.file()).nonempty("Upload an image for your profile"),

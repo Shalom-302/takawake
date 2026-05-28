@@ -66,6 +66,7 @@ from app.routers import veille
 from app.routers import article
 from app.routers import cluster
 from app.routers import category
+from app.routers import qdrant
 
 # Ajoutez ces imports en haut du fichier
 
@@ -452,6 +453,7 @@ api_router.include_router(veille.router, prefix="/veille", tags=["Tekawake"])
 api_router.include_router(cluster.router, prefix="/clusters", tags=["Tekawake"])
 api_router.include_router(category.router, prefix="/categories", tags=["Tekawake"])
 api_router.include_router(article.router, prefix="/articles", tags=["Tekawake"])
+api_router.include_router(qdrant.router, prefix="/qdrant", tags=["Qdrant"])
 
 
 # Include the main API router in the application

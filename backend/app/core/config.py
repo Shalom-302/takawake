@@ -82,12 +82,55 @@ class Settings(BaseSettings):
     REDIS_DATABASE: int = 0
 
 
-    DEEPSEEK_API_KEY: str = ""
     # Configuration optionnelle pour LangSmith
     LANGSMITH_TRACING_V2: Optional[str] = "true"
     LANGSMITH_ENDPOINT: Optional[str] = "https://api.smith.langchain.com"
     LANGSMITH_API_KEY: str = ""
     LANGSMITH_PROJECT: str = ""
+
+    # LLM providers — 3 backends interchangeables via le param `llm_provider`
+    # (cf. app/services/llm_factory.py). Le default historique est deepseek.
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_LLM_MODEL: str = "deepseek-chat"
+    OPENAI_API_KEY: str = ""
+    OPENAI_LLM_MODEL: str = "gpt-4o-mini"
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_LLM_MODEL: str = "claude-sonnet-4-6"
+    # Ollama — endpoint distant self-hosted, pas de clé API. Modèle par défaut
+    # surchargeable via OLLAMA_LLM_MODEL dans le .env ou le param `ollama_model`
+    # de la route (voir routers/veille.py).
+    # gemma3:4b retenu par défaut : meilleur compromis vitesse/qualité au bench
+    # interne (675s pour 38/40 articles processed vs 909s/36 pour llama3.1:8b).
+    # Possible car le wrapper _OllamaJsonSchema force la contrainte JSON-schema
+    # côté serveur Ollama → fiabilité indépendante du support tool-calling du
+    # modèle (gemma3 ne supporte pas les tools, mais marche via json_schema).
+    OLLAMA_BASE_URL: str = "https://ollama.traaf.app"
+    OLLAMA_LLM_MODEL: str = "gemma3:4b"
+
+    # Embeddings — sentence-transformers/multilingual-e5-base, 768 dim, local CPU.
+    # Multilingue (incl. FR), tourne sans clé API ni quota. ~500 MB en RAM,
+    # ~30-50 docs/s sur CPU. Le 1er chargement télécharge le modèle dans HF_HOME
+    # (cf. docker-compose : volume monté pour éviter le re-download).
+    EMBED_MODEL: str = "intfloat/multilingual-e5-base"
+    EMBED_DIM: int = 768
+
+    # Qdrant (vector DB) — instance partagée, voir https://qdrant-client.kortexai.dev/dashboard
+    QDRANT_URL: str = "https://qdrant-client.kortexai.dev"
+    QDRANT_API_KEY: Optional[str] = None
+    QDRANT_COLLECTION: str = "tekawake_articles"
+
+    # Clustering v2 — regroupement agglomératif des articles d'une veille sur
+    # leurs vecteurs e5-base (cf. app/services/clustering.py).
+    #  - CLUSTER_SIM_THRESHOLD : similarité cosine min pour regrouper 2 articles.
+    #    À caler empiriquement ; les embeddings e5 ont une similarité de base
+    #    élevée, monter la valeur si tout fusionne, la baisser si tout est isolé.
+    #  - CLUSTER_MAX_SIZE : cap d'articles par cluster (on garde le top-N par
+    #    score_pertinence, le reste repasse non-clusterisé).
+    #  - MIN_CLUSTER_SIZE : un groupe sous ce seuil n'est pas promu en cluster
+    #    (un article isolé reste cluster_id = NULL).
+    CLUSTER_SIM_THRESHOLD: float = 0.86
+    CLUSTER_MAX_SIZE: int = 10
+    MIN_CLUSTER_SIZE: int = 2
 
     # Logging
     LOKI_URL: str = "http://loki:3100"

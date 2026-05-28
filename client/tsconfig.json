@@ -23,5 +23,12 @@
         }
     },
     "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-    "exclude": ["node_modules"]
+    "exclude": [
+        "node_modules",
+        "src/app/_old",
+        "src/components/analytics",
+        "src/components/auth",
+        "src/components/documents",
+        "src/providers/analytics-provider.tsx"
+    ]
 }

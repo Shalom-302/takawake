@@ -20,6 +20,12 @@
 
 set -e
 
+# BuildKit obligatoire pour le cache mount pip dans le Dockerfile.
+# Sans ça, chaque rebuild retélécharge toutes les wheels (~8 min).
+# Avec ça, seules les nouvelles deps sont téléchargées (~30s).
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
     echo "Docker is not installed. Please install Docker first."

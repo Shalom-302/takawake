@@ -8,7 +8,7 @@ services:
     image: kaapi-app:latest # Il construit et nomme l'image
     container_name: kaapi-api
     ports:
-      - "8001:8001"
+      - "8000:8000"
     volumes:
       - .:/app
     environment:
@@ -22,7 +22,18 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Cache HuggingFace persistant (le modèle multilingual-e5-base ~500 MB).
+      # Mappé via le volume `.:/app` → survit aux restarts.
+      - HF_HOME=/app/.hf_cache
+    # NOTE DEV : qdrant-client + sentence-transformers + langchain-* pas encore
+    # dans l'image. On installe au start si absent (1er run lent : ~2-3 min de
+    # téléchargement torch+st, ensuite quasi-instantané). À retirer quand on
+    # aura fait un rebuild propre.
+    command: sh -c "pip show qdrant-client >/dev/null 2>&1 || pip install --quiet qdrant-client; pip show sentence_transformers >/dev/null 2>&1 || pip install --quiet sentence-transformers langchain-openai langchain-anthropic langchain-deepseek; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug"
     tty: true
     depends_on:
       - kaapi-db
@@ -36,7 +47,8 @@ services:
     # PAS DE SECTION 'build'. CE SERVICE UTILISE L'IMAGE EXISTANTE.
     image: kaapi-app:latest
     container_name: kaapi-celery
-    command: python -m celery -A app.core.celery worker --loglevel=info
+    # NOTE DEV : install qdrant-client + sentence-transformers + langchain-*. Voir api/command.
+    command: sh -c "pip show qdrant-client >/dev/null 2>&1 || pip install --quiet qdrant-client; pip show sentence_transformers >/dev/null 2>&1 || pip install --quiet sentence-transformers langchain-openai langchain-anthropic langchain-deepseek; python -m celery -A app.core.celery worker --loglevel=info"
     volumes:
       - .:/app
     environment:
@@ -45,6 +57,11 @@ services:
       - ENVIRONMENT=development
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=dev-token
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - HF_HOME=/app/.hf_cache
     depends_on:
       - api # S'assure que 'api' est prêt avant de démarrer
       - kaapi-db
@@ -59,7 +76,7 @@ services:
     container_name: kaapi-metrics
     command: python app/metrics_server.py
     ports:
-      - "8002:8002"
+      - "8001:8001"
     volumes:
       - .:/app
     environment:
