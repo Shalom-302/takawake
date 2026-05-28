@@ -39,6 +39,11 @@ uploads/
 logs/
 *.log
 
+# Cache HuggingFace (modèles ~500MB+). Monté via volume `.:/app` au runtime,
+# inutile (et bloquant) à envoyer dans le build context.
+.hf_cache/
+postgres_backups/
+
 # Artefacts de build et documentation
 build/
 dist/

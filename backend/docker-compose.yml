@@ -29,11 +29,7 @@ services:
       # Cache HuggingFace persistant (le modèle multilingual-e5-base ~500 MB).
       # Mappé via le volume `.:/app` → survit aux restarts.
       - HF_HOME=/app/.hf_cache
-    # NOTE DEV : qdrant-client + sentence-transformers + langchain-* pas encore
-    # dans l'image. On installe au start si absent (1er run lent : ~2-3 min de
-    # téléchargement torch+st, ensuite quasi-instantané). À retirer quand on
-    # aura fait un rebuild propre.
-    command: sh -c "pip show qdrant-client >/dev/null 2>&1 || pip install --quiet qdrant-client; pip show sentence_transformers >/dev/null 2>&1 || pip install --quiet sentence-transformers langchain-openai langchain-anthropic langchain-deepseek; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
     tty: true
     depends_on:
       - kaapi-db
@@ -47,8 +43,7 @@ services:
     # PAS DE SECTION 'build'. CE SERVICE UTILISE L'IMAGE EXISTANTE.
     image: kaapi-app:latest
     container_name: kaapi-celery
-    # NOTE DEV : install qdrant-client + sentence-transformers + langchain-*. Voir api/command.
-    command: sh -c "pip show qdrant-client >/dev/null 2>&1 || pip install --quiet qdrant-client; pip show sentence_transformers >/dev/null 2>&1 || pip install --quiet sentence-transformers langchain-openai langchain-anthropic langchain-deepseek; python -m celery -A app.core.celery worker --loglevel=info"
+    command: python -m celery -A app.core.celery worker --loglevel=info
     volumes:
       - .:/app
     environment:
