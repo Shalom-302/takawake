@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional, cast
+from typing import List, Literal, Optional, cast
 from celery import Task
 
 from app.core.db import get_async_db
@@ -16,6 +16,7 @@ from app.tasks.veille_tasks import (
     run_full_backfill_task,
     generate_cluster_content_task,
 )
+from app.services.llm_factory import OllamaModel
 from app.plugins.advanced_auth.utils.security import require_superuser
 
 router = APIRouter()
@@ -28,14 +29,17 @@ router = APIRouter()
     summary="Déclencher le backfill complet des clusters et de la pertinence"
 )
 def run_full_backfill_endpoint(
-    llm_provider: str = Query(
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
         "deepseek",
-        pattern="^(deepseek|openai|anthropic)$",
-        description="Provider LLM : deepseek (default) | openai | anthropic.",
+        description="Provider LLM utilisé pour cette tâche.",
     ),
     veille_id: Optional[int] = Query(
         None,
         description="ID de la veille à clusteriser. Si omis, toutes les veilles sont traitées.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama').",
     ),
     _: object = Depends(require_superuser),
 ):
@@ -44,11 +48,17 @@ def run_full_backfill_endpoint(
     assignation des clusters aux articles et génération des justifications de pertinence.
     """
     try:
-        print(f"Envoi de la tâche de backfill complet à Celery (LLM: {llm_provider}, veille: {veille_id or 'toutes'}).")
-        cast(Task, run_full_backfill_task).delay(llm_provider=llm_provider, veille_id=veille_id)
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        print(f"Envoi de la tâche de backfill complet à Celery (LLM: {llm_provider}, model: {effective_model or 'default'}, veille: {veille_id or 'toutes'}).")
+        cast(Task, run_full_backfill_task).delay(
+            llm_provider=llm_provider,
+            veille_id=veille_id,
+            ollama_model=effective_model,
+        )
         return {
             "message": "Tâche de backfill complet lancée en arrière-plan.",
             "llm_provider": llm_provider,
+            "ollama_model": effective_model,
             "veille_id": veille_id,
         }
     except Exception as e:
@@ -61,10 +71,13 @@ def run_full_backfill_endpoint(
 )
 def generate_cluster_full_content_endpoint(
     cluster_id: int = Path(..., description="L'ID exact du cluster pour lequel générer le contenu."),
-    llm_provider: str = Query(
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
         "deepseek",
-        pattern="^(deepseek|openai|anthropic)$",
-        description="Provider LLM : deepseek (default) | openai | anthropic.",
+        description="Provider LLM utilisé pour cette tâche.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama').",
     ),
     _: object = Depends(require_superuser),
 ):
@@ -73,11 +86,13 @@ def generate_cluster_full_content_endpoint(
     et le carrousel de slides pour le cluster spécifié.
     """
     try:
-        print(f"Envoi de la tâche de génération de contenu pour le cluster ID '{cluster_id}' à Celery (LLM: {llm_provider}).")
-        cast(Task, generate_cluster_content_task).delay(cluster_id, llm_provider)
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        print(f"Envoi de la tâche de génération de contenu pour le cluster ID '{cluster_id}' à Celery (LLM: {llm_provider}, model: {effective_model or 'default'}).")
+        cast(Task, generate_cluster_content_task).delay(cluster_id, llm_provider, effective_model)
         return {
             "message": f"Tâche de génération de contenu pour le cluster ID '{cluster_id}' lancée en arrière-plan.",
             "llm_provider": llm_provider,
+            "ollama_model": effective_model,
         }
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")

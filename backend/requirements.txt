@@ -120,7 +120,9 @@ firebase-admin
 qdrant-client>=1.9.0
 # Embeddings locaux : sentence-transformers/multilingual-e5-base (768 dim, CPU).
 sentence-transformers>=2.7.0
-# LangChain providers pour switcher entre DeepSeek / OpenAI / Anthropic comme LLM.
-# (`openai` SDK est tiré transitivement par `langchain-openai`.)
+# LangChain providers pour switcher entre DeepSeek / OpenAI / Anthropic / Ollama comme LLM.
+# (`openai` SDK est tiré transitivement par `langchain-openai`. `langchain-ollama`
+# parle à un endpoint distant /api/chat configuré via OLLAMA_BASE_URL.)
 langchain-openai>=0.1.0
 langchain-anthropic>=0.1.0
+langchain-ollama>=0.2.0

@@ -96,6 +96,16 @@ class Settings(BaseSettings):
     OPENAI_LLM_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_LLM_MODEL: str = "claude-sonnet-4-6"
+    # Ollama — endpoint distant self-hosted, pas de clé API. Modèle par défaut
+    # surchargeable via OLLAMA_LLM_MODEL dans le .env ou le param `ollama_model`
+    # de la route (voir routers/veille.py).
+    # gemma3:4b retenu par défaut : meilleur compromis vitesse/qualité au bench
+    # interne (675s pour 38/40 articles processed vs 909s/36 pour llama3.1:8b).
+    # Possible car le wrapper _OllamaJsonSchema force la contrainte JSON-schema
+    # côté serveur Ollama → fiabilité indépendante du support tool-calling du
+    # modèle (gemma3 ne supporte pas les tools, mais marche via json_schema).
+    OLLAMA_BASE_URL: str = "https://ollama.traaf.app"
+    OLLAMA_LLM_MODEL: str = "gemma3:4b"
 
     # Embeddings — sentence-transformers/multilingual-e5-base, 768 dim, local CPU.
     # Multilingue (incl. FR), tourne sans clé API ni quota. ~500 MB en RAM,

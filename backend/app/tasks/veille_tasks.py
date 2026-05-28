@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional
 from app.core.celery import celery_app
 from app.services import tekawake as veille_service # <- Renommé de 'tekawake' à 'veille_service' pour plus de clarté
+from app.services.llm_factory import OLLAMA_MODEL_OVERRIDE
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.core.config import settings
 
@@ -15,16 +16,27 @@ from app.models.veille import VeilleStatus
 # 1️⃣ Tâche principale : exécuter un workflow de veille
 # ============================================================
 @celery_app.task(name="veille.run_workflow")
-def run_veille_workflow_task(query: str, llm_provider: str = "deepseek"):
+def run_veille_workflow_task(
+    query: str,
+    llm_provider: str = "deepseek",
+    ollama_model: Optional[str] = None,
+):
     """
     Tâche Celery qui orchestre le workflow de veille.
     1. Crée un objet Veille pour le suivi.
     2. Met son statut à PENDING.
     3. Lance le service de scraping/analyse.
     4. Gère les états SUCCESS ou FAILED.
+
+    `ollama_model` n'a d'effet que si `llm_provider == "ollama"` — il surcharge
+    settings.OLLAMA_LLM_MODEL pour cette task uniquement (via ContextVar).
     """
     async def async_workflow():
-        print(f"--- Tâche Celery Démarrée : Veille pour '{query}' (LLM: {llm_provider}) ---")
+        # ContextVar.set() dans une coro lancée par asyncio.run() reste scopé
+        # à cette task — pas de fuite entre tasks Celery successives.
+        if ollama_model:
+            OLLAMA_MODEL_OVERRIDE.set(ollama_model)
+        print(f"--- Tâche Celery Démarrée : Veille pour '{query}' (LLM: {llm_provider}{', model=' + ollama_model if ollama_model else ''}) ---")
 
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
@@ -79,7 +91,11 @@ def run_veille_workflow_task(query: str, llm_provider: str = "deepseek"):
 # 2️⃣ NOUVELLE TÂCHE : Orchestrateur de Backfill Complet
 # ============================================================
 @celery_app.task(name="veille.run_full_backfill")
-def run_full_backfill_task(llm_provider: str = "deepseek", veille_id: Optional[int] = None):
+def run_full_backfill_task(
+    llm_provider: str = "deepseek",
+    veille_id: Optional[int] = None,
+    ollama_model: Optional[str] = None,
+):
     """
     Tâche Celery qui orchestre l'exécution séquentielle du backfill des clusters
     et du backfill de la pertinence.
@@ -87,7 +103,9 @@ def run_full_backfill_task(llm_provider: str = "deepseek", veille_id: Optional[i
     veille_id fourni → ne traite que cette veille ; None → toutes les veilles.
     """
     async def async_full_backfill():
-        print(f"--- Tâche Celery Démarrée : Backfill Complet Orchestré (LLM: {llm_provider}, veille: {veille_id or 'toutes'}) ---")
+        if ollama_model:
+            OLLAMA_MODEL_OVERRIDE.set(ollama_model)
+        print(f"--- Tâche Celery Démarrée : Backfill Complet Orchestré (LLM: {llm_provider}{', model=' + ollama_model if ollama_model else ''}, veille: {veille_id or 'toutes'}) ---")
 
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
@@ -116,13 +134,19 @@ def run_full_backfill_task(llm_provider: str = "deepseek", veille_id: Optional[i
 # 3️⃣ NOUVELLE TÂCHE : Orchestrateur de Génération de Contenu de Cluster
 # =================================================================
 @celery_app.task(name="veille.generate_cluster_content")
-def generate_cluster_content_task(cluster_id: int, llm_provider: str = "deepseek"):
+def generate_cluster_content_task(
+    cluster_id: int,
+    llm_provider: str = "deepseek",
+    ollama_model: Optional[str] = None,
+):
     """
     Tâche Celery qui orchestre la génération de l'article de synthèse et des slides
     pour un cluster donné.
     """
     async def async_generate_content():
-        print(f"--- Tâche Celery Démarrée : Génération de contenu pour le cluster ID '{cluster_id}' (LLM: {llm_provider}) ---")
+        if ollama_model:
+            OLLAMA_MODEL_OVERRIDE.set(ollama_model)
+        print(f"--- Tâche Celery Démarrée : Génération de contenu pour le cluster ID '{cluster_id}' (LLM: {llm_provider}{', model=' + ollama_model if ollama_model else ''}) ---")
         engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
         AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 

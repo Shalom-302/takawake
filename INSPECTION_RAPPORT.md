@@ -10,6 +10,54 @@
 
 ## Journal des versions
 
+### 2026-05-28 — Ajout du provider LLM Ollama (self-hosted)
+
+**Pourquoi**
+- Quatrième provider à côté de deepseek / openai / anthropic, pour absorber les
+  veilles sans coût d'API et garder les données chez nous (endpoint distant
+  `https://ollama.traaf.app`). Les 3 providers commerciaux restent intacts.
+
+**Intégration**
+- Nouveau builder `_build_ollama()` dans `app/services/llm_factory.py` —
+  utilise `langchain_ollama.ChatOllama(base_url=..., model=...)` qui tape
+  `/api/chat` en httpx async sous le capot. Compat directe avec les chains
+  existantes (`prompt | llm | parser`, `with_structured_output`, `ainvoke`).
+- Sous-classe locale `_OllamaJsonSchema(ChatOllama)` qui override
+  `with_structured_output` pour forcer `method="json_schema"` (contrainte JSON
+  native côté serveur Ollama) au lieu de `function_calling`. Encapsulé dans le
+  factory → `tekawake.py` et `clustering.py` non touchés.
+- `OllamaModel = Literal["qwen3:8b", "mistral:7b", "gemma3:4b", "llama3.1:8b"]`
+  exposé en dropdown Swagger sur 3 routes (`/veille/run`,
+  `/cluster/backfill-assign`, `/cluster/{id}/generate-content`).
+- `OLLAMA_MODEL_OVERRIDE: ContextVar` propage la sélection request-scoped à
+  travers Celery → `_build_ollama()`. Zéro signature touchée dans les services
+  profonds. Isolation garantie par `asyncio.run` (le `set()` est scopé à la
+  coroutine).
+
+**Bench interne** (40 articles, "Tendances Fintech")
+
+| Modèle      | Processed | Wall time | Erreurs LLM |
+|-------------|-----------|-----------|-------------|
+| llama3.1:8b | 36/40     | 909s      | 0           |
+| mistral:7b  | 36/40     | 814s (-10%) | 0         |
+| **gemma3:4b** | **38/40** | **675s (-26%)** | **0** |
+
+- **gemma3:4b retenu comme défaut Ollama** (`OLLAMA_LLM_MODEL`). Contre-intuitif
+  (4B params bat 8B), expliqué par : tâche étroite (résumé + classif structurée),
+  vitesse d'inférence ∝ 1/taille, et surtout la **contrainte JSON-schema** qui
+  fait le gros du travail — peu importe la "réflexion" du modèle, la sortie
+  est forcée au format `ArticleAnalysis`.
+- Les modèles peuvent toujours être changés au cas par cas via le dropdown
+  Swagger sans rebuild ni restart.
+
+**Décisions techniques**
+- Refus du chemin "ajouter `method` paramétré dans tekawake.py" — Ollama
+  encapsule sa stratégie chez lui (factory), la logique veille reste agnostique.
+- ContextVar plutôt que threading d'un kwarg à travers 5+ signatures.
+- Tool-calling natif Ollama écarté : les modèles 7B/8B locaux y sont peu
+  fiables (qwen3 hallucine la structure, llama3.1 n'émet pas le tool-call,
+  gemma3 ne le supporte pas du tout) → json_schema = commun dénominateur.
+
 ### 2026-05-20 — Phase 2 backend : clustering v2, catégories, site public
 
 **Scraping & embeddings**

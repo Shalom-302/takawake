@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Path
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional, cast
+from typing import List, Literal, Optional, cast
 from celery import Task
 
 from app.core.db import get_async_db # Assurez-vous d'avoir ceci
@@ -11,6 +11,7 @@ from app.crud.crud_veille import crud_veille
 from app.crud.crud_cluster import crud_cluster
 from app.services.qdrant_service import delete_vectors_for_veille
 from app.tasks.veille_tasks import run_veille_workflow_task # Assurez-vous que cela pointe vers vos tâches Celery
+from app.services.llm_factory import OllamaModel
 from app.plugins.advanced_auth.utils.security import require_superuser
 
 
@@ -21,10 +22,13 @@ router = APIRouter()
 @router.post("/run", status_code=202, summary="Lancer une nouvelle veille en arrière-plan (Admin)")
 def run_new_veille(
     query: str = Query(..., min_length=3, description="Le sujet de la veille, ex: 'Tendances Fintech'"),
-    llm_provider: str = Query(
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
         "deepseek",
-        pattern="^(deepseek|openai|anthropic)$",
-        description="Provider LLM pour l'analyse : deepseek (default) | openai | anthropic. Permet de lancer la même veille avec 3 providers pour comparer la pertinence.",
+        description="Provider LLM pour l'analyse. Permet de lancer la même veille avec plusieurs providers pour comparer la pertinence.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama'). Si vide, on retombe sur OLLAMA_LLM_MODEL du .env.",
     ),
     _: object = Depends(require_superuser),
     # Note : cette route est maintenant `def` et non `async def` car elle est instantanée.
@@ -35,12 +39,14 @@ def run_new_veille(
     Le travail lourd se fait en arrière-plan par un worker Celery.
     """
     try:
-        print(f"Envoi de la tâche de veille pour '{query}' à Celery (LLM: {llm_provider}).")
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        print(f"Envoi de la tâche de veille pour '{query}' à Celery (LLM: {llm_provider}, model: {effective_model or 'default'}).")
         # On délègue le travail à Celery. `.delay()` envoie la tâche au broker (Redis).
-        cast(Task, run_veille_workflow_task).delay(query, llm_provider)
+        cast(Task, run_veille_workflow_task).delay(query, llm_provider, effective_model)
         return {
             "message": "Tâche de veille lancée en arrière-plan. Les résultats seront disponibles via /articles dans 3 minutes.",
             "llm_provider": llm_provider,
+            "ollama_model": effective_model,
         }
     except Exception as e:
         # Gère le cas où le broker Celery/Redis est inaccessible

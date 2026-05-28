@@ -78,7 +78,7 @@ class VeilleBase(BaseModel):
     prompt: str
 
 class VeilleCreate(VeilleBase):
-    llm_provider: Optional[str] = None  # deepseek | openai | anthropic
+    llm_provider: Optional[str] = None  # deepseek | openai | anthropic | ollama
 
 class VeilleUpdate(BaseModel):
     prompt: Optional[str] = None
