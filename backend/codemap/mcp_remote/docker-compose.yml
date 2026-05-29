@@ -1,0 +1,16 @@
+# Pour run local ou déploiement Dokploy (type "Compose").
+# Dokploy gère le domaine + TLS (Traefik) ; ici on n'expose que le port interne.
+services:
+  mcp-kaapi-codemap:
+    build: .
+    image: kaapi-codemap-mcp:latest
+    restart: unless-stopped
+    environment:
+      MCP_API_TOKEN: ${MCP_API_TOKEN:?token requis}
+      QDRANT_URL: ${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      CODEMAP_COLLECTION: ${CODEMAP_COLLECTION:-kaapi_backend_memory}
+      EMBED_MODEL: ${EMBED_MODEL:-intfloat/multilingual-e5-base}
+      PORT: "8000"
+    ports:
+      - "8000:8000"

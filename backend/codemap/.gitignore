@@ -1,0 +1,12 @@
+# Artefacts générés lourds — régénérables via `run_all.py`, non versionnés.
+# (Le runtime MCP interroge Qdrant, pas ces fichiers.)
+output/embeddings.npy
+output/chunks.jsonl
+output/analysis.json
+
+# Caches Python
+**/__pycache__/
+*.pyc
+
+# Secrets de déploiement
+mcp_remote/.env

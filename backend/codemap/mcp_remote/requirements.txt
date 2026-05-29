@@ -1,0 +1,5 @@
+# torch CPU est installé séparément dans le Dockerfile (index pytorch CPU).
+mcp>=1.9.0
+sentence-transformers>=2.7.0
+qdrant-client>=1.9.0
+uvicorn>=0.30.0
