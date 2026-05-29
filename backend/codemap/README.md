@@ -27,7 +27,7 @@ backend en `/app` et fournit `QDRANT_URL` / `QDRANT_API_KEY` via l'env.
 | 2 | `dependency_graph.py` | `dependency_graph.{json,md}` |
 | 3 | `project_map.py` | `PROJECT_MAP.md` |
 | 4-5 | `chunk.py` | `chunks.jsonl` |
-| 6 | `vectorize.py` | `embeddings.npy`, `embeddings_meta.json` |
+| 6 | `vectorize.py` | `embeddings.npy`, `embeddings_meta.json`, `embedding_cache.npz` |
 | 7 | `index_qdrant.py` | collection Qdrant `kaapi_backend_memory` |
 | 8 | `search.py` | recherche sémantique CLI |
 | 9 | `final_report.py` | `FINAL_REPORT.md` |
@@ -92,9 +92,23 @@ déployable **`mcp_remote/`** (Streamable HTTP, Dockerfile + Dokploy) et son
 
 ## Rafraîchir après une évolution du code
 
-Le pipeline est **idempotent** (upsert par id de chunk stable). Relancer
-`run_all.py` régénère analyse + graphe + map et ré-indexe. Pour une remise à
-zéro complète de la collection, ajouter `--recreate`.
+Le pipeline est **idempotent**. Relancer `run_all.py` régénère analyse + graphe
++ map, ré-encode **uniquement les chunks modifiés** (cache, voir ci-dessous) et
+ré-indexe. Pour une remise à zéro complète de la collection, ajouter
+`--recreate`.
 ```bash
 docker exec -w /app kaapi-api python codemap/scripts/run_all.py
 ```
+
+### Cache d'embeddings (DRY — ne ré-encode que le nouveau)
+
+`vectorize.py` garde `output/embedding_cache.npz` = `{hash(texte) → vecteur}`.
+À chaque run, un chunk au **contenu inchangé** réutilise son vecteur ; seuls les
+chunks **nouveaux ou modifiés** sont ré-encodés. Si rien n'a changé, le modèle
+n'est même pas chargé → rebuild en **quelques secondes** au lieu de ~30 min.
+
+- Clé = hash du contenu embarqué → robuste à la renumérotation des `id`.
+- Cache **invalidé** automatiquement si `EMBED_MODEL` change.
+- `index_qdrant.py` **purge** les points obsolètes (id ≥ N) si le code rétrécit,
+  pour rester synchro avec Qdrant.
+- Forcer un ré-encodage complet : `python codemap/scripts/vectorize.py --no-cache`.

@@ -1,6 +1,7 @@
 # Artefacts générés lourds — régénérables via `run_all.py`, non versionnés.
 # (Le runtime MCP interroge Qdrant, pas ces fichiers.)
 output/embeddings.npy
+output/embedding_cache.npz
 output/chunks.jsonl
 output/analysis.json
 

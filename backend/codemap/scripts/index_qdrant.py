@@ -107,10 +107,24 @@ def main() -> None:
         for i, ch in enumerate(chunks)
     ]
 
+    # Compte avant upsert : sert à purger les id obsolètes si le code a rétréci.
+    try:
+        prev_count = client.get_collection(name).points_count or 0
+    except Exception:
+        prev_count = 0
+
     BATCH = 256
     for i in range(0, len(points), BATCH):
         client.upsert(collection_name=name, points=points[i:i + BATCH], wait=True)
         print(f"[index] upsert {min(i + BATCH, len(points))}/{len(points)}")
+
+    # Les id sont contigus 0..N-1 (cf. chunk.py). Si l'index précédent en avait
+    # davantage, on supprime la queue obsolète (id >= N) pour rester synchro.
+    n = len(points)
+    if prev_count > n:
+        stale = list(range(n, prev_count))
+        client.delete(collection_name=name, points_selector=qm.PointIdsList(points=stale), wait=True)
+        print(f"[index] purge {len(stale)} point(s) obsolète(s) (id {n}..{prev_count - 1})")
 
     info = client.get_collection(name)
     print(f"[index] OK — collection {name} : {info.points_count} points")
