@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-    TableHeader,
-    TableRow,
-    TableHead,
-    TableBody,
-    TableCell,
-} from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button/button";
 import {
     Download,
@@ -487,7 +481,7 @@ const FileList: React.FC<FileListProps> = ({
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                <tbody>
                     {/* Folders first */}
                     {folders.map(folder => (
                         <TableRow key={`folder-${folder.id}`}>
@@ -590,7 +584,7 @@ const FileList: React.FC<FileListProps> = ({
                             </TableCell>
                         </TableRow>
                     ))}
-                </TableBody>
+                </tbody>
             </table>
         </div>
     );
