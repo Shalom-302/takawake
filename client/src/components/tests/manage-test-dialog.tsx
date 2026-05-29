@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import {
-    Dialog,
+    DialogRoot as Dialog,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -60,19 +60,26 @@ export default function ManageTestDialog({ open, onOpenChange }: ManageTestDialo
             form.reset();
             onOpenChange(false);
             window.location.reload();
-        } catch (error: any) {
+        } catch (error) {
             console.error("Erreur lors de la création du test:", error);
 
             let errorMessage = "Impossible de créer le test. Veuillez réessayer.";
 
-            if (error.response?.status === 422) {
-                if (Array.isArray(error.response.data?.detail)) {
-                    const errors = error.response.data.detail.map(
+            const apiError = error as {
+                response?: {
+                    status?: number;
+                    data?: { detail?: string | { loc: string[]; msg: string }[] };
+                };
+            };
+
+            if (apiError.response?.status === 422) {
+                if (Array.isArray(apiError.response.data?.detail)) {
+                    const errors = apiError.response.data.detail.map(
                         (err: { loc: string[]; msg: string }) => `${err.loc.join(".")} : ${err.msg}`
                     );
                     errorMessage = errors.join("\n");
-                } else if (error.response.data?.detail) {
-                    errorMessage = error.response.data.detail;
+                } else if (apiError.response.data?.detail) {
+                    errorMessage = apiError.response.data.detail;
                 }
             }
 

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMessaging } from "@/lib/contexts/messaging-context";
+import type { UserData } from "@/lib/api/auth-service";
 
 interface Notification {
     id: string;
@@ -19,7 +20,7 @@ interface Notification {
 }
 
 interface AppHeaderProps {
-    user: any;
+    user: UserData | null;
     onLogout: () => void;
 }
 
@@ -189,10 +190,12 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
                             <Button className="rounded-full">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage
-                                        src={user?.avatar || ""}
-                                        alt={user?.name || "User"}
+                                        src={user?.imageUrl || ""}
+                                        alt={user?.firstName || "User"}
                                     />
-                                    <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                                    <AvatarFallback>
+                                        {user?.firstName?.charAt(0) || "U"}
+                                    </AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenu.Trigger>

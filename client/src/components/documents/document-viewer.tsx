@@ -16,11 +16,11 @@ import {
     Download,
     Shield,
     Clock,
+    CheckCircle,
 } from "lucide-react";
 import { SignaturePadComponent } from "./signature-pad";
 import { WorkflowStatus } from "./workflow-status";
 import {
-    Document,
     DocumentStatus,
     SignatureType,
     Signature as SignatureModel,
@@ -250,7 +250,8 @@ export function DocumentViewer({
             <div className="text-center p-8">
                 <div className="text-lg font-medium">Document non trouvé</div>
                 <p className="text-muted-foreground">
-                    Ce document n'existe pas ou vous n'avez pas les permissions nécessaires.
+                    Ce document n&apos;existe pas ou vous n&apos;avez pas les permissions
+                    nécessaires.
                 </p>
                 <Button className="mt-4" onClick={() => router.push("/documents")}>
                     Retour à la liste des documents
@@ -362,8 +363,8 @@ export function DocumentViewer({
                                     Erreur de chargement du document
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Le document n'a pas pu être chargé. Vérifiez que le format est
-                                    supporté.
+                                    Le document n&apos;a pas pu être chargé. Vérifiez que le format
+                                    est supporté.
                                 </p>
                             </div>
                         ) : (

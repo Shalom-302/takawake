@@ -179,3 +179,18 @@ export const DialogCustom = {
     Title: DialogTitle,
     Trigger: DialogTrigger,
 };
+
+// Réexport nommé des primitives pour l'API compositionnelle
+// (<DialogRoot><DialogContent>...</DialogContent></DialogRoot>)
+export {
+    DialogRoot,
+    DialogTrigger,
+    DialogPortal,
+    DialogClose,
+    DialogOverlay,
+    DialogContent,
+    DialogHeader,
+    DialogFooter,
+    DialogTitle,
+    DialogDescription,
+};

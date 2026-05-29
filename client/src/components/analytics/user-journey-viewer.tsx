@@ -7,13 +7,12 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input/input";
 import { Label } from "@/components/ui/label/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Calendar as CalendarIcon, User, Clock, Activity } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Clock, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
@@ -41,14 +40,14 @@ interface JourneyEvent {
     target_path?: string;
     component_name?: string;
     duration_ms?: number;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export function UserJourneyViewer({ userId, sessionId, className }: UserJourneyViewerProps) {
     const [loading, setLoading] = useState(false);
     const [journeyData, setJourneyData] = useState<JourneySession[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [filter, setFilter] = useState<UserJourneyFilter>({
+    const [filter] = useState<UserJourneyFilter>({
         user_id: userId,
         session_id: sessionId,
         limit: 5,
@@ -84,10 +83,11 @@ export function UserJourneyViewer({ userId, sessionId, className }: UserJourneyV
 
             // Reset selected session index
             setSelectedSessionIndex(0);
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError(
-                err.message ||
-                    "Une erreur est survenue lors de la récupération du parcours utilisateur"
+                err instanceof Error
+                    ? err.message
+                    : "Une erreur est survenue lors de la récupération du parcours utilisateur"
             );
             console.error("Erreur lors de la récupération du parcours utilisateur:", err);
         } finally {
@@ -130,7 +130,7 @@ export function UserJourneyViewer({ userId, sessionId, className }: UserJourneyV
                     <div>
                         <CardTitle>Parcours utilisateur</CardTitle>
                         <CardDescription>
-                            Visualisation chronologique des interactions d'un utilisateur
+                            Visualisation chronologique des interactions d&apos;un utilisateur
                         </CardDescription>
                     </div>
                     <Button
@@ -412,7 +412,7 @@ export function UserJourneyViewer({ userId, sessionId, className }: UserJourneyV
                             Aucune donnée de parcours disponible pour cet utilisateur
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Essayez de modifier les filtres ou de vérifier l'ID utilisateur
+                            Essayez de modifier les filtres ou de vérifier l&apos;ID utilisateur
                         </p>
                     </div>
                 )}

@@ -23,7 +23,7 @@ export default function CookiePolicyPage() {
                         advertising from selected third party networks. Some of these cookies may be
                         set when a page is loaded, or when a user takes a particular action on the
                         website. Many of the cookies we use are only set if you are a registered
-                        user (so you don't need to register again when you visit later), while
+                        user (so you don&apos;t need to register again when you visit later), while
                         others are set whenever you visit one of our websites, irrespective of
                         whether you have an account.
                     </p>

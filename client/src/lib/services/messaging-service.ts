@@ -99,22 +99,22 @@ export const useCreateConversation = () => {
             // For demo, we're mocking a new conversation
             const newConversation: Conversation = {
                 id: `new-conversation-${Date.now()}`,
-                conversationType: data.isGroup ? ConversationType.GROUP : ConversationType.DIRECT,
+                conversation_type: data.isGroup ? ConversationType.GROUP : ConversationType.DIRECT,
                 title: data.title || "",
-                createdBy: "current-user-id", // Normalement ça viendrait du contexte d'authentification
-                isEncrypted: false,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                created_by: "current-user-id", // Normalement ça viendrait du contexte d'authentification
+                is_encrypted: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
                 participants: data.participantIds.map(id => ({
-                    userId: id,
+                    user_id: id,
                     username: `user-${id}`,
-                    firstName: "",
-                    lastName: "",
-                    joinedAt: new Date().toISOString(),
+                    first_name: "",
+                    last_name: "",
+                    joined_at: new Date().toISOString(),
                     role: "member",
-                    isActive: true,
+                    is_active: true,
                 })),
-                unreadCount: 0,
+                unread_count: 0,
             };
 
             // In a real app, trigger a revalidation of the conversations list
@@ -204,10 +204,10 @@ export const useMessages = (conversationId: string | null) => {
         // Flatten the pages and sort by createdAt (newest messages at the end)
         return data.flat().sort((a, b) => {
             // Si les dates ne sont pas disponibles, utiliser l'ID comme fallback
-            if (!a.createdAt || !b.createdAt) {
+            if (!a.created_at || !b.created_at) {
                 return a.id.localeCompare(b.id);
             }
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         });
     }, [data]);
 
@@ -342,14 +342,14 @@ export function useSendMessage(conversationId: string) {
     const [error, setError] = useState<Error | null>(null);
 
     const sendMessage = useCallback(
-        async (data: Omit<MessageCreate, "conversationId">) => {
+        async (data: Omit<MessageCreate, "conversation_id">) => {
             setIsLoading(true);
             setError(null);
 
             try {
                 const messageData: MessageCreate = {
                     ...data,
-                    conversationId,
+                    conversation_id: conversationId,
                 };
 
                 const newMessage = await API.fetchAPI(API.API_ROUTES.MESSAGE(conversationId, ""), {

@@ -169,7 +169,7 @@ export default function MatomoAdminPage() {
                                             }
                                         />
                                         <p className="text-sm text-muted-foreground mt-1">
-                                            Fréquence d'envoi des pings pour le suivi du temps passé
+                                            Fréquence d&apos;envoi des pings pour le suivi du temps passé
                                             (0 pour désactiver)
                                         </p>
                                     </div>

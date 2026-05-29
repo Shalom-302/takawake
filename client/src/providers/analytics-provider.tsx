@@ -25,7 +25,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
  */
 function AnalyticsRouteChangeTracker({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { data: session } = useSession();
+    useSession();
 
     // Suivre les changements de page
     useEffect(() => {

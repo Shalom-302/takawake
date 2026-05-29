@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/contexts/auth-context";
 export default function ConversationView() {
     const params = useParams();
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     const conversationId = (params?.conversationId as string) || null;
 

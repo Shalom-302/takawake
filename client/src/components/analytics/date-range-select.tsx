@@ -19,7 +19,7 @@ export function DateRangeSelect({ value, onChange }: DateRangeSelectProps) {
                 <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="today">Aujourd'hui</SelectItem>
+                <SelectItem value="today">Aujourd&apos;hui</SelectItem>
                 <SelectItem value="yesterday">Hier</SelectItem>
                 <SelectItem value="last7">7 derniers jours</SelectItem>
                 <SelectItem value="last30">30 derniers jours</SelectItem>

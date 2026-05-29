@@ -4,8 +4,8 @@ import { AxiosRequestConfig } from "axios";
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 
-export const requester = <TData = any>(method: HttpMethod, axiosConfig?: AxiosRequestConfig) => {
-    return async <TArg = any>(
+export const requester = <TData = unknown>(method: HttpMethod, axiosConfig?: AxiosRequestConfig) => {
+    return async <TArg = unknown>(
         url: string,
         options?: { arg?: TArg } // 👈 optionnel maintenant
     ): Promise<TData> => {

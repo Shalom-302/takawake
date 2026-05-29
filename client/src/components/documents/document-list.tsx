@@ -28,7 +28,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import {
-    DropdownMenu,
+    DropdownMenuRoot as DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
@@ -42,7 +42,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table/base";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDocuments } from "@/lib/contexts/document-context";
 import { Document, DocumentStatus, WorkflowStep } from "@/lib/services/document-service";
 

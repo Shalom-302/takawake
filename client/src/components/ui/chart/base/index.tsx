@@ -192,7 +192,7 @@ interface CustomRadarChartTickProps {
     payload?: {
         value: number;
     };
-    textAnchor?: string;
+    textAnchor?: "inherit" | "end" | "start" | "middle";
     className?: string;
 }
 

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export function useLocalStorage<T>(
     key: string,
     initialValue: T,
-    reviver?: (raw: any) => T
+    reviver?: (raw: unknown) => T
 ): [T, (value: T) => void] {
     const [storedValue, setStoredValue] = useState<T>(() => {
         if (typeof window === "undefined") return initialValue;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button/button";
 import { Badge } from "@/components/ui/badge";
-import veilleService, { type ClusterResponse } from "@/lib/api/veille.service";
+import veilleService from "@/lib/api/veille.service";
 import { formatShortDate } from "@/lib/format-date";
 
 function ClusterThumb({

@@ -7,10 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button/button";
 import { toast } from "sonner";
 import { FolderIcon, File as FileIcon, Upload, Search, SortAsc, Filter } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input/input";
 import {
-    DropdownMenu,
+    DropdownMenuRoot as DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
@@ -21,7 +20,6 @@ import axios from "axios";
 import fileStorageService, {
     StoredFile,
     FileFolder,
-    StorageProvider,
 } from "@/lib/services/file-storage-service";
 
 import FileList from "@/components/files/file-list";

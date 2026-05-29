@@ -5,7 +5,6 @@ import { BookmarkIcon, HeartIcon, MessageCircleTwoIcon } from "../icons";
 export default function LikeCommentSaveBar({
     like,
     comment,
-    article_id,
     time,
 }: {
     like: number;

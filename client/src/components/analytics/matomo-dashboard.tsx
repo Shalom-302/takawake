@@ -42,9 +42,9 @@ export function MatomoDashboard({
             } else {
                 setError("No embed URL returned from server");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error loading Matomo dashboard:", err);
-            setError(err.message || "Failed to load dashboard");
+            setError(err instanceof Error ? err.message : "Failed to load dashboard");
         } finally {
             setLoading(false);
         }
@@ -115,7 +115,7 @@ export function MatomoDashboard({
                         style={{ height: `${height}px` }}
                     >
                         <p className="text-sm text-muted-foreground">
-                            Cliquez sur "Actualiser" pour charger le tableau de bord
+                            Cliquez sur &quot;Actualiser&quot; pour charger le tableau de bord
                         </p>
                     </div>
                 )}

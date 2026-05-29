@@ -191,7 +191,7 @@ export function WorkflowStatus({ documentId, className }: WorkflowStatusProps) {
                 </>
             ) : (
                 <div className="text-sm text-muted-foreground">
-                    Impossible de récupérer l'état du workflow
+                    Impossible de récupérer l&apos;état du workflow
                 </div>
             )}
         </div>

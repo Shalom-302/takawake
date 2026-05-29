@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
@@ -74,8 +73,12 @@ export function HeatmapViewer({
             if (data.points.length > 0) {
                 setHeatmapData(data);
             }
-        } catch (err: any) {
-            setError(err.message || "Une erreur est survenue lors de la génération de la heatmap");
+        } catch (err: unknown) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Une erreur est survenue lors de la génération de la heatmap"
+            );
             console.error("Erreur lors de la génération de la heatmap:", err);
         } finally {
             setLoading(false);
@@ -114,7 +117,7 @@ export function HeatmapViewer({
                 <div>
                     <CardTitle>Heatmap des interactions utilisateur</CardTitle>
                     <CardDescription>
-                        Visualisation des interactions des utilisateurs sur l'application
+                        Visualisation des interactions des utilisateurs sur l&apos;application
                     </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -135,7 +138,7 @@ export function HeatmapViewer({
                                 </div>
                                 <div className="grid gap-2">
                                     <div className="grid gap-1">
-                                        <Label htmlFor="event-type">Type d'événement</Label>
+                                        <Label htmlFor="event-type">Type d&apos;événement</Label>
                                         <Select
                                             value={filter.event_type || "click"}
                                             onValueChange={handleEventTypeChange}
@@ -304,7 +307,7 @@ export function HeatmapViewer({
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64">
                         <p className="text-sm text-muted-foreground">
-                            Cliquez sur "Générer" pour afficher la heatmap
+                            Cliquez sur &quot;Générer&quot; pour afficher la heatmap
                         </p>
                     </div>
                 )}
