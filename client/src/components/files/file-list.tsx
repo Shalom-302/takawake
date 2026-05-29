@@ -2,13 +2,12 @@
 
 import React, { useState } from "react";
 import {
-    Table,
     TableHeader,
     TableRow,
     TableHead,
     TableBody,
     TableCell,
-} from "@/components/ui/table/base";
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button/button";
 import {
     Download,
@@ -25,7 +24,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { StoredFile, FileFolder } from "@/lib/services/file-storage-service";
 import {
-    Dialog,
+    DialogRoot as Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -478,7 +477,7 @@ const FileList: React.FC<FileListProps> = ({
                 </Button>
             )}
 
-            <Table>
+            <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[300px]">Name</TableHead>
@@ -592,7 +591,7 @@ const FileList: React.FC<FileListProps> = ({
                         </TableRow>
                     ))}
                 </TableBody>
-            </Table>
+            </table>
         </div>
     );
 };

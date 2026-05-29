@@ -5,7 +5,7 @@ export default function MessageInput() {
     const [message, setMessage] = useState("");
     const [isComposing, setIsComposing] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    const { sendMessage, sendTypingIndicator, isConnected } = useMessaging();
+    const { sendMessage, sendTypingIndicator, isConnected, activeConversationId } = useMessaging();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -21,7 +21,7 @@ export default function MessageInput() {
     useEffect(() => {
         if (message && !isComposing) {
             setIsComposing(true);
-            sendTypingIndicator(true);
+            if (activeConversationId) sendTypingIndicator(activeConversationId);
         }
 
         // Clear existing timeout
@@ -33,7 +33,7 @@ export default function MessageInput() {
         typingTimeoutRef.current = setTimeout(() => {
             if (isComposing) {
                 setIsComposing(false);
-                sendTypingIndicator(false);
+                if (activeConversationId) sendTypingIndicator(activeConversationId);
             }
         }, 3000); // Stop typing indicator after 3 seconds of inactivity
 
@@ -42,9 +42,9 @@ export default function MessageInput() {
             if (typingTimeoutRef.current) {
                 clearTimeout(typingTimeoutRef.current);
             }
-            sendTypingIndicator(false);
+            if (activeConversationId) sendTypingIndicator(activeConversationId);
         };
-    }, [message, isComposing, sendTypingIndicator]);
+    }, [message, isComposing, sendTypingIndicator, activeConversationId]);
 
     // Handle sending messages
     const handleSendMessage = async () => {
@@ -56,7 +56,7 @@ export default function MessageInput() {
             await sendMessage(trimmedMessage);
             setMessage("");
             setIsComposing(false);
-            sendTypingIndicator(false);
+            if (activeConversationId) sendTypingIndicator(activeConversationId);
 
             // Focus the textarea after sending
             textareaRef.current?.focus();

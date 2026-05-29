@@ -5,7 +5,7 @@
 // Register a push subscription
 export async function registerPushSubscription(
     subscription: PushSubscriptionJSON,
-    metadata: any = {}
+    metadata: Record<string, unknown> = {}
 ) {
     try {
         const response = await fetch("/api/push/subscribe", {

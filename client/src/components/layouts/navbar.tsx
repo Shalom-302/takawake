@@ -5,8 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button/button";
-import { useAuth } from "@/lib/contexts/auth-context";
-import { LinkButton } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ArrowNarrowRightIcon, ChevronDownIcon, SearchMdIcon } from "../icons";
 import { cn } from "@/lib/utils/cn";
@@ -15,7 +13,6 @@ import { Slideout } from "../ui/slideout-menu";
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const { isAuthenticated, logout } = useAuth();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);

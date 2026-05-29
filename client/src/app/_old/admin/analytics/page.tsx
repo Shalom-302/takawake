@@ -7,7 +7,6 @@
 import React from "react";
 import { Metadata } from "next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/layouts/_old/admin-layout";
 import AnalyticsOverview from "@/components/analytics/analytics-overview";
 import HeatmapViewer from "@/components/analytics/heatmap-viewer";
@@ -26,7 +25,7 @@ export default function AnalyticsDashboardPage() {
         >
             <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+                    <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
                     <TabsTrigger value="heatmaps">Heatmaps</TabsTrigger>
                     <TabsTrigger value="user-journeys">Parcours utilisateur</TabsTrigger>
                 </TabsList>

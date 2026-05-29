@@ -5,7 +5,6 @@
  */
 
 import axiosClient from "@/lib/api/axios-client";
-import { v4 as uuidv4 } from "uuid";
 
 // Types for analytics service
 export interface SessionInfo {
@@ -29,7 +28,7 @@ export interface UserEvent {
     target_path?: string;
     component_name?: string;
     duration_ms?: number;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     x_position?: number;
     y_position?: number;
     screen_width?: number;
@@ -205,7 +204,7 @@ const AnalyticsService = {
      * Get user journey data for analysis
      * (Admin only feature)
      */
-    async getUserJourney(filter: UserJourneyFilter): Promise<any> {
+    async getUserJourney(filter: UserJourneyFilter): Promise<unknown> {
         try {
             const response = await axiosClient.post(
                 "/user-analytics/analytics/user-journey",
@@ -222,7 +221,7 @@ const AnalyticsService = {
      * Get analytics dashboard overview data
      * (Admin only feature)
      */
-    async getDashboardOverview(days = 7): Promise<any> {
+    async getDashboardOverview(days = 7): Promise<unknown> {
         try {
             const response = await axiosClient.get(
                 `/user-analytics/analytics/dashboard/overview?days=${days}`
@@ -335,7 +334,7 @@ const AnalyticsService = {
         const link = target.closest("a");
         const interactive = target.closest('[role="button"], [role="link"], [role="tab"]');
 
-        let elementToTrack = button || link || interactive || target;
+        const elementToTrack = (button || link || interactive || target) as HTMLElement;
         let targetType = "element";
 
         if (button) targetType = "button";
@@ -390,9 +389,10 @@ const AnalyticsService = {
                 action: form.action || undefined,
                 method: form.method || undefined,
                 fields: Array.from(form.elements)
-                    .map((el: any) => {
-                        if (el.name && !el.name.toLowerCase().includes("password")) {
-                            return el.name;
+                    .map(el => {
+                        const name = (el as HTMLInputElement).name;
+                        if (name && !name.toLowerCase().includes("password")) {
+                            return name;
                         }
                         return null;
                     })

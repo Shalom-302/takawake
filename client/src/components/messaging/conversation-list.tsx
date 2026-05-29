@@ -55,7 +55,7 @@ const getConversationTitle = (conversation: Conversation, currentUserId: string)
 
 export default function ConversationList() {
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const { conversations, loadingConversations, activeConversation, refreshConversations } =
         useMessaging();
     const [searchQuery, setSearchQuery] = useState("");

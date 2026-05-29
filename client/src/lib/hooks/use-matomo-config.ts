@@ -7,7 +7,7 @@ interface MatomoConfig {
     enabled: boolean;
     track_admin_users: boolean;
     heartbeat_timer: number;
-    additional_settings?: Record<string, any>;
+    additional_settings?: Record<string, unknown>;
 }
 
 export function useMatomoConfig() {
@@ -21,9 +21,11 @@ export function useMatomoConfig() {
                 setIsLoading(true);
                 const response = await axios.get("/api/matomo/config");
                 setConfig(response.data);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error fetching Matomo configuration:", err);
-                setError(err.message || "Failed to load Matomo configuration");
+                setError(
+                    err instanceof Error ? err.message : "Failed to load Matomo configuration"
+                );
                 // Set fallback disabled config to prevent errors
                 setConfig({
                     matomo_url: "",
@@ -44,7 +46,7 @@ export function useMatomoConfig() {
     const updateConfig = async (newConfig: Partial<MatomoConfig>) => {
         try {
             setIsLoading(true);
-            const response = await axios.post("/api/matomo/config", {
+            await axios.post("/api/matomo/config", {
                 ...config,
                 ...newConfig,
             });
@@ -53,9 +55,9 @@ export function useMatomoConfig() {
                 ...newConfig,
             } as MatomoConfig);
             return true;
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error updating Matomo configuration:", err);
-            setError(err.message || "Failed to update Matomo configuration");
+            setError(err instanceof Error ? err.message : "Failed to update Matomo configuration");
             return false;
         } finally {
             setIsLoading(false);

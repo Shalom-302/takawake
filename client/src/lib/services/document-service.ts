@@ -553,7 +553,8 @@ const DocumentService = {
     async getWorkflowStatus(documentId: string): Promise<{
         current_step: WorkflowStep;
         next_step: WorkflowStep | null;
-        completed: boolean;
+        progress: number;
+        pending_actions: string[];
     }> {
         try {
             console.log("Getting workflow status for document...");
@@ -596,7 +597,8 @@ const DocumentService = {
             return {
                 current_step: mapStateToStep(workflowResponse.data.current_state),
                 next_step: nextTransition ? mapStateToStep(nextTransition.target_state) : null,
-                completed: workflowResponse.data.is_completed,
+                progress: workflowResponse.data.is_completed ? 100 : 0,
+                pending_actions: [],
             };
         } catch (error) {
             console.error(`Error getting workflow status for document ${documentId}:`, error);

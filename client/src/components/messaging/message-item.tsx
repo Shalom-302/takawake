@@ -227,7 +227,7 @@ export default function MessageItem({
                 return message.attachments && message.attachments.length > 0 ? (
                     <div className="relative rounded overflow-hidden max-w-xs">
                         <Image
-                            src={message.attachments[0].filePath}
+                            src={message.attachments[0].file_path}
                             alt="Image jointe"
                             width={300}
                             height={200}
@@ -254,10 +254,10 @@ export default function MessageItem({
                         </svg>
                         <div>
                             <div className="font-medium text-sm">
-                                {message.attachments[0].fileName}
+                                {message.attachments[0].file_name}
                             </div>
                             <div className="text-xs text-gray-500">
-                                {Math.round(message.attachments[0].fileSize / 1024)} KB
+                                {Math.round(message.attachments[0].file_size / 1024)} KB
                             </div>
                         </div>
                     </div>
@@ -376,10 +376,10 @@ export default function MessageItem({
             {isCurrentUser && showSenderAvatar && (
                 <div className="flex-shrink-0 ml-2 mr-2">
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                        {senderInfo?.profilePicture ? (
+                        {senderInfo?.profile_picture ? (
                             <div className="relative w-full h-full">
                                 <Image
-                                    src={senderInfo.profilePicture}
+                                    src={senderInfo.profile_picture}
                                     alt="Avatar"
                                     fill
                                     sizes="32px"
@@ -388,8 +388,8 @@ export default function MessageItem({
                             </div>
                         ) : (
                             <div className="bg-gray-100 text-gray-500 w-full h-full flex items-center justify-center">
-                                {senderInfo?.firstName ? (
-                                    senderInfo.firstName.charAt(0).toUpperCase()
+                                {senderInfo?.first_name ? (
+                                    senderInfo.first_name.charAt(0).toUpperCase()
                                 ) : (
                                     <svg
                                         className="w-5 h-5 text-gray-500"

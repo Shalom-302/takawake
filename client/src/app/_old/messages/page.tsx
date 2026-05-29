@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { MessagingProvider } from "@/lib/contexts/messaging-context";
 import ConversationList from "@/components/messaging/conversation-list";
 import ConversationView from "@/components/messaging/conversation-view";

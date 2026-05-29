@@ -70,7 +70,9 @@ export function SignatureVerification({ documentId, signatureId }: SignatureVeri
                     <Shield className="mr-2 h-5 w-5" />
                     Vérification de signature
                 </CardTitle>
-                <CardDescription>Validez l'authenticité de la signature numérique</CardDescription>
+                <CardDescription>
+                    Validez l&apos;authenticité de la signature numérique
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {!verificationResult && !isVerifying && (
@@ -177,7 +179,7 @@ export function SignatureVerification({ documentId, signatureId }: SignatureVeri
                                             </div>
                                             <div className="flex items-center">
                                                 <span className="text-xs text-muted-foreground">
-                                                    Valide jusqu'au:
+                                                    Valide jusqu&apos;au:
                                                 </span>
                                                 <span className="text-xs ml-2">
                                                     {format(

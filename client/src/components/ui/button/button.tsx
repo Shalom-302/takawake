@@ -69,12 +69,36 @@ const buttonVariants = cva(
                     "justify-normal rounded p-0! text-error-primary outline-error hover:text-error-primary_hover",
                     "[&_svg]:text-fg-error-secondary hover:[&_svg]:text-fg-error-primary",
                 ],
+                // Alias de compatibilité (ancienne nomenclature shadcn)
+                default: [
+                    "bg-brand-solid text-white shadow-xs-skeumorphic ring-1 ring-transparent ring-inset hover:bg-brand-solid_hover",
+                    "before:absolute before:inset-px before:border before:border-white/12 before:mask-b-from-0%",
+                    "disabled:bg-disabled disabled:shadow-xs disabled:ring-disabled_subtle",
+                    "[&_svg]:text-button-primary-icon hover:[&_svg]:text-button-primary-icon_hover",
+                ],
+                outline: [
+                    "bg-primary text-secondary shadow-xs-skeumorphic ring-1 ring-primary ring-inset hover:bg-primary_hover hover:text-secondary_hover",
+                    "disabled:shadow-xs disabled:ring-disabled_subtle",
+                    "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
+                ],
+                ghost: [
+                    "text-tertiary hover:bg-primary_hover hover:text-tertiary_hover",
+                    "[&_svg]:text-fg-quaternary hover:[&_svg]:text-fg-quaternary_hover",
+                ],
+                destructive: [
+                    "bg-error-solid text-white shadow-xs-skeumorphic ring-1 ring-transparent outline-error ring-inset",
+                    "before:absolute before:inset-px before:border before:border-white/12 before:mask-b-from-0%",
+                    "disabled:bg-disabled disabled:shadow-xs disabled:ring-disabled_subtle",
+                    "[&_svg]:text-button-destructive-primary-icon hover:[&_svg]:text-button-destructive-primary-icon_hover",
+                ],
             },
             size: {
                 sm: "gap-1 rounded-full px-3 py-2 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2",
                 md: "gap-1 rounded-full px-3.5 py-2.5 text-sm font-semibold before:rounded-[7px] data-icon-only:p-2.5",
                 lg: "gap-1.5 rounded-full px-4 py-2.5 text-md font-semibold before:rounded-[7px] data-icon-only:p-3",
                 xl: "gap-1.5 rounded-full px-4.5 py-3 text-md font-semibold before:rounded-[7px] data-icon-only:p-3.5",
+                // Alias de compatibilité : bouton carré pour icône seule
+                icon: "gap-1 rounded-full p-2.5 text-sm font-semibold before:rounded-[7px]",
             },
         },
         defaultVariants: {

@@ -427,7 +427,8 @@ export function Tag({
         <Dot className={cn("text-fg-success-secondary", dotClassName)} size="sm" />
     ) : null;
 
-    const isFocused = elementRef.current === document.activeElement;
+    const isFocused =
+        typeof document !== "undefined" && elementRef.current === document.activeElement;
     const tabIndex = isSelectable ? (isDisabled ? undefined : 0) : isInteractive ? 0 : undefined;
 
     const commonProps = {

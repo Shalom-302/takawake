@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Select,
     SelectContent,
@@ -62,8 +61,12 @@ export function AnalyticsOverview({ className }: AnalyticsOverviewProps) {
             setMetrics(data.metrics);
             setTopEventTypes(data.top_event_types || []);
             setTopPages(data.top_pages || []);
-        } catch (err: any) {
-            setError(err.message || "Une erreur est survenue lors de la récupération des données");
+        } catch (err: unknown) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Une erreur est survenue lors de la récupération des données"
+            );
             console.error("Erreur lors de la récupération des données analytics:", err);
         } finally {
             setLoading(false);
@@ -122,8 +125,8 @@ export function AnalyticsOverview({ className }: AnalyticsOverviewProps) {
         <Card className={className}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
-                    <CardTitle>Vue d'ensemble des analyses</CardTitle>
-                    <CardDescription>Métriques clés d'utilisation et d'engagement</CardDescription>
+                    <CardTitle>Vue d&apos;ensemble des analyses</CardTitle>
+                    <CardDescription>Métriques clés d&apos;utilisation et d&apos;engagement</CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
                     <Select value={timeRange} onValueChange={handleTimeRangeChange}>
@@ -237,7 +240,7 @@ export function AnalyticsOverview({ className }: AnalyticsOverviewProps) {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg">
-                                        Types d'événements populaires
+                                        Types d&apos;événements populaires
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -307,7 +310,7 @@ export function AnalyticsOverview({ className }: AnalyticsOverviewProps) {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64">
                         <p className="text-sm text-muted-foreground">
-                            Cliquez sur "Actualiser" pour charger les données analytics
+                            Cliquez sur &quot;Actualiser&quot; pour charger les données analytics
                         </p>
                     </div>
                 )}

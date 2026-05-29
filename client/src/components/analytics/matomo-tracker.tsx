@@ -123,7 +123,7 @@ export const MatomoTracker: React.FC<{ children: React.ReactNode }> = ({ childre
 // Declare global extensions
 declare global {
     interface Window {
-        _paq?: any[];
+        _paq?: unknown[][];
         trackEvent?: (category: string, action: string, name?: string, value?: number) => void;
         trackSearch?: (keyword: string, category?: string, resultsCount?: number) => void;
     }

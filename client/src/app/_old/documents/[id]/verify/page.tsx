@@ -19,7 +19,7 @@ interface VerifyPageProps {
 function VerifyDocumentContent({ documentId }: { documentId: string }) {
     const { fetchDocument, currentDocument, isLoading } = useDocuments();
     const router = useRouter();
-    const [activeSignatureId, setActiveSignatureId] = useState<string | null>(null);
+    const [, setActiveSignatureId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDocument(documentId);
@@ -40,7 +40,7 @@ function VerifyDocumentContent({ documentId }: { documentId: string }) {
             <div className="text-center p-8">
                 <div className="text-lg font-medium">Document non trouvé</div>
                 <p className="text-muted-foreground">
-                    Ce document n'existe pas ou vous n'avez pas les permissions nécessaires.
+                    Ce document n&apos;existe pas ou vous n&apos;avez pas les permissions nécessaires.
                 </p>
                 <Button className="mt-4" onClick={() => router.push("/documents")}>
                     Retour à la liste des documents
@@ -55,7 +55,7 @@ function VerifyDocumentContent({ documentId }: { documentId: string }) {
                 <div>
                     <h1 className="text-2xl font-bold">{currentDocument.name}</h1>
                     <p className="text-muted-foreground">
-                        Vérification de l'authenticité du document et des signatures
+                        Vérification de l&apos;authenticité du document et des signatures
                     </p>
                 </div>
 
@@ -183,7 +183,7 @@ function VerifyDocumentContent({ documentId }: { documentId: string }) {
                                 <Shield className="h-12 w-12 text-muted-foreground mb-4" />
                                 <h3 className="text-lg font-medium">Aucune signature</h3>
                                 <p className="text-center text-muted-foreground mt-2">
-                                    Ce document n'a pas encore été signé.
+                                    Ce document n&apos;a pas encore été signé.
                                 </p>
                                 <Button
                                     className="mt-4"

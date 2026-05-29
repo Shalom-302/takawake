@@ -498,3 +498,23 @@ export const DropdownMenuCustom = {
     SubTrigger: DropdownMenuSubTrigger,
     SubContent: DropdownMenuSubContent,
 };
+
+// Réexport nommé des primitives pour l'API compositionnelle
+// (<DropdownMenuRoot><DropdownMenuTrigger/>...</DropdownMenuRoot>)
+export {
+    DropdownMenuRoot,
+    DropdownMenuPortal,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuShortcut,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+};

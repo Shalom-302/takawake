@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 // import {
 //     useCookieSettings,
 //     useSubmitCookieConsent,
@@ -81,12 +81,9 @@ export function CookieProvider({ children }: CookieProviderProps) {
                 reject_all: false,
             };
 
-            const success = await submitConsent(newConsent);
-            if (success) {
-                setConsent(newConsent);
-                setConsentGiven(true);
-                setShowCookieBanner(false);
-            }
+            setConsent(newConsent);
+            setConsentGiven(true);
+            setShowCookieBanner(false);
         } catch (error) {
             console.error("Error accepting all cookies:", error);
         }
@@ -104,12 +101,9 @@ export function CookieProvider({ children }: CookieProviderProps) {
                 reject_all: true,
             };
 
-            const success = await submitConsent(newConsent);
-            if (success) {
-                setConsent(newConsent);
-                setConsentGiven(true);
-                setShowCookieBanner(false);
-            }
+            setConsent(newConsent);
+            setConsentGiven(true);
+            setShowCookieBanner(false);
         } catch (error) {
             console.error("Error rejecting non-essential cookies:", error);
         }
@@ -124,12 +118,9 @@ export function CookieProvider({ children }: CookieProviderProps) {
                 necessary: true,
             };
 
-            const success = await submitConsent(updatedPreferences);
-            if (success) {
-                setConsent(updatedPreferences);
-                setConsentGiven(true);
-                setShowCookieBanner(false);
-            }
+            setConsent(updatedPreferences);
+            setConsentGiven(true);
+            setShowCookieBanner(false);
         } catch (error) {
             console.error("Error saving cookie preferences:", error);
         }

@@ -91,7 +91,7 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                                 {"Plateforme"}
                             </span>
                             <ul className="mt-2">
-                                {[{ id: "aa", label: "Utilisateurs" }]?.map((item: any) => (
+                                {[{ id: "aa", label: "Utilisateurs" }]?.map((item: { id: string; label: string }) => (
                                     <li key={item?.id}>
                                         <div className="flex items-center gap-4 p-2 cursor-pointer sm:hover:bg-black/5 rounded-md">
                                             <div className="h-6 w-6 bg-black/10 shrink-0"></div>

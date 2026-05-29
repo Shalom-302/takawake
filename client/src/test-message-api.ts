@@ -1,7 +1,6 @@
 // Script de test pour l'API de messagerie
 // Ce script peut être exécuté avec ts-node
-
-import fetch from "node-fetch";
+// Utilise l'API fetch globale (Node 18+)
 
 async function testMessageCreation() {
     // Remplacer ces valeurs par des valeurs valides

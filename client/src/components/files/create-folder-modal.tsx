@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import {
-    Dialog,
+    DialogRoot as Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button/button";
 import { Input } from "@/components/ui/input/input";
-import { Label } from "@/components/ui/label/label";
-import { Textarea } from "@/components/ui/texarea/textarea";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { FolderIcon } from "lucide-react";
 import { FileFolder } from "@/lib/services/file-storage-service";
 

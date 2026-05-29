@@ -1,6 +1,9 @@
 "use client";
 // ---- Fonction pour extraire l'image croppée ----
-export async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<File> {
+export async function getCroppedImg(
+    imageSrc: string,
+    pixelCrop: { x: number; y: number; width: number; height: number }
+): Promise<File> {
     const image = await createImage(imageSrc);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;

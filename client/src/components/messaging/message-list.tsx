@@ -192,9 +192,11 @@ export default function MessageList({ currentUserId }: MessageListProps) {
 
     // Render typing indicators
     const renderTypingIndicators = () => {
-        if (!typingUsers.length || !activeConversation) return null;
+        if (!activeConversation) return null;
+        const conversationTypingUsers = typingUsers[activeConversation.id] || [];
+        if (!conversationTypingUsers.length) return null;
         // Get participant names
-        const typingNames = typingUsers.map(userId => {
+        const typingNames = conversationTypingUsers.map(({ userId }: { userId: string }) => {
             const participant = activeConversation.participants.find(p => p.user_id === userId);
             return participant?.first_name || participant?.username || "Someone";
         });

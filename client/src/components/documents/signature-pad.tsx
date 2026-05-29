@@ -19,7 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select/select";
 import { SignatureType } from "@/lib/services/document-service";
-import { AlertCircle, Check, Download, RefreshCw, Save, X } from "lucide-react";
+import { AlertCircle, Check, Download, RefreshCw, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SignaturePadProps {
@@ -147,8 +147,8 @@ export function SignaturePadComponent({
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Certificat requis</AlertTitle>
                         <AlertDescription>
-                            Pour utiliser une signature avancée ou qualifiée, vous devez d'abord
-                            obtenir un certificat numérique.
+                            Pour utiliser une signature avancée ou qualifiée, vous devez
+                            d&apos;abord obtenir un certificat numérique.
                         </AlertDescription>
                     </Alert>
                 )}

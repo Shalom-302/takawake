@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useMessaging } from "@/lib/contexts/messaging-context";
 import { ConversationType, ChatUser } from "@/lib/types/messaging";
 import { ConversationAvatar } from "./conversation-avatar";
@@ -12,7 +11,7 @@ import {
 import { useSearchChatUsers } from "@/lib/services/messaging-service";
 import { Button } from "@/components/ui/button/button";
 import {
-    Dialog,
+    DialogRoot as Dialog,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -551,7 +550,7 @@ export default function ConversationHeader({ currentUserId }: ConversationHeader
                             value={searchQuery}
                             onChange={e => handleSearchChange(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && handleSearch()}
-                            className="flex-1"
+                            inputWrapperClassName="flex-1"
                         />
                         <Button
                             onClick={handleSearch}

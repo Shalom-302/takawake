@@ -1,13 +1,6 @@
 import Image from "next/image";
 import { Conversation, ConversationType, OtherParticipantInfo } from "@/lib/types/messaging";
 
-interface Participant {
-    user_id: string;
-    profile_picture?: string | null;
-    first_name?: string;
-    username?: string;
-}
-
 interface ConversationAvatarProps {
     conversation: Conversation;
     currentUserId: string | undefined;
@@ -130,7 +123,7 @@ export const ConversationAvatar: React.FC<ConversationAvatarProps> = ({
 
     // If it's a GROUP conversation, we can optionally display the initial of the group name
     if (conversation.conversation_type === ConversationType.GROUP) {
-        const initial = conversation.name?.[0] || "";
+        const initial = conversation.title?.[0] || "";
         return (
             <div
                 className="rounded-full flex items-center justify-center text-gray-500 bg-gray-200"

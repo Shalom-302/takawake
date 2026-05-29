@@ -73,7 +73,7 @@ function MessagingProvider({ children }: { children: ReactNode }) {
     const [typingUsers, setTypingUsers] = useState<
         Record<string, { userId: string; username: string; timestamp: number }[]>
     >({});
-    const [userStatuses, setUserStatuses] = useState<
+    const [userStatuses] = useState<
         Record<string, { status: string; lastSeen: string }>
     >({});
     const [websocketStatus, setWebsocketStatus] = useState<

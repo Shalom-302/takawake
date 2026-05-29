@@ -91,7 +91,13 @@ export function AlertProvider({ children }: { children: ReactNode }) {
                 customComponent ? (
                     customComponent(t)
                 ) : (
-                    <Alert type={type} title={title} desc={desc} action={() => toast.dismiss(t)} />
+                    <Alert
+                        variant={type}
+                        title={title}
+                        description={desc}
+                        dismissible
+                        onClick={() => toast.dismiss(t)}
+                    />
                 ),
             {
                 position,

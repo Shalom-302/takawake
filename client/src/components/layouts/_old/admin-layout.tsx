@@ -26,14 +26,14 @@ import {
 import { Button } from "@/components/ui/button/button";
 import { Input } from "@/components/ui/input/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar/avatar";
-// import {
-//     DropdownMenu,
-//     DropdownMenuContent,
-//     DropdownMenuItem,
-//     DropdownMenuLabel,
-//     DropdownMenuSeparator,
-//     DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenuRoot as DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { signOut } from "next-auth/react";
@@ -214,7 +214,7 @@ export default function AdminLayout({ children, title, description }: AdminLayou
                                 <Input
                                     type="search"
                                     placeholder="Rechercher..."
-                                    className="w-full appearance-none bg-background pl-8 shadow-none lg:w-[300px]"
+                                    inputWrapperClassName="w-full appearance-none bg-background pl-8 shadow-none lg:w-[300px]"
                                 />
                             </div>
                         </form>

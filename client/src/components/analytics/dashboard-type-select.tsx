@@ -19,7 +19,7 @@ export function DashboardTypeSelect({ value, onChange }: DashboardTypeSelectProp
                 <SelectValue placeholder="Type de tableau de bord" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="overview">Vue d'ensemble</SelectItem>
+                <SelectItem value="overview">Vue d&apos;ensemble</SelectItem>
                 <SelectItem value="visitors">Visiteurs</SelectItem>
                 <SelectItem value="behavior">Comportement</SelectItem>
                 <SelectItem value="acquisition">Acquisition</SelectItem>
