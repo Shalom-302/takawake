@@ -1,4 +1,4 @@
-# Déploiement Dokploy — backend kaapi + serveur MCP codemap
+# Déploiement Dokploy — backend kaapi + serveur MCP codemap + client Next.js
 
 Branche dédiée : **`deploy/dokploy-mcp-backend`**.
 Deux services à déployer, tous deux exposés **par domaine via Traefik** (zéro port
@@ -64,13 +64,42 @@ claude mcp add --transport http kaapi-codemap \
 - Repository : ce dépôt · Branch : `deploy/dokploy-mcp-backend`
 - Compose path : `backend/docker-compose.dokploy.yml`
 - Environment : copier `backend/.env.dokploy.example` et renseigner les secrets.
+  **Obligatoire** : `KAAPI_AES_KEY` (base64 32 octets) + `KAAPI_FERNET_KEY` —
+  sans clé AES valide, l'API crashe au boot (chiffrement paiement). Générer :
+  `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"`.
+  ⚠️ Garder ces clés **stables** (sinon données chiffrées illisibles).
 - Onglet **Domains** : service `api`, port `8000`,
   domaine `veille-api.kortexai.dev`, HTTPS activé, health check `/`.
 - **Deploy.**
 
 Topologie : `api` + `celery` + `metrics` partagent l'image `kaapi-app:latest` ;
-`kaapi-db` (+ backup), `redis`, `vault`, `minio` restent internes au réseau
-`kaapi-network`. Seul `api` est joignable par Traefik (`dokploy-network`).
+`vault-seed` (init one-shot) écrit les clés dans Vault au boot et `api`/`celery`
+attendent sa complétion. `kaapi-db` (+ backup), `redis`, `vault`, `minio` restent
+internes au réseau `kaapi-network`. Seul `api` est joignable par Traefik
+(`dokploy-network`).
+
+Vérif : `curl https://veille-api.kortexai.dev/` → `{"message":"Hello from Kaapi backend!"}`.
+Docs : `https://veille-api.kortexai.dev/docs`.
+
+---
+
+## 3) Client Next.js (`client/`)
+
+Frontend qui consomme l'API. Exposé par domaine via Traefik, zéro port hôte.
+
+**Dokploy → Create → Compose**
+- Repository : ce dépôt · Branch : `deploy/dokploy-mcp-backend`
+- Compose path : `client/docker-compose.dokploy.yml`
+- Onglet **Domains** : service `web`, port `3000`,
+  domaine `takawake.kortexai.dev`, HTTPS activé, Path `/`.
+- Environment / build-args : cf. `client/.env.dokploy.example`
+  (seuls `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` sont requis).
+- **Deploy.**
+
+> ⚠️ Les variables `NEXT_PUBLIC_*` sont **inlinées au build** (pas au runtime).
+> L'URL de l'API est passée en **build-arg** (défaut `https://veille-api.kortexai.dev/api`
+> dans le compose). Pour changer d'API → modifier `NEXT_PUBLIC_API_URL` et
+> **rebuild**. L'onglet Environment runtime ne suffit pas pour ces variables.
 
 ---
 

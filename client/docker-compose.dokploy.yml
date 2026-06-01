@@ -1,0 +1,33 @@
+# Déploiement Dokploy (type "Compose") du client Next.js.
+#
+# Exposé par DOMAINE via Traefik (onglet "Domains" de Dokploy) — AUCUN port
+# publié sur l'hôte (cohérent avec l'API et le MCP).
+#
+# Dokploy → onglet "Domains" :
+#   - Service        : web
+#   - Container port : 3000
+#   - Host (domaine) : ex. veille.kortexai.dev
+#   - HTTPS          : activé (Let's Encrypt) · Path : /
+#
+# ⚠️ NEXT_PUBLIC_* est inlinée au BUILD. L'URL de l'API passe donc par des
+#    build-args (et non par l'onglet Environment runtime). Modifier l'URL ⇒
+#    rebuild de l'image.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://veille-api.kortexai.dev/api}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://veille-api.kortexai.dev/api}
+    image: kaapi-client:latest
+    restart: unless-stopped
+    expose:
+      - "3000"        # interne uniquement : Traefik route via dokploy-network
+    networks:
+      - dokploy-network
+
+networks:
+  # Réseau overlay de Dokploy/Traefik : créé par Dokploy, on s'y rattache.
+  dokploy-network:
+    external: true
