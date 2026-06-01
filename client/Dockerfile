@@ -3,8 +3,10 @@
 # Build du client Next.js (sortie standalone) — image runtime légère.
 # pnpm via corepack ; pnpm-lock.yaml fait foi.
 # ===================================================================
-FROM node:20-alpine AS base
-RUN corepack enable
+# pnpm épinglé en 9.x : le lockfile est en v9.0 (généré par pnpm 9). On évite
+# corepack "latest" (pnpm 11 exige Node ≥ 22.13 + node:sqlite → crash sur Node 20).
+FROM node:22-alpine AS base
+RUN npm install -g pnpm@9
 WORKDIR /app
 
 # --- deps : couche invalidée seulement si les manifestes changent ---
