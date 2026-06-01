@@ -8,7 +8,7 @@
 #   - Services de données (db/redis/vault/minio) restent internes à kaapi-network.
 #
 # Dokploy → onglet "Domains" :
-#   - Service : api · Container port : 8000 · Host : ex. api-kaapi.kortexai.dev
+#   - Service : api · Container port : 8000 · Host : veille-api.kortexai.dev
 #   - HTTPS (Let's Encrypt) · Path / · Health check path : /
 #
 # ⚠️ Un backend kaapi tourne déjà sur ce VPS (projet "petroapi"). Déploie ceci

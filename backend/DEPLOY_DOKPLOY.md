@@ -65,7 +65,7 @@ claude mcp add --transport http kaapi-codemap \
 - Compose path : `backend/docker-compose.dokploy.yml`
 - Environment : copier `backend/.env.dokploy.example` et renseigner les secrets.
 - Onglet **Domains** : service `api`, port `8000`,
-  domaine ex. `api-kaapi.kortexai.dev`, HTTPS activé, health check `/`.
+  domaine `veille-api.kortexai.dev`, HTTPS activé, health check `/`.
 - **Deploy.**
 
 Topologie : `api` + `celery` + `metrics` partagent l'image `kaapi-app:latest` ;
