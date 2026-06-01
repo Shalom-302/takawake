@@ -1,5 +1,17 @@
-# Pour run local ou déploiement Dokploy (type "Compose").
-# Dokploy gère le domaine + TLS (Traefik) ; ici on n'expose que le port interne.
+# Déploiement Dokploy (type "Compose") du serveur MCP distant kaapi-codemap.
+#
+# Exposition : par DOMAINE via Traefik (onglet "Domains" de Dokploy) — AUCUN
+# port publié sur l'hôte, donc aucun conflit avec les autres services du VPS
+# (80/443/3000/3001/3004/32822/33107 sont déjà pris ; ici on n'en prend aucun).
+# Le service est attaché au réseau `dokploy-network` pour que Traefik l'atteigne.
+#
+# Dokploy → onglet "Domains" :
+#   - Service        : mcp-kaapi-codemap
+#   - Container port : 8000
+#   - Host (domaine) : ex. mcp-kaapi.kortexai.dev
+#   - HTTPS          : activé (Let's Encrypt)
+#   - Path           : /
+# Health check path  : /health
 services:
   mcp-kaapi-codemap:
     build: .
@@ -12,5 +24,20 @@ services:
       CODEMAP_COLLECTION: ${CODEMAP_COLLECTION:-kaapi_backend_memory}
       EMBED_MODEL: ${EMBED_MODEL:-intfloat/multilingual-e5-base}
       PORT: "8000"
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"        # interne uniquement : Traefik route via dokploy-network
+    networks:
+      - dokploy-network
+    # Alternative à l'onglet "Domains" de Dokploy : labels Traefik explicites
+    # (décommenter + remplacer le domaine). NE PAS cumuler avec l'onglet Domains.
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.mcp-kaapi.rule=Host(`mcp-kaapi.kortexai.dev`)
+    #   - traefik.http.routers.mcp-kaapi.entrypoints=websecure
+    #   - traefik.http.routers.mcp-kaapi.tls.certresolver=letsencrypt
+    #   - traefik.http.services.mcp-kaapi.loadbalancer.server.port=8000
+
+networks:
+  # Réseau overlay de Dokploy/Traefik : créé par Dokploy, on s'y rattache.
+  dokploy-network:
+    external: true
