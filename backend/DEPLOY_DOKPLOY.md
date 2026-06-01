@@ -91,7 +91,9 @@ Frontend qui consomme l'API. Exposé par domaine via Traefik, zéro port hôte.
 - Repository : ce dépôt · Branch : `deploy/dokploy-mcp-backend`
 - Compose path : `client/docker-compose.dokploy.yml`
 - Onglet **Domains** : service `web`, port `3000`,
-  domaine ex. `veille.kortexai.dev`, HTTPS activé, Path `/`.
+  domaine `takawake.kortexai.dev`, HTTPS activé, Path `/`.
+- Environment / build-args : cf. `client/.env.dokploy.example`
+  (seuls `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` sont requis).
 - **Deploy.**
 
 > ⚠️ Les variables `NEXT_PUBLIC_*` sont **inlinées au build** (pas au runtime).
