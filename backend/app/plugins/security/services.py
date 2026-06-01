@@ -1,16 +1,33 @@
 # /backend/app/plugins/security/services.py
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.fernet import Fernet
+import base64
 import os
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 import json
 from datetime import datetime
 
+
+def _coerce_key_bytes(raw):
+    """Normalise une clé en bytes pour AES-GCM.
+
+    Vault KV v2 stocke du JSON : get_secret() renvoie alors une `str` (la clé
+    encodée en base64). Le fallback mock (mode dev) renvoie déjà des `bytes`.
+    On accepte les deux : base64 d'abord, sinon encodage brut en UTF-8.
+    """
+    if isinstance(raw, bytes):
+        return raw
+    try:
+        return base64.b64decode(raw)
+    except Exception:
+        return raw.encode()
+
+
 class CryptoService:
     def __init__(self, vault_client):
         self.vault = vault_client
-        self.aes_key = self.vault.get_secret("encryption/aes-key")
+        self.aes_key = _coerce_key_bytes(self.vault.get_secret("encryption/aes-key"))
         self.fernet_key = self.vault.get_secret("encryption/fernet-key")
 
     def encrypt_field(self, data: str) -> str:

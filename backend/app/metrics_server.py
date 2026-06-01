@@ -22,10 +22,6 @@ REGISTRY = CollectorRegistry()
 HTTP_REQUESTS = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'], registry=REGISTRY)
 REQUEST_LATENCY = Summary('http_request_duration_seconds', 'HTTP request latency', registry=REGISTRY)
 
-# Server metrics
-REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', registry=REGISTRY)
-REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration in seconds', registry=REGISTRY)
-
 # System metrics
 DISK_FREE = Gauge('system_disk_free_bytes', 'Free disk space in bytes', registry=REGISTRY)
 

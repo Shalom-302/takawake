@@ -51,6 +51,8 @@ services:
         condition: service_healthy
       vault:
         condition: service_started
+      vault-seed:
+        condition: service_completed_successfully
       minio:
         condition: service_healthy
     networks:
@@ -79,7 +81,10 @@ services:
     volumes:
       - hf_cache:/app/.hf_cache
     depends_on:
-      - api
+      api:
+        condition: service_started
+      vault-seed:
+        condition: service_completed_successfully
     networks:
       - kaapi-network
 
@@ -156,6 +161,25 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
+    networks:
+      - kaapi-network
+
+  # Init one-shot : seede les clés de chiffrement dans Vault (dev = éphémère)
+  # AVANT que `api`/`celery` ne démarrent, sinon CryptoService crashe.
+  # Réécrit les mêmes valeurs à chaque boot → clés stables tant que les
+  # variables d'env ne changent pas.
+  vault-seed:
+    image: kaapi-app:latest
+    command: python scripts/seed_vault.py
+    restart: "no"
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      - KAAPI_AES_KEY=${KAAPI_AES_KEY:?clé AES base64 requise (cf. .env.dokploy.example)}
+      - KAAPI_FERNET_KEY=${KAAPI_FERNET_KEY:-}
+    depends_on:
+      vault:
+        condition: service_started
     networks:
       - kaapi-network
 
