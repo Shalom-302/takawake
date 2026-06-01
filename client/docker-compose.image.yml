@@ -1,0 +1,23 @@
+# Déploiement Dokploy du client en mode PULL (image pré-buildée par GitHub Actions,
+# cf. .github/workflows/client-image.yml). Aucun build sur le VPS → plus d'OOM.
+#
+# Prérequis :
+#   - Le workflow a poussé ghcr.io/<owner>/takawake-client:latest
+#   - Le package GHCR est PUBLIC (sinon configurer un registry privé dans Dokploy)
+#
+# Dokploy → Compose Path : client/docker-compose.image.yml
+#   Domains : service web, port 3000, host takawake.kortexai.dev, HTTPS.
+#
+# ⚠️ Remplace <owner> ci-dessous par ton owner GitHub en minuscules (ex. shalom-302).
+services:
+  web:
+    image: ghcr.io/shalom-302/takawake-client:latest
+    restart: unless-stopped
+    expose:
+      - "3000"        # interne : Traefik route via dokploy-network
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
