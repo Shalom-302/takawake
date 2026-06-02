@@ -1,0 +1,207 @@
+# Déploiement Dokploy (type "Compose") du backend kaapi en mode PULL.
+# L'image est pré-buildée par GitHub Actions (.github/workflows/backend-image.yml)
+# et poussée sur GHCR → Dokploy ne build PLUS sur le VPS (fini les ~1h / OOM).
+#
+# Identique à docker-compose.dokploy.yml SAUF : api/celery/metrics/vault-seed
+# n'ont plus de `build:` — ils PULL ghcr.io/shalom-302/tekawake-backend:latest.
+#
+# Prérequis :
+#   - L'Action a poussé ghcr.io/shalom-302/tekawake-backend:latest
+#   - Package GHCR PUBLIC (sinon registry GHCR + PAT read:packages dans Dokploy)
+#   - Workflow de déploiement : push → l'Action build l'image (~quelques min) →
+#     UNE FOIS VERTE, Redeploy l'app dans Dokploy (pull). Évite de pull une image
+#     stale si le redeploy auto part avant la fin du build.
+#
+# Dokploy → Compose Path : backend/docker-compose.image.yml
+#   Domains : service api, port 8000, host veille-api.kortexai.dev, HTTPS, Path /.
+
+services:
+  api:
+    image: ghcr.io/shalom-302/tekawake-backend:latest
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@kaapi-db:5432/kaapi
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - PYTHONUNBUFFERED=1
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_SECURE=false
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - HF_HOME=/app/.hf_cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    expose:
+      - "8000"
+    volumes:
+      - hf_cache:/app/.hf_cache
+    depends_on:
+      kaapi-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_started
+      vault-seed:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+    networks:
+      - kaapi-network
+      - dokploy-network
+
+  celery:
+    image: ghcr.io/shalom-302/tekawake-backend:latest
+    restart: unless-stopped
+    command: python -m celery -A app.core.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@kaapi-db:5432/kaapi
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_SECURE=false
+      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - HF_HOME=/app/.hf_cache
+    volumes:
+      - hf_cache:/app/.hf_cache
+    depends_on:
+      api:
+        condition: service_started
+      vault-seed:
+        condition: service_completed_successfully
+    networks:
+      - kaapi-network
+
+  metrics:
+    image: ghcr.io/shalom-302/tekawake-backend:latest
+    restart: unless-stopped
+    command: python app/metrics_server.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    expose:
+      - "8001"
+    depends_on:
+      - api
+    networks:
+      - kaapi-network
+
+  kaapi-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=kaapi
+    networks:
+      - kaapi-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kaapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kaapi-db-backup:
+    image: prodrigestivill/postgres-backup-local
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=kaapi-db
+      - POSTGRES_DB=kaapi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_EXTRA_OPTS=--schema=public --blobs
+      - SCHEDULE=0 0 * * *
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_CMD=pg_isready -U postgres -h kaapi-db
+      - HEALTHCHECK_TIMEOUT=10s
+      - HEALTHCHECK_INTERVAL=10s
+    volumes:
+      - postgres_backups:/backups
+    depends_on:
+      kaapi-db:
+        condition: service_healthy
+    networks:
+      - kaapi-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - kaapi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  vault:
+    image: hashicorp/vault:latest
+    restart: unless-stopped
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN:-dev-token}
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - kaapi-network
+
+  # Init one-shot : seede les clés de chiffrement dans Vault AVANT api/celery.
+  vault-seed:
+    image: ghcr.io/shalom-302/tekawake-backend:latest
+    command: python scripts/seed_vault.py
+    restart: "no"
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      - KAAPI_AES_KEY=${KAAPI_AES_KEY:?clé AES base64 requise (cf. .env.dokploy.example)}
+      - KAAPI_FERNET_KEY=${KAAPI_FERNET_KEY:-}
+    depends_on:
+      vault:
+        condition: service_started
+    networks:
+      - kaapi-network
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - kaapi-network
+
+volumes:
+  postgres_data:
+  postgres_backups:
+  minio_data:
+  hf_cache:
+
+networks:
+  kaapi-network:
+    driver: bridge
+  # Réseau overlay de Dokploy/Traefik (créé par Dokploy) — pour exposer `api`.
+  dokploy-network:
+    external: true
