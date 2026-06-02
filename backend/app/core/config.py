@@ -48,12 +48,13 @@ class Settings(BaseSettings):
     
     # CORS — origines explicites (allow_credentials=True interdit le wildcard "*").
     # Surchargeable via la variable d'env CORS_ORIGINS (format JSON), ex. dans Dokploy :
-    #   CORS_ORIGINS=["https://takawake.kortexai.dev"]
+    #   CORS_ORIGINS=["https://tekawake.kortexai.dev"]
     CORS_ORIGINS: list[str] = [
         # Dev local
         "http://localhost:3000", "http://localhost:8000", "http://localhost:9000", "http://localhost:8501",
         # Prod (client Next.js déployé via Dokploy)
-        "https://takawake.kortexai.dev",
+        "https://tekawake.kortexai.dev",
+        "https://takawake.kortexai.dev",  # legacy — à retirer après bascule complète
     ]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
