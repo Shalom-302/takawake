@@ -36,7 +36,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - HF_HOME=/app/.hf_cache
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    # Applique les migrations Alembic AVANT de démarrer l'API (le code exige le
+    # schéma à jour, ex. clusters.veille_id). Idempotent : n'applique que le pending.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     expose:
       - "8000"
     volumes:

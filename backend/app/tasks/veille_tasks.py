@@ -130,6 +130,39 @@ def run_full_backfill_task(
     return asyncio.run(async_full_backfill())
 
 
+# ============================================================
+# 3️⃣ TÂCHE : Ré-indexation (vectorisation) des articles d'une veille
+# ============================================================
+@celery_app.task(name="veille.reindex_articles")
+def reindex_articles_task(veille_id: int):
+    """
+    (Re)vectorise dans Qdrant les articles PROCESSED d'une veille existante.
+
+    À lancer quand une veille a des articles mais aucun vecteur (indexation
+    initiale échouée) → indispensable avant de pouvoir clusteriser.
+    """
+    async def async_reindex():
+        print(f"--- Tâche Celery Démarrée : Ré-indexation des articles (veille: {veille_id}) ---")
+        engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
+        AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
+
+        session = None
+        try:
+            async with AsyncSessionFactory() as session:
+                count = await veille_service.reindex_articles_for_veille(db=session, veille_id=veille_id)
+            print(f"--- Ré-indexation veille {veille_id} terminée : {count} vecteur(s) upserté(s) ---")
+            return {"status": "SUCCESS", "indexed": count}
+        except Exception as e:
+            print(f"--- ERREUR ré-indexation veille {veille_id} : {e} ---")
+            return {"status": "FAILURE", "error": str(e)}
+        finally:
+            if session is not None:
+                await session.close()
+            await engine.dispose()
+
+    return asyncio.run(async_reindex())
+
+
 # =================================================================
 # 3️⃣ NOUVELLE TÂCHE : Orchestrateur de Génération de Contenu de Cluster
 # =================================================================

@@ -179,6 +179,8 @@ class ClusterBase(BaseModel):
     title: str
 
 class ClusterCreate(ClusterBase):
+    # veille_id : la veille d'origine du cluster (le clustering est mono-veille).
+    veille_id: int
     # category_id : suggestion posée par le clustering (cf. services/clustering.py),
     # corrigeable ensuite par l'éditeur via PATCH /clusters/{id}.
     category_id: Optional[int] = None
@@ -196,8 +198,9 @@ class ClusterUpdate(BaseModel):
 
 class ClusterResponse(ClusterBase):
     id: int
+    veille_id: int
     category_id: Optional[int] = None
-    category: Optional[CategoryResponse] = None 
+    category: Optional[CategoryResponse] = None
     
     summary_article: Optional[str] = None
     slides: Optional[List[Slide]] = None

@@ -492,6 +492,17 @@ async def index_articles_node(state: AgentState) -> dict:
         return {"indexed_articles": 0}
 
 
+async def reindex_articles_for_veille(db: AsyncSession, veille_id: int) -> int:
+    """(Re)vectorise dans Qdrant les articles PROCESSED d'une veille existante.
+
+    Comble le cas où l'indexation initiale (index_articles_node) a échoué pendant
+    le workflow : sans vecteurs, le clustering ne peut rien regrouper. Réutilise
+    la même logique d'indexation. Retourne le nombre de vecteurs upsertés.
+    """
+    result = await index_articles_node({"db_session": db, "veille_id": veille_id})
+    return int(result.get("indexed_articles", 0))
+
+
 def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]:
     workflow = StateGraph(AgentState)
     workflow.add_node("scrape", parallel_scrape_node)

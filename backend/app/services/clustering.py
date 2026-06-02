@@ -290,7 +290,7 @@ async def cluster_articles_for_veille(
     articles_clusterises = 0
     for arts, (title, category_id) in zip(final_groups, naming):
         cluster = await crud_cluster.create(
-            db, ClusterCreate(title=title, category_id=category_id)
+            db, ClusterCreate(title=title, veille_id=veille_id, category_id=category_id)
         )
         ids = [a.id for a in arts]
         await crud_article.assign_cluster(db, ids, cluster.id)

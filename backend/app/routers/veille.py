@@ -10,7 +10,7 @@ from app.schemas.veille import VeilleCreate, VeilleResponse, TriggerVeilleReques
 from app.crud.crud_veille import crud_veille
 from app.crud.crud_cluster import crud_cluster
 from app.services.qdrant_service import delete_vectors_for_veille
-from app.tasks.veille_tasks import run_veille_workflow_task # Assurez-vous que cela pointe vers vos tâches Celery
+from app.tasks.veille_tasks import run_veille_workflow_task, reindex_articles_task # Assurez-vous que cela pointe vers vos tâches Celery
 from app.services.llm_factory import OllamaModel
 from app.plugins.advanced_auth.utils.security import require_superuser
 
@@ -50,6 +50,32 @@ def run_new_veille(
         }
     except Exception as e:
         # Gère le cas où le broker Celery/Redis est inaccessible
+        print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
+        raise HTTPException(status_code=503, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
+
+
+@router.post(
+    "/{veille_id}/reindex",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Ré-indexer (vectoriser) les articles d'une veille (Admin)",
+)
+def reindex_veille_articles(
+    veille_id: int = Path(..., description="L'ID de la veille dont on (re)vectorise les articles."),
+    _: object = Depends(require_superuser),
+):
+    """
+    Déclenche une tâche de fond qui (re)vectorise dans Qdrant les articles
+    PROCESSED de la veille. Indispensable quand l'indexation initiale a échoué :
+    sans vecteurs, le clustering ne peut rien regrouper.
+    """
+    try:
+        print(f"Envoi de la tâche de ré-indexation pour la veille {veille_id} à Celery.")
+        cast(Task, reindex_articles_task).delay(veille_id=veille_id)
+        return {
+            "message": f"Tâche de ré-indexation lancée pour la veille {veille_id}.",
+            "veille_id": veille_id,
+        }
+    except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=503, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
 

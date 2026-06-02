@@ -48,6 +48,9 @@ class Veille(Base):
     # Relation One-to-Many avec Article
     # "veille" fait référence à l'attribut de relation dans le modèle Article
     articles: Mapped[List["Article"]] = relationship(back_populates="veille", cascade="all, delete-orphan")
+    # Relation One-to-Many avec Cluster : le clustering est mono-veille
+    # (cf. services/clustering.py), un cluster appartient donc à une seule veille.
+    clusters: Mapped[List["Cluster"]] = relationship(back_populates="veille", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Veille(id={self.id}, prompt='{self.prompt[:50]}...')>"
@@ -61,6 +64,12 @@ class Cluster(Base):
     slides: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True) # Les slides générées
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    # Clé étrangère pour Veille : un cluster appartient à exactement une veille
+    # (le clustering est mono-veille). Permet de filtrer les clusters par veille.
+    veille_id: Mapped[int] = mapped_column(ForeignKey("veilles.id"), nullable=False, index=True)
+    # Relation Many-to-One avec Veille
+    veille: Mapped["Veille"] = relationship(back_populates="clusters")
 
     # Clé étrangère pour Category (nullable pour la flexibilité)
     category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("categories.id"), nullable=True, index=True)
