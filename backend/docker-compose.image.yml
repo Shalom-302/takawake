@@ -18,6 +18,7 @@
 services:
   api:
     image: ghcr.io/shalom-302/tekawake-backend:latest
+    pull_policy: always
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@kaapi-db:5432/kaapi
@@ -57,6 +58,7 @@ services:
 
   celery:
     image: ghcr.io/shalom-302/tekawake-backend:latest
+    pull_policy: always
     restart: unless-stopped
     command: python -m celery -A app.core.celery worker --loglevel=info
     environment:
@@ -86,6 +88,7 @@ services:
 
   metrics:
     image: ghcr.io/shalom-302/tekawake-backend:latest
+    pull_policy: always
     restart: unless-stopped
     command: python app/metrics_server.py
     environment:
@@ -163,6 +166,7 @@ services:
   # Init one-shot : seede les clés de chiffrement dans Vault AVANT api/celery.
   vault-seed:
     image: ghcr.io/shalom-302/tekawake-backend:latest
+    pull_policy: always
     command: python scripts/seed_vault.py
     restart: "no"
     environment:
