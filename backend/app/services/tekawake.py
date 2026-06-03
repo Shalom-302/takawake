@@ -75,13 +75,20 @@ class FoundArticle(TypedDict, total=False):
 # agrégateurs panafricains couvrent déjà chaque pays.
 
 # --- Sources francophones (prioritaires) ---
+# Mélange tech-pur (CIO Mag, Digital Business Africa, Afrique IT News,
+# Socialnetlink) et agrégateurs panafricains généralistes à fort volume
+# (Agence Ecofin flux complet, Jeune Afrique, Afrimag) : ces derniers couvrent
+# l'Afrique de l'Ouest francophone (dont le Bénin) ; le gate de pertinence se
+# charge de ne garder que les articles tech vis-à-vis du prompt.
 NEWS_FEEDS_FR: List[Dict[str, str]] = [
-    {"source": "Agence Ecofin", "url": "https://www.agenceecofin.com/component/obrss/telecom-rss"},
+    {"source": "Agence Ecofin", "url": "https://www.agenceecofin.com/component/obrss/agence-ecofin-full"},
     {"source": "CIO Mag", "url": "https://cio-mag.com/feed/"},
     {"source": "Socialnetlink", "url": "https://www.socialnetlink.org/feed/"},
     {"source": "Digital Business Africa", "url": "https://www.digitalbusiness.africa/feed/"},
     {"source": "Afrique IT News", "url": "https://afriqueitnews.com/feed/"},
     {"source": "Bénin Web TV", "url": "https://www.beninwebtv.com/feed/"},
+    {"source": "Jeune Afrique", "url": "https://www.jeuneafrique.com/feed/"},
+    {"source": "Afrimag", "url": "https://afrimag.net/feed/"},
 ]
 
 # --- Sources anglophones (fort volume ; l'analyse LLM est rendue en français
@@ -103,7 +110,7 @@ NEWS_FEEDS_EN: List[Dict[str, str]] = [
 # 100 % francophone (le boss valide d'abord ce périmètre). Réactiver l'anglophone
 # = NEWS_FEEDS_FR + NEWS_FEEDS_EN.
 NEWS_FEEDS: List[Dict[str, str]] = NEWS_FEEDS_FR
-MAX_ARTICLES_PER_FEED = 15
+MAX_ARTICLES_PER_FEED = 25
 
 
 def _html_to_text(fragment: Optional[str]) -> str:
