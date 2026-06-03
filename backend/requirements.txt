@@ -107,6 +107,7 @@ playwright
 beautifulsoup4>=4.12.2
 requests>=2.31.0
 trafilatura>=1.6.3
+feedparser>=6.0.10
 langchain-deepseek>=0.1.0
 langgraph>=0.1.0
 python-multipart

@@ -44,7 +44,7 @@ def run_new_veille(
         # On délègue le travail à Celery. `.delay()` envoie la tâche au broker (Redis).
         cast(Task, run_veille_workflow_task).delay(query, llm_provider, effective_model)
         return {
-            "message": "Tâche de veille lancée en arrière-plan. Les résultats seront disponibles via /articles dans 3 minutes.",
+            "message": "Tâche de veille lancée en arrière-plan. Les résultats seront disponibles via /articles dans 5 minutes.",
             "llm_provider": llm_provider,
             "ollama_model": effective_model,
         }
