@@ -108,6 +108,7 @@ def generate_cluster_full_content_endpoint(
 async def get_all_clusters(
     is_published: Optional[bool] = Query(None, description="Filtrer par statut de publication."),
     category_id: Optional[int] = Query(None, description="Filtrer par ID de catégorie."),
+    veille_id: Optional[int] = Query(None, description="Filtrer par veille d'origine."),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_async_db)
@@ -115,7 +116,7 @@ async def get_all_clusters(
     """
     Récupère une liste de tous les clusters.
     """
-    clusters = await crud_cluster.get_all(db, skip=skip, limit=limit, is_published=is_published, category_id=category_id)
+    clusters = await crud_cluster.get_all(db, skip=skip, limit=limit, is_published=is_published, category_id=category_id, veille_id=veille_id)
     return clusters
 
 # --- Endpoints d'agrégation et de gestion de contenu du Cluster ---
@@ -124,11 +125,12 @@ async def get_all_clusters(
 async def count_clusters(
     is_published: Optional[bool] = Query(None),
     category_id: Optional[int] = Query(None),
+    veille_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_async_db),
 ):
     return {
         "count": await crud_cluster.count(
-            db, is_published=is_published, category_id=category_id
+            db, is_published=is_published, category_id=category_id, veille_id=veille_id
         )
     }
 

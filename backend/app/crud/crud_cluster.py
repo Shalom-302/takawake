@@ -14,6 +14,7 @@ class CRUDCluster:
     async def create(self, db: AsyncSession, cluster_in: ClusterCreate) -> Cluster:
         db_cluster = Cluster(
             title=cluster_in.title,
+            veille_id=cluster_in.veille_id,
             category_id=cluster_in.category_id,
             # created_at est server_default, is_published par défaut à False
         )
@@ -49,7 +50,8 @@ class CRUDCluster:
         skip: int = 0,
         limit: int = 100,
         is_published: Optional[bool] = None,
-        category_id: Optional[int] = None
+        category_id: Optional[int] = None,
+        veille_id: Optional[int] = None,
     ) -> List[Cluster]:
         # ClusterResponse expose `category` (pas `articles`) → on eager-load
         # category pour éviter un lazy-load MissingGreenlet dès qu'un cluster
@@ -59,6 +61,8 @@ class CRUDCluster:
             query = query.filter(Cluster.is_published == is_published)
         if category_id is not None:
             query = query.filter(Cluster.category_id == category_id)
+        if veille_id is not None:
+            query = query.filter(Cluster.veille_id == veille_id)
 
         query = query.offset(skip).limit(limit).order_by(desc(Cluster.created_at))
         result = await db.execute(query)
@@ -69,12 +73,15 @@ class CRUDCluster:
         db: AsyncSession,
         is_published: Optional[bool] = None,
         category_id: Optional[int] = None,
+        veille_id: Optional[int] = None,
     ) -> int:
         query = select(func.count()).select_from(Cluster)
         if is_published is not None:
             query = query.filter(Cluster.is_published == is_published)
         if category_id is not None:
             query = query.filter(Cluster.category_id == category_id)
+        if veille_id is not None:
+            query = query.filter(Cluster.veille_id == veille_id)
         result = await db.execute(query)
         return int(result.scalar_one())
 

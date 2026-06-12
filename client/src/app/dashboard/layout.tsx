@@ -1,4 +1,5 @@
 import AdminLayout from "@/components/layouts/admin-layout";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function DashboardLayout({
     children,
@@ -8,7 +9,9 @@ export default function DashboardLayout({
     return (
         <html lang="fr" suppressHydrationWarning className="scroll-smooth">
             <body>
-                <AdminLayout>{children}</AdminLayout>
+                <ProtectedRoute>
+                    <AdminLayout>{children}</AdminLayout>
+                </ProtectedRoute>
             </body>
         </html>
     );

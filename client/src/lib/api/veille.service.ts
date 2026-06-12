@@ -9,6 +9,9 @@ import axiosClient from "./axios-client";
 export type VeilleStatus = "PENDING" | "SUCCESS" | "FAILED";
 export type ArticleStatus = "PENDING" | "PROCESSED" | "FAILED";
 
+// Providers LLM supportés par le backend (cf. /veille/run).
+export type LlmProvider = "deepseek" | "openai" | "anthropic" | "ollama";
+
 export interface ArticleAnalysis {
     impact_afrique: string;
     problematique_africaine: string;
@@ -96,6 +99,7 @@ export interface ArticleUpdate {
 export interface ClusterResponse {
     id: number;
     title: string;
+    veille_id: number;
     category_id: number | null;
     category: CategoryResponse | null;
     summary_article: string | null;
@@ -175,6 +179,7 @@ const veilleService = {
     useClusters(opts?: {
         is_published?: boolean;
         category_id?: number;
+        veille_id?: number;
         skip?: number;
         limit?: number;
     }) {
@@ -183,10 +188,10 @@ const veilleService = {
         return { clusters: data, error, isLoading, refreshClusters: mutate };
     },
 
-    useClustersCount(opts?: { is_published?: boolean; category_id?: number }) {
+    useClustersCount(opts?: { is_published?: boolean; category_id?: number; veille_id?: number }) {
         const key = buildKey("/clusters/count", opts);
-        const { data, error, isLoading } = useSWR<{ count: number }>(key, fetcher);
-        return { count: data?.count, error, isLoading };
+        const { data, error, isLoading, mutate } = useSWR<{ count: number }>(key, fetcher);
+        return { count: data?.count, error, isLoading, refreshCount: mutate };
     },
 
     useClustersWithPertinences() {
@@ -253,12 +258,44 @@ const veilleService = {
         );
     },
 
-    async runBackfill(): Promise<void> {
-        await axiosClient.post("/clusters/backfill-assign");
+    /**
+     * Clusterise les articles. Si `veilleId` est fourni, ne traite que cette
+     * veille (sinon toutes). Tâche asynchrone (Celery) : les clusters
+     * n'apparaissent pas immédiatement → on invalide le cache pour que les
+     * prochains fetch les récupèrent.
+     */
+    async runBackfill(
+        veilleId?: number,
+        llm_provider: LlmProvider = "deepseek",
+        ollama_model?: string,
+    ): Promise<void> {
+        const params: QueryParams = { llm_provider };
+        if (veilleId !== undefined) params.veille_id = veilleId;
+        if (llm_provider === "ollama" && ollama_model) params.ollama_model = ollama_model;
+        await axiosClient.post("/clusters/backfill-assign", null, { params });
+        await globalMutate(
+            key => typeof key === "string" && (key === CLUSTERS || key.startsWith(`${CLUSTERS}?`)),
+        );
     },
 
-    async generateClusterContent(id: number | string): Promise<void> {
-        await axiosClient.post(`/clusters/${id}/generate-content`);
+    /**
+     * Génère le résumé ET les slides d'un cluster (route combinée). Tâche
+     * asynchrone (Celery) → on invalide le détail/résumé/slides du cluster.
+     */
+    async generateClusterContent(
+        id: number | string,
+        llm_provider: LlmProvider = "deepseek",
+        ollama_model?: string,
+    ): Promise<void> {
+        const params: QueryParams = { llm_provider };
+        if (llm_provider === "ollama" && ollama_model) params.ollama_model = ollama_model;
+        await axiosClient.post(`/clusters/${id}/generate-content`, null, { params });
+        await globalMutate(clusterPath(id));
+        await globalMutate(clusterSummaryPath(id));
+        await globalMutate(clusterSlidesPath(id));
+        await globalMutate(
+            key => typeof key === "string" && (key === CLUSTERS || key.startsWith(`${CLUSTERS}?`)),
+        );
     },
 
     // ----- Articles -----
@@ -340,8 +377,14 @@ const veilleService = {
         return { veille: data, error, isLoading, refreshVeille: mutate };
     },
 
-    async runVeille(query: string): Promise<void> {
-        await axiosClient.post("/veille/run", null, { params: { query } });
+    async runVeille(
+        query: string,
+        llm_provider: LlmProvider = "deepseek",
+        ollama_model?: string,
+    ): Promise<void> {
+        const params: QueryParams = { query, llm_provider };
+        if (llm_provider === "ollama" && ollama_model) params.ollama_model = ollama_model;
+        await axiosClient.post("/veille/run", null, { params });
         await globalMutate(
             key => typeof key === "string" && (key === VEILLES || key.startsWith(`${VEILLES}?`)),
         );
@@ -352,6 +395,15 @@ const veilleService = {
         await globalMutate(
             key => typeof key === "string" && (key === VEILLES || key.startsWith(`${VEILLES}?`)),
         );
+    },
+
+    /**
+     * (Re)vectorise dans Qdrant les articles d'une veille. Tâche asynchrone
+     * (Celery) — indispensable avant de pouvoir clusteriser si l'indexation
+     * initiale a échoué (articles sans vecteur).
+     */
+    async reindexVeille(id: number | string): Promise<void> {
+        await axiosClient.post(`/veille/${id}/reindex`);
     },
 
     // ----- Categories -----

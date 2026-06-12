@@ -147,20 +147,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (username: string, password: string): Promise<boolean> => {
         try {
             setLoading(true);
-            const response = await authService.login(username, password);
-            console.log("Login successful, token received:", !!response.token?.access_token);
-            // Store the token
+            // /auth/login renvoie un Token PLAT (access_token/refresh_token à la racine).
+            const tokens = await authService.login(username, password);
             if (typeof window !== "undefined") {
-                localStorage.setItem("auth_token", response.token.access_token);
-                localStorage.setItem("refresh_token", response.token.refresh_token);
-                // Verify token was properly set
-                const storedToken = localStorage.getItem("auth_token");
-                console.log("Token stored in localStorage:", !!storedToken);
+                localStorage.setItem("auth_token", tokens.access_token);
+                if (tokens.refresh_token) {
+                    localStorage.setItem("refresh_token", tokens.refresh_token);
+                }
             }
 
-            setUser(response.user);
+            // L'endpoint de login ne renvoie pas l'utilisateur → on le récupère via /auth/me.
+            const userData = await authService.getCurrentUser();
+            setUser(userData);
             setIsAuthenticated(true);
-            toast.success("Logged in successfully");
+
+            const tokenData = parseJwt(tokens.access_token);
+            if (tokenData?.exp) {
+                setTokenExpiryTime(tokenData.exp * 1000);
+            }
+
+            toast.success("Connecté");
             return true;
         } catch (err) {
             let errorMessage = "Failed to login";

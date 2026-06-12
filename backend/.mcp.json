@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "kaapi-codemap": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "-w",
+        "/app",
+        "kaapi-api",
+        "python",
+        "-u",
+        "codemap/mcp/server.py"
+      ]
+    }
+  }
+}

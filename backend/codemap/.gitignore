@@ -1,0 +1,11 @@
+# Artefacts générés lourds — régénérables via `run_all.py`, non versionnés.
+# (Le runtime MCP interroge Qdrant, pas ces fichiers.)
+# Tout le dossier output/ est régénérable : rien à versionner.
+output/
+
+# Caches Python
+**/__pycache__/
+*.pyc
+
+# Secrets de déploiement
+mcp_remote/.env

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    /* config options here */
+    // Sortie autonome : .next/standalone embarque un server.js minimal +
+    // uniquement les deps runtime → image Docker légère (cf. Dockerfile).
+    output: "standalone",
     images: {
         domains: [
             "randomuser.me",

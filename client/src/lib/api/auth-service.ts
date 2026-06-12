@@ -48,14 +48,16 @@ export interface AuthProvider {
 
 // Auth service for interacting with the custom_auth plugin
 const authService = {
-    // Email login
-    async login(username: string, password: string): Promise<LoginResponse> {
+    // Email login.
+    // ⚠️ Le backend (/auth/login) renvoie un Token PLAT (access_token à la racine),
+    // PAS un LoginResponse {user, token}. L'utilisateur se récupère ensuite via /auth/me.
+    async login(username: string, password: string): Promise<Token> {
         // Create form data object for OAuth2 password flow
         const formData = new URLSearchParams();
         formData.append("username", username);
         formData.append("password", password);
 
-        const response = await axiosClient.post<LoginResponse>("/auth/login", formData, {
+        const response = await axiosClient.post<Token>("/auth/login", formData, {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },

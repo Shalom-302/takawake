@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowUpRightIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +14,14 @@ export default function TopicContent() {
     const topicParam = params?.topic_id;
     const clusterId = Array.isArray(topicParam) ? topicParam[0] : topicParam;
 
+    const router = useRouter();
     const { cluster, error, isLoading, refreshCluster } =
         veilleService.useClusterDetail(clusterId);
     const { imageUrls } = veilleService.useClusterImage(clusterId);
     const [publishing, setPublishing] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [genNotice, setGenNotice] = useState<string | null>(null);
 
     async function togglePublish() {
         if (!cluster) return;
@@ -33,9 +38,45 @@ export default function TopicContent() {
         }
     }
 
+    async function generateContent() {
+        if (!cluster) return;
+        setGenerating(true);
+        setGenNotice(null);
+        try {
+            // Route combinée : génère résumé + slides (tâche asynchrone Celery).
+            await veilleService.generateClusterContent(cluster.id);
+            setGenNotice(
+                "Génération lancée — le résumé et les slides apparaîtront dans quelques instants.",
+            );
+        } catch {
+            setGenNotice("Impossible de lancer la génération du contenu.");
+        } finally {
+            setGenerating(false);
+        }
+    }
+
+    async function removeCluster() {
+        if (!cluster) return;
+        const ok = window.confirm(
+            `Supprimer le cluster « ${cluster.title.slice(0, 60)} » ?\n\n` +
+                "Le résumé et les slides sont supprimés. Les articles restent (ils redeviennent " +
+                "non clusterisés). Action irréversible.",
+        );
+        if (!ok) return;
+        setDeleting(true);
+        try {
+            await veilleService.deleteCluster(cluster.id);
+            router.push("/dashboard/topics");
+        } catch {
+            window.alert("Impossible de supprimer le cluster.");
+            setDeleting(false);
+        }
+    }
+
     const slides = cluster?.slides ?? [];
     const articles = cluster?.articles ?? [];
     const heroImage = imageUrls?.[0];
+    const hasContent = Boolean(cluster?.summary_article) && slides.length > 0;
 
     const carouselItems =
         slides.length > 0
@@ -79,9 +120,15 @@ export default function TopicContent() {
     }
 
     return (
-        <div className="w-full mx-auto max-w-3xl py-16 px-10 space-y-10">
+        <div className="w-full mx-auto max-w-3xl py-8 sm:py-16 px-4 sm:px-10 space-y-8 sm:space-y-10">
+            <Link
+                href="/dashboard/topics"
+                className="md:hidden inline-flex items-center gap-1 text-sm text-black/60 hover:text-black"
+            >
+                {"← Retour aux sujets"}
+            </Link>
             <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-3">
                     <Badge color={cluster.is_published ? "success" : "gray"}>
                         {cluster.is_published ? "Publié" : "Brouillon"}
                     </Badge>
@@ -96,6 +143,14 @@ export default function TopicContent() {
                             : cluster.is_published
                               ? "Dépublier"
                               : "Publier sur le site"}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary-destructive"
+                        disabled={deleting}
+                        onClick={removeCluster}
+                    >
+                        {deleting ? "..." : "Supprimer"}
                     </Button>
                 </div>
                 <h2 className="text-lg sm:text-xl md:text-2xl leading-[140%] font-bold">
@@ -114,8 +169,30 @@ export default function TopicContent() {
                 </div>
             </div>
 
+            {!hasContent && (
+                <div className="rounded-lg border border-black/10 bg-black/[0.02] p-5 text-center space-y-3">
+                    <p className="text-sm text-black/70">
+                        {"Ce cluster n'a pas encore de résumé ni de slides."}
+                    </p>
+                    <Button
+                        size="md"
+                        variant="primary"
+                        disabled={generating}
+                        onClick={generateContent}
+                    >
+                        {generating ? "Génération..." : "Générer le contenu"}
+                    </Button>
+                    {genNotice && <p className="text-sm text-black/60">{genNotice}</p>}
+                    {genNotice && (
+                        <Button size="sm" variant="secondary" onClick={() => refreshCluster()}>
+                            {"Rafraîchir"}
+                        </Button>
+                    )}
+                </div>
+            )}
+
             <div
-                className="h-[400px] rounded-lg relative bg-black bg-cover bg-center"
+                className="h-56 sm:h-[400px] rounded-lg relative bg-black bg-cover bg-center"
                 style={heroImage ? { backgroundImage: `url(${heroImage})` } : undefined}
             />
 

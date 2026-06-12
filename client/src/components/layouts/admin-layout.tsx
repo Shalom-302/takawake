@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -22,6 +22,12 @@ const navigationItems = [
 
 export default function AdminLayout({ children }: MainLayoutProps) {
     const pathname = usePathname();
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Ferme le drawer à chaque changement de page (navigation mobile).
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
 
     const isActive = (href: string) => {
         if (!pathname) return false;
@@ -41,7 +47,40 @@ export default function AdminLayout({ children }: MainLayoutProps) {
 
     return (
         <div className="min-h-screen">
-            <div className="h-screen bg-white z-10 flex flex-col justify-between fixed top-0 left-0 w-[300px] border-r border-black/10 ">
+            {/* Barre supérieure (mobile uniquement) avec bouton menu */}
+            <div className="md:hidden fixed top-0 left-0 right-0 h-14 z-30 bg-white border-b border-black/10 flex items-center gap-3 px-4">
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen(true)}
+                    aria-label="Ouvrir le menu"
+                    className="p-1 -ml-1"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+                <div className="h-7 w-28 relative">
+                    <Image src="/logo.png" fill alt="logo TEKAWAKE" className="object-contain" />
+                </div>
+            </div>
+
+            {/* Backdrop (mobile) quand le drawer est ouvert */}
+            {mobileOpen && (
+                <div
+                    className="md:hidden fixed inset-0 z-30 bg-black/40"
+                    onClick={() => setMobileOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
+            <div
+                className={cn(
+                    "h-screen bg-white z-40 flex flex-col justify-between fixed top-0 left-0 w-[300px] border-r border-black/10 transition-transform duration-200",
+                    mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+                )}
+            >
                 <div className="h-full overflow-auto px-4 py-5 ">
                     <Link href={"/dashboard"}>
                         <div className="h-8 w-32 relative shrink-0">
@@ -127,7 +166,7 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                     </div>
                 </div>
             </div>
-            <main className="pl-[300px]">{children}</main>
+            <main className="pl-0 md:pl-[300px] pt-14 md:pt-0">{children}</main>
         </div>
     );
 }
