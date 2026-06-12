@@ -1,0 +1,23 @@
+// {
+//   "editor.tabSize": 6, // ➡️ Le nombre d'espaces utilisés pour une tabulation est fixé (ex) à 2 espaces.
+//   "editor.detectIndentation": false, // ➡️ VS Code n’essaie pas de deviner l’indentation à partir du contenu du fichier. Il utilisera la valeur fixée (tabSize: 2).
+//   "search.exclude": {
+//     "package-lock.json": true // ➡️ Lorsqu’on fait une recherche dans le projet, le fichier package-lock.json est ignoré.
+//   },
+//   "editor.defaultFormatter": "esbenp.prettier-vscode",
+//   "editor.formatOnSave": true,
+//   "editor.codeActionsOnSave": [
+//     "source.addMissingImports",
+//     "source.fixAll.eslint"
+//   ],
+//   // Multiple language settings for json and jsonc files
+//   "[json][jsonc][yaml]": {
+//     "editor.formatOnSave": true,
+//     "editor.defaultFormatter": "esbenp.prettier-vscode"
+//   },
+//   "prettier.ignorePath": ".gitignore" // Don't run prettier for files listed in .gitignore
+// }
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+}

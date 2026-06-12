@@ -1,0 +1,71 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/lib/contexts/auth-context";
+import { MessagingProvider } from "@/lib/contexts/messaging-context";
+import { CookieProvider } from "@/lib/contexts/cookie-context";
+import { PWAProvider } from "@/lib/contexts/pwa-context";
+import CookieManager from "@/components/cookie/cookie-manager";
+import Script from "next/script";
+import "../styles/globals.css";
+import { AuditProvider } from "@/lib/contexts/audit-context";
+import { ThemeProvider } from "next-themes";
+import { cn } from "@/lib/utils/cn";
+import { LocaleProvider } from "@/lib/hooks/use-locale";
+
+const inter = Inter({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-inter",
+});
+
+export const metadata: Metadata = {
+    title: "Kaapi - Application de messagerie",
+    description: "Une application de messagerie moderne avec support PWA",
+    manifest: "/manifest.json",
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "default",
+        title: "Kaapi App",
+    },
+    themeColor: "#4F46E5",
+};
+
+export default function RootLayout({
+    children,
+}: Readonly<{
+    children: React.ReactNode;
+}>) {
+    return (
+        <html lang="fr" suppressHydrationWarning className="scroll-smooth">
+            <head>
+                <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+                <meta name="theme-color" content="#4F46E5" />
+                <Script src="/pwa-register.js" strategy="afterInteractive" />
+            </head>
+            <body className={cn(inter.variable, "bg-primary antialiased ")}>
+                <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+                    <LocaleProvider>
+                        <AuthProvider>
+                            <Toaster position="top-right" richColors />
+                            <PWAProvider>
+                                <MessagingProvider>
+                                    <CookieProvider>
+                                        <CookieManager />
+                                        {/* <PWAWrapper> */}
+                                        {/* <DocumentProvider> */}
+                                        <AuditProvider>{children}</AuditProvider>
+                                        {/* </DocumentProvider> */}
+                                        {/* </PWAWrapper> */}
+                                    </CookieProvider>
+                                </MessagingProvider>
+                            </PWAProvider>
+                        </AuthProvider>
+                    </LocaleProvider>
+                </ThemeProvider>
+            </body>
+        </html>
+    );
+}
