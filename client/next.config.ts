@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     // Sortie autonome : .next/standalone embarque un server.js minimal +
     // uniquement les deps runtime → image Docker légère (cf. Dockerfile).
-    output: "standalone",
+    // Activé UNIQUEMENT quand NEXT_OUTPUT_STANDALONE=true (cf. Dockerfile).
+    // La copie standalone recrée des symlinks → EPERM sur Windows hors Mode
+    // développeur. On la désactive donc par défaut pour les builds locaux.
+    output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
     images: {
         domains: [
             "randomuser.me",
