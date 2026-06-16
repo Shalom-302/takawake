@@ -30,6 +30,7 @@ from app.services.embeddings import build_text_from_analysis, embed_texts
 from app.services.qdrant_service import ensure_collection, upsert_article_vectors
 from app.services.llm_factory import get_llm
 from app.services.clustering import cluster_articles_for_veille
+from app.services import firecrawl_client
 
 # Provider LLM par défaut. Override par requête via llm_provider="openai" ou "anthropic".
 DEFAULT_LLM_PROVIDER = "deepseek"
@@ -620,16 +621,99 @@ async def reindex_articles_for_veille(db: AsyncSession, veille_id: int) -> int:
     return int(result.get("indexed_articles", 0))
 
 
+# --- Sourcing Firecrawl (alternatif au RSS, piloté par le prompt) ----------
+async def firecrawl_search_node(state: AgentState) -> dict:
+    """Découverte + scrape via Firecrawl, piloté par le prompt de la veille.
+
+    Remplace `scrape` (RSS) + `fetch` (trafilatura) : produit directement des
+    `prepared_articles` au même format que fetch_articles_node, donc la suite
+    (`relevance → analyze → index`) reste inchangée. Fallback "squelette" :
+    re-scrape musclé (rendu JS long + proxy stealth) si le markdown renvoyé par
+    la recherche est trop court.
+    """
+    query = (state.get("query") or "").strip()
+    veille_id = state["veille_id"]
+    if not query:
+        print("--- firecrawl_search : query vide, rien à chercher ---")
+        return {"prepared_articles": []}
+
+    print(
+        f"--- firecrawl_search : '{query}' "
+        f"(limit {settings.FIRECRAWL_SEARCH_LIMIT}, géo {settings.FIRECRAWL_COUNTRY}/{settings.FIRECRAWL_LANG}) ---"
+    )
+    try:
+        results = await firecrawl_client.search(query)
+    except Exception as e:
+        print(f"[FIRECRAWL ERROR] search a échoué : {type(e).__name__}: {e}")
+        return {"prepared_articles": []}
+
+    # Dédup par URL (un même lien peut ressortir plusieurs fois).
+    by_url: Dict[str, Dict[str, Any]] = {}
+    for r in results:
+        url = r.get("url")
+        if url and url not in by_url:
+            by_url[url] = r
+    print(f"--- firecrawl_search : {len(by_url)} URL uniques ---")
+
+    prepared: List[Dict[str, Any]] = []
+    for url, r in by_url.items():
+        meta = r.get("metadata") or {}
+        content = (r.get("markdown") or "").strip()
+
+        # Fallback "squelette" : la recherche a ramené trop peu → scrape musclé.
+        if len(content) <= firecrawl_client.MIN_CONTENT_LEN:
+            try:
+                deep = await firecrawl_client.scrape(url, aggressive=True)
+                if deep and len(deep) > len(content):
+                    content = deep.strip()
+            except Exception as e:
+                print(f"[FIRECRAWL] re-scrape KO {url} : {type(e).__name__}: {e}")
+
+        ok = len(content) > firecrawl_client.MIN_CONTENT_LEN
+        title = meta.get("title") or r.get("title") or url
+        image = meta.get("ogImage") or meta.get("og:image")
+        pub = firecrawl_client.parse_meta_date(meta) or datetime.datetime.utcnow()
+
+        prepared.append({
+            "veille_id": veille_id,
+            "source_url": url,
+            "source_name": firecrawl_client.domain_of(url),
+            "title": title,
+            "status": ArticleStatus.PENDING if ok else ArticleStatus.FAILED,
+            "status_message": None if ok else "Contenu insuffisant (Firecrawl)",
+            "publication_date": pub,
+            "image_urls": [image] if image else [],
+            "content": content or None,
+            "analysis": None,
+            "pertinence_cluster": None,
+            "cluster_id": None,
+        })
+
+    ok_count = sum(1 for d in prepared if d["status"] == ArticleStatus.PENDING)
+    print(f"--- firecrawl_search : {ok_count}/{len(prepared)} articles exploitables ---")
+    return {"prepared_articles": prepared}
+
+
 def create_langgraph_app() -> Runnable[AgentState, Dict[str, Any]]:
     workflow = StateGraph(AgentState)
-    workflow.add_node("scrape", parallel_scrape_node)
-    workflow.add_node("fetch", fetch_articles_node)
     workflow.add_node("relevance", relevance_filter_node)
     workflow.add_node("analyze", analyze_articles_node)
     workflow.add_node("index", index_articles_node)
-    workflow.set_entry_point("scrape")
-    workflow.add_edge("scrape", "fetch")
-    workflow.add_edge("fetch", "relevance")
+
+    # Découverte : Firecrawl (piloté par le prompt) ou RSS (historique).
+    if settings.SOURCING_PROVIDER == "firecrawl":
+        print(f"[SOURCING] provider = firecrawl ({settings.FIRECRAWL_BASE_URL})")
+        workflow.add_node("firecrawl_search", firecrawl_search_node)
+        workflow.set_entry_point("firecrawl_search")
+        workflow.add_edge("firecrawl_search", "relevance")
+    else:
+        print("[SOURCING] provider = rss")
+        workflow.add_node("scrape", parallel_scrape_node)
+        workflow.add_node("fetch", fetch_articles_node)
+        workflow.set_entry_point("scrape")
+        workflow.add_edge("scrape", "fetch")
+        workflow.add_edge("fetch", "relevance")
+
     workflow.add_edge("relevance", "analyze")
     workflow.add_edge("analyze", "index")
     workflow.add_edge("index", END)

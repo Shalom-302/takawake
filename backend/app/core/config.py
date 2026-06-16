@@ -140,6 +140,22 @@ class Settings(BaseSettings):
     CLUSTER_MAX_SIZE: int = 10
     MIN_CLUSTER_SIZE: int = 2
 
+    # --- Sourcing des articles (découverte) -------------------------------
+    # "rss"       : flux RSS fixes + trafilatura (historique, cf. tekawake.py)
+    # "firecrawl" : recherche pilotée par le prompt via Firecrawl self-host
+    #               (/v1/search + scrape markdown), géo-ciblée, rendu JS.
+    # Flag de bascule (rollback instantané) ; le worker Celery doit redémarrer
+    # après changement (pas de hot-reload).
+    SOURCING_PROVIDER: str = "rss"
+    # Firecrawl self-host — API INTERNE (réseau Dokploy), aucune auth requise.
+    FIRECRAWL_BASE_URL: str = "http://firecrawl-api:3002"
+    FIRECRAWL_SEARCH_LIMIT: int = 15          # nb de résultats par veille
+    FIRECRAWL_LANG: str = "fr"
+    FIRECRAWL_COUNTRY: str = "bj"             # géo par défaut (ISO 3166-1 alpha-2)
+    FIRECRAWL_WAIT_FOR_MS: int = 2500         # laisse le JS s'hydrater (sites squelette)
+    FIRECRAWL_PROXY: str = "auto"            # basic|stealth|enhanced|auto (escalade anti-bot)
+    FIRECRAWL_TIMEOUT_MS: int = 45000
+
     # Logging
     LOKI_URL: str = "http://loki:3100"
     
