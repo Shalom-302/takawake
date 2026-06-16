@@ -1222,14 +1222,9 @@
   resolved "https://registry.npmjs.org/@tanstack/table-core/-/table-core-8.21.3.tgz"
   integrity sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==
 
-"@tiptap/core@^3.10.2":
-  version "3.26.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/core/-/core-3.26.1.tgz#a4d3222248af7af01aede146806a5757465cc654"
-  integrity sha512-TX9PyPqBoix0qDLjtok/bddtdSy54QhzLVha405C07V+WySOpH3s/pWYkywehZQY0SQtcrcY4MNSCeQjCbA28A==
-
-"@tiptap/core@^3.11.0":
+"@tiptap/core@3.11.0", "@tiptap/core@^3.11.0":
   version "3.11.0"
-  resolved "https://registry.npmjs.org/@tiptap/core/-/core-3.11.0.tgz"
+  resolved "https://registry.yarnpkg.com/@tiptap/core/-/core-3.11.0.tgz#122a1db7852c9cea48221290210e713bb4efd66e"
   integrity sha512-kmS7ZVpHm1EMnW1Wmft9H5ZLM7E0G0NGBx+aGEHGDcNxZBXD2ZUa76CuWjIhOGpwsPbELp684ZdpF2JWoNi4Dg==
 
 "@tiptap/extension-blockquote@^3.11.0":
@@ -1319,16 +1314,9 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-italic/-/extension-italic-3.11.0.tgz"
   integrity sha512-WP6wL2b//8bLVdeUCWOpYA7nUStvrAMMD0nRn0F9CEW+l7vH6El2PZFhHmJ9uqXo5MnyugBpARiwgxfoAlef5w==
 
-"@tiptap/extension-link@^3.10.2":
-  version "3.26.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-link/-/extension-link-3.26.1.tgz#e4a331f65e3be5c83479b530745e9dd7686a390e"
-  integrity sha512-aLLGLgikuhLFHRbjfUC6D4gRg+NUty4uhW7YkyVl8AxxPME47dPbCOX4H6uLCjEZcn3WnfNuCTr6HCTl0KEmGA==
-  dependencies:
-    linkifyjs "^4.3.3"
-
-"@tiptap/extension-link@^3.11.0":
+"@tiptap/extension-link@3.11.0", "@tiptap/extension-link@^3.11.0":
   version "3.11.0"
-  resolved "https://registry.npmjs.org/@tiptap/extension-link/-/extension-link-3.11.0.tgz"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-link/-/extension-link-3.11.0.tgz#38ed5dc9251a95f02c58f069fe2b30a0ecb80dbc"
   integrity sha512-RoUkGqowVMKLE76KktNOGhzNMyKtwrSDRqeYCe1ODPuOMZvDGexOE8cIuA4A1ODkgN6ji9qE/9Sf8uhpZdH39Q==
   dependencies:
     linkifyjs "^4.3.2"
@@ -1383,14 +1371,9 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-text/-/extension-text-3.11.0.tgz"
   integrity sha512-ELAYm2BuChzZOqDG9B0k3W6zqM4pwNvXkam28KgHGiT2y7Ni68Rb+NXp16uVR+5zR6hkqnQ/BmJSKzAW59MXpA==
 
-"@tiptap/extension-underline@^3.10.2":
-  version "3.26.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-underline/-/extension-underline-3.26.1.tgz#bf83cdc3119422d1401416438497ecfb1f0bc3e3"
-  integrity sha512-HUHtQ+DRWDM0opW7Nk3YQwrLzw876hMU7cr1X/ZTG+8Bp+AKHihlwU+bqrPgG5St0mqASyUEhHQ/vK5PlnUYOQ==
-
-"@tiptap/extension-underline@^3.11.0":
+"@tiptap/extension-underline@3.11.0", "@tiptap/extension-underline@^3.11.0":
   version "3.11.0"
-  resolved "https://registry.npmjs.org/@tiptap/extension-underline/-/extension-underline-3.11.0.tgz"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-underline/-/extension-underline-3.11.0.tgz#b5c113351fd9a35fb73fc4555ff687e3e31b0b8d"
   integrity sha512-D3PsS/84RlQKFjd5eerMIUioC0mNh4yy1RRV/WbXx6ugu+6T+0hT42gNk9Ap8pDsVQZCk0SHfDyBEUFC2KOwKw==
 
 "@tiptap/extensions@^3.11.0":
@@ -3596,11 +3579,6 @@ linkifyjs@^4.3.2:
   version "4.3.2"
   resolved "https://registry.npmjs.org/linkifyjs/-/linkifyjs-4.3.2.tgz"
   integrity sha512-NT1CJtq3hHIreOianA8aSXn6Cw0JzYOuDQbOrSPe7gqFnCpKP++MQe3ODgO3oh2GJFORkAAdqredOa60z63GbA==
-
-linkifyjs@^4.3.3:
-  version "4.3.3"
-  resolved "https://registry.yarnpkg.com/linkifyjs/-/linkifyjs-4.3.3.tgz#da08f0eeb4d89a24541d09591fbdcc211eb8fef0"
-  integrity sha512-P8aEP5U/D1/IlTY2OeYsErdwh9bGuLE30NcXtKEjgdHcahveQoQwM2yZNsioQHsWFz0P7KKudisbrzCgR0sDHg==
 
 locate-path@^6.0.0:
   version "6.0.0"
