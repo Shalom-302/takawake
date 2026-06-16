@@ -35,6 +35,19 @@ services:
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # LLM par défaut (deepseek) + autres providers — étaient ABSENTS ici, donc
+      # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Sourcing veille : Firecrawl piloté par le prompt.
+      - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
+      - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}
+      - FIRECRAWL_COUNTRY=${FIRECRAWL_COUNTRY:-bj}
+      # LangSmith (off par défaut pour éviter le spam 401 si la clé est invalide).
+      - LANGSMITH_TRACING_V2=${LANGSMITH_TRACING_V2:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-tekawake}
       - HF_HOME=/app/.hf_cache
     # Applique les migrations Alembic AVANT de démarrer l'API (le code exige le
     # schéma à jour, ex. clusters.veille_id). Idempotent : n'applique que le pending.
@@ -77,6 +90,19 @@ services:
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # LLM par défaut (deepseek) + autres providers — étaient ABSENTS ici, donc
+      # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Sourcing veille : Firecrawl piloté par le prompt.
+      - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
+      - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}
+      - FIRECRAWL_COUNTRY=${FIRECRAWL_COUNTRY:-bj}
+      # LangSmith (off par défaut pour éviter le spam 401 si la clé est invalide).
+      - LANGSMITH_TRACING_V2=${LANGSMITH_TRACING_V2:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-tekawake}
       - HF_HOME=/app/.hf_cache
     volumes:
       - hf_cache:/app/.hf_cache
