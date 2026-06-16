@@ -87,6 +87,9 @@ services:
         condition: service_completed_successfully
     networks:
       - kaapi-network
+      # Le worker exécute la veille → doit joindre Firecrawl (alias
+      # firecrawl-api) qui vit sur le réseau partagé Dokploy.
+      - dokploy-network
 
   metrics:
     image: ghcr.io/shalom-302/tekawake-backend:latest
