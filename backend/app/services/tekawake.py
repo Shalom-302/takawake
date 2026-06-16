@@ -497,6 +497,26 @@ async def analyze_articles_node(state: AgentState) -> dict:
         print("Aucun article préparé à analyser.")
         return {"status": "SUCCESS", "processed_articles": 0}
 
+    # Réutilisation cross-veille : si l'URL a déjà été analysée (n'importe quelle
+    # veille), on reprend son analyse au lieu de relancer le LLM → dédup du coût
+    # LLM quand des veilles se recoupent. L'analyse est intrinsèque à l'article
+    # (résumé, problématique…) ; la pertinence par cluster est recalculée ensuite.
+    pending_urls = [
+        d["source_url"] for d in prepared
+        if d["status"] == ArticleStatus.PENDING and d.get("content")
+    ]
+    reuse = await crud_article.get_analyses_by_urls(db, pending_urls)
+    reused = 0
+    for d in prepared:
+        if d["status"] == ArticleStatus.PENDING and d.get("content") and d["source_url"] in reuse:
+            analysis = reuse[d["source_url"]]
+            d["analysis"] = analysis
+            d["pertinence_cluster"] = (analysis or {}).get("pertinence_cluster")
+            d["status"] = ArticleStatus.PROCESSED
+            reused += 1
+    if reused:
+        print(f"--- analyze_articles : {reused} analyse(s) réutilisée(s) (déjà vues ailleurs) → 0 appel LLM ---")
+
     print(f"--- analyze_articles : provider LLM = '{provider}' ---")
     # `method="function_calling"` est le seul commun dénominateur supporté par
     # les 3 providers : DeepSeek a désactivé `response_format=json_schema`

@@ -2,7 +2,7 @@ import datetime
 import enum
 from typing import List, Dict, Optional, Any
 
-from sqlalchemy import String, Text, DateTime, Boolean, JSON, ForeignKey, Integer
+from sqlalchemy import String, Text, DateTime, Boolean, JSON, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func
 
@@ -87,6 +87,13 @@ class Cluster(Base):
 # --- Modèle Article ---
 class Article(Base):
     __tablename__ = "articles"
+    # Unicité PAR VEILLE (et non plus globale) : un même article (URL) peut
+    # coexister dans plusieurs veilles sans que l'une "vole" l'autre. La dédup
+    # du coût LLM se fait par réutilisation de l'analyse existante (cf.
+    # analyze_articles_node), pas par une URL globalement unique.
+    __table_args__ = (
+        UniqueConstraint("veille_id", "source_url", name="uq_article_veille_url"),
+    )
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     # Clés étrangères
@@ -94,7 +101,9 @@ class Article(Base):
     cluster_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clusters.id"), nullable=True, index=True)
 
     # Infos de base de l'article
-    source_url: Mapped[str] = mapped_column(String(1024), unique=True, index=True, nullable=False)
+    # index (non unique) pour les lookups par URL ; l'unicité est portée par
+    # la contrainte composite (veille_id, source_url) dans __table_args__.
+    source_url: Mapped[str] = mapped_column(String(1024), index=True, nullable=False)
     source_name: Mapped[str] = mapped_column(String(100), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     publication_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True, index=True)
