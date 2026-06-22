@@ -62,8 +62,37 @@ class Cluster(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False) # Le titre/question du cluster
     summary_article: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # L'article de synthèse LLM
     slides: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True) # Les slides générées
+    # Image de couverture validée par l'éditeur. Pré-remplie par l'IA (image de
+    # l'article le plus pertinent) à la génération, modifiable ensuite.
+    cover_image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    # --- Snapshots de la version IA d'origine (human-in-the-loop) ---
+    # Figés au moment de la génération par le LLM et JAMAIS modifiés par l'édition
+    # humaine (le PATCH ne touche que les champs de travail ci-dessus). Ils
+    # permettent de "revenir à l'original IA" via POST /clusters/{id}/revert.
+    summary_article_ai: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    slides_ai: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)
+    cover_image_url_ai: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    @property
+    def is_edited(self) -> bool:
+        """True si la version de travail diverge de l'original IA snapshotté.
+        Sert au front à afficher un badge "édité" et activer le bouton revert.
+        Les clusters antérieurs à cette feature (aucun snapshot) sont considérés
+        non édités, faute de version IA de référence."""
+        if (
+            self.summary_article_ai is None
+            and self.slides_ai is None
+            and self.cover_image_url_ai is None
+        ):
+            return False
+        return (
+            self.summary_article != self.summary_article_ai
+            or self.slides != self.slides_ai
+            or self.cover_image_url != self.cover_image_url_ai
+        )
 
     # Clé étrangère pour Veille : un cluster appartient à exactement une veille
     # (le clustering est mono-veille). Permet de filtrer les clusters par veille.

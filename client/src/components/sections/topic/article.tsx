@@ -16,7 +16,8 @@ export default function Article() {
 
     const { cluster, isLoading, error } = veilleService.useClusterDetail(clusterId);
     const { imageUrls } = veilleService.useClusterImage(clusterId);
-    const heroImage = imageUrls?.[0];
+    // Couverture validée par l'éditeur en priorité, sinon image dérivée du meilleur article.
+    const heroImage = cluster?.cover_image_url || imageUrls?.[0];
 
     const slides = cluster?.slides ?? [];
     const articles = cluster?.articles ?? [];
@@ -26,12 +27,18 @@ export default function Article() {
             ? slides.map((item, idx) => (
                   <div
                       key={`${item.slide}-${idx}`}
-                      className="pt-8 pb-3 px-16 text-center bg-black text-white rounded-lg min-h-[200px]"
+                      className="relative flex min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-lg bg-black bg-cover bg-center px-16 py-8 text-center text-white"
+                      style={
+                          item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined
+                      }
                   >
-                      <span className="text-sm opacity-60">
-                          {`Slide ${idx + 1} sur ${slides.length}`}
-                      </span>
-                      <p className="text-md mt-3 pb-5">{item.texte}</p>
+                      {item.image_url && <div className="absolute inset-0 bg-black/55" />}
+                      <div className="relative z-10">
+                          <span className="text-sm opacity-70">
+                              {`Slide ${idx + 1} sur ${slides.length}`}
+                          </span>
+                          <p className="text-md mt-3 pb-5">{item.texte}</p>
+                      </div>
                   </div>
               ))
             : [];

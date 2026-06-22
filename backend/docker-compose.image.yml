@@ -39,6 +39,8 @@ services:
       # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Banque d'images pour illustrer les slides (cf. services/slide_images.py).
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
       # Sourcing veille : Firecrawl piloté par le prompt.
       - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
       - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}
@@ -100,6 +102,8 @@ services:
       # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Banque d'images pour illustrer les slides (cf. services/slide_images.py).
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
       # Sourcing veille : Firecrawl piloté par le prompt.
       - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
       - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}

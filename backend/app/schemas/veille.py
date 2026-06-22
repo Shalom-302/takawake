@@ -31,9 +31,12 @@ class ArticleAnalysis(BaseModel):
 class Slide(BaseModel):
     """
     Schéma pour un seul slide du carrousel.
+    `image_url` est illustrée automatiquement (Pexels, cf. services/slide_images.py)
+    mais reste éditable/remplaçable à la main par l'éditeur.
     """
     slide: int
     texte: str
+    image_url: Optional[str] = None
 
 class TriggerVeilleRequest(BaseModel):
     """
@@ -46,6 +49,15 @@ class PublishStatusUpdate(BaseModel):
     Schéma pour la mise à jour du statut de publication d'un cluster.
     """
     is_published: bool
+
+class PexelsImage(BaseModel):
+    """Une image renvoyée par le sélecteur (recherche Pexels)."""
+    id: Optional[int] = None
+    url: str            # URL de l'image à utiliser
+    thumbnail: str      # vignette pour la grille du sélecteur
+    photographer: Optional[str] = None
+    alt: Optional[str] = None
+
 
 class ImageInfo(BaseModel):
     """
@@ -193,6 +205,7 @@ class ClusterUpdate(BaseModel):
     title: Optional[str] = None
     summary_article: Optional[str] = None
     slides: Optional[List[Slide]] = None
+    cover_image_url: Optional[str] = None
     is_published: Optional[bool] = None
     category_id: Optional[int] = None
 
@@ -204,10 +217,18 @@ class ClusterResponse(ClusterBase):
     
     summary_article: Optional[str] = None
     slides: Optional[List[Slide]] = None
+    cover_image_url: Optional[str] = None
     is_published: bool
     created_at: datetime.datetime
-    
-    
+
+    # --- Version IA d'origine (human-in-the-loop) ---
+    # Exposée pour que le front puisse prévisualiser/diff l'original IA avant un
+    # revert et afficher l'état "édité" sans seconde requête.
+    summary_article_ai: Optional[str] = None
+    slides_ai: Optional[List[Slide]] = None
+    cover_image_url_ai: Optional[str] = None
+    is_edited: bool = False
+
     model_config = ConfigDict(from_attributes=True)
 
 

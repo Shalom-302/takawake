@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import veilleService from "@/lib/api/veille.service";
+import ClusterEditor from "./cluster-editor";
 
 export default function TopicContent() {
     const params = useParams<{ topic_id?: string | string[] }>();
@@ -21,7 +22,46 @@ export default function TopicContent() {
     const [publishing, setPublishing] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [reverting, setReverting] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [regenImages, setRegenImages] = useState(false);
+    const [imgNotice, setImgNotice] = useState<string | null>(null);
     const [genNotice, setGenNotice] = useState<string | null>(null);
+
+    async function regenerateImages() {
+        if (!cluster) return;
+        setRegenImages(true);
+        setImgNotice(null);
+        try {
+            await veilleService.generateSlideImages(cluster.id);
+            setImgNotice(
+                "Régénération des images lancée — elles apparaîtront dans quelques instants. Rafraîchissez pour voir le résultat.",
+            );
+        } catch {
+            setImgNotice("Impossible de régénérer les images des slides.");
+        } finally {
+            setRegenImages(false);
+        }
+    }
+
+    async function revertToAi() {
+        if (!cluster) return;
+        const ok = window.confirm(
+            "Revenir à la version générée par l'IA ?\n\n" +
+                "Vos modifications (synthèse, slides, couverture) seront remplacées par " +
+                "l'original IA. Cette version originale n'est jamais perdue.",
+        );
+        if (!ok) return;
+        setReverting(true);
+        try {
+            await veilleService.revertCluster(cluster.id);
+            await refreshCluster();
+        } catch {
+            window.alert("Impossible de restaurer la version IA.");
+        } finally {
+            setReverting(false);
+        }
+    }
 
     async function togglePublish() {
         if (!cluster) return;
@@ -75,7 +115,9 @@ export default function TopicContent() {
 
     const slides = cluster?.slides ?? [];
     const articles = cluster?.articles ?? [];
-    const heroImage = imageUrls?.[0];
+    // Couverture validée par l'éditeur en priorité, sinon image dérivée du
+    // meilleur article (rétro-compat clusters sans couverture).
+    const heroImage = cluster?.cover_image_url || imageUrls?.[0];
     const hasContent = Boolean(cluster?.summary_article) && slides.length > 0;
 
     const carouselItems =
@@ -83,12 +125,18 @@ export default function TopicContent() {
             ? slides.map((item, idx) => (
                   <div
                       key={`${item.slide}-${idx}`}
-                      className="pt-8 pb-3 px-16 text-center bg-black text-white rounded-lg min-h-[200px]"
+                      className="relative flex min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-lg bg-black bg-cover bg-center px-16 py-8 text-center text-white"
+                      style={
+                          item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined
+                      }
                   >
-                      <span className="text-sm opacity-60">
-                          {`Slide ${idx + 1} sur ${slides.length}`}
-                      </span>
-                      <p className="text-md mt-3 pb-5">{item.texte}</p>
+                      {item.image_url && <div className="absolute inset-0 bg-black/55" />}
+                      <div className="relative z-10">
+                          <span className="text-sm opacity-70">
+                              {`Slide ${idx + 1} sur ${slides.length}`}
+                          </span>
+                          <p className="text-md mt-3 pb-5">{item.texte}</p>
+                      </div>
                   </div>
               ))
             : [
@@ -132,6 +180,24 @@ export default function TopicContent() {
                     <Badge color={cluster.is_published ? "success" : "gray"}>
                         {cluster.is_published ? "Publié" : "Brouillon"}
                     </Badge>
+                    {cluster.is_edited && (
+                        <Badge color="warning">{"Édité"}</Badge>
+                    )}
+                    {!editing && (
+                        <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                            {"Modifier"}
+                        </Button>
+                    )}
+                    {!editing && cluster.is_edited && (
+                        <Button
+                            size="sm"
+                            variant="tertiary"
+                            disabled={reverting}
+                            onClick={revertToAi}
+                        >
+                            {reverting ? "..." : "Revenir à la version IA"}
+                        </Button>
+                    )}
                     <Button
                         size="sm"
                         variant={cluster.is_published ? "secondary" : "primary"}
@@ -169,6 +235,16 @@ export default function TopicContent() {
                 </div>
             </div>
 
+            {editing ? (
+                <ClusterEditor
+                    cluster={cluster}
+                    onDone={() => {
+                        setEditing(false);
+                        refreshCluster();
+                    }}
+                />
+            ) : (
+              <>
             {!hasContent && (
                 <div className="rounded-lg border border-black/10 bg-black/[0.02] p-5 text-center space-y-3">
                     <p className="text-sm text-black/70">
@@ -199,8 +275,25 @@ export default function TopicContent() {
             {cluster.summary_article && <div>{FormatText(cluster.summary_article)}</div>}
 
             <div>
+                {slides.length > 0 && (
+                    <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
+                        {imgNotice && (
+                            <span className="text-sm text-black/60">{imgNotice}</span>
+                        )}
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={regenImages}
+                            onClick={regenerateImages}
+                        >
+                            {regenImages ? "..." : "Régénérer les images"}
+                        </Button>
+                    </div>
+                )}
                 <Carousel items={carouselItems} opts={{ loop: true }} />
             </div>
+              </>
+            )}
 
             <div>
                 <h1 className="text-lg font-semibold">{`${articles.length} source${articles.length > 1 ? "s" : ""}`}</h1>

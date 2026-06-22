@@ -31,6 +31,8 @@ export interface ArticleAnalysis {
 export interface Slide {
     slide: number;
     texte: string;
+    // Illustration automatique (Pexels) — éditable/remplaçable à la main.
+    image_url?: string | null;
 }
 
 export interface CategoryResponse {
@@ -104,8 +106,16 @@ export interface ClusterResponse {
     category: CategoryResponse | null;
     summary_article: string | null;
     slides: Slide[] | null;
+    cover_image_url: string | null;
     is_published: boolean;
     created_at: string;
+    // Version IA d'origine (human-in-the-loop) : snapshots figés à la génération,
+    // exposés pour prévisualiser/diff l'original avant un revert.
+    summary_article_ai: string | null;
+    slides_ai: Slide[] | null;
+    cover_image_url_ai: string | null;
+    // True si la version de travail diverge de l'original IA.
+    is_edited: boolean;
 }
 
 export interface ClusterWithArticlesResponse extends ClusterResponse {
@@ -116,8 +126,16 @@ export interface ClusterUpdate {
     title?: string;
     summary_article?: string;
     slides?: Slide[];
+    cover_image_url?: string;
     is_published?: boolean;
     category_id?: number;
+}
+
+/** Champs à restaurer lors d'un revert vers la version IA (tous par défaut). */
+export interface ClusterRevertOptions {
+    summary?: boolean;
+    slides?: boolean;
+    cover?: boolean;
 }
 
 export interface ImageInfo {
@@ -130,6 +148,15 @@ export interface ImageInfo {
 export interface ClusterInfo {
     title: string;
     pertinences: string[];
+}
+
+/** Une image renvoyée par le sélecteur (recherche Pexels, proxy backend). */
+export interface PexelsImage {
+    id: number | null;
+    url: string;
+    thumbnail: string;
+    photographer: string | null;
+    alt: string | null;
 }
 
 // ===================================================================
@@ -161,6 +188,7 @@ const VEILLES = "/veille/";
 const CATEGORIES = "/categories/";
 
 const clusterPath = (id: number | string) => `/clusters/${id}`;
+const clusterRevertPath = (id: number | string) => `/clusters/${id}/revert`;
 const clusterSummaryPath = (id: number | string) => `/clusters/${id}/summary`;
 const clusterSlidesPath = (id: number | string) => `/clusters/${id}/slides`;
 const clusterImagePath = (id: number | string) => `/clusters/${id}/image`;
@@ -251,6 +279,31 @@ const veilleService = {
         return data;
     },
 
+    /**
+     * Restaure la version IA d'origine d'un cluster (human-in-the-loop). Par
+     * défaut tous les champs (synthèse, slides, couverture) ; sinon on cible via
+     * `opts`. Invalide le détail + la liste pour refléter le retour à l'original.
+     */
+    async revertCluster(
+        id: number | string,
+        opts?: ClusterRevertOptions,
+    ): Promise<ClusterResponse> {
+        const params: QueryParams = {};
+        if (opts?.summary !== undefined) params.summary = opts.summary;
+        if (opts?.slides !== undefined) params.slides = opts.slides;
+        if (opts?.cover !== undefined) params.cover = opts.cover;
+        const { data } = await axiosClient.post<ClusterResponse>(clusterRevertPath(id), null, {
+            params,
+        });
+        await globalMutate(clusterPath(id));
+        await globalMutate(clusterSummaryPath(id));
+        await globalMutate(clusterSlidesPath(id));
+        await globalMutate(
+            key => typeof key === "string" && (key === CLUSTERS || key.startsWith(`${CLUSTERS}?`)),
+        );
+        return data;
+    },
+
     async deleteCluster(id: number | string): Promise<void> {
         await axiosClient.delete(clusterPath(id));
         await globalMutate(
@@ -296,6 +349,31 @@ const veilleService = {
         await globalMutate(
             key => typeof key === "string" && (key === CLUSTERS || key.startsWith(`${CLUSTERS}?`)),
         );
+    },
+
+    /**
+     * (Ré)génère automatiquement les images des slides d'un cluster (Pexels +
+     * mots-clés dérivés par le LLM). Tâche asynchrone (Celery) → on invalide le
+     * détail et les slides du cluster.
+     */
+    async generateSlideImages(
+        id: number | string,
+        llm_provider: LlmProvider = "deepseek",
+        ollama_model?: string,
+    ): Promise<void> {
+        const params: QueryParams = { llm_provider };
+        if (llm_provider === "ollama" && ollama_model) params.ollama_model = ollama_model;
+        await axiosClient.post(`/clusters/${id}/generate-slide-images`, null, { params });
+        await globalMutate(clusterPath(id));
+        await globalMutate(clusterSlidesPath(id));
+    },
+
+    /** Recherche d'images via le proxy Pexels backend (sélecteur de l'éditeur). */
+    async searchImages(q: string, per_page = 15): Promise<PexelsImage[]> {
+        const { data } = await axiosClient.get<PexelsImage[]>("/clusters/image-search", {
+            params: { q, per_page },
+        });
+        return data;
     },
 
     // ----- Articles -----

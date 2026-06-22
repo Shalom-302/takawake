@@ -103,13 +103,12 @@ class CRUDArticle:
         if not db_article:
             return None
         
+        # model_dump() a déjà converti récursivement `analysis` en dict → on pose
+        # les valeurs telles quelles (refaire .model_dump() sur un dict planterait).
         update_data = article_in.model_dump(exclude_unset=True)
         for var, value in update_data.items():
-            if var == "analysis" and value is not None:
-                setattr(db_article, var, value.model_dump())
-            else:
-                setattr(db_article, var, value)
-        
+            setattr(db_article, var, value)
+
         db.add(db_article)
         await db.commit()
         await db.refresh(db_article)

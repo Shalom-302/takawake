@@ -10,12 +10,16 @@ import { formatShortDate } from "@/lib/format-date";
 function ClusterThumb({
     id,
     className,
+    coverUrl,
 }: {
     id: number;
     className?: string;
+    coverUrl?: string | null;
 }) {
-    const { imageUrls } = veilleService.useClusterImage(id);
-    const img = imageUrls?.[0];
+    // Couverture validée par l'éditeur en priorité ; sinon on retombe sur
+    // l'image dérivée du meilleur article (et on évite alors un fetch inutile).
+    const { imageUrls } = veilleService.useClusterImage(coverUrl ? null : id);
+    const img = coverUrl || imageUrls?.[0];
     return (
         <div
             className={className}
@@ -98,6 +102,7 @@ export default function Topic() {
                                 <div>
                                     <ClusterThumb
                                         id={c.id}
+                                        coverUrl={c.cover_image_url}
                                         className="h-[300px] md:h-[400px] bg-black rounded-lg "
                                     />
                                     <div className="mt-6">
@@ -152,6 +157,7 @@ export default function Topic() {
                                                 >
                                                     <ClusterThumb
                                                         id={c.id}
+                                                        coverUrl={c.cover_image_url}
                                                         className="h-52 sm:h-40 w-full sm:w-[190px] md:w-3xs shrink-0 bg-black/5 rounded-lg"
                                                     />
                                                     <div className="w-full">
@@ -203,6 +209,7 @@ export default function Topic() {
                                                 >
                                                     <ClusterThumb
                                                         id={c.id}
+                                                        coverUrl={c.cover_image_url}
                                                         className="h-16 sm:h-24 w-16 sm:w-24 shrink-0 bg-black/5 rounded-lg"
                                                     />
                                                     <div className="w-full">

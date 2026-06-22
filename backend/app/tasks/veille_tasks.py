@@ -201,3 +201,40 @@ def generate_cluster_content_task(
             await engine.dispose()
 
     return asyncio.run(async_generate_content())
+
+
+# =================================================================
+# 4️⃣ TÂCHE : Ré-illustration des slides d'un cluster (Pexels)
+# =================================================================
+@celery_app.task(name="veille.regenerate_slide_images")
+def regenerate_slide_images_task(
+    cluster_id: int,
+    llm_provider: str = "deepseek",
+    ollama_model: Optional[str] = None,
+):
+    """
+    Tâche Celery qui ré-illustre les slides d'un cluster via Pexels (requête
+    dérivée du texte de chaque slide par le LLM).
+    """
+    async def async_regenerate():
+        if ollama_model:
+            OLLAMA_MODEL_OVERRIDE.set(ollama_model)
+        print(f"--- Tâche Celery Démarrée : Ré-illustration des slides du cluster ID '{cluster_id}' (LLM: {llm_provider}) ---")
+        engine = create_async_engine(settings.ASYNC_DB_URL, echo=False, future=True)
+        AsyncSessionFactory = async_sessionmaker(engine, expire_on_commit=False)
+
+        session = None
+        try:
+            async with AsyncSessionFactory() as session:
+                await veille_service.regenerate_slide_images_service(db=session, cluster_id=cluster_id, llm_provider=llm_provider)
+            print(f"--- Ré-illustration des slides du cluster ID '{cluster_id}' terminée ---")
+            return {"status": "SUCCESS", "message": "Images des slides régénérées."}
+        except Exception as e:
+            print(f"--- ERREUR ré-illustration slides cluster ID '{cluster_id}' : {e} ---")
+            return {"status": "FAILURE", "error": str(e)}
+        finally:
+            if session is not None:
+                await session.close()
+            await engine.dispose()
+
+    return asyncio.run(async_regenerate())
