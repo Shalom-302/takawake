@@ -31,6 +31,7 @@ from app.services.qdrant_service import ensure_collection, upsert_article_vector
 from app.services.llm_factory import get_llm
 from app.services.clustering import cluster_articles_for_veille
 from app.services import firecrawl_client
+from app.services.slide_images import illustrate_slides
 
 # Provider LLM par défaut. Override par requête via llm_provider="openai" ou "anthropic".
 DEFAULT_LLM_PROVIDER = "deepseek"
@@ -497,6 +498,26 @@ async def analyze_articles_node(state: AgentState) -> dict:
         print("Aucun article préparé à analyser.")
         return {"status": "SUCCESS", "processed_articles": 0}
 
+    # Réutilisation cross-veille : si l'URL a déjà été analysée (n'importe quelle
+    # veille), on reprend son analyse au lieu de relancer le LLM → dédup du coût
+    # LLM quand des veilles se recoupent. L'analyse est intrinsèque à l'article
+    # (résumé, problématique…) ; la pertinence par cluster est recalculée ensuite.
+    pending_urls = [
+        d["source_url"] for d in prepared
+        if d["status"] == ArticleStatus.PENDING and d.get("content")
+    ]
+    reuse = await crud_article.get_analyses_by_urls(db, pending_urls)
+    reused = 0
+    for d in prepared:
+        if d["status"] == ArticleStatus.PENDING and d.get("content") and d["source_url"] in reuse:
+            analysis = reuse[d["source_url"]]
+            d["analysis"] = analysis
+            d["pertinence_cluster"] = (analysis or {}).get("pertinence_cluster")
+            d["status"] = ArticleStatus.PROCESSED
+            reused += 1
+    if reused:
+        print(f"--- analyze_articles : {reused} analyse(s) réutilisée(s) (déjà vues ailleurs) → 0 appel LLM ---")
+
     print(f"--- analyze_articles : provider LLM = '{provider}' ---")
     # `method="function_calling"` est le seul commun dénominateur supporté par
     # les 3 providers : DeepSeek a désactivé `response_format=json_schema`
@@ -896,7 +917,16 @@ async def generate_cluster_content_service(
         print(f"Étape 2 : Génération des slides pour le cluster ID '{cluster_id}'.")
         await generate_slides_for_summary_article(db, cluster_id, llm_provider=llm_provider)
         print(f"Étape 2 : Slides pour le cluster ID '{cluster_id}' générés avec succès.")
-        
+
+        # Étape 3 : Pré-remplir l'image de couverture proposée par l'IA à partir
+        # de l'image de l'article le plus pertinent du cluster (snapshot inclus,
+        # pour le revert). L'éditeur pourra la remplacer via PATCH.
+        print(f"Étape 3 : Pré-remplissage de l'image de couverture pour le cluster ID '{cluster_id}'.")
+        cover_image_urls = await crud_article.get_image_for_cluster_by_id(db, cluster_id)
+        cover_image_url = cover_image_urls[0] if cover_image_urls else None
+        await crud_cluster.set_ai_cover_image(db, cluster_id=cluster_id, cover_image_url=cover_image_url)
+        print(f"Étape 3 : Image de couverture pour le cluster ID '{cluster_id}' : {cover_image_url or 'aucune'}.")
+
         print(f"--- Fin de l'orchestrateur de génération de contenu pour le cluster ID '{cluster_id}'. ---")
         return {"status": "SUCCESS", "message": "Contenu du cluster généré."}
 
@@ -956,11 +986,11 @@ async def generate_article_by_cluster_belong(
         print("Article de synthèse généré.")
 
         if synthesized_article:
-            cluster_update_data = veille_schema.ClusterUpdate(
-                summary_article=synthesized_article
-                # is_published=True # La publication est maintenant déclenchée par un endpoint dédié ou après slides
+            # set_ai_summary_article écrit à la fois le champ de travail et le
+            # snapshot `summary_article_ai` (référence pour le revert HITL).
+            await crud_cluster.set_ai_summary_article(
+                db, cluster_id=cluster_id, summary_article=synthesized_article
             )
-            await crud_cluster.update(db, cluster_id=cluster_id, cluster_in=cluster_update_data)
             print(f"Article de synthèse pour le cluster '{cluster_title}' (ID: {cluster_id}) sauvegardé avec succès.")
             return {"status": "SUCCESS", "message": "Synthèse générée"}
         else:
@@ -1048,8 +1078,12 @@ async def generate_slides_for_summary_article(
         
         slides_raw_data = json.loads(json_match.group(0))
         slides_data_pydantic = [veille_schema.Slide(**s) for s in slides_raw_data]
-        
+
         print("Slides générés et parsés avec succès.")
+
+        # Illustration automatique des slides (Pexels) — best-effort : sans clé
+        # ou en cas d'échec réseau, les slides restent sans image.
+        slides_data_pydantic = await illustrate_slides(slides_data_pydantic, llm_provider)
 
         await crud_cluster.update_slides_for_cluster(db, cluster_id=cluster_id, slides_data=slides_data_pydantic)
         print(f"Slides pour le cluster '{cluster_title}' (ID: {cluster_id}) sauvegardés avec succès.")
@@ -1061,3 +1095,26 @@ async def generate_slides_for_summary_article(
     except Exception as e:
         print(f"[ERREUR] Impossible de générer les slides pour le cluster '{cluster_title}' (ID: {cluster_id}): {e}")
         raise # Relaisser l'exception
+
+
+# --- Régénération des images de slides (human-in-the-loop) ---
+async def regenerate_slide_images_service(
+    db: AsyncSession,
+    cluster_id: int,
+    llm_provider: str = DEFAULT_LLM_PROVIDER,
+):
+    """
+    Ré-illustre TOUTES les slides existantes d'un cluster (bouton « Régénérer les
+    images »). Ne touche qu'aux slides de travail : le snapshot IA reste intact,
+    donc le revert reste possible.
+    """
+    print(f"--- Ré-illustration des slides du cluster ID '{cluster_id}' (LLM: {llm_provider}) ---")
+    db_cluster = await crud_cluster.get(db, cluster_id)
+    if not db_cluster or not db_cluster.slides:
+        raise ValueError(f"Aucune slide à illustrer pour le cluster ID '{cluster_id}'.")
+
+    slides = [veille_schema.Slide(**s) for s in db_cluster.slides]
+    slides = await illustrate_slides(slides, llm_provider, overwrite=True)
+    await crud_cluster.set_working_slides(db, cluster_id=cluster_id, slides_data=slides)
+    print(f"--- Images des slides du cluster ID '{cluster_id}' régénérées. ---")
+    return {"status": "SUCCESS", "message": "Images des slides régénérées."}

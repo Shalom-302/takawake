@@ -90,13 +90,13 @@ class CRUDCluster:
         if not db_cluster:
             return None
         
+        # model_dump() a déjà converti récursivement les sous-modèles (slides) en
+        # dicts JSON-sérialisables → on pose les valeurs telles quelles. (Refaire
+        # un .model_dump() sur les slides planterait : ce sont déjà des dicts.)
         update_data = cluster_in.model_dump(exclude_unset=True)
         for var, value in update_data.items():
-            if var == "slides" and value is not None:
-                setattr(db_cluster, var, [s.model_dump() for s in value])
-            else:
-                setattr(db_cluster, var, value)
-        
+            setattr(db_cluster, var, value)
+
         db.add(db_cluster)
         await db.commit()
         await db.refresh(db_cluster)
@@ -119,14 +119,94 @@ class CRUDCluster:
     
     async def update_slides_for_cluster(self, db: AsyncSession, cluster_id: int, slides_data: List[Slide]) -> Optional[Cluster]:
         """
-        Met à jour le champ 'slides' d'un cluster.
+        Met à jour le champ 'slides' d'un cluster (chemin de génération IA).
+        Écrit aussi le snapshot `slides_ai` qui sert de référence au revert :
+        cette méthode n'est appelée que par la génération LLM, l'édition humaine
+        passe par `update()` qui ne touche pas le snapshot.
         """
         db_cluster = await self.get(db, cluster_id)
         if not db_cluster:
             return None
-        
+
+        slides_dict = [s.model_dump() for s in slides_data]
+        db_cluster.slides = slides_dict
+        db_cluster.slides_ai = slides_dict
+
+        db.add(db_cluster)
+        await db.commit()
+        await db.refresh(db_cluster)
+        return db_cluster
+
+    async def set_working_slides(self, db: AsyncSession, cluster_id: int, slides_data: List[Slide]) -> Optional[Cluster]:
+        """
+        Met à jour UNIQUEMENT les slides de travail (sans toucher au snapshot
+        `slides_ai`). Utilisé par la ré-illustration manuelle (« Régénérer les
+        images ») : c'est une retouche humaine, l'original IA reste restaurable.
+        """
+        db_cluster = await self.get(db, cluster_id)
+        if not db_cluster:
+            return None
         db_cluster.slides = [s.model_dump() for s in slides_data]
-        
+        db.add(db_cluster)
+        await db.commit()
+        await db.refresh(db_cluster)
+        return db_cluster
+
+    async def set_ai_summary_article(self, db: AsyncSession, cluster_id: int, summary_article: str) -> Optional[Cluster]:
+        """
+        Enregistre la synthèse générée par l'IA : remplit à la fois le champ de
+        travail `summary_article` (éditable) et le snapshot figé
+        `summary_article_ai` (référence pour le revert).
+        """
+        db_cluster = await self.get(db, cluster_id)
+        if not db_cluster:
+            return None
+        db_cluster.summary_article = summary_article
+        db_cluster.summary_article_ai = summary_article
+        db.add(db_cluster)
+        await db.commit()
+        await db.refresh(db_cluster)
+        return db_cluster
+
+    async def set_ai_cover_image(self, db: AsyncSession, cluster_id: int, cover_image_url: Optional[str]) -> Optional[Cluster]:
+        """
+        Pré-remplit l'image de couverture proposée par l'IA (image de l'article
+        le plus pertinent) : champ de travail `cover_image_url` + snapshot
+        `cover_image_url_ai`.
+        """
+        db_cluster = await self.get(db, cluster_id)
+        if not db_cluster:
+            return None
+        db_cluster.cover_image_url = cover_image_url
+        db_cluster.cover_image_url_ai = cover_image_url
+        db.add(db_cluster)
+        await db.commit()
+        await db.refresh(db_cluster)
+        return db_cluster
+
+    async def revert_to_ai(
+        self,
+        db: AsyncSession,
+        cluster_id: int,
+        *,
+        summary: bool = True,
+        slides: bool = True,
+        cover: bool = True,
+    ) -> Optional[Cluster]:
+        """
+        Restaure la version IA d'origine sur les champs demandés en recopiant les
+        snapshots `*_ai` dans les champs de travail. Les snapshots ne sont pas
+        modifiés : on peut donc éditer puis revert autant de fois que voulu.
+        """
+        db_cluster = await self.get(db, cluster_id)
+        if not db_cluster:
+            return None
+        if summary:
+            db_cluster.summary_article = db_cluster.summary_article_ai
+        if slides:
+            db_cluster.slides = db_cluster.slides_ai
+        if cover:
+            db_cluster.cover_image_url = db_cluster.cover_image_url_ai
         db.add(db_cluster)
         await db.commit()
         await db.refresh(db_cluster)

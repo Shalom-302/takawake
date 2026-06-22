@@ -8,13 +8,15 @@ from celery import Task
 from app.core.db import get_async_db
 from app.schemas.veille import (
     ClusterResponse, ClusterCreate, ClusterUpdate,
-    Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse 
+    Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse, PexelsImage
 )
+from app.services.slide_images import search_pexels_photos
 from app.crud.crud_cluster import crud_cluster 
 from app.crud.crud_article import crud_article 
 from app.tasks.veille_tasks import (
     run_full_backfill_task,
     generate_cluster_content_task,
+    regenerate_slide_images_task,
 )
 from app.services.llm_factory import OllamaModel
 from app.plugins.advanced_auth.utils.security import require_superuser
@@ -97,6 +99,56 @@ def generate_cluster_full_content_endpoint(
     except Exception as e:
         print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
+
+@router.post(
+    "/{cluster_id}/generate-slide-images",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="(Ré)générer automatiquement les images des slides d'un cluster"
+)
+def regenerate_slide_images_endpoint(
+    cluster_id: int = Path(..., description="L'ID du cluster dont on illustre les slides."),
+    llm_provider: Literal["deepseek", "openai", "anthropic", "ollama"] = Query(
+        "deepseek",
+        description="Provider LLM pour dériver les mots-clés de recherche d'image.",
+    ),
+    ollama_model: Optional[OllamaModel] = Query(
+        None,
+        description="Modèle Ollama spécifique (ignoré si llm_provider != 'ollama').",
+    ),
+):
+    """
+    Déclenche une tâche de fond qui ré-illustre les slides du cluster : pour
+    chaque slide, le LLM extrait des mots-clés visuels puis on récupère une photo
+    pertinente sur Pexels. Ne touche qu'aux slides de travail (l'original IA
+    reste restaurable via /revert).
+    """
+    try:
+        effective_model = ollama_model if llm_provider == "ollama" else None
+        cast(Task, regenerate_slide_images_task).delay(cluster_id, llm_provider, effective_model)
+        return {
+            "message": f"Ré-illustration des slides du cluster ID '{cluster_id}' lancée en arrière-plan.",
+            "llm_provider": llm_provider,
+            "ollama_model": effective_model,
+        }
+    except Exception as e:
+        print(f"ERREUR : Impossible de contacter le broker Celery. {e}")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Le service de tâches de fond est indisponible : {str(e)}")
+
+@router.get(
+    "/image-search",
+    response_model=List[PexelsImage],
+    summary="Rechercher des images (Pexels) pour le sélecteur de l'éditeur"
+)
+async def image_search_endpoint(
+    q: str = Query(..., min_length=1, description="Mots-clés de recherche d'image."),
+    per_page: int = Query(15, ge=1, le=30, description="Nombre de résultats."),
+):
+    """
+    Proxy de recherche Pexels : la clé API reste côté serveur. Sert au sélecteur
+    d'images de l'éditeur (couverture + slides). Retourne [] si Pexels n'est pas
+    configuré.
+    """
+    return await search_pexels_photos(q, per_page=per_page)
 
 # --- Endpoints CRUD de base pour Cluster ---
 
@@ -183,6 +235,31 @@ async def update_cluster_partial(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé.")
     return updated_cluster
 
+
+@router.post(
+    "/{cluster_id}/revert",
+    response_model=ClusterResponse,
+    summary="Restaurer la version IA d'origine d'un cluster (human-in-the-loop)"
+)
+async def revert_cluster_to_ai(
+    cluster_id: int = Path(..., description="L'ID du cluster à restaurer."),
+    summary: bool = Query(True, description="Restaurer l'article de synthèse à la version IA."),
+    slides: bool = Query(True, description="Restaurer les slides à la version IA."),
+    cover: bool = Query(True, description="Restaurer l'image de couverture à la version IA."),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Annule les modifications humaines en recopiant les snapshots IA d'origine
+    (`*_ai`) dans les champs de travail. On choisit par query param les champs à
+    restaurer (synthèse, slides, couverture). Les snapshots ne sont pas modifiés :
+    on peut éditer puis revert autant de fois que nécessaire.
+    """
+    reverted = await crud_cluster.revert_to_ai(
+        db, cluster_id=cluster_id, summary=summary, slides=slides, cover=cover
+    )
+    if not reverted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé.")
+    return reverted
 
 
 @router.get(

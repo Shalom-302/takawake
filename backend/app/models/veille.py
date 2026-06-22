@@ -2,7 +2,7 @@ import datetime
 import enum
 from typing import List, Dict, Optional, Any
 
-from sqlalchemy import String, Text, DateTime, Boolean, JSON, ForeignKey, Integer
+from sqlalchemy import String, Text, DateTime, Boolean, JSON, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func
 
@@ -62,8 +62,37 @@ class Cluster(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False) # Le titre/question du cluster
     summary_article: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # L'article de synthèse LLM
     slides: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True) # Les slides générées
+    # Image de couverture validée par l'éditeur. Pré-remplie par l'IA (image de
+    # l'article le plus pertinent) à la génération, modifiable ensuite.
+    cover_image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    # --- Snapshots de la version IA d'origine (human-in-the-loop) ---
+    # Figés au moment de la génération par le LLM et JAMAIS modifiés par l'édition
+    # humaine (le PATCH ne touche que les champs de travail ci-dessus). Ils
+    # permettent de "revenir à l'original IA" via POST /clusters/{id}/revert.
+    summary_article_ai: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    slides_ai: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)
+    cover_image_url_ai: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    @property
+    def is_edited(self) -> bool:
+        """True si la version de travail diverge de l'original IA snapshotté.
+        Sert au front à afficher un badge "édité" et activer le bouton revert.
+        Les clusters antérieurs à cette feature (aucun snapshot) sont considérés
+        non édités, faute de version IA de référence."""
+        if (
+            self.summary_article_ai is None
+            and self.slides_ai is None
+            and self.cover_image_url_ai is None
+        ):
+            return False
+        return (
+            self.summary_article != self.summary_article_ai
+            or self.slides != self.slides_ai
+            or self.cover_image_url != self.cover_image_url_ai
+        )
 
     # Clé étrangère pour Veille : un cluster appartient à exactement une veille
     # (le clustering est mono-veille). Permet de filtrer les clusters par veille.
@@ -87,6 +116,13 @@ class Cluster(Base):
 # --- Modèle Article ---
 class Article(Base):
     __tablename__ = "articles"
+    # Unicité PAR VEILLE (et non plus globale) : un même article (URL) peut
+    # coexister dans plusieurs veilles sans que l'une "vole" l'autre. La dédup
+    # du coût LLM se fait par réutilisation de l'analyse existante (cf.
+    # analyze_articles_node), pas par une URL globalement unique.
+    __table_args__ = (
+        UniqueConstraint("veille_id", "source_url", name="uq_article_veille_url"),
+    )
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     # Clés étrangères
@@ -94,7 +130,9 @@ class Article(Base):
     cluster_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clusters.id"), nullable=True, index=True)
 
     # Infos de base de l'article
-    source_url: Mapped[str] = mapped_column(String(1024), unique=True, index=True, nullable=False)
+    # index (non unique) pour les lookups par URL ; l'unicité est portée par
+    # la contrainte composite (veille_id, source_url) dans __table_args__.
+    source_url: Mapped[str] = mapped_column(String(1024), index=True, nullable=False)
     source_name: Mapped[str] = mapped_column(String(100), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     publication_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True, index=True)

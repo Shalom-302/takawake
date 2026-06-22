@@ -103,23 +103,50 @@ class CRUDArticle:
         if not db_article:
             return None
         
+        # model_dump() a déjà converti récursivement `analysis` en dict → on pose
+        # les valeurs telles quelles (refaire .model_dump() sur un dict planterait).
         update_data = article_in.model_dump(exclude_unset=True)
         for var, value in update_data.items():
-            if var == "analysis" and value is not None:
-                setattr(db_article, var, value.model_dump())
-            else:
-                setattr(db_article, var, value)
-        
+            setattr(db_article, var, value)
+
         db.add(db_article)
         await db.commit()
         await db.refresh(db_article)
         return db_article
 
+    async def get_analyses_by_urls(self, db: AsyncSession, urls: List[str]) -> Dict[str, Dict[str, Any]]:
+        """
+        Map source_url -> analyse JSON pour les articles DÉJÀ analysés (n'importe
+        quelle veille). Sert à réutiliser une analyse existante au lieu de
+        relancer le LLM sur un article déjà traité ailleurs (dédup du coût LLM).
+        """
+        if not urls:
+            return {}
+        stmt = select(Article.source_url, Article.analysis).where(
+            Article.source_url.in_(list(set(urls))),
+            Article.status == ArticleStatus.PROCESSED,
+            Article.analysis.is_not(None),
+        )
+        result = await db.execute(stmt)
+        out: Dict[str, Dict[str, Any]] = {}
+        for url, analysis in result.all():
+            if url not in out and analysis:
+                out[url] = analysis
+        return out
+
     async def create_or_update(self, db: AsyncSession, article_data: Dict[str, Any]) -> Article:
         """
-        Crée ou met à jour un article basé sur son URL.
+        Crée ou met à jour un article basé sur le couple (veille_id, URL).
+
+        Scopé PAR VEILLE : un article déjà présent dans une AUTRE veille n'est
+        plus écrasé/volé — on crée une ligne distincte pour la veille courante.
         """
-        result = await db.execute(select(Article).filter(Article.source_url == article_data["source_url"]))
+        result = await db.execute(
+            select(Article).filter(
+                Article.veille_id == article_data["veille_id"],
+                Article.source_url == article_data["source_url"],
+            )
+        )
         db_article = result.scalars().first()
         
         filtered_data = {k: v for k, v in article_data.items() if hasattr(Article, k) and k not in ['id', 'scraping_date']}

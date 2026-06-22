@@ -39,6 +39,8 @@ services:
       # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Banque d'images pour illustrer les slides (cf. services/slide_images.py).
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
       # Sourcing veille : Firecrawl piloté par le prompt.
       - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
       - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}
@@ -48,6 +50,12 @@ services:
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
       - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-tekawake}
+      # Clustering : réglables par env pour affiner la granularité sans rebuild.
+      # Seuil ↑ = clusters plus fins/nombreux mais plus d'isolés ; MIN_CLUSTER_SIZE=1
+      # = aucun article perdu (chaque isolé devient son propre cluster).
+      - CLUSTER_SIM_THRESHOLD=${CLUSTER_SIM_THRESHOLD:-0.86}
+      - CLUSTER_MAX_SIZE=${CLUSTER_MAX_SIZE:-10}
+      - MIN_CLUSTER_SIZE=${MIN_CLUSTER_SIZE:-2}
       - HF_HOME=/app/.hf_cache
     # Applique les migrations Alembic AVANT de démarrer l'API (le code exige le
     # schéma à jour, ex. clusters.veille_id). Idempotent : n'applique que le pending.
@@ -94,6 +102,8 @@ services:
       # jamais transmis au conteneur (d'où "DEEPSEEK_API_KEY n'est pas configuré").
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Banque d'images pour illustrer les slides (cf. services/slide_images.py).
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
       # Sourcing veille : Firecrawl piloté par le prompt.
       - SOURCING_PROVIDER=${SOURCING_PROVIDER:-rss}
       - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-http://firecrawl-api:3002}
@@ -103,6 +113,12 @@ services:
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
       - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-tekawake}
+      # Clustering : réglables par env pour affiner la granularité sans rebuild.
+      # Seuil ↑ = clusters plus fins/nombreux mais plus d'isolés ; MIN_CLUSTER_SIZE=1
+      # = aucun article perdu (chaque isolé devient son propre cluster).
+      - CLUSTER_SIM_THRESHOLD=${CLUSTER_SIM_THRESHOLD:-0.86}
+      - CLUSTER_MAX_SIZE=${CLUSTER_MAX_SIZE:-10}
+      - MIN_CLUSTER_SIZE=${MIN_CLUSTER_SIZE:-2}
       - HF_HOME=/app/.hf_cache
     volumes:
       - hf_cache:/app/.hf_cache

@@ -121,6 +121,10 @@ celerybeat.pid
 # Environments
 .env
 .env.elastic
+# Fichiers d'env en clair (secrets prod) — ne JAMAIS committer.
+# Les .env.template / .env.dokploy.example (placeholders) restent suivis.
+dokploy.env.txt
+*.env.txt
 .venv
 env/
 venv/
