@@ -6,7 +6,15 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 
 DB_URL = settings.DB_URL
 
-engine = create_engine(DB_URL, echo=True)
+engine = create_engine(
+    DB_URL,
+    echo=settings.DB_ECHO,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
+    pool_pre_ping=settings.DB_POOL_PRE_PING,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -17,7 +25,15 @@ def get_db():
     finally:
         db.close()
 
-async_engine = create_async_engine(settings.ASYNC_DB_URL)
+async_engine = create_async_engine(
+    settings.ASYNC_DB_URL,
+    echo=settings.DB_ECHO,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
+    pool_pre_ping=settings.DB_POOL_PRE_PING,
+)
 # Création d'une "usine" à sessions asynchrones, comme dans votre exemple
 AsyncSessionFactory = async_sessionmaker(
     bind=async_engine,

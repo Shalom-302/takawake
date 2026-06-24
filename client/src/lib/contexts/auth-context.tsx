@@ -135,12 +135,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             `Token expires in ${Math.floor((tokenExpiryTime - currentTime) / 1000)} seconds. Refresh scheduled in ${Math.floor(timeUntilRefresh / 1000)} seconds.`
         );
 
-        const refreshInterval = setInterval(() => {
+        // setTimeout (PAS setInterval) : on refresh UNE fois, puis le succès
+        // met à jour tokenExpiryTime → cet effet se relance et re-planifie.
+        // Avec setInterval + timeUntilRefresh=0 (token déjà expiré), on
+        // déclenchait une tempête de /auth/refresh aussi vite que possible.
+        const refreshTimeout = setTimeout(() => {
             console.log("Refreshing token...");
             refreshToken();
         }, timeUntilRefresh);
 
-        return () => clearInterval(refreshInterval);
+        return () => clearTimeout(refreshTimeout);
     }, [isAuthenticated, tokenExpiryTime, refreshToken]);
 
     // Login handler
