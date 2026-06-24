@@ -46,6 +46,12 @@ export interface AuthProvider {
     name?: string;
 }
 
+// Single-flight : un seul appel /auth/refresh en vol à la fois.
+// Tous les appelants concurrents (intervalle d'expiration, refresh manuel,
+// futurs intercepteurs 401…) partagent la MÊME promesse. Évite la tempête de
+// requêtes /auth/refresh qui épuisait le pool de connexions backend.
+let refreshInFlight: Promise<LoginResponse> | null = null;
+
 // Auth service for interacting with the custom_auth plugin
 const authService = {
     // Email login.
@@ -82,17 +88,30 @@ const authService = {
         }
     },
 
-    // Refresh token
+    // Refresh token (single-flight : voir refreshInFlight ci-dessus).
+    // Si un refresh est déjà en cours, on renvoie la promesse existante
+    // au lieu d'en lancer un nouveau.
     async refreshToken(refreshToken: string): Promise<LoginResponse> {
+        if (refreshInFlight) {
+            return refreshInFlight;
+        }
+
         const formData = new URLSearchParams();
         formData.append("refresh_token", refreshToken);
 
-        const response = await axiosClient.post<LoginResponse>("/auth/refresh", formData, {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        });
-        return response.data;
+        refreshInFlight = axiosClient
+            .post<LoginResponse>("/auth/refresh", formData, {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            })
+            .then(response => response.data)
+            .finally(() => {
+                // Libère le verrou quoi qu'il arrive (succès ou échec)
+                refreshInFlight = null;
+            });
+
+        return refreshInFlight;
     },
 
     // Get current user profile

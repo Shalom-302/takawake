@@ -163,7 +163,15 @@ class Settings(BaseSettings):
 
     # Logging
     LOKI_URL: str = "http://loki:3100"
-    
+
+    # --- Pool de connexions SQLAlchemy (tunable sans rebuild) ---
+    DB_ECHO: bool = False              # JAMAIS True en prod (log chaque requête SQL)
+    DB_POOL_SIZE: int = 20            # connexions persistantes
+    DB_MAX_OVERFLOW: int = 30         # connexions supplémentaires en pic
+    DB_POOL_TIMEOUT: int = 30         # attente max avant TimeoutError (s)
+    DB_POOL_RECYCLE: int = 1800       # recycle les connexions > 30 min
+    DB_POOL_PRE_PING: bool = True     # détecte/écarte les connexions mortes
+
     @property
     def CELERY_BROKER_URL(self) -> str:
         password = f":{self.REDIS_PASSWORD}" if self.REDIS_PASSWORD else ""

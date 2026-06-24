@@ -12,7 +12,7 @@ import re
 from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from app.core.db import get_db
+from app.core.db import get_db, SessionLocal
 from app.plugins.advanced_i18n.utils import get_default_language_code
 
 
@@ -100,16 +100,18 @@ class LanguageDetectionMiddleware(BaseHTTPMiddleware):
         # Try to get default language from available languages
         if self.available_languages:
             # Try to get a database connection to fetch the default language
+            db = SessionLocal()
             try:
-                # This is a bit of a hack to get a database connection
-                # In a real implementation, you might want to inject the session
-                db = next(get_db())
                 default_lang = get_default_language_code(db)
                 if default_lang:
                     return default_lang
-            except:
+            except Exception:
                 # If database access fails, fall back to first available language
                 return self.available_languages[0]
+            finally:
+                # IMPORTANT : sans ça la connexion fuit à chaque requête
+                # (next(get_db()) n'exécute jamais le finally du générateur)
+                db.close()
         
         # Fallback to hardcoded default
         return self.default_language
