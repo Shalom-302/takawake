@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import veilleService, { type PexelsImage } from "@/lib/api/veille.service";
+import veilleService, { type StockImage } from "@/lib/api/veille.service";
 
 interface ImagePickerProps {
     value?: string | null;
@@ -15,16 +15,34 @@ interface ImagePickerProps {
 
 /**
  * Sélecteur d'image réutilisable : ouvre une boîte de dialogue avec une
- * recherche Pexels (proxy backend, clé côté serveur), une grille cliquable, et
- * un champ « coller une URL » en repli. Renvoie l'URL choisie via onChange.
+ * recherche Unsplash (proxy backend, clé côté serveur), une grille cliquable, un
+ * upload depuis le PC, et un champ « coller une URL » en repli. Renvoie l'URL
+ * choisie via onChange.
  */
 export default function ImagePicker({ value, onChange, defaultQuery = "" }: ImagePickerProps) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState(defaultQuery);
-    const [results, setResults] = useState<PexelsImage[]>([]);
+    const [results, setResults] = useState<StockImage[]>([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
     const [manualUrl, setManualUrl] = useState("");
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    async function handleUpload(file: File) {
+        setUploading(true);
+        setUploadError(null);
+        try {
+            const img = await veilleService.uploadImage(file);
+            select(img.url);
+        } catch {
+            setUploadError("Échec de l'upload (format ou taille ?).");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    }
 
     async function runSearch(qArg?: string) {
         const term = (qArg ?? query).trim();
@@ -116,13 +134,41 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
                     </div>
                 ) : searched ? (
                     <p className="py-6 text-center text-sm text-black/50">
-                        {"Aucune image trouvée (ou Pexels non configuré)."}
+                        {"Aucune image trouvée (ou Unsplash non configuré)."}
                     </p>
                 ) : (
                     <p className="py-6 text-center text-sm text-black/50">
                         {"Lance une recherche pour voir des images."}
                     </p>
                 )}
+            </div>
+
+            <div className="border-t border-black/10 pt-3">
+                <p className="mb-1.5 text-xs text-black/50">
+                    {"Ou importer une image depuis votre ordinateur :"}
+                </p>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleUpload(file);
+                    }}
+                />
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={uploading}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {uploading ? "Import en cours..." : "Importer une image"}
+                    </Button>
+                    {uploadError && <span className="text-xs text-red-600">{uploadError}</span>}
+                </div>
             </div>
 
             <div className="border-t border-black/10 pt-3">

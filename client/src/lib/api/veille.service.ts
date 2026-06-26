@@ -31,7 +31,7 @@ export interface ArticleAnalysis {
 export interface Slide {
     slide: number;
     texte: string;
-    // Illustration automatique (Pexels) — éditable/remplaçable à la main.
+    // Illustration automatique (Unsplash) — éditable/remplaçable à la main.
     image_url?: string | null;
 }
 
@@ -108,7 +108,18 @@ export interface ClusterResponse {
     slides: Slide[] | null;
     cover_image_url: string | null;
     is_published: boolean;
+    // Nombre d'articles regroupés dans ce cluster (renvoyé par la liste /clusters/).
+    article_count?: number;
+    // Article réservé aux comptes : visiteur anonyme = teaser + mur d'inscription.
+    is_premium: boolean;
+    // Posé par l'API (non persisté) : true quand le contenu a été tronqué pour un
+    // visiteur anonyme → le front affiche le mur d'inscription.
+    locked: boolean;
     created_at: string;
+    // Date de l'actu (non persistée) : publication_date la plus récente des
+    // articles du cluster, repli sur created_at. Base du filtre temporel
+    // (Aujourd'hui/Hier/Semaine) et de l'indicateur "il y a X heures".
+    published_date: string | null;
     // Version IA d'origine (human-in-the-loop) : snapshots figés à la génération,
     // exposés pour prévisualiser/diff l'original avant un revert.
     summary_article_ai: string | null;
@@ -128,6 +139,7 @@ export interface ClusterUpdate {
     slides?: Slide[];
     cover_image_url?: string;
     is_published?: boolean;
+    is_premium?: boolean;
     category_id?: number;
 }
 
@@ -150,14 +162,23 @@ export interface ClusterInfo {
     pertinences: string[];
 }
 
-/** Une image renvoyée par le sélecteur (recherche Pexels, proxy backend). */
-export interface PexelsImage {
+/** Un point de la série temporelle (volume d'articles traités ce jour-là). */
+export interface ArticleDailyCount {
+    date: string; // YYYY-MM-DD
+    count: number;
+}
+
+/** Une image renvoyée par le sélecteur (recherche Unsplash ou upload local). */
+export interface StockImage {
     id: number | null;
     url: string;
     thumbnail: string;
     photographer: string | null;
     alt: string | null;
 }
+
+/** @deprecated Renommé en {@link StockImage} (on n'utilise plus Pexels). */
+export type PexelsImage = StockImage;
 
 // ===================================================================
 // Helpers
@@ -177,6 +198,20 @@ function buildKey(path: string, params?: QueryParams): string {
 }
 
 const fetcher = <T,>(url: string) => axiosClient.get<T>(url).then(r => r.data);
+
+// Origine de l'API (sans le suffixe /api) — sert à absolutiser les chemins
+// relatifs renvoyés par l'upload d'image (ex. /api/uploads/x.jpg) afin que l'URL
+// stockée sur le cluster soit portable (rendue aussi par le client public).
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api").replace(
+    /\/api\/?$/,
+    "",
+);
+
+/** Préfixe un chemin relatif avec l'origine de l'API ; laisse les URLs absolues. */
+function toAbsoluteUrl(pathOrUrl: string): string {
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    return `${API_ORIGIN}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+}
 
 // ===================================================================
 // Endpoints
@@ -352,7 +387,7 @@ const veilleService = {
     },
 
     /**
-     * (Ré)génère automatiquement les images des slides d'un cluster (Pexels +
+     * (Ré)génère automatiquement les images des slides d'un cluster (Unsplash +
      * mots-clés dérivés par le LLM). Tâche asynchrone (Celery) → on invalide le
      * détail et les slides du cluster.
      */
@@ -368,12 +403,30 @@ const veilleService = {
         await globalMutate(clusterSlidesPath(id));
     },
 
-    /** Recherche d'images via le proxy Pexels backend (sélecteur de l'éditeur). */
-    async searchImages(q: string, per_page = 15): Promise<PexelsImage[]> {
-        const { data } = await axiosClient.get<PexelsImage[]>("/clusters/image-search", {
+    /** Recherche d'images via le proxy Unsplash backend (sélecteur de l'éditeur). */
+    async searchImages(q: string, per_page = 15): Promise<StockImage[]> {
+        const { data } = await axiosClient.get<StockImage[]>("/clusters/image-search", {
             params: { q, per_page },
         });
         return data;
+    },
+
+    /**
+     * Upload une image depuis le poste de l'éditeur. Le backend la stocke et
+     * renvoie un chemin relatif ; on l'absolutise (origine de l'API) pour que
+     * l'URL enregistrée sur le cluster soit portable.
+     */
+    async uploadImage(file: File): Promise<StockImage> {
+        const form = new FormData();
+        form.append("file", file);
+        const { data } = await axiosClient.post<StockImage>("/clusters/upload-image", form, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return {
+            ...data,
+            url: toAbsoluteUrl(data.url),
+            thumbnail: toAbsoluteUrl(data.thumbnail),
+        };
     },
 
     // ----- Articles -----
@@ -401,6 +454,13 @@ const veilleService = {
         const key = buildKey("/articles/count", opts);
         const { data, error, isLoading } = useSWR<{ count: number }>(key, fetcher);
         return { count: data?.count, error, isLoading };
+    },
+
+    /** Série temporelle dense (jours remplis à 0) du volume d'articles / jour. */
+    useArticlesTimeseries(days = 14) {
+        const key = buildKey("/articles/timeseries", { days });
+        const { data, error, isLoading } = useSWR<ArticleDailyCount[]>(key, fetcher);
+        return { points: data, error, isLoading };
     },
 
     useArticle(id?: number | string | null) {

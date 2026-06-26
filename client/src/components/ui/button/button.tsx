@@ -240,7 +240,13 @@ function Button({
             )}
 
             {/* Text content */}
-            {isLinkVariant ? (
+            {asChild ? (
+                // asChild : on fusionne les styles du bouton DIRECTEMENT sur l'enfant
+                // (ex. <Link>) sans <span> intermédiaire. Sinon Slot stylait le span
+                // et l'élément cliquable (l'<a>) se retrouvait imbriqué dedans → seule
+                // la zone du texte était active (le padding du bouton ne l'était pas).
+                <Slottable>{children}</Slottable>
+            ) : isLinkVariant ? (
                 <Slottable>
                     {children && (
                         <span

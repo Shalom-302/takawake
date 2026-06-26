@@ -1,14 +1,12 @@
 "use client";
 
-import MainLayout from "@/components/layouts/main-layout";
-import ContentSection from "@/components/sections/landing/content";
-import HeroSection from "@/components/sections/landing/hero";
+import { Suspense } from "react";
+import ALaUne from "@/components/sections/feed/a-la-une";
 
 export default function Home() {
     return (
-        <MainLayout>
-            <HeroSection />
-            <ContentSection />
-        </MainLayout>
+        <Suspense fallback={<div className="h-screen w-full bg-white" />}>
+            <ALaUne />
+        </Suspense>
     );
 }

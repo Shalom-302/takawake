@@ -104,10 +104,20 @@
     "workflow_transitions",
     "step_approvals",
     "workflow_history",
-    "categories",
     "clusters",
+    "categories",
+    "faith_friendships",
     "articles",
-    "veilles"
+    "veilles",
+    "faith_sermons",
+    "faith_testimonies",
+    "faith_questions",
+    "faith_messages",
+    "faith_sermon_likes",
+    "faith_sermon_comments",
+    "faith_testimony_likes",
+    "faith_testimony_comments",
+    "faith_answers"
   ],
   "relationships": [
     {
@@ -551,12 +561,84 @@
       "target": "categories"
     },
     {
+      "source": "clusters",
+      "target": "veilles"
+    },
+    {
+      "source": "faith_friendships",
+      "target": "user"
+    },
+    {
+      "source": "faith_friendships",
+      "target": "user"
+    },
+    {
       "source": "articles",
       "target": "clusters"
     },
     {
       "source": "articles",
       "target": "veilles"
+    },
+    {
+      "source": "faith_sermons",
+      "target": "user"
+    },
+    {
+      "source": "faith_testimonies",
+      "target": "user"
+    },
+    {
+      "source": "faith_questions",
+      "target": "user"
+    },
+    {
+      "source": "faith_messages",
+      "target": "user"
+    },
+    {
+      "source": "faith_messages",
+      "target": "user"
+    },
+    {
+      "source": "faith_sermon_likes",
+      "target": "faith_sermons"
+    },
+    {
+      "source": "faith_sermon_likes",
+      "target": "user"
+    },
+    {
+      "source": "faith_sermon_comments",
+      "target": "faith_sermons"
+    },
+    {
+      "source": "faith_sermon_comments",
+      "target": "user"
+    },
+    {
+      "source": "faith_testimony_likes",
+      "target": "faith_testimonies"
+    },
+    {
+      "source": "faith_testimony_likes",
+      "target": "user"
+    },
+    {
+      "source": "faith_testimony_comments",
+      "target": "faith_testimonies"
+    },
+    {
+      "source": "faith_testimony_comments",
+      "target": "user"
+    },
+    {
+      "source": "faith_answers",
+      "target": "faith_questions"
+    },
+    {
+      "source": "faith_answers",
+      "target": "user"
     }
   ]
 }

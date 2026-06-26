@@ -5,16 +5,19 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button/button";
 import { Badge } from "@/components/ui/badge";
 import veilleService from "@/lib/api/veille.service";
-import { formatShortDate } from "@/lib/format-date";
+import { formatRelative } from "@/lib/format-date";
+import { stripMarkdown } from "@/lib/markdown";
 
 function ClusterThumb({
     id,
     className,
     coverUrl,
+    premium,
 }: {
     id: number;
     className?: string;
     coverUrl?: string | null;
+    premium?: boolean;
 }) {
     // Couverture validée par l'éditeur en priorité ; sinon on retombe sur
     // l'image dérivée du meilleur article (et on évite alors un fetch inutile).
@@ -22,7 +25,7 @@ function ClusterThumb({
     const img = coverUrl || imageUrls?.[0];
     return (
         <div
-            className={className}
+            className={`relative ${className ?? ""}`}
             style={
                 img
                     ? {
@@ -32,7 +35,13 @@ function ClusterThumb({
                       }
                     : undefined
             }
-        />
+        >
+            {premium && (
+                <span className="absolute left-2 top-2 z-10 rounded-full bg-(--purple-dreams-500) px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+                    {"Premium"}
+                </span>
+            )}
+        </div>
     );
 }
 
@@ -103,6 +112,7 @@ export default function Topic() {
                                     <ClusterThumb
                                         id={c.id}
                                         coverUrl={c.cover_image_url}
+                                        premium={c.is_premium}
                                         className="h-[300px] md:h-[400px] bg-black rounded-lg "
                                     />
                                     <div className="mt-6">
@@ -112,11 +122,11 @@ export default function Topic() {
                                             </span>
                                             {c.summary_article && (
                                                 <p className=" line-clamp-2 text-sm mt-2">
-                                                    {c.summary_article.replace(/[*#\n]/g, " ")}
+                                                    {stripMarkdown(c.summary_article)}
                                                 </p>
                                             )}
                                             <div className="mt-4 text-sm font-medium text-(--black-tekawake-300)">
-                                                {formatShortDate(c.created_at)}
+                                                {formatRelative(c.created_at)}
                                             </div>
                                         </div>
                                     </div>
@@ -158,6 +168,7 @@ export default function Topic() {
                                                     <ClusterThumb
                                                         id={c.id}
                                                         coverUrl={c.cover_image_url}
+                                                        premium={c.is_premium}
                                                         className="h-52 sm:h-40 w-full sm:w-[190px] md:w-3xs shrink-0 bg-black/5 rounded-lg"
                                                     />
                                                     <div className="w-full">
@@ -169,7 +180,7 @@ export default function Topic() {
                                                                 &bull;
                                                             </span>
                                                             <span className="font-medium inline-block text-sm">
-                                                                {formatShortDate(c.created_at)}
+                                                                {formatRelative(c.created_at)}
                                                             </span>
                                                         </div>
                                                         <h2 className="block line-clamp-2 font-bold text-lg sm:text-xl">
@@ -177,7 +188,7 @@ export default function Topic() {
                                                         </h2>
                                                         {c.summary_article && (
                                                             <p className=" line-clamp-2 text-sm mt-2">
-                                                                {c.summary_article.replace(/[*#\n]/g, " ")}
+                                                                {stripMarkdown(c.summary_article)}
                                                             </p>
                                                         )}
                                                     </div>
@@ -210,6 +221,7 @@ export default function Topic() {
                                                     <ClusterThumb
                                                         id={c.id}
                                                         coverUrl={c.cover_image_url}
+                                                        premium={c.is_premium}
                                                         className="h-16 sm:h-24 w-16 sm:w-24 shrink-0 bg-black/5 rounded-lg"
                                                     />
                                                     <div className="w-full">

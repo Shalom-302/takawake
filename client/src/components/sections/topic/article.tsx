@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button/button";
+import { buttonVariants } from "@/components/ui/button/button";
 import { Badge } from "@/components/ui/badge";
 import { Carousel } from "@/components/ui/carousel";
 import { ArrowUpRightIcon } from "@/components/icons";
 import veilleService from "@/lib/api/veille.service";
 import { formatLongDate } from "@/lib/format-date";
+import { renderMarkdown } from "@/lib/markdown";
+import { cn } from "@/lib/utils/cn";
 
 export default function Article() {
     const params = useParams<{ article_id?: string | string[] }>();
@@ -76,7 +78,7 @@ export default function Article() {
                                         {cluster.title}
                                     </h1>
                                     <div className="flex items-center gap-2 text-sm font-medium text-(--black-tekawake-300)">
-                                        <span>{formatLongDate(cluster.created_at)}</span>
+                                        <span>{formatLongDate(cluster.published_date ?? cluster.created_at)}</span>
                                         <span>&bull;</span>
                                         <span>{`${articles.length} source${articles.length > 1 ? "s" : ""}`}</span>
                                     </div>
@@ -103,13 +105,44 @@ export default function Article() {
                 <div className="main-container">
                     <div className="max-w-4xl mx-auto space-y-10">
                         {cluster.summary_article ? (
-                            <div className="prose-tekawake">
-                                {renderRichText(cluster.summary_article)}
+                            <div
+                                className={
+                                    cluster.locked
+                                        ? "prose-tekawake relative max-h-[280px] overflow-hidden after:absolute after:inset-x-0 after:bottom-0 after:h-32 after:bg-gradient-to-t after:from-white after:to-transparent"
+                                        : "prose-tekawake"
+                                }
+                            >
+                                {renderMarkdown(cluster.summary_article)}
                             </div>
                         ) : (
                             <p className="text-sm text-black/60">
                                 {"Le résumé de ce sujet n'a pas encore été généré."}
                             </p>
+                        )}
+
+                        {cluster.locked && (
+                            <div className="rounded-xl border border-(--purple-dreams-200) bg-(--blue-tekawake-50) p-8 text-center">
+                                <h2 className="text-xl font-bold">
+                                    {"Article réservé aux membres"}
+                                </h2>
+                                <p className="mt-2 text-sm text-black/70">
+                                    {"Créez un compte gratuit pour lire l'article en entier, voir le carrousel et les sources."}
+                                </p>
+                                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                                    <Link
+                                        href="/auth/register"
+                                        className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
+                                    >
+                                        {"Créer un compte gratuit"}
+                                    </Link>
+                                    <Link
+                                        href="/auth/login"
+                                        className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
+                                    >
+                                        {"J'ai déjà un compte"}
+                                    </Link>
+                                </div>
+                            </div>
                         )}
 
                         {carouselItems.length > 0 && (
@@ -171,9 +204,12 @@ export default function Article() {
                         )}
 
                         <div className="mt-12">
-                            <Button className="w-full" size={"xl"} variant="primary" asChild>
-                                <Link href={"/"}>{"Retour à l'accueil"}</Link>
-                            </Button>
+                            <Link
+                                href="/"
+                                className={cn(buttonVariants({ variant: "primary", size: "xl" }), "w-full")}
+                            >
+                                {"Retour à l'accueil"}
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -182,44 +218,3 @@ export default function Article() {
     );
 }
 
-function renderRichText(raw: string) {
-    const blocks = raw.trim().split(/\n{2,}/);
-
-    return blocks.map((block, i) => {
-        const trimmed = block.trim();
-
-        if (/^[-]{3,}$/.test(trimmed)) {
-            return <hr key={`hr-${i}`} className="my-4 border-black/10" />;
-        }
-
-        const h2Match = trimmed.match(/^\*\*(.+?)\*\*$/);
-        if (h2Match) {
-            return (
-                <h2 key={`h2-${i}`} className="text-xl font-bold mt-6 mb-2 leading-snug">
-                    {h2Match[1]}
-                </h2>
-            );
-        }
-
-        const h3Match = trimmed.match(/^\*\*(.+?)\*\*\s*:?\s*(.+)$/);
-        if (h3Match) {
-            return (
-                <div key={`sub-${i}`}>
-                    <h3 className="text-base font-semibold mt-4 mb-1">{h3Match[1]}</h3>
-                    <p className="text-sm leading-relaxed">{h3Match[2]}</p>
-                </div>
-            );
-        }
-
-        return (
-            <p key={`p-${i}`} className="leading-relaxed mb-4">
-                {trimmed.split(/\n/).map((line, idx, arr) => (
-                    <span key={idx}>
-                        {line}
-                        {idx < arr.length - 1 && <br />}
-                    </span>
-                ))}
-            </p>
-        );
-    });
-}

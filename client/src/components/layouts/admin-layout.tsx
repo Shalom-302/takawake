@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { BookmarkIcon, EyeIcon, FileTwoIcon, HomeLineIcon, StarSixIcon } from "../icons";
+import { useAuth } from "@/lib/contexts/auth-context";
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -22,7 +23,13 @@ const navigationItems = [
 
 export default function AdminLayout({ children }: MainLayoutProps) {
     const pathname = usePathname();
+    const { user, logout } = useAuth();
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    const fullName =
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+        user?.username ||
+        "Administrateur";
 
     // Ferme le drawer à chaque changement de page (navigation mobile).
     useEffect(() => {
@@ -147,21 +154,27 @@ export default function AdminLayout({ children }: MainLayoutProps) {
                 <div className="px-4 pb-5 pt-3 border-t border-black/10 ">
                     <ul className="mb-2">
                         <li>
-                            <div className="flex items-center gap-4 p-2 cursor-pointer sm:hover:bg-black/5 rounded-md">
+                            <button
+                                type="button"
+                                onClick={() => logout()}
+                                className="w-full flex items-center gap-4 p-2 cursor-pointer sm:hover:bg-black/5 rounded-md text-left"
+                            >
                                 <div className="h-6 w-6 bg-black/10 shrink-0"></div>
                                 <span className="block truncate text-sm font-medium">
                                     {"Déconnexion"}
                                 </span>
-                            </div>
+                            </button>
                         </li>
                     </ul>
                     <div className="border border-black/10 p-3 rounded-lg flex items-center justify-between gap-4">
                         <div className="h-10 w-10 bg-black/10  shrink-0 rounded-full"></div>
                         <div className="truncate w-full">
                             <span className="block truncate text-sm font-medium">
-                                {"John Doe Sévérin"}
+                                {fullName}
                             </span>
-                            <span className="block truncate text-sm opacity-60">{"dodosev"}</span>
+                            <span className="block truncate text-sm opacity-60">
+                                {user?.email ?? ""}
+                            </span>
                         </div>
                     </div>
                 </div>

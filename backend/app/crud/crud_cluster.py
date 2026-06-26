@@ -38,8 +38,15 @@ class CRUDCluster:
             )
         )
         result = await db.execute(query)
-        return result.scalars().first()
-    
+        cluster = result.scalars().first()
+        if cluster is not None:
+            # Date de l'actu = publication_date la plus récente des articles déjà
+            # eager-loadés (repli created_at). Cohérent avec la liste (cf. get_all),
+            # pour l'indicateur "il y a X heures" du détail.
+            pubs = [a.publication_date for a in cluster.articles if a.publication_date]
+            cluster.published_date = max(pubs) if pubs else cluster.created_at
+        return cluster
+
     async def get_by_title(self, db: AsyncSession, title: str) -> Optional[Cluster]:
         result = await db.execute(select(Cluster).filter(Cluster.title == title))
         return result.scalars().first()
@@ -56,7 +63,26 @@ class CRUDCluster:
         # ClusterResponse expose `category` (pas `articles`) → on eager-load
         # category pour éviter un lazy-load MissingGreenlet dès qu'un cluster
         # aura une catégorie assignée.
-        query = select(Cluster).options(selectinload(Cluster.category))
+        # `article_count` : sous-requête scalaire corrélée → le nombre d'articles
+        # du cluster est renvoyé en une seule requête (pas de N+1, pas de
+        # chargement des articles eux-mêmes), exposé sur ClusterResponse.
+        article_count = (
+            select(func.count(Article.id))
+            .where(Article.cluster_id == Cluster.id)
+            .correlate(Cluster)
+            .scalar_subquery()
+        )
+        # `published_date` : date de l'actu = publication_date la plus récente des
+        # articles du cluster (sous-requête scalaire corrélée). Repli applicatif
+        # sur created_at quand aucun article n'a de date (NULL). Sert au front pour
+        # le classement/filtrage temporel "Aujourd'hui / Hier / Cette semaine".
+        published_date = (
+            select(func.max(Article.publication_date))
+            .where(Article.cluster_id == Cluster.id)
+            .correlate(Cluster)
+            .scalar_subquery()
+        )
+        query = select(Cluster, article_count, published_date).options(selectinload(Cluster.category))
         if is_published is not None:
             query = query.filter(Cluster.is_published == is_published)
         if category_id is not None:
@@ -66,7 +92,13 @@ class CRUDCluster:
 
         query = query.offset(skip).limit(limit).order_by(desc(Cluster.created_at))
         result = await db.execute(query)
-        return list(result.scalars().all()) # Correction
+        clusters: List[Cluster] = []
+        for cluster, count, pub in result.all():
+            # Attributs non mappés lus par Pydantic (from_attributes) à la sérialisation.
+            cluster.article_count = count
+            cluster.published_date = pub or cluster.created_at
+            clusters.append(cluster)
+        return clusters
 
     async def count(
         self,

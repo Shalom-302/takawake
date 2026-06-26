@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
             "images.pexels.com",
             "images.unsplash.com",
             "kaanari.com",
+            // Backend Tekawake — sert les images uploadées sous /api/uploads/.
+            "veille-api.kortexai.dev",
         ],
         remotePatterns: [
             {

@@ -10,8 +10,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
     providers: AuthProviderType[];
-    login: (username: string, password: string) => Promise<boolean>;
-    register: (username: string, password: string) => Promise<boolean>;
+    login: (username: string, password: string) => Promise<UserData | null>;
+    register: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
     refreshToken: () => Promise<boolean>;
     getOAuthLoginUrl: (provider: string, redirectUri: string, state: string) => Promise<string>;
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     isLoading: true,
     providers: [],
-    login: async () => false,
+    login: async () => null,
     register: async () => false,
     logout: () => {},
     refreshToken: async () => false,
@@ -147,8 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(refreshTimeout);
     }, [isAuthenticated, tokenExpiryTime, refreshToken]);
 
-    // Login handler
-    const login = async (username: string, password: string): Promise<boolean> => {
+    // Login handler — renvoie l'utilisateur connecté (avec son rôle) pour que
+    // l'appelant redirige en conséquence (admin → /dashboard, lecteur → accueil),
+    // ou null en cas d'échec.
+    const login = async (username: string, password: string): Promise<UserData | null> => {
         try {
             setLoading(true);
             // /auth/login renvoie un Token PLAT (access_token/refresh_token à la racine).
@@ -171,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             toast.success("Connecté");
-            return true;
+            return userData;
         } catch (err) {
             let errorMessage = "Failed to login";
             if (err instanceof Error) {
@@ -179,35 +181,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             console.error("Login error:", err);
             toast.error(errorMessage);
-            return false;
+            return null;
         } finally {
             setLoading(false);
         }
     };
 
-    // Register handler
-    const register = async (username: string, password: string): Promise<boolean> => {
+    // Register handler — inscription LECTEUR uniquement. /auth/register ne renvoie
+    // pas de token, donc on enchaîne avec un login automatique (username = email).
+    const register = async (email: string, password: string): Promise<boolean> => {
         try {
             setLoading(true);
-            const response = await authService.register(username, password);
-
-            // Store the token if registration automatically logs in the user
-            if (response.token?.access_token && typeof window !== "undefined") {
-                localStorage.setItem("auth_token", response.token.access_token);
-                localStorage.setItem("refresh_token", response.token.refresh_token);
-            }
-
-            setUser(response.user);
-            setIsAuthenticated(true);
-            toast.success("Registration successful");
-            return true;
+            await authService.register(email, email, password);
+            // Auto-login pour récupérer les tokens et hydrater l'état d'auth.
+            const user = await login(email, password);
+            return !!user;
         } catch (error) {
             console.error("Registration error:", error);
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : (error as { response?: { data?: { detail?: string } } })?.response?.data
-                          ?.detail || "Registration failed";
+                          ?.detail || "Inscription impossible";
             toast.error(errorMessage);
             return false;
         } finally {

@@ -60,9 +60,10 @@ export default function RegisterForm() {
     const onSubmit = async (data: RegisterFormValues) => {
         setIsLoading(true);
         try {
+            // Inscription = compte lecteur ; on reste sur le site public.
             const success = await register(data.username, data.password);
             if (success) {
-                router.push("/dashboard");
+                router.push("/");
             }
         } finally {
             setIsLoading(false);

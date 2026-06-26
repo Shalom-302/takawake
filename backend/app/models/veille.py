@@ -66,6 +66,9 @@ class Cluster(Base):
     # l'article le plus pertinent) à la génération, modifiable ensuite.
     cover_image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # Article réservé aux comptes : visiteur anonyme = teaser + mur d'inscription,
+    # utilisateur connecté (tout rôle) = contenu complet. Géré par l'éditeur.
+    is_premium: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     # --- Snapshots de la version IA d'origine (human-in-the-loop) ---

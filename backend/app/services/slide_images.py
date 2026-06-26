@@ -2,11 +2,11 @@
 Illustration automatique des slides d'un cluster.
 
 Pour chaque slide : le LLM extrait 2-4 mots-clés visuels (en anglais, les banques
-d'images répondent mieux), puis on récupère une photo pertinente sur Pexels.
+d'images répondent mieux), puis on récupère une photo pertinente sur Unsplash.
 L'`image_url` obtenue est posée sur la slide mais reste éditable/remplaçable à la
 main (PATCH du cluster) côté human-in-the-loop.
 
-Tout est best-effort : si la clé Pexels manque ou qu'un appel échoue, la slide
+Tout est best-effort : si la clé Unsplash manque ou qu'un appel échoue, la slide
 est simplement laissée sans image (jamais d'exception qui casserait la génération).
 """
 import asyncio
@@ -20,7 +20,7 @@ from app.core.config import settings
 from app.schemas.veille import Slide
 from app.services.llm_factory import get_llm
 
-PEXELS_SEARCH_URL = "https://api.pexels.com/v1/search"
+UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos"
 
 _QUERY_PROMPT = ChatPromptTemplate.from_template(
     """Tu choisis des mots-clés pour rechercher une photo d'illustration.
@@ -34,6 +34,20 @@ Texte de la slide :
 )
 
 
+def _auth_headers() -> dict:
+    """En-têtes d'authentification Unsplash (clé d'accès côté serveur)."""
+    return {
+        "Authorization": f"Client-ID {settings.UNSPLASH_ACCESS_KEY}",
+        "Accept-Version": "v1",
+    }
+
+
+def _photo_url(photo: dict) -> Optional[str]:
+    """URL exploitable d'une photo Unsplash (regular ~1080px, sinon full)."""
+    urls = photo.get("urls") or {}
+    return urls.get("regular") or urls.get("full") or urls.get("raw")
+
+
 async def _derive_query(texte: str, llm_provider: str) -> str:
     """Mots-clés de recherche image dérivés du texte de slide via le LLM."""
     chain = _QUERY_PROMPT | get_llm(llm_provider) | StrOutputParser()
@@ -44,7 +58,7 @@ async def _derive_query(texte: str, llm_provider: str) -> str:
     return " ".join(query.split())[:100]
 
 
-async def _search_pexels(
+async def _search_unsplash(
     client: httpx.AsyncClient, query: str, exclude: set[str]
 ) -> Optional[str]:
     """1re photo paysage pertinente non déjà utilisée, ou None."""
@@ -52,60 +66,60 @@ async def _search_pexels(
         return None
     try:
         resp = await client.get(
-            PEXELS_SEARCH_URL,
+            UNSPLASH_SEARCH_URL,
             params={"query": query, "per_page": 5, "orientation": "landscape"},
-            headers={"Authorization": settings.PEXELS_API_KEY},
+            headers=_auth_headers(),
             timeout=15.0,
         )
         resp.raise_for_status()
-        photos = resp.json().get("photos", [])
+        photos = resp.json().get("results", [])
         for photo in photos:
-            url = (photo.get("src") or {}).get("landscape") or (photo.get("src") or {}).get("large")
+            url = _photo_url(photo)
             if url and url not in exclude:
                 return url
         # Toutes déjà utilisées → on renvoie quand même la 1re dispo.
         if photos:
-            src = photos[0].get("src") or {}
-            return src.get("landscape") or src.get("large")
+            return _photo_url(photos[0])
     except Exception as e:  # noqa: BLE001 — best-effort, on log et on continue
-        print(f"[slide_images] Échec recherche Pexels pour '{query}': {e}")
+        print(f"[slide_images] Échec recherche Unsplash pour '{query}': {e}")
     return None
 
 
-async def search_pexels_photos(query: str, per_page: int = 15) -> List[dict]:
+async def search_stock_photos(query: str, per_page: int = 15) -> List[dict]:
     """
     Recherche multi-résultats pour le sélecteur d'images de l'éditeur.
     Retourne une liste de {id, url, thumbnail, photographer, alt}. [] si pas de
     clé ou en cas d'échec (l'UI affiche alors « aucun résultat »).
     """
-    if not settings.PEXELS_API_KEY or not query.strip():
+    if not settings.UNSPLASH_ACCESS_KEY or not query.strip():
         return []
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                PEXELS_SEARCH_URL,
+                UNSPLASH_SEARCH_URL,
                 params={"query": query, "per_page": per_page, "orientation": "landscape"},
-                headers={"Authorization": settings.PEXELS_API_KEY},
+                headers=_auth_headers(),
                 timeout=15.0,
             )
             resp.raise_for_status()
-            photos = resp.json().get("photos", [])
+            photos = resp.json().get("results", [])
     except Exception as e:  # noqa: BLE001 — best-effort
-        print(f"[slide_images] Échec recherche Pexels (picker) pour '{query}': {e}")
+        print(f"[slide_images] Échec recherche Unsplash (picker) pour '{query}': {e}")
         return []
 
     results: list[dict] = []
     for p in photos:
-        src = p.get("src") or {}
-        url = src.get("landscape") or src.get("large")
+        url = _photo_url(p)
         if not url:
             continue
+        urls = p.get("urls") or {}
+        user = p.get("user") or {}
         results.append({
-            "id": p.get("id"),
+            "id": None,  # Unsplash expose des id alphanumériques → on n'utilise pas le champ int.
             "url": url,
-            "thumbnail": src.get("medium") or src.get("small") or url,
-            "photographer": p.get("photographer"),
-            "alt": p.get("alt"),
+            "thumbnail": urls.get("small") or urls.get("thumb") or url,
+            "photographer": user.get("name"),
+            "alt": p.get("alt_description") or p.get("description"),
         })
     return results
 
@@ -122,10 +136,10 @@ async def illustrate_slides(
     - overwrite=False : ne complète que les slides sans image (génération initiale).
     - overwrite=True  : ré-illustre toutes les slides (bouton « Régénérer les images »).
 
-    Sans clé Pexels, renvoie les slides inchangées.
+    Sans clé Unsplash, renvoie les slides inchangées.
     """
-    if not settings.PEXELS_API_KEY:
-        print("[slide_images] PEXELS_API_KEY absente → illustration des slides désactivée.")
+    if not settings.UNSPLASH_ACCESS_KEY:
+        print("[slide_images] UNSPLASH_ACCESS_KEY absente → illustration des slides désactivée.")
         return slides
 
     targets = [i for i, s in enumerate(slides) if overwrite or not s.image_url]
@@ -142,7 +156,7 @@ async def illustrate_slides(
     used: set[str] = {s.image_url for s in slides if s.image_url}
     async with httpx.AsyncClient() as client:
         for idx, query in zip(targets, queries):
-            url = await _search_pexels(client, query, used)
+            url = await _search_unsplash(client, query, used)
             if url:
                 used.add(url)
                 result[idx] = result[idx].model_copy(update={"image_url": url})

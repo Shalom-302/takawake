@@ -29,6 +29,7 @@ export default function ClusterEditor({ cluster, onDone }: ClusterEditorProps) {
     const [summary, setSummary] = useState(cluster.summary_article ?? "");
     const [cover, setCover] = useState(cluster.cover_image_url ?? "");
     const [slides, setSlides] = useState<Slide[]>(cluster.slides ?? []);
+    const [isPremium, setIsPremium] = useState(cluster.is_premium ?? false);
     const [saving, setSaving] = useState(false);
 
     // Images candidates pour la couverture (articles les plus pertinents du cluster).
@@ -70,6 +71,7 @@ export default function ClusterEditor({ cluster, onDone }: ClusterEditorProps) {
         if (JSON.stringify(cleaned) !== JSON.stringify(cluster.slides ?? [])) {
             patch.slides = cleaned;
         }
+        if (isPremium !== (cluster.is_premium ?? false)) patch.is_premium = isPremium;
         return patch;
     }
 
@@ -201,6 +203,25 @@ export default function ClusterEditor({ cluster, onDone }: ClusterEditorProps) {
                 <Button size="sm" variant="secondary" onClick={addSlide}>
                     {"+ Ajouter une slide"}
                 </Button>
+            </div>
+
+            {/* Accès : article réservé aux comptes (premium) */}
+            <div className="space-y-1.5 border-t border-black/10 pt-4">
+                <Label>{"Accès"}</Label>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={isPremium}
+                        onChange={e => setIsPremium(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    <span className="text-sm">
+                        {"Réservé aux comptes (premium)"}
+                        <span className="block text-xs text-black/50">
+                            {"Le visiteur anonyme ne voit qu'un aperçu + une invitation à s'inscrire ; un utilisateur connecté lit l'article entier."}
+                        </span>
+                    </span>
+                </label>
             </div>
 
             {/* Actions */}

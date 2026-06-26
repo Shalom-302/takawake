@@ -247,6 +247,33 @@ async def get_current_user(
     return user
 
 
+# Variante "auto_error=False" : ne lève pas 401 si l'en-tête Authorization est
+# absent → permet l'authentification optionnelle (contenu public avec gating).
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+
+async def get_optional_current_user(
+    db: Session = Depends(get_db),
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+) -> Optional[User]:
+    """
+    Renvoie l'utilisateur courant si un token d'accès valide est fourni, sinon
+    None. Ne lève JAMAIS 401 : sert au gating (visiteur anonyme = None, lecteur
+    connecté = User). Tolérant : tout token absent/invalide/expiré ⇒ None.
+    """
+    if not token:
+        return None
+    from .token import decode_token
+    try:
+        token_data = decode_token(token)
+        user_id = token_data.get("sub")
+        if not user_id or token_data.get("type") != "access":
+            return None
+    except Exception:
+        return None
+    return db.query(User).filter(User.id == user_id).first()
+
+
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:

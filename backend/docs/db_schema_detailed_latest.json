@@ -8846,40 +8846,6 @@
         }
       ]
     },
-    "categories": {
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "nullable": false,
-          "primary_key": false,
-          "default": "nextval('categories_id_seq'::regclass)"
-        },
-        {
-          "name": "name",
-          "type": "VARCHAR(100)",
-          "nullable": false,
-          "primary_key": false,
-          "default": null
-        }
-      ],
-      "indices": [
-        {
-          "name": "categories_name_key",
-          "unique": true,
-          "columns": [
-            "name"
-          ]
-        },
-        {
-          "name": "ix_categories_id",
-          "unique": false,
-          "columns": [
-            "id"
-          ]
-        }
-      ]
-    },
     "clusters": {
       "columns": [
         {
@@ -8930,6 +8896,48 @@
           "nullable": true,
           "primary_key": false,
           "default": null
+        },
+        {
+          "name": "veille_id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "cover_image_url",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "summary_article_ai",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "slides_ai",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "cover_image_url_ai",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_premium",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": false,
+          "default": "false"
         }
       ],
       "indices": [
@@ -8948,10 +8956,121 @@
           ]
         },
         {
+          "name": "ix_clusters_is_premium",
+          "unique": false,
+          "columns": [
+            "is_premium"
+          ]
+        },
+        {
           "name": "ix_clusters_is_published",
           "unique": false,
           "columns": [
             "is_published"
+          ]
+        },
+        {
+          "name": "ix_clusters_veille_id",
+          "unique": false,
+          "columns": [
+            "veille_id"
+          ]
+        }
+      ]
+    },
+    "categories": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "default": "nextval('categories_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        }
+      ],
+      "indices": [
+        {
+          "name": "categories_name_key",
+          "unique": true,
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "ix_categories_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    "faith_friendships": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "requester_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "addressee_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_friendships_addressee_id",
+          "unique": false,
+          "columns": [
+            "addressee_id"
+          ]
+        },
+        {
+          "name": "ix_faith_friendships_requester_id",
+          "unique": false,
+          "columns": [
+            "requester_id"
+          ]
+        },
+        {
+          "name": "uq_faith_friendship",
+          "unique": true,
+          "columns": [
+            "requester_id",
+            "addressee_id"
           ]
         }
       ]
@@ -9081,7 +9200,7 @@
         },
         {
           "name": "ix_articles_source_url",
-          "unique": true,
+          "unique": false,
           "columns": [
             "source_url"
           ]
@@ -9098,6 +9217,14 @@
           "unique": false,
           "columns": [
             "veille_id"
+          ]
+        },
+        {
+          "name": "uq_article_veille_url",
+          "unique": true,
+          "columns": [
+            "veille_id",
+            "source_url"
           ]
         }
       ]
@@ -9160,6 +9287,510 @@
           "unique": false,
           "columns": [
             "llm_provider"
+          ]
+        }
+      ]
+    },
+    "faith_sermons": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "media_url",
+          "type": "VARCHAR(1024)",
+          "nullable": true,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_sermons_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_faith_sermons_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    "faith_testimonies": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_testimonies_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_faith_testimonies_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    "faith_questions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "question_text",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_answered",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_questions_id",
+          "unique": false,
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "ix_faith_questions_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    "faith_messages": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "sender_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "receiver_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "is_read",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "sent_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_messages_receiver_id",
+          "unique": false,
+          "columns": [
+            "receiver_id"
+          ]
+        },
+        {
+          "name": "ix_faith_messages_sender_id",
+          "unique": false,
+          "columns": [
+            "sender_id"
+          ]
+        }
+      ]
+    },
+    "faith_sermon_likes": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "sermon_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_sermon_likes_sermon_id",
+          "unique": false,
+          "columns": [
+            "sermon_id"
+          ]
+        },
+        {
+          "name": "ix_faith_sermon_likes_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "uq_faith_sermon_like",
+          "unique": true,
+          "columns": [
+            "user_id",
+            "sermon_id"
+          ]
+        }
+      ]
+    },
+    "faith_sermon_comments": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "sermon_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_sermon_comments_sermon_id",
+          "unique": false,
+          "columns": [
+            "sermon_id"
+          ]
+        },
+        {
+          "name": "ix_faith_sermon_comments_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    "faith_testimony_likes": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "testimony_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_testimony_likes_testimony_id",
+          "unique": false,
+          "columns": [
+            "testimony_id"
+          ]
+        },
+        {
+          "name": "ix_faith_testimony_likes_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "uq_faith_testimony_like",
+          "unique": true,
+          "columns": [
+            "user_id",
+            "testimony_id"
+          ]
+        }
+      ]
+    },
+    "faith_testimony_comments": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "testimony_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_testimony_comments_testimony_id",
+          "unique": false,
+          "columns": [
+            "testimony_id"
+          ]
+        },
+        {
+          "name": "ix_faith_testimony_comments_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    "faith_answers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "question_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "answer_text",
+          "type": "TEXT",
+          "nullable": false,
+          "primary_key": false,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primary_key": false,
+          "default": "now()"
+        }
+      ],
+      "indices": [
+        {
+          "name": "ix_faith_answers_question_id",
+          "unique": false,
+          "columns": [
+            "question_id"
+          ]
+        },
+        {
+          "name": "ix_faith_answers_user_id",
+          "unique": false,
+          "columns": [
+            "user_id"
           ]
         }
       ]
@@ -10267,6 +10898,36 @@
       ]
     },
     {
+      "source_table": "clusters",
+      "source_columns": [
+        "veille_id"
+      ],
+      "target_table": "veilles",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_friendships",
+      "source_columns": [
+        "addressee_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_friendships",
+      "source_columns": [
+        "requester_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
       "source_table": "articles",
       "source_columns": [
         "cluster_id"
@@ -10282,6 +10943,156 @@
         "veille_id"
       ],
       "target_table": "veilles",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_sermons",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_testimonies",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_questions",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_messages",
+      "source_columns": [
+        "receiver_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_messages",
+      "source_columns": [
+        "sender_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_sermon_likes",
+      "source_columns": [
+        "sermon_id"
+      ],
+      "target_table": "faith_sermons",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_sermon_likes",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_sermon_comments",
+      "source_columns": [
+        "sermon_id"
+      ],
+      "target_table": "faith_sermons",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_sermon_comments",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_testimony_likes",
+      "source_columns": [
+        "testimony_id"
+      ],
+      "target_table": "faith_testimonies",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_testimony_likes",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_testimony_comments",
+      "source_columns": [
+        "testimony_id"
+      ],
+      "target_table": "faith_testimonies",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_testimony_comments",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_answers",
+      "source_columns": [
+        "question_id"
+      ],
+      "target_table": "faith_questions",
+      "target_columns": [
+        "id"
+      ]
+    },
+    {
+      "source_table": "faith_answers",
+      "source_columns": [
+        "user_id"
+      ],
+      "target_table": "user",
       "target_columns": [
         "id"
       ]

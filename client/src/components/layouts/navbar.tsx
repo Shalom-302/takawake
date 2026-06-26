@@ -3,16 +3,29 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button/button";
 import { Badge } from "../ui/badge";
 import { ArrowNarrowRightIcon, ChevronDownIcon, SearchMdIcon } from "../icons";
 import { cn } from "@/lib/utils/cn";
 import { Slideout } from "../ui/slideout-menu";
+import { useAuth } from "@/lib/contexts/auth-context";
+import veilleService from "@/lib/api/veille.service";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const { isAuthenticated, logout } = useAuth();
+    const { categories } = veilleService.useCategories({ limit: 20 });
+    const router = useRouter();
+    const [search, setSearch] = useState("");
+
+    function submitSearch(e: React.FormEvent) {
+        e.preventDefault();
+        const term = search.trim();
+        router.push(term ? `/articles?q=${encodeURIComponent(term)}` : "/articles");
+    }
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -100,20 +113,31 @@ export default function Navbar() {
                                 </li>
                             </ul>
                             <div className="flex items-center justify-end md:gap-7 w-full lg:w-auto">
-                                <div className="border border-black/50 rounded-full lg:shrink-0 h-10 px-3 cursor-pointer w-full lg:w-auto hidden md:flex items-center gap-2">
-                                    <div className="h-6 w-6 shrink-0  flex items-center justify-center">
-                                        <SearchMdIcon />{" "}
-                                    </div>
-                                    <span className="text-sm font-medium opacity-60">
-                                        {"Rechercher"}
-                                    </span>
-                                </div>
+                                <form
+                                    onSubmit={submitSearch}
+                                    className="border border-black/50 rounded-full lg:shrink-0 h-10 px-3 w-full lg:w-auto hidden md:flex items-center gap-2"
+                                >
+                                    <button
+                                        type="submit"
+                                        aria-label="Rechercher"
+                                        className="h-6 w-6 shrink-0 flex items-center justify-center cursor-pointer"
+                                    >
+                                        <SearchMdIcon />
+                                    </button>
+                                    <input
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                        placeholder="Rechercher"
+                                        className="bg-transparent text-sm font-medium outline-none placeholder:opacity-60 lg:w-40"
+                                    />
+                                </form>
 
                                 <div className="flex items-center gap-2">
                                     <div className="md:hidden block">
                                         <Button
                                             variant="tertiary"
                                             size={"md"}
+                                            onClick={() => router.push("/articles")}
                                             leftIcon={
                                                 <div className="">
                                                     <SearchMdIcon />
@@ -121,21 +145,45 @@ export default function Navbar() {
                                             }
                                         />
                                     </div>
-                                    <Button
-                                        size={"md"}
-                                        variant="tertiary"
-                                        asChild
-                                        className="hidden md:block"
-                                    >
-                                        <Link href={"#"} className="block">
-                                            {"S'inscrire"}
-                                        </Link>
-                                    </Button>
-                                    <Button size={"md"} variant="secondary" asChild>
-                                        <Link href={"#"} className="block">
-                                            {"Connexion"}
-                                        </Link>
-                                    </Button>
+                                    {isAuthenticated ? (
+                                        <>
+                                            <Button
+                                                size={"md"}
+                                                variant="tertiary"
+                                                asChild
+                                                className="hidden md:block"
+                                            >
+                                                <Link href={"/account"} className="block">
+                                                    {"Mon compte"}
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                size={"md"}
+                                                variant="secondary"
+                                                onClick={() => logout()}
+                                            >
+                                                {"Se déconnecter"}
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Button
+                                                size={"md"}
+                                                variant="tertiary"
+                                                asChild
+                                                className="hidden md:block"
+                                            >
+                                                <Link href={"/auth/register"} className="block">
+                                                    {"S'inscrire"}
+                                                </Link>
+                                            </Button>
+                                            <Button size={"md"} variant="secondary" asChild>
+                                                <Link href={"/auth/login"} className="block">
+                                                    {"Connexion"}
+                                                </Link>
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -159,25 +207,30 @@ export default function Navbar() {
                         className="fixed left-0 top-0 w-full z-40 bg-white overflow-hidden pt-20 md:pt-[88px]"
                     >
                         <div className="main-container py-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-4">
-                                {Array.from({ length: 14 }).map((_, i) => (
-                                    <Link href={`/topic/one/robotique-ia`} key={i}>
-                                        <div className="flex items-center p-4 rounded-md justify-between gap-4 cursor-pointer sm:hover:bg-black/5">
-                                            <div className="flex items-center gap-2 truncate">
-                                                <div className="h-12 w-12 shrink-0 bg-black/5"></div>
+                            {(categories?.length ?? 0) === 0 ? (
+                                <p className="py-6 text-sm text-(--black-tekawake-200)">
+                                    {"Aucune catégorie pour le moment."}
+                                </p>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-4">
+                                    {(categories ?? []).map(cat => (
+                                        <Link
+                                            href={`/topic/one/${cat.id}`}
+                                            key={cat.id}
+                                            onClick={closeDropdown}
+                                        >
+                                            <div className="flex items-center p-4 rounded-md justify-between gap-4 cursor-pointer sm:hover:bg-black/5">
                                                 <span className="font-medium block truncate w-full text-sm text-(--black-tekawake-200)">
-                                                    {
-                                                        "Mariam joue à la balle tous les jours de la semaine devant la maison de son père"
-                                                    }
+                                                    {cat.name}
                                                 </span>
+                                                <div className="h-6 w-6 flex items-center justify-center shrink-0 text-(--black-tekawake-200) ">
+                                                    <ArrowNarrowRightIcon size={20} />
+                                                </div>
                                             </div>
-                                            <div className="h-6 w-6 flex items-center justify-center shrink-0 text-(--black-tekawake-200) ">
-                                                <ArrowNarrowRightIcon size={20} />
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}
