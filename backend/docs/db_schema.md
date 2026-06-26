@@ -87,8 +87,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_ai_models_id | id | No |
 | ix_ai_models_model_type | model_type | No |
+| ix_ai_models_id | id | No |
 
 ## ai_providers
 
@@ -112,8 +112,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_ai_providers_id | id | No |
 | ix_ai_providers_name | name | No |
+| ix_ai_providers_id | id | No |
 | ix_ai_providers_provider_type | provider_type | No |
 
 ## ai_text_analysis_results
@@ -267,9 +267,9 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_endpoints_path | path | No |
-| ix_api_endpoints_method | method | No |
 | ix_api_endpoints_id | id | No |
+| ix_api_endpoints_method | method | No |
+| ix_api_endpoints_path | path | No |
 
 ## api_gateway_audit_logs
 
@@ -336,8 +336,8 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_api_gateway_keys_id | id | No |
-| ix_api_gateway_keys_prefix | prefix | Yes |
 | ix_api_gateway_keys_owner_id | owner_id | No |
+| ix_api_gateway_keys_prefix | prefix | Yes |
 
 ## api_gateway_permissions
 
@@ -388,10 +388,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_api_gateway_rate_limits_id | id | No |
 | ix_api_gateway_rate_limits_window_start | window_start | No |
-| ix_api_gateway_rate_limits_window_size | window_size | No |
 | ix_api_gateway_rate_limits_path_pattern | path_pattern | No |
+| ix_api_gateway_rate_limits_window_size | window_size | No |
+| ix_api_gateway_rate_limits_id | id | No |
 
 ## api_versions
 
@@ -444,12 +444,12 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_articles_source_url | source_url | Yes |
+| ix_articles_status | status | No |
+| ix_articles_source_url | source_url | No |
+| ix_articles_veille_id | veille_id | No |
+| ix_articles_cluster_id | cluster_id | No |
 | ix_articles_id | id | No |
 | ix_articles_publication_date | publication_date | No |
-| ix_articles_cluster_id | cluster_id | No |
-| ix_articles_status | status | No |
-| ix_articles_veille_id | veille_id | No |
 
 ## audit_logs
 
@@ -626,8 +626,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_auth_session_token | token | Yes |
 | ix_auth_session_refresh_token | refresh_token | Yes |
+| ix_auth_session_token | token | Yes |
 
 ## auth_verification_code
 
@@ -676,8 +676,8 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_business_alerts_entity_id | entity_id | No |
-| ix_business_alerts_entity_type | entity_type | No |
 | ix_business_alerts_alert_type | alert_type | No |
+| ix_business_alerts_entity_type | entity_type | No |
 
 ## categories
 
@@ -707,20 +707,29 @@
 | is_published | BOOLEAN | No | - | No |
 | created_at | TIMESTAMP | No | now() | No |
 | category_id | INTEGER | Yes | - | No |
+| veille_id | INTEGER | No | - | No |
+| cover_image_url | TEXT | Yes | - | No |
+| summary_article_ai | TEXT | Yes | - | No |
+| slides_ai | JSON | Yes | - | No |
+| cover_image_url_ai | TEXT | Yes | - | No |
+| is_premium | BOOLEAN | No | false | No |
 
 ### Foreign Keys
 
 | Column | References | On Delete | On Update |
 |--------|------------|-----------|----------|
 | category_id | categories.id | NO ACTION | NO ACTION |
+| veille_id | veilles.id | NO ACTION | NO ACTION |
 
 ### Indexes
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_clusters_id | id | No |
-| ix_clusters_is_published | is_published | No |
 | ix_clusters_category_id | category_id | No |
+| ix_clusters_is_published | is_published | No |
+| ix_clusters_id | id | No |
+| ix_clusters_veille_id | veille_id | No |
+| ix_clusters_is_premium | is_premium | No |
 
 ## data_exchange_jobs
 
@@ -938,8 +947,264 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_digital_timestamps_data_hash | data_hash | No |
-| ix_digital_timestamps_user_id | user_id | No |
 | ix_digital_timestamps_id | id | No |
+| ix_digital_timestamps_user_id | user_id | No |
+
+## faith_answers
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| question_id | UUID | No | - | No |
+| user_id | UUID | No | - | No |
+| answer_text | TEXT | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| question_id | faith_questions.id | NO ACTION | NO ACTION |
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_answers_user_id | user_id | No |
+| ix_faith_answers_question_id | question_id | No |
+
+## faith_friendships
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| requester_id | UUID | No | - | No |
+| addressee_id | UUID | No | - | No |
+| status | VARCHAR(20) | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| addressee_id | user.id | NO ACTION | NO ACTION |
+| requester_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_friendships_requester_id | requester_id | No |
+| ix_faith_friendships_addressee_id | addressee_id | No |
+
+## faith_messages
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| sender_id | UUID | No | - | No |
+| receiver_id | UUID | No | - | No |
+| content | TEXT | No | - | No |
+| is_read | BOOLEAN | No | - | No |
+| sent_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| receiver_id | user.id | NO ACTION | NO ACTION |
+| sender_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_messages_receiver_id | receiver_id | No |
+| ix_faith_messages_sender_id | sender_id | No |
+
+## faith_questions
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| question_text | TEXT | No | - | No |
+| is_answered | BOOLEAN | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_questions_user_id | user_id | No |
+| ix_faith_questions_id | id | No |
+
+## faith_sermon_comments
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| sermon_id | UUID | No | - | No |
+| content | TEXT | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| sermon_id | faith_sermons.id | NO ACTION | NO ACTION |
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_sermon_comments_user_id | user_id | No |
+| ix_faith_sermon_comments_sermon_id | sermon_id | No |
+
+## faith_sermon_likes
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| sermon_id | UUID | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| sermon_id | faith_sermons.id | NO ACTION | NO ACTION |
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_sermon_likes_user_id | user_id | No |
+| ix_faith_sermon_likes_sermon_id | sermon_id | No |
+
+## faith_sermons
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| title | VARCHAR(255) | No | - | No |
+| content | TEXT | No | - | No |
+| media_url | VARCHAR(1024) | Yes | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_sermons_user_id | user_id | No |
+| ix_faith_sermons_id | id | No |
+
+## faith_testimonies
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| content | TEXT | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_testimonies_id | id | No |
+| ix_faith_testimonies_user_id | user_id | No |
+
+## faith_testimony_comments
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| testimony_id | UUID | No | - | No |
+| content | TEXT | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| testimony_id | faith_testimonies.id | NO ACTION | NO ACTION |
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_testimony_comments_user_id | user_id | No |
+| ix_faith_testimony_comments_testimony_id | testimony_id | No |
+
+## faith_testimony_likes
+
+### Columns
+
+| Name | Type | Nullable | Default | Primary Key |
+|------|------|----------|---------|-------------|
+| id | UUID | No | - | Yes |
+| user_id | UUID | No | - | No |
+| testimony_id | UUID | No | - | No |
+| created_at | TIMESTAMP | No | now() | No |
+
+### Foreign Keys
+
+| Column | References | On Delete | On Update |
+|--------|------------|-----------|----------|
+| testimony_id | faith_testimonies.id | NO ACTION | NO ACTION |
+| user_id | user.id | NO ACTION | NO ACTION |
+
+### Indexes
+
+| Name | Columns | Unique |
+|------|---------|--------|
+| ix_faith_testimony_likes_user_id | user_id | No |
+| ix_faith_testimony_likes_testimony_id | testimony_id | No |
 
 ## file_storage_files
 
@@ -1156,8 +1421,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_kyc_regions_country_code | country_code | No |
 | ix_kyc_regions_name | name | Yes |
+| ix_kyc_regions_country_code | country_code | No |
 
 ## kyc_user_profiles
 
@@ -1625,10 +1890,10 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_sync_batches_user_id_status | user_id, status | No |
 | ix_offline_sync_batches_id | id | No |
-| ix_sync_batches_status_priority | status, priority | No |
 | ix_offline_sync_batches_user_id | user_id | No |
+| ix_sync_batches_status_priority | status, priority | No |
+| ix_sync_batches_user_id_status | user_id, status | No |
 
 ## offline_sync_configs
 
@@ -1651,8 +1916,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_offline_sync_configs_id | id | No |
 | ix_offline_sync_configs_user_id | user_id | Yes |
+| ix_offline_sync_configs_id | id | No |
 
 ## offline_sync_operations
 
@@ -1691,9 +1956,9 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_sync_operations_status_priority | status, priority | No |
-| ix_offline_sync_operations_user_id | user_id | No |
 | ix_sync_operations_user_id_status | user_id, status | No |
 | ix_offline_sync_operations_id | id | No |
+| ix_offline_sync_operations_user_id | user_id | No |
 
 ## payment_approval_steps
 
@@ -2260,10 +2525,10 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_recommendation_interactions_user_id | user_id | No |
+| ix_recommendation_interactions_id | id | No |
+| idx_interaction_type | interaction_type | No |
 | idx_user_item | user_id, item_id | No |
 | ix_recommendation_interactions_item_id | item_id | No |
-| idx_interaction_type | interaction_type | No |
-| ix_recommendation_interactions_id | id | No |
 
 ## recommendation_item_features
 
@@ -2291,11 +2556,11 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
+| idx_item_type_rating | item_type, average_rating | No |
 | ix_recommendation_item_features_item_type | item_type | No |
 | ix_recommendation_item_features_item_id | item_id | Yes |
 | ix_recommendation_item_features_id | id | No |
 | idx_item_type_popularity | item_type, popularity_score | No |
-| idx_item_type_rating | item_type, average_rating | No |
 
 ## recommendation_item_similarities
 
@@ -2317,11 +2582,11 @@
 | Name | Columns | Unique |
 |------|---------|--------|
 | ix_recommendation_item_similarities_algorithm | algorithm | No |
-| idx_item_algorithm_score | item_id, algorithm, similarity_score | No |
-| ix_recommendation_item_similarities_id | id | No |
-| ix_recommendation_item_similarities_item_id | item_id | No |
 | ix_recommendation_item_similarities_similar_item_id | similar_item_id | No |
+| ix_recommendation_item_similarities_id | id | No |
 | idx_item_similar | item_id, similar_item_id | No |
+| ix_recommendation_item_similarities_item_id | item_id | No |
+| idx_item_algorithm_score | item_id, algorithm, similarity_score | No |
 
 ## recommendation_results
 
@@ -2345,13 +2610,13 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| idx_created_expires | created_at, expires_at | No |
-| ix_recommendation_results_item_id | item_id | No |
-| ix_recommendation_results_id | id | No |
-| ix_recommendation_results_algorithm | algorithm | No |
 | idx_algorithm_score | algorithm, score | No |
 | ix_recommendation_results_user_id | user_id | No |
+| idx_created_expires | created_at, expires_at | No |
+| ix_recommendation_results_item_id | item_id | No |
 | idx_user_context | user_id, context | No |
+| ix_recommendation_results_algorithm | algorithm | No |
+| ix_recommendation_results_id | id | No |
 
 ## recommendation_similarity_matrices
 
@@ -2374,8 +2639,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_similarity_matrices_id | id | No |
 | ix_recommendation_similarity_matrices_algorithm | algorithm | No |
+| ix_recommendation_similarity_matrices_id | id | No |
 | ix_recommendation_similarity_matrices_matrix_type | matrix_type | No |
 
 ## recommendation_user_preferences
@@ -2400,8 +2665,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_recommendation_user_preferences_user_id | user_id | Yes |
 | ix_recommendation_user_preferences_id | id | No |
+| ix_recommendation_user_preferences_user_id | user_id | Yes |
 
 ## scheduled_jobs
 
@@ -2582,8 +2847,8 @@
 
 | Name | Columns | Unique |
 |------|---------|--------|
-| ix_veilles_llm_provider | llm_provider | No |
 | ix_veilles_id | id | No |
+| ix_veilles_llm_provider | llm_provider | No |
 
 ## webhooks
 

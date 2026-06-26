@@ -115,10 +115,18 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "https://ollama.traaf.app"
     OLLAMA_LLM_MODEL: str = "gemma3:4b"
 
-    # Pexels — banque d'images pour illustrer automatiquement les slides des
-    # clusters (cf. services/slide_images.py). Clé gratuite : https://www.pexels.com/api/.
-    # Vide → l'illustration des slides est simplement désactivée (pas d'erreur).
-    PEXELS_API_KEY: str = ""
+    # Unsplash — banque d'images pour illustrer automatiquement les slides des
+    # clusters (cf. services/slide_images.py). Clé gratuite (Access Key) :
+    # https://unsplash.com/developers. Vide → l'illustration des slides est
+    # simplement désactivée (pas d'erreur).
+    UNSPLASH_ACCESS_KEY: str = ""
+
+    # Upload d'images depuis le poste de l'éditeur (cf. routers/cluster.py).
+    # Les fichiers sont stockés sur disque et servis en statique sous
+    # {API_PREFIX}/uploads/ (cf. main.py). Chemin relatif à la racine du backend.
+    UPLOAD_DIR: str = "uploads"
+    # Taille max d'un upload (octets). 10 Mo par défaut.
+    UPLOAD_MAX_BYTES: int = 10 * 1024 * 1024
 
     # Embeddings — sentence-transformers/multilingual-e5-base, 768 dim, local CPU.
     # Multilingue (incl. FR), tourne sans clé API ni quota. ~500 MB en RAM,

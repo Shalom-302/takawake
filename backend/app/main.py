@@ -462,6 +462,17 @@ app.include_router(api_router)
 # Add the public file storage router directly to the application
 app.include_router(file_storage_public_router, prefix=f"{settings.API_PREFIX}/public/file-storage", tags=["File Storage Public"])
 
+# Fichiers uploadés par l'éditeur (images de clusters/slides), servis en statique
+# sous {API_PREFIX}/uploads/ — cf. routers/cluster.py:upload_image_endpoint.
+# Le dossier est créé au démarrage ; en prod un volume Docker le rend persistant.
+from fastapi.staticfiles import StaticFiles
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount(
+    f"{settings.API_PREFIX}/uploads",
+    StaticFiles(directory=settings.UPLOAD_DIR),
+    name="uploads",
+)
+
 # (5) Optionally mount the plugin manager endpoints
 # e.g. GET /admin/plugins  or POST /admin/plugins/<plugin>/toggle
 app.include_router(plugin_manager_router, prefix=f"{settings.API_PREFIX}/admin")

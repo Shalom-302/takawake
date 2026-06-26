@@ -71,10 +71,14 @@ const authService = {
         return response.data;
     },
 
-    // Email registration
-    async register(username: string, password: string): Promise<RegisterResponse> {
-        const response = await axiosClient.post<RegisterResponse>("/auth/register", {
+    // Email registration — le backend exige username + email + password et
+    // renvoie l'utilisateur créé (PAS de token : on se connecte ensuite).
+    // L'inscription publique crée toujours un compte LECTEUR (rôle reader, forcé
+    // côté backend — aucun rôle admin possible via /register).
+    async register(username: string, email: string, password: string): Promise<UserData> {
+        const response = await axiosClient.post<UserData>("/auth/register", {
             username,
+            email,
             password,
         });
         return response.data;

@@ -204,7 +204,7 @@ def generate_cluster_content_task(
 
 
 # =================================================================
-# 4️⃣ TÂCHE : Ré-illustration des slides d'un cluster (Pexels)
+# 4️⃣ TÂCHE : Ré-illustration des slides d'un cluster (Unsplash)
 # =================================================================
 @celery_app.task(name="veille.regenerate_slide_images")
 def regenerate_slide_images_task(
@@ -213,7 +213,7 @@ def regenerate_slide_images_task(
     ollama_model: Optional[str] = None,
 ):
     """
-    Tâche Celery qui ré-illustre les slides d'un cluster via Pexels (requête
+    Tâche Celery qui ré-illustre les slides d'un cluster via Unsplash (requête
     dérivée du texte de chaque slide par le LLM).
     """
     async def async_regenerate():

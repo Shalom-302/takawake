@@ -31,7 +31,7 @@ class ArticleAnalysis(BaseModel):
 class Slide(BaseModel):
     """
     Schéma pour un seul slide du carrousel.
-    `image_url` est illustrée automatiquement (Pexels, cf. services/slide_images.py)
+    `image_url` est illustrée automatiquement (Unsplash, cf. services/slide_images.py)
     mais reste éditable/remplaçable à la main par l'éditeur.
     """
     slide: int
@@ -50,8 +50,8 @@ class PublishStatusUpdate(BaseModel):
     """
     is_published: bool
 
-class PexelsImage(BaseModel):
-    """Une image renvoyée par le sélecteur (recherche Pexels)."""
+class StockImage(BaseModel):
+    """Une image renvoyée par le sélecteur (recherche Unsplash ou upload local)."""
     id: Optional[int] = None
     url: str            # URL de l'image à utiliser
     thumbnail: str      # vignette pour la grille du sélecteur
@@ -207,6 +207,7 @@ class ClusterUpdate(BaseModel):
     slides: Optional[List[Slide]] = None
     cover_image_url: Optional[str] = None
     is_published: Optional[bool] = None
+    is_premium: Optional[bool] = None
     category_id: Optional[int] = None
 
 class ClusterResponse(ClusterBase):
@@ -219,7 +220,21 @@ class ClusterResponse(ClusterBase):
     slides: Optional[List[Slide]] = None
     cover_image_url: Optional[str] = None
     is_published: bool
+    is_premium: bool = False
+    # Nombre d'articles regroupés dans le cluster (calculé côté liste via une
+    # sous-requête ; 0 par défaut sur les schémas qui exposent déjà `articles`).
+    article_count: int = 0
+    # Verrou de gating posé par l'API (non persisté) : True quand le contenu a été
+    # tronqué en teaser pour un visiteur anonyme (article premium). Le front
+    # affiche alors le mur d'inscription.
+    locked: bool = False
     created_at: datetime.datetime
+    # Date de publication de l'actu (non persistée) : `publication_date` la plus
+    # récente parmi les articles du cluster, avec repli sur `created_at` si aucun
+    # article n'a de date. Sert au front à classer/filtrer "Aujourd'hui / Hier /
+    # Cette semaine" et à l'indicateur "il y a X heures" (fraîcheur de l'actu,
+    # pas le moment du clustering).
+    published_date: Optional[datetime.datetime] = None
 
     # --- Version IA d'origine (human-in-the-loop) ---
     # Exposée pour que le front puisse prévisualiser/diff l'original IA avant un
@@ -234,10 +249,16 @@ class ClusterResponse(ClusterBase):
 
 
 class ArticleTrueResponse(ArticleBase):
-    
+
     score_pertinence : Optional[int] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+class ArticleDailyCount(BaseModel):
+    """Un point de la série temporelle : nombre d'articles traités ce jour-là.
+    Sert au sparkline "réactif" du panneau d'accueil (volume d'articles / temps)."""
+    date: datetime.date
+    count: int
 
 class ArticleInClusterResponse(ArticleResponse):
     """

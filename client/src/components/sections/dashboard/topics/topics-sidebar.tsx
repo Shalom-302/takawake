@@ -294,6 +294,14 @@ function VeilleClusters({ veilleId }: { veilleId: number }) {
                                             <span>{"Brouillon"}</span>
                                         </>
                                     )}
+                                    {cluster.is_premium && (
+                                        <>
+                                            <span>&bull;</span>
+                                            <span className="font-semibold text-utility-brand-700 opacity-100">
+                                                {"Premium"}
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </Link>

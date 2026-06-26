@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
 from app.core.db import get_async_db
-from app.schemas.veille import ArticleResponse, ArticleUpdate, ArticleStatus # Utilisez ArticleUpdate et ArticleStatus
+from app.schemas.veille import ArticleResponse, ArticleUpdate, ArticleStatus, ArticleDailyCount # Utilisez ArticleUpdate et ArticleStatus
 from app.crud.crud_article import crud_article # Nouvelle instance CRUD
 from app.plugins.advanced_auth.utils.security import require_superuser
 
@@ -59,6 +59,23 @@ async def count_articles(
             cluster_title=cluster_title,
         )
     }
+
+@router.get(
+    "/timeseries",
+    response_model=List[ArticleDailyCount],
+    summary="Volume d'articles traités par jour (série temporelle dense)"
+)
+async def articles_timeseries(
+    days: int = Query(14, ge=1, le=90, description="Nombre de jours de la fenêtre glissante."),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Série temporelle du nombre d'articles analysés par jour (basée sur la date de
+    traitement). Jours sans article remplis à 0. Alimente le sparkline réactif de
+    la page d'accueil.
+    """
+    return await crud_article.count_by_day(db, days=days)
+
 
 @router.get(
     "/{article_id}",

@@ -1,5 +1,7 @@
 # app/crud/crud_article.py
 
+import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete, desc, update, func, join
@@ -97,6 +99,32 @@ class CRUDArticle:
             query = query.filter(Article.analysis['score_pertinence'].as_integer() >= score_min)
         result = await db.execute(query)
         return int(result.scalar_one())
+
+    async def count_by_day(self, db: AsyncSession, days: int = 14) -> List[Dict[str, Any]]:
+        """
+        Série temporelle dense du volume d'articles traités par jour sur les
+        `days` derniers jours (basée sur `scraping_date` = date d'analyse). Les
+        jours sans article sont remplis à 0 pour un sparkline continu côté front.
+        Retourne une liste ordonnée du plus ancien au plus récent.
+        """
+        today = datetime.date.today()
+        since = today - datetime.timedelta(days=days - 1)
+        stmt = (
+            select(func.date(Article.scraping_date).label("day"), func.count(Article.id))
+            .where(Article.scraping_date >= datetime.datetime.combine(since, datetime.time.min))
+            .group_by(func.date(Article.scraping_date))
+        )
+        result = await db.execute(stmt)
+        counts: Dict[str, int] = {}
+        for day, c in result.all():
+            key = day.isoformat() if hasattr(day, "isoformat") else str(day)
+            counts[key] = int(c)
+        return [
+            {"date": (since + datetime.timedelta(days=i)), "count": counts.get(
+                (since + datetime.timedelta(days=i)).isoformat(), 0
+            )}
+            for i in range(days)
+        ]
 
     async def update(self, db: AsyncSession, article_id: int, article_in: ArticleUpdate) -> Optional[Article]:
         db_article = await self.get(db, article_id)

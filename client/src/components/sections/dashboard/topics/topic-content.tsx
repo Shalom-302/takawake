@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import veilleService from "@/lib/api/veille.service";
+import { renderMarkdown } from "@/lib/markdown";
 import ClusterEditor from "./cluster-editor";
 
 export default function TopicContent() {
@@ -20,6 +21,7 @@ export default function TopicContent() {
         veilleService.useClusterDetail(clusterId);
     const { imageUrls } = veilleService.useClusterImage(clusterId);
     const [publishing, setPublishing] = useState(false);
+    const [settingAccess, setSettingAccess] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [reverting, setReverting] = useState(false);
@@ -75,6 +77,20 @@ export default function TopicContent() {
             window.alert("Impossible de mettre à jour la publication du sujet.");
         } finally {
             setPublishing(false);
+        }
+    }
+
+    async function toggleAccess() {
+        if (!cluster) return;
+        setSettingAccess(true);
+        try {
+            // Bascule rapide Gratuit ⇄ Premium sans passer par le mode édition.
+            await veilleService.updateCluster(cluster.id, { is_premium: !cluster.is_premium });
+            await refreshCluster();
+        } catch {
+            window.alert("Impossible de changer l'accès du sujet.");
+        } finally {
+            setSettingAccess(false);
         }
     }
 
@@ -180,6 +196,9 @@ export default function TopicContent() {
                     <Badge color={cluster.is_published ? "success" : "gray"}>
                         {cluster.is_published ? "Publié" : "Brouillon"}
                     </Badge>
+                    <Badge color={cluster.is_premium ? "brand" : "gray"}>
+                        {cluster.is_premium ? "Premium" : "Gratuit"}
+                    </Badge>
                     {cluster.is_edited && (
                         <Badge color="warning">{"Édité"}</Badge>
                     )}
@@ -209,6 +228,19 @@ export default function TopicContent() {
                             : cluster.is_published
                               ? "Dépublier"
                               : "Publier sur le site"}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={settingAccess}
+                        onClick={toggleAccess}
+                        title="Premium = réservé aux comptes ; Gratuit = visible par tous"
+                    >
+                        {settingAccess
+                            ? "..."
+                            : cluster.is_premium
+                              ? "Rendre gratuit"
+                              : "Passer en premium"}
                     </Button>
                     <Button
                         size="sm"
@@ -272,7 +304,7 @@ export default function TopicContent() {
                 style={heroImage ? { backgroundImage: `url(${heroImage})` } : undefined}
             />
 
-            {cluster.summary_article && <div>{FormatText(cluster.summary_article)}</div>}
+            {cluster.summary_article && <div>{renderMarkdown(cluster.summary_article)}</div>}
 
             <div>
                 {slides.length > 0 && (
@@ -339,46 +371,3 @@ export default function TopicContent() {
     );
 }
 
-function FormatText(raw?: string | null) {
-    if (!raw) return null;
-
-    const blocks = raw.trim().split(/\n{2,}/);
-
-    return blocks.map((block, i) => {
-        const trimmed = block.trim();
-
-        if (/^[-]{3,}$/.test(trimmed)) {
-            return <hr key={`hr-${i}`} className="my-4 border-black/10" />;
-        }
-
-        const h2Match = trimmed.match(/^\*\*(.+?)\*\*$/);
-        if (h2Match) {
-            return (
-                <h2 key={`h2-${i}`} className="text-xl font-bold mt-6 mb-2 leading-snug">
-                    {h2Match[1]}
-                </h2>
-            );
-        }
-
-        const h3Match = trimmed.match(/^\*\*(.+?)\*\*\s*:?\s*(.+)$/);
-        if (h3Match) {
-            return (
-                <div key={`sub-${i}`}>
-                    <h3 className="text-base font-semibold mt-4 mb-1">{h3Match[1]}</h3>
-                    <p className="text-sm leading-relaxed">{h3Match[2]}</p>
-                </div>
-            );
-        }
-
-        return (
-            <p key={`p-${i}`} className="leading-relaxed mb-4">
-                {trimmed.split(/\n/).map((line, idx, arr) => (
-                    <span key={idx}>
-                        {line}
-                        {idx < arr.length - 1 && <br />}
-                    </span>
-                ))}
-            </p>
-        );
-    });
-}

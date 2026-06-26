@@ -8,8 +8,9 @@ import veilleService, { type ClusterResponse } from "@/lib/api/veille.service";
 import { formatRelative } from "@/lib/format-date";
 
 function HeroCard({ cluster }: { cluster: ClusterResponse }) {
-    const { imageUrls } = veilleService.useClusterImage(cluster.id);
-    const heroImage = imageUrls?.[0];
+    // Couverture validée par l'éditeur en priorité ; sinon image du meilleur article.
+    const { imageUrls } = veilleService.useClusterImage(cluster.cover_image_url ? null : cluster.id);
+    const heroImage = cluster.cover_image_url || imageUrls?.[0];
 
     return (
         <div className="w-full">
@@ -34,15 +35,21 @@ function HeroCard({ cluster }: { cluster: ClusterResponse }) {
                 <div
                     className="h-[400px] bg-black rounded-lg relative overflow-hidden bg-cover bg-center"
                     style={heroImage ? { backgroundImage: `url(${heroImage})` } : undefined}
-                />
+                >
+                    {cluster.is_premium && (
+                        <span className="absolute left-3 top-3 z-10 rounded-full bg-(--purple-dreams-500) px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+                            {"Premium"}
+                        </span>
+                    )}
+                </div>
             </Link>
         </div>
     );
 }
 
 function MiniRecentCard({ cluster }: { cluster: ClusterResponse }) {
-    const { imageUrls } = veilleService.useClusterImage(cluster.id);
-    const thumb = imageUrls?.[0];
+    const { imageUrls } = veilleService.useClusterImage(cluster.cover_image_url ? null : cluster.id);
+    const thumb = cluster.cover_image_url || imageUrls?.[0];
 
     return (
         <Link
@@ -105,7 +112,7 @@ export default function HeroSection() {
                                 </span>
                                 <div className="h-0.5 w-full bg-(--purple-dreams-100)"></div>
                                 <LinkButton
-                                    href={"/"}
+                                    href={"/articles"}
                                     variant="link-color"
                                     rightIcon={<ArrowUpRightIcon />}
                                 >

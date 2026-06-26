@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,8 +30,9 @@ export default function LoginPage() {
     async function onSubmit(data: z.infer<typeof loginSchema>) {
         setSubmitting(true);
         try {
-            const ok = await login(data.username, data.password);
-            if (ok) router.push("/dashboard");
+            const user = await login(data.username, data.password);
+            // Admin → back-office ; lecteur → site public (jamais le dashboard).
+            if (user) router.push(user.role?.name === "admin" ? "/dashboard" : "/");
         } finally {
             setSubmitting(false);
         }
@@ -41,7 +43,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md rounded-xl border border-black/10 p-8">
                 <h1 className="text-lg font-semibold">{"Connexion"}</h1>
                 <p className="mt-1 text-sm opacity-60">
-                    {"Accès réservé à l'administration Tekawake."}
+                    {"Connectez-vous pour accéder à tous les articles."}
                 </p>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
@@ -67,6 +69,12 @@ export default function LoginPage() {
                         </Button>
                     </form>
                 </Form>
+                <p className="mt-6 text-center text-sm opacity-70">
+                    {"Pas encore de compte ? "}
+                    <Link href="/auth/register" className="font-medium underline">
+                        {"Créer un compte"}
+                    </Link>
+                </p>
             </div>
         </main>
     );

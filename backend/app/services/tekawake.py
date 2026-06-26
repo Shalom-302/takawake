@@ -1081,7 +1081,7 @@ async def generate_slides_for_summary_article(
 
         print("Slides générés et parsés avec succès.")
 
-        # Illustration automatique des slides (Pexels) — best-effort : sans clé
+        # Illustration automatique des slides (Unsplash) — best-effort : sans clé
         # ou en cas d'échec réseau, les slides restent sans image.
         slides_data_pydantic = await illustrate_slides(slides_data_pydantic, llm_provider)
 

@@ -9,7 +9,9 @@ export default function DashboardLayout({
     return (
         <html lang="fr" suppressHydrationWarning className="scroll-smooth">
             <body>
-                <ProtectedRoute>
+                {/* Back-office réservé aux admins : un lecteur connecté est
+                    redirigé. L'inscription publique ne crée jamais d'admin. */}
+                <ProtectedRoute allowedRoles={["admin"]}>
                     <AdminLayout>{children}</AdminLayout>
                 </ProtectedRoute>
             </body>

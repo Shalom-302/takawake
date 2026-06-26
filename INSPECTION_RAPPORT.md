@@ -10,6 +10,131 @@
 
 ## Journal des versions
 
+### 2026-06-26 — Page « À la Une » : date d'actu, graphe réactif, slides au clic, cohérence UI
+
+**Pourquoi**
+- Aligner la page lecteur sur le modèle Entropie : onglets **Aujourd'hui / Hier /
+  Cette semaine** qui affichent les clusters **publiés par l'admin**, et au clic un
+  panneau qui « sort » le résumé **et** les slides proprement, avec des indicateurs
+  de fraîcheur (« il y a 4 heures », « 12 articles »).
+
+**Date de l'actu (et non plus date de clustering)**
+- Le filtre temporel + l'indicateur « il y a X heures » se basaient sur
+  `cluster.created_at` (= moment du clustering) → un cluster publié aujourd'hui mais
+  *créé* hier n'apparaissait pas dans « Aujourd'hui ».
+- Nouveau champ **calculé** `published_date` = `MAX(articles.publication_date)` du
+  cluster, repli `created_at`. Exposé sur `ClusterResponse` (sous-requête scalaire
+  corrélée dans `get_all`, dérivation des articles eager-loadés dans `get`). **Aucune
+  colonne / migration** — champ non persisté. Le front filtre/classe dessus.
+
+**Graphe réactif (panneau d'accueil)**
+- Le sparkline était un tracé SVG **codé en dur**. Remplacé par un rendu **piloté par
+  les données** : nouvel endpoint `GET /articles/timeseries?days=14` (`count_by_day`,
+  volume d'articles traités/jour sur fenêtre glissante, jours vides remplis à 0) +
+  hook SWR `useArticlesTimeseries`.
+
+**Slides au clic + bouton réparé**
+- Le panneau de droite n'affichait qu'un teaser : ajout du **carrousel de slides
+  inline** (même rendu que la page article). Au clic sur un cluster, résumé + slides
+  sortent directement.
+- Bouton « Lire l'article complet » non cliquable → cause racine identifiée (cf.
+  ci-dessous).
+
+**Cohérence UI — shell partagé**
+- La page article complète (`/topic/article/[id]`) était enveloppée dans
+  `MainLayout` (Navbar/Footer marketing) → rupture visuelle avec le feed. Extraction
+  d'un **`FeedShell`** (sidebar + barre/drawer mobile) partagé par l'accueil **et** la
+  page article. La sidebar de la page article renvoie à l'accueil sur la vue choisie
+  (deep-link `?view=`, lu via `useSearchParams` + `Suspense`).
+
+**Boutons-liens cassés — fix racine**
+- Le composant `Button` en mode `asChild` enveloppait les enfants dans un `<span>`
+  stylé : Slot fusionnait les classes sur le span et le vrai `<a>` se retrouvait
+  **imbriqué** → seule la zone du texte était cliquable. Corrigé **une fois** dans
+  `Button` (`asChild` → `<Slottable>{children}</Slottable>`, styles sur l'enfant).
+  Répare d'un coup navbar, public-navbar, topic, hero, document-list, account, le
+  wrapper `LinkButton` et la page article.
+
+**Rendu markdown des résumés**
+- Le LLM émet du markdown irrégulier (`##`, `**`, `*`, puces) affiché en clair.
+  Nouveau module **`lib/markdown.tsx`** : `renderMarkdown` (titres, gras, italique,
+  code, listes, paragraphes ; marqueurs orphelins retirés) + `stripMarkdown`
+  (texte nu pour les teasers). Les deux rendus dupliqués (`renderRichText`,
+  `FormatText`) supprimés → une seule source. Branché sur le lecteur, le dashboard
+  et tous les aperçus (topic, landing, all-articles, feed).
+
+**Migrations**
+- Suppression de la migration auto-générée **fautive** `023f96dfc305_is_premium` :
+  l'autogenerate, ne voyant plus les modèles `faith_*` dans le code (mais les tables
+  encore en base), proposait des `DROP TABLE faith_*` non voulus (échec sur FK
+  `faith_answers`). La colonne `clusters.is_premium` est déjà ajoutée par
+  `f3a9c1d2e4b7`. **Tables `faith_*` orphelines** en base (modèles absents) : à
+  purger volontairement un jour, ou à ignorer dans l'autogenerate.
+
+**À l'exécution**
+- `published_date` et `/articles/timeseries` sont **calculés** (pas de migration) →
+  un **redémarrage backend** suffit. Tant qu'il n'est pas à jour, le sparkline reste
+  vide (dégradé propre) et le filtre retombe sur `created_at`.
+
+### 2026-06-16 — Sourcing Firecrawl (piloté par le prompt) + dédup par veille + tuning clustering
+
+**Pourquoi**
+- Le sourcing RSS fixe (8 flux) ramenait le **même pool panafricain** pour toutes
+  les veilles → fort recoupement, et une veille pays (« Bénin ») restait noyée dans
+  du généraliste (~88 % d'articles écartés au gate de pertinence). Constat boss :
+  « il prend les mêmes articles quand le sujet est proche ».
+
+**Sourcing Firecrawl (Phase 1)** — découverte pilotée par le prompt
+- Firecrawl self-hosté (fork `ghcr.io/shalom-302/firecrawl`) déployé sur Dokploy,
+  **interne** (alias réseau `firecrawl-api:3002`, pas d'expo publique), empreinte
+  plafonnée (mem_limit, workers min).
+- Nouveau `app/services/firecrawl_client.py` : `search()` = `/v1/search` (recherche
+  web + scrape markdown en 1 appel, fallback DuckDuckGo gratuit) ; `scrape()` =
+  fallback musclé pour sites JS « squelette » (waitFor + onlyMainContent=false).
+- Nœud `firecrawl_search_node` + graphe LangGraph **conditionnel** via flag
+  `SOURCING_PROVIDER` (`rss` | `firecrawl`, défaut `rss` = rollback instantané).
+  `relevance → analyze → index → cluster` inchangés.
+- **Résultat prod** : veille « tech Bénin » → 9 URLs **ultra-ciblées** (gouv.bj,
+  devbenin.bj, techies.ga…), **relevance 9 gardés / 0 écartés** (vs ~88 % de bruit
+  en RSS). Remplace aussi trafilatura (extraction markdown propre).
+
+**Phase 2 — fin du vol d'articles + dédup du coût LLM**
+- Bug : `source_url` **unique global** + `create_or_update` par URL → une veille
+  proche **volait** les articles d'une autre (réécriture du `veille_id`, cluster
+  vidé). Corruption silencieuse.
+- Fix : unicité **`(veille_id, source_url)`** (migration `d2f1a4c7b8e3`) +
+  `create_or_update` scopé par veille → plus de vol, chaque veille est autonome.
+- `analyze_articles_node` **réutilise** l'analyse d'une URL déjà traitée (toute
+  veille) → **0 appel LLM redondant** quand des veilles se recoupent. (Choix
+  pragmatique vs split de table N-N complet : même résultat, 1/10e du risque,
+  Qdrant/clustering/front intacts.)
+
+**Clustering réglable par env**
+- `CLUSTER_SIM_THRESHOLD` / `CLUSTER_MAX_SIZE` / `MIN_CLUSTER_SIZE` exposés en env
+  (sans rebuild). Effet de bord du sourcing ciblé : les articles d'une veille étant
+  désormais homogènes, ils fusionnent souvent en **1 cluster** au seuil 0.86. Pour
+  un grain plus fin **sans perdre d'articles** : monter le seuil (~0.90) + passer
+  `MIN_CLUSTER_SIZE=1`. **Décision finale en attente du point boss** (1 synthèse par
+  veille vs sous-thèmes).
+
+**Image backend allégée** (en cours)
+- `Dockerfile` : torch **CPU-only** pré-installé (`--index-url .../whl/cpu`) avant
+  requirements → image ~3 Go → ~1,3 Go (la couche CUDA inutile en CPU disparaît).
+  *Modif faite, à pousser pour que le prochain build en profite.*
+
+**Déploiement — pièges résolus (Dokploy)**
+- Compose prod `backend/docker-compose.image.yml` : il faut **lister explicitement**
+  chaque var dans `environment:` (Dokploy ne fait que la substitution `${}`, pas
+  d'injection complète du `.env`). Manquaient `DEEPSEEK_API_KEY`, `SOURCING_PROVIDER`,
+  `FIRECRAWL_*`, `GEMINI`, `LANGSMITH_*` → symptômes `provider=rss`, « DEEPSEEK non
+  configuré », spam LangSmith 401. Ajoutés à `api` **et** `celery`.
+- `celery` doit être sur **`dokploy-network`** (pas que `kaapi-network`) pour
+  résoudre `firecrawl-api` (sinon `EAI_AGAIN`).
+- `FIRECRAWL_BASE_URL` prod = `http://firecrawl-api:3002` (PAS `host.docker.internal`
+  qui est la valeur **locale** Docker Desktop).
+- Compose Path Dokploy = `backend/docker-compose.image.yml` (monorepo) ; pull image
+  ~3 Go figeait sur le VPS (IPv6/MTU → `disable_ipv6` + `daemon.json {"mtu":1400}`).
+
 ### 2026-05-28 — Ajout du provider LLM Ollama (self-hosted)
 
 **Pourquoi**
@@ -127,15 +252,19 @@
   masquées tant qu'il y a peu de clusters publiés).
 - Nettoyage repo + Dockerfile prod (voir « Dette technique »).
 
-### Phase 2 — Optimisation du scraping (partiellement faite)
+### Phase 2 — Optimisation du scraping (largement faite)
 
-Fait : async, Qdrant + embeddings, clustering v2. Reste :
+Fait : async, Qdrant + embeddings, clustering v2, **sourcing Firecrawl piloté par le
+prompt** (2026-06-16), **dédup par veille + réutilisation analyse** (fin du vol
+d'articles + 0 LLM redondant), **rendu JS** (Firecrawl/Playwright intégré). Reste :
 - **Fan-out Celery par article** — `chord(group(...))`, retry granulaire, observabilité (Flower).
-- **RSS / sitemaps comme source primaire** — plus stable que parser le HTML.
-- **Déduplication avant LLM** — normaliser l'URL, écarter les doublons avant l'analyse.
-- **Cache HTTP + cache LLM** — ETag par source ; `llm_cache(content_hash, analysis)`.
+- **Cache HTTP + cache LLM** — ETag par source ; le `llm_cache(content_hash, analysis)`
+  est partiellement couvert par la réutilisation d'analyse par URL.
 - **Celery beat** — scraping continu, recluster incrémental.
-- **Score domaine + fraîcheur** ; **Playwright** pour les sites en JS.
+- **SearXNG** — moteur de recherche self-host pour Firecrawl si DuckDuckGo rate-limite.
+- **Score domaine + fraîcheur**.
+- (Optionnel) modèle N-N complet (article canonique + table de liaison) si on veut
+  zéro duplication de contenu/vecteur — non nécessaire fonctionnellement.
 
 ### Phase 3 — Idées « version boss »
 
@@ -156,8 +285,13 @@ Fait : async, Qdrant + embeddings, clustering v2. Reste :
 ## Dette technique / à régler avant prod
 
 - Sortir `.env`, `dev.db`, `tests.db` du dépôt (`git rm --cached`, ajouter à `.gitignore`).
-- **Révoquer le token LangSmith** exposé en clair dans `.env`.
-- Retirer `--reload` du `CMD` du Dockerfile de prod.
+- **`backend/dokploy.env.txt`** (template env prod, contient des secrets) → à gitignorer.
+- **Rotationner les clés exposées** (DeepSeek, OpenAI, Anthropic, Gemini, Qdrant,
+  LangSmith, secrets OAuth) — divulguées en clair pendant le déploiement.
+- Retirer `--reload` du `CMD` du Dockerfile de prod (le compose prod override déjà
+  la commande, mais à nettoyer).
+- **Pousser le Dockerfile torch-CPU** (image ~1,3 Go) — fait en local, pas encore buildé.
+- LangSmith : `LANGSMITH_TRACING_V2=false` en prod (clé 401, spammait les logs).
 
 ### Dockerfile prod recommandé
 

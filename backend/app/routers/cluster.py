@@ -1,16 +1,21 @@
 # app/api/routers/cluster.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
+import re
+import uuid
+from pathlib import Path as FilePath
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Literal, Optional, cast
 from celery import Task
 
+from app.core.config import settings
 from app.core.db import get_async_db
 from app.schemas.veille import (
     ClusterResponse, ClusterCreate, ClusterUpdate,
-    Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse, PexelsImage
+    Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse, StockImage
 )
-from app.services.slide_images import search_pexels_photos
+from app.services.slide_images import search_stock_photos
 from app.crud.crud_cluster import crud_cluster 
 from app.crud.crud_article import crud_article 
 from app.tasks.veille_tasks import (
@@ -19,9 +24,36 @@ from app.tasks.veille_tasks import (
     regenerate_slide_images_task,
 )
 from app.services.llm_factory import OllamaModel
-from app.plugins.advanced_auth.utils.security import require_superuser
+from app.plugins.advanced_auth.utils.security import require_superuser, get_optional_current_user
 
 router = APIRouter()
+
+# --- Gating premium (lecteur connecté) ----------------------------------
+# Un cluster `is_premium` n'expose son contenu complet (synthèse + slides) qu'aux
+# utilisateurs authentifiés. Le visiteur anonyme reçoit un teaser et `locked=True`
+# (le front affiche alors un mur d'inscription).
+_TEASER_CHARS = 320
+
+
+def _teaser(text: Optional[str]) -> Optional[str]:
+    """Aperçu en clair (markdown retiré, ~320 caractères) d'un article verrouillé."""
+    if not text:
+        return text
+    plain = re.sub(r"[*#>`_~]+", " ", text)
+    plain = re.sub(r"\s+", " ", plain).strip()
+    if len(plain) <= _TEASER_CHARS:
+        return plain
+    return plain[:_TEASER_CHARS].rsplit(" ", 1)[0] + "…"
+
+
+def _lock(resp, *, with_articles: bool = False):
+    """Tronque le contenu premium en teaser pour un visiteur anonyme."""
+    resp.summary_article = _teaser(resp.summary_article)
+    resp.slides = None
+    if with_articles:
+        resp.articles = []
+    resp.locked = True
+    return resp
 
 # --- Opérations de Backfill (tâches Celery) ---
 
@@ -119,7 +151,7 @@ def regenerate_slide_images_endpoint(
     """
     Déclenche une tâche de fond qui ré-illustre les slides du cluster : pour
     chaque slide, le LLM extrait des mots-clés visuels puis on récupère une photo
-    pertinente sur Pexels. Ne touche qu'aux slides de travail (l'original IA
+    pertinente sur Unsplash. Ne touche qu'aux slides de travail (l'original IA
     reste restaurable via /revert).
     """
     try:
@@ -136,19 +168,79 @@ def regenerate_slide_images_endpoint(
 
 @router.get(
     "/image-search",
-    response_model=List[PexelsImage],
-    summary="Rechercher des images (Pexels) pour le sélecteur de l'éditeur"
+    response_model=List[StockImage],
+    summary="Rechercher des images (Unsplash) pour le sélecteur de l'éditeur"
 )
 async def image_search_endpoint(
     q: str = Query(..., min_length=1, description="Mots-clés de recherche d'image."),
     per_page: int = Query(15, ge=1, le=30, description="Nombre de résultats."),
 ):
     """
-    Proxy de recherche Pexels : la clé API reste côté serveur. Sert au sélecteur
-    d'images de l'éditeur (couverture + slides). Retourne [] si Pexels n'est pas
+    Proxy de recherche Unsplash : la clé API reste côté serveur. Sert au sélecteur
+    d'images de l'éditeur (couverture + slides). Retourne [] si Unsplash n'est pas
     configuré.
     """
-    return await search_pexels_photos(q, per_page=per_page)
+    return await search_stock_photos(q, per_page=per_page)
+
+
+# Types MIME image acceptés à l'upload, mappés sur l'extension stockée.
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+
+
+@router.post(
+    "/upload-image",
+    response_model=StockImage,
+    summary="Uploader une image depuis le poste de l'éditeur"
+)
+async def upload_image_endpoint(
+    file: UploadFile = File(..., description="Fichier image (jpg, png, webp, gif)."),
+):
+    """
+    Reçoit une image depuis le PC de l'éditeur, la stocke sur disque et renvoie
+    son chemin (servi en statique sous {API_PREFIX}/uploads/). Le front
+    l'absolutise avec l'origine de l'API avant de l'enregistrer sur le cluster
+    (couverture ou slide) via le PATCH habituel. On renvoie un chemin relatif
+    plutôt qu'une URL absolue car derrière le proxy `request.base_url` ne reflète
+    pas l'hôte public.
+    """
+    ext = _ALLOWED_IMAGE_TYPES.get((file.content_type or "").lower())
+    if ext is None:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Format non supporté. Formats acceptés : JPG, PNG, WebP, GIF.",
+        )
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Fichier vide.")
+    if len(content) > settings.UPLOAD_MAX_BYTES:
+        max_mb = settings.UPLOAD_MAX_BYTES // (1024 * 1024)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Image trop volumineuse (max {max_mb} Mo).",
+        )
+
+    upload_dir = FilePath(settings.UPLOAD_DIR)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{ext}"
+    (upload_dir / filename).write_bytes(content)
+
+    # Chemin relatif (ex. /api/uploads/<uuid>.jpg) — le front le préfixe avec
+    # l'origine de l'API pour obtenir une URL absolue portable.
+    url = f"{settings.API_PREFIX}/uploads/{filename}"
+
+    return StockImage(
+        id=None,
+        url=url,
+        thumbnail=url,
+        photographer=None,
+        alt=file.filename,
+    )
 
 # --- Endpoints CRUD de base pour Cluster ---
 
@@ -163,13 +255,20 @@ async def get_all_clusters(
     veille_id: Optional[int] = Query(None, description="Filtrer par veille d'origine."),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db),
+    current_user: object = Depends(get_optional_current_user),
 ):
     """
-    Récupère une liste de tous les clusters.
+    Récupère une liste de tous les clusters. Pour un visiteur anonyme, la synthèse
+    des clusters premium est tronquée en teaser (gating ; `locked=True`).
     """
     clusters = await crud_cluster.get_all(db, skip=skip, limit=limit, is_published=is_published, category_id=category_id, veille_id=veille_id)
-    return clusters
+    result = [ClusterResponse.model_validate(c) for c in clusters]
+    if current_user is None:
+        for r in result:
+            if r.is_premium:
+                _lock(r)
+    return result
 
 # --- Endpoints d'agrégation et de gestion de contenu du Cluster ---
 
@@ -207,15 +306,21 @@ async def get_all_clusters_with_pertinences(db: AsyncSession = Depends(get_async
 )
 async def get_single_cluster(
     cluster_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db),
+    current_user: object = Depends(get_optional_current_user),
 ):
     """
-    Récupère les détails d'un cluster spécifique.
+    Récupère les détails d'un cluster spécifique. Si le cluster est premium et que
+    l'appelant n'est pas authentifié, le contenu complet (synthèse, slides,
+    sources) est tronqué en teaser et `locked=True` (mur d'inscription côté front).
     """
     cluster = await crud_cluster.get(db, cluster_id)
     if not cluster:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster non trouvé")
-    return cluster
+    resp = ClusterWithArticlesResponse.model_validate(cluster)
+    if current_user is None and resp.is_premium:
+        _lock(resp, with_articles=True)
+    return resp
 
 @router.patch(
     "/{cluster_id}",

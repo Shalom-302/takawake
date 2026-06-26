@@ -67,19 +67,21 @@ class AuthService:
                     detail="Username already taken"
                 )
         
-        # Get default role if not specified
-        role_id = user_data.role_id
-        if role_id is None:
-            default_role = self.db.query(Role).filter(Role.name == "admin").first()
-            if default_role:
-                role_id = default_role.id
-            else:
-                # Create default role if it doesn't exist
-                default_role = Role(name="User", description="Default user role")
-                self.db.add(default_role)
-                self.db.commit()
-                self.db.refresh(default_role)
-                role_id = default_role.id
+        # Inscription publique = LECTEURS UNIQUEMENT. On ignore délibérément tout
+        # `role_id` fourni par le client (aucune élévation possible via /register)
+        # et on force le rôle "reader". Les comptes admin sont créés en amont
+        # (seed/DB) et ne passent JAMAIS par l'inscription : ils se connectent.
+        # Cf. exigence produit (mémoire auth-inscription-reader-only).
+        reader_role = self.db.query(Role).filter(Role.name == "reader").first()
+        if reader_role is None:
+            reader_role = Role(
+                name="reader",
+                description="Lecteur (compte public, débloque les articles premium)",
+            )
+            self.db.add(reader_role)
+            self.db.commit()
+            self.db.refresh(reader_role)
+        role_id = reader_role.id
         
         # Hash password
         hashed_password = get_password_hash(user_data.password)

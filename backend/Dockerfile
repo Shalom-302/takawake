@@ -21,6 +21,14 @@ RUN pip install --upgrade pip
 # que si requirements.txt ou install_plugin_requirements.py changent.
 COPY requirements.txt install_plugin_requirements.py ./
 
+# Torch en CPU-only AVANT tout le reste. Le wheel torch par défaut (PyPI)
+# embarque CUDA + les paquets nvidia-cu12 (~2,9 Go) INUTILES en CPU. On le
+# pré-installe depuis l'index CPU de PyTorch (~200 Mo) ; sentence-transformers
+# (requirements.txt) réutilise alors ce torch au lieu de tirer la version CUDA.
+# → image runtime ~1,3-1,5 Go au lieu de ~3 Go.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --index-url https://download.pytorch.org/whl/cpu torch
+
 # Cache mount BuildKit : /root/.cache/pip est partagé entre builds.
 # Premier build : télécharge tout (~8 min).
 # Rebuilds suivants : ne télécharge que les wheels manquantes (~30s).

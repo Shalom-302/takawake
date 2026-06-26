@@ -171,3 +171,6 @@ docs/db_schema_*.json
 
 # HuggingFace cache (modèle sentence-transformers ~500 MB)
 .hf_cache/
+
+# Images uploadées par l'éditeur (données runtime, servies en statique) — jamais en VCS.
+uploads/

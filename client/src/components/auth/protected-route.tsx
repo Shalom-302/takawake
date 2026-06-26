@@ -30,8 +30,8 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
         ) {
             const hasAllowedRole = allowedRoles.includes(user.role.name);
             if (!hasAllowedRole) {
-                // Redirect to unauthorized page or dashboard
-                router.push("/unauthorized");
+                // Rôle insuffisant (ex. lecteur tentant /dashboard) → site public.
+                router.push("/");
             }
         }
     }, [isLoading, isAuthenticated, user, router, allowedRoles]);
