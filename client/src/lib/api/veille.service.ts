@@ -208,9 +208,22 @@ const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/ap
 );
 
 /** Préfixe un chemin relatif avec l'origine de l'API ; laisse les URLs absolues. */
-function toAbsoluteUrl(pathOrUrl: string): string {
+export function toAbsoluteUrl(pathOrUrl: string): string {
     if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
     return `${API_ORIGIN}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+}
+
+/**
+ * Résout une URL d'image *à l'affichage* : les images sont stockées en chemin
+ * RELATIF (ex. /api/public/file-storage/files/12/preview, servi par MinIO via
+ * l'API) pour rester portables d'un environnement à l'autre. On ajoute l'origine
+ * de l'API uniquement au rendu. Les URLs déjà absolues (Unsplash, sites tiers)
+ * passent telles quelles. Renvoie `undefined` si vide (pratique pour un style
+ * conditionnel `backgroundImage`).
+ */
+export function resolveImageUrl(u?: string | null): string | undefined {
+    if (!u) return undefined;
+    return toAbsoluteUrl(u);
 }
 
 // ===================================================================
@@ -412,9 +425,29 @@ const veilleService = {
     },
 
     /**
-     * Upload une image depuis le poste de l'éditeur. Le backend la stocke et
-     * renvoie un chemin relatif ; on l'absolutise (origine de l'API) pour que
-     * l'URL enregistrée sur le cluster soit portable.
+     * Bibliothèque des images déjà importées dans MinIO (préfixe `veille/`), pour
+     * réutiliser une image uploadée précédemment depuis le sélecteur. Les URLs
+     * sont relatives → absolutisées à l'affichage via `resolveImageUrl`.
+     */
+    async listUploadedImages(limit = 60): Promise<StockImage[]> {
+        const { data } = await axiosClient.get<StockImage[]>("/clusters/uploaded-images", {
+            params: { limit },
+        });
+        return data;
+    },
+
+    /** Supprime une image importée (objet MinIO + ligne en base). */
+    async deleteUploadedImage(id: number): Promise<void> {
+        await axiosClient.delete(`/clusters/uploaded-images/${id}`);
+    },
+
+    /**
+     * Upload une image depuis le poste de l'éditeur. Le backend la stocke dans
+     * MinIO et renvoie un chemin RELATIF (ex. /api/public/file-storage/.../preview).
+     * On garde ce chemin relatif tel quel : c'est lui qui sera enregistré sur le
+     * cluster (portable), et l'absolutisation se fait à l'affichage via
+     * `resolveImageUrl`. (Le backend réécrit de toute façon toute image en URL
+     * relative MinIO au PATCH.)
      */
     async uploadImage(file: File): Promise<StockImage> {
         const form = new FormData();
@@ -422,11 +455,7 @@ const veilleService = {
         const { data } = await axiosClient.post<StockImage>("/clusters/upload-image", form, {
             headers: { "Content-Type": "multipart/form-data" },
         });
-        return {
-            ...data,
-            url: toAbsoluteUrl(data.url),
-            thumbnail: toAbsoluteUrl(data.thumbnail),
-        };
+        return data;
     },
 
     // ----- Articles -----

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import veilleService, { type StockImage } from "@/lib/api/veille.service";
+import veilleService, { type StockImage, resolveImageUrl } from "@/lib/api/veille.service";
 
 interface ImagePickerProps {
     value?: string | null;
@@ -28,13 +28,41 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
     const [manualUrl, setManualUrl] = useState("");
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [library, setLibrary] = useState<StockImage[]>([]);
+    const [loadingLibrary, setLoadingLibrary] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    async function loadLibrary() {
+        setLoadingLibrary(true);
+        try {
+            setLibrary(await veilleService.listUploadedImages());
+        } catch {
+            setLibrary([]);
+        } finally {
+            setLoadingLibrary(false);
+        }
+    }
+
+    async function handleDeleteFromLibrary(img: StockImage) {
+        if (img.id == null) return;
+        if (!window.confirm("Supprimer définitivement cette image importée ?")) return;
+        // Retrait optimiste de la grille ; on tente la suppression serveur ensuite.
+        setLibrary(prev => prev.filter(i => i.id !== img.id));
+        try {
+            await veilleService.deleteUploadedImage(img.id);
+        } catch {
+            // Échec → on recharge la liste pour refléter l'état réel.
+            void loadLibrary();
+        }
+    }
 
     async function handleUpload(file: File) {
         setUploading(true);
         setUploadError(null);
         try {
             const img = await veilleService.uploadImage(file);
+            // L'image fraîchement importée rejoint la bibliothèque réutilisable.
+            setLibrary(prev => [img, ...prev]);
             select(img.url);
         } catch {
             setUploadError("Échec de l'upload (format ou taille ?).");
@@ -60,11 +88,15 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
 
     function handleOpenChange(next: boolean) {
         setOpen(next);
-        // À la première ouverture, on lance une recherche sur la requête suggérée
-        // pour afficher tout de suite des images pertinentes.
-        if (next && !searched && defaultQuery.trim()) {
-            setQuery(defaultQuery);
-            void runSearch(defaultQuery);
+        if (next) {
+            // Charge la bibliothèque d'images déjà importées (réutilisation).
+            void loadLibrary();
+            // À la première ouverture, on lance une recherche sur la requête
+            // suggérée pour afficher tout de suite des images pertinentes.
+            if (!searched && defaultQuery.trim()) {
+                setQuery(defaultQuery);
+                void runSearch(defaultQuery);
+            }
         }
     }
 
@@ -81,7 +113,51 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
     );
 
     const dialogContent = (
-        <div className="space-y-3">
+        <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
+            {/* Bibliothèque : images déjà importées dans MinIO, réutilisables. */}
+            {(loadingLibrary || library.length > 0) && (
+                <div>
+                    <p className="mb-1.5 text-xs font-medium text-black/60">
+                        {"Vos images importées"}
+                    </p>
+                    {loadingLibrary ? (
+                        <p className="py-3 text-center text-sm text-black/40">{"Chargement..."}</p>
+                    ) : (
+                        <div className="grid max-h-[20vh] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-5">
+                            {library.map(img => (
+                                <div
+                                    key={img.id ?? img.url}
+                                    className="group relative aspect-video overflow-hidden rounded-md ring-1 ring-black/10 transition hover:ring-2 hover:ring-black"
+                                    title={img.alt ?? ""}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => select(img.url)}
+                                        className="block h-full w-full"
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={resolveImageUrl(img.thumbnail)}
+                                            alt={img.alt ?? ""}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleDeleteFromLibrary(img)}
+                                        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs leading-none text-white group-hover:flex hover:bg-red-600"
+                                        title="Supprimer cette image"
+                                    >
+                                        {"×"}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="mt-3 border-t border-black/10" />
+                </div>
+            )}
+
             <div className="flex gap-2">
                 <Input
                     value={query}
@@ -105,7 +181,7 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
                 </Button>
             </div>
 
-            <div className="max-h-[50vh] overflow-y-auto">
+            <div className="max-h-[32vh] overflow-y-auto">
                 {loading ? (
                     <p className="py-6 text-center text-sm text-black/50">{"Recherche..."}</p>
                 ) : results.length > 0 ? (
@@ -120,7 +196,7 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
                             >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                    src={img.thumbnail}
+                                    src={resolveImageUrl(img.thumbnail)}
                                     alt={img.alt ?? ""}
                                     className="h-full w-full object-cover"
                                 />
@@ -200,7 +276,7 @@ export default function ImagePicker({ value, onChange, defaultQuery = "" }: Imag
             {value && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                    src={value}
+                    src={resolveImageUrl(value)}
                     alt="Aperçu"
                     className="h-32 w-full rounded-md object-cover"
                 />

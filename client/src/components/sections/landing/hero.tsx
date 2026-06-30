@@ -4,13 +4,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button/button";
 import { LinkButton } from "@/components/ui/button";
 import { ArrowUpRightIcon } from "@/components/icons";
-import veilleService, { type ClusterResponse } from "@/lib/api/veille.service";
+import veilleService, { resolveImageUrl, type ClusterResponse } from "@/lib/api/veille.service";
 import { formatRelative } from "@/lib/format-date";
 
 function HeroCard({ cluster }: { cluster: ClusterResponse }) {
     // Couverture validée par l'éditeur en priorité ; sinon image du meilleur article.
     const { imageUrls } = veilleService.useClusterImage(cluster.cover_image_url ? null : cluster.id);
-    const heroImage = cluster.cover_image_url || imageUrls?.[0];
+    const heroImage = resolveImageUrl(cluster.cover_image_url || imageUrls?.[0]);
 
     return (
         <div className="w-full">
@@ -49,7 +49,7 @@ function HeroCard({ cluster }: { cluster: ClusterResponse }) {
 
 function MiniRecentCard({ cluster }: { cluster: ClusterResponse }) {
     const { imageUrls } = veilleService.useClusterImage(cluster.cover_image_url ? null : cluster.id);
-    const thumb = cluster.cover_image_url || imageUrls?.[0];
+    const thumb = resolveImageUrl(cluster.cover_image_url || imageUrls?.[0]);
 
     return (
         <Link
