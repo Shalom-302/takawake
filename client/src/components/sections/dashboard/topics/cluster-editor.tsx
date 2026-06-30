@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import ImagePicker from "./image-picker";
 import veilleService, {
+    resolveImageUrl,
     type ClusterWithArticlesResponse,
     type ClusterUpdate,
     type Slide,
@@ -142,7 +143,7 @@ export default function ClusterEditor({ cluster, onDone }: ClusterEditorProps) {
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
-                                        src={img.image_url}
+                                        src={resolveImageUrl(img.image_url)}
                                         alt={img.article_title}
                                         className="h-full w-full object-cover"
                                     />

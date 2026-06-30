@@ -7,7 +7,7 @@ import { ArrowUpRightIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
-import veilleService from "@/lib/api/veille.service";
+import veilleService, { resolveImageUrl } from "@/lib/api/veille.service";
 import { renderMarkdown } from "@/lib/markdown";
 import ClusterEditor from "./cluster-editor";
 
@@ -133,20 +133,22 @@ export default function TopicContent() {
     const articles = cluster?.articles ?? [];
     // Couverture validée par l'éditeur en priorité, sinon image dérivée du
     // meilleur article (rétro-compat clusters sans couverture).
-    const heroImage = cluster?.cover_image_url || imageUrls?.[0];
+    const heroImage = resolveImageUrl(cluster?.cover_image_url || imageUrls?.[0]);
     const hasContent = Boolean(cluster?.summary_article) && slides.length > 0;
 
     const carouselItems =
         slides.length > 0
-            ? slides.map((item, idx) => (
+            ? slides.map((item, idx) => {
+                  const slideImg = resolveImageUrl(item.image_url);
+                  return (
                   <div
                       key={`${item.slide}-${idx}`}
                       className="relative flex min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-lg bg-black bg-cover bg-center px-16 py-8 text-center text-white"
                       style={
-                          item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined
+                          slideImg ? { backgroundImage: `url(${slideImg})` } : undefined
                       }
                   >
-                      {item.image_url && <div className="absolute inset-0 bg-black/55" />}
+                      {slideImg && <div className="absolute inset-0 bg-black/55" />}
                       <div className="relative z-10">
                           <span className="text-sm opacity-70">
                               {`Slide ${idx + 1} sur ${slides.length}`}
@@ -154,7 +156,8 @@ export default function TopicContent() {
                           <p className="text-md mt-3 pb-5">{item.texte}</p>
                       </div>
                   </div>
-              ))
+                  );
+              })
             : [
                   <div
                       key="no-slides"

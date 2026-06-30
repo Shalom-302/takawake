@@ -7,6 +7,7 @@ from typing import List, Optional, Dict, Any, Sequence # Importez Sequence
 
 from app.models.veille import Cluster, Article, Category
 from app.schemas.veille import ClusterCreate, ClusterUpdate, Slide, ClusterInfo # ClusterInfo est maintenant correctement importé et défini
+from app.services import storage
 from sqlalchemy.orm import selectinload
 from sqlalchemy import func
 
@@ -126,6 +127,18 @@ class CRUDCluster:
         # dicts JSON-sérialisables → on pose les valeurs telles quelles. (Refaire
         # un .model_dump() sur les slides planterait : ce sont déjà des dicts.)
         update_data = cluster_in.model_dump(exclude_unset=True)
+
+        # Toute image posée par l'éditeur (upload, picker Unsplash, collage d'URL)
+        # est rapatriée dans MinIO avant persistance — best-effort (cf. storage.py).
+        if "cover_image_url" in update_data:
+            update_data["cover_image_url"] = await storage.ensure_url_stored(
+                db, update_data["cover_image_url"]
+            )
+        if "slides" in update_data:
+            update_data["slides"] = await storage.ensure_slides_stored(
+                db, update_data["slides"]
+            )
+
         for var, value in update_data.items():
             setattr(db_cluster, var, value)
 
@@ -160,7 +173,11 @@ class CRUDCluster:
         if not db_cluster:
             return None
 
-        slides_dict = [s.model_dump() for s in slides_data]
+        # Illustrations (Unsplash) rapatriées dans MinIO avant d'être figées dans
+        # le snapshot IA → l'original restaurable pointe aussi vers MinIO.
+        slides_dict = await storage.ensure_slides_stored(
+            db, [s.model_dump() for s in slides_data]
+        )
         db_cluster.slides = slides_dict
         db_cluster.slides_ai = slides_dict
 
@@ -178,7 +195,10 @@ class CRUDCluster:
         db_cluster = await self.get(db, cluster_id)
         if not db_cluster:
             return None
-        db_cluster.slides = [s.model_dump() for s in slides_data]
+        # Ré-illustration manuelle : images Unsplash rapatriées dans MinIO.
+        db_cluster.slides = await storage.ensure_slides_stored(
+            db, [s.model_dump() for s in slides_data]
+        )
         db.add(db_cluster)
         await db.commit()
         await db.refresh(db_cluster)
@@ -209,6 +229,9 @@ class CRUDCluster:
         db_cluster = await self.get(db, cluster_id)
         if not db_cluster:
             return None
+        # Couverture proposée par l'IA = image d'un article scrapé (URL distante)
+        # → rapatriée dans MinIO pour ne pas dépendre de la source d'origine.
+        cover_image_url = await storage.ensure_url_stored(db, cover_image_url)
         db_cluster.cover_image_url = cover_image_url
         db_cluster.cover_image_url_ai = cover_image_url
         db.add(db_cluster)

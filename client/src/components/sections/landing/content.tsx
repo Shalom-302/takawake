@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { ArrowUpRightIcon } from "@/components/icons";
-import veilleService, { type ClusterResponse } from "@/lib/api/veille.service";
+import veilleService, { resolveImageUrl, type ClusterResponse } from "@/lib/api/veille.service";
 import { formatRelative } from "@/lib/format-date";
 import { stripMarkdown } from "@/lib/markdown";
 
@@ -25,7 +25,7 @@ function ClusterThumb({
     // Couverture validée par l'éditeur en priorité ; sinon image dérivée du
     // meilleur article (et on évite alors un fetch inutile).
     const { imageUrls } = veilleService.useClusterImage(coverUrl ? null : id);
-    const img = coverUrl || imageUrls?.[0];
+    const img = resolveImageUrl(coverUrl || imageUrls?.[0]);
     return (
         <div
             className={`relative ${className ?? ""}`}

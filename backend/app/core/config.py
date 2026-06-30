@@ -128,6 +128,21 @@ class Settings(BaseSettings):
     # Taille max d'un upload (octets). 10 Mo par défaut.
     UPLOAD_MAX_BYTES: int = 10 * 1024 * 1024
 
+    # --- MinIO (stockage objet) ------------------------------------------
+    # Backend de stockage des fichiers/images de la veille. Les octets vont
+    # dans MinIO (bucket), seules les métadonnées restent en Postgres
+    # (cf. app/services/storage.py qui réutilise le plugin file_storage).
+    # Valeurs alignées sur docker-compose.yml (service `minio`).
+    MINIO_ENDPOINT: str = "minio:9000"          # hôte interne (réseau Docker)
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_SECURE: bool = False                   # True => HTTPS
+    MINIO_BUCKET: str = "files"                   # bucket cible (auto-créé au 1er usage)
+    # URL publique directe vers MinIO (prod, ex. https://files.example.com).
+    # Vide => on ne sert jamais d'URL présignée, les images transitent par la
+    # route preview de l'API (proxy-safe). À renseigner si accès direct voulu.
+    MINIO_PUBLIC_ENDPOINT: str = ""
+
     # Embeddings — sentence-transformers/multilingual-e5-base, 768 dim, local CPU.
     # Multilingue (incl. FR), tourne sans clé API ni quota. ~500 MB en RAM,
     # ~30-50 docs/s sur CPU. Le 1er chargement télécharge le modèle dans HF_HOME

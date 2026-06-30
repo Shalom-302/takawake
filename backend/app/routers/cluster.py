@@ -16,6 +16,7 @@ from app.schemas.veille import (
     Slide, ImageInfo, ClusterInfo,ClusterWithArticlesResponse, StockImage
 )
 from app.services.slide_images import search_stock_photos
+from app.services import storage
 from app.crud.crud_cluster import crud_cluster 
 from app.crud.crud_article import crud_article 
 from app.tasks.veille_tasks import (
@@ -183,6 +184,65 @@ async def image_search_endpoint(
     return await search_stock_photos(q, per_page=per_page)
 
 
+@router.get(
+    "/uploaded-images",
+    response_model=List[StockImage],
+    summary="Lister les images déjà importées (MinIO) pour le sélecteur"
+)
+async def uploaded_images_endpoint(
+    limit: int = Query(60, ge=1, le=200, description="Nombre d'images à retourner."),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Bibliothèque des images déjà importées/stockées dans MinIO (préfixe `veille/`).
+    Permet à l'éditeur de RÉUTILISER une image uploadée précédemment au lieu de
+    re-chercher sur Unsplash. Renvoie des `StockImage` dont l'`url` est le chemin
+    relatif de la route preview (le front l'absolutise à l'affichage).
+    """
+    from sqlalchemy import select as _select
+    from app.plugins.file_storage.models import StoredFile
+
+    result = await db.execute(
+        _select(StoredFile)
+        .where(
+            StoredFile.storage_path.like("veille/%"),
+            StoredFile.mime_type.like("image/%"),
+        )
+        .order_by(StoredFile.uploaded_at.desc())
+        .limit(limit)
+    )
+    files = result.scalars().all()
+    return [
+        StockImage(
+            id=f.id,
+            url=storage.public_url_for(f),
+            thumbnail=storage.public_url_for(f),
+            photographer=None,
+            alt=f.original_filename,
+        )
+        for f in files
+    ]
+
+
+@router.delete(
+    "/uploaded-images/{file_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Supprimer une image importée (MinIO + base)"
+)
+async def delete_uploaded_image_endpoint(
+    file_id: int = Path(..., description="ID du fichier stocké à supprimer."),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Retire une image de la bibliothèque : objet MinIO + ligne en base. À utiliser
+    pour faire le ménage dans le sélecteur. NB : ne vérifie pas si un cluster
+    référence encore cette image (l'éditeur reste maître de ses couvertures).
+    """
+    ok = await storage.delete_stored_file(db, file_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image introuvable.")
+
+
 # Types MIME image acceptés à l'upload, mappés sur l'extension stockée.
 _ALLOWED_IMAGE_TYPES = {
     "image/jpeg": ".jpg",
@@ -199,10 +259,11 @@ _ALLOWED_IMAGE_TYPES = {
 )
 async def upload_image_endpoint(
     file: UploadFile = File(..., description="Fichier image (jpg, png, webp, gif)."),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Reçoit une image depuis le PC de l'éditeur, la stocke sur disque et renvoie
-    son chemin (servi en statique sous {API_PREFIX}/uploads/). Le front
+    Reçoit une image depuis le PC de l'éditeur, la stocke dans MinIO (objet) et
+    renvoie l'URL de la route preview de l'API (servie depuis MinIO). Le front
     l'absolutise avec l'origine de l'API avant de l'enregistrer sur le cluster
     (couverture ou slide) via le PATCH habituel. On renvoie un chemin relatif
     plutôt qu'une URL absolue car derrière le proxy `request.base_url` ne reflète
@@ -225,14 +286,14 @@ async def upload_image_endpoint(
             detail=f"Image trop volumineuse (max {max_mb} Mo).",
         )
 
-    upload_dir = FilePath(settings.UPLOAD_DIR)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}{ext}"
-    (upload_dir / filename).write_bytes(content)
-
-    # Chemin relatif (ex. /api/uploads/<uuid>.jpg) — le front le préfixe avec
-    # l'origine de l'API pour obtenir une URL absolue portable.
-    url = f"{settings.API_PREFIX}/uploads/{filename}"
+    # Octets → MinIO, métadonnées → Postgres (cf. app/services/storage.py).
+    stored = await storage.store_bytes(
+        db,
+        content,
+        original_filename=file.filename or f"upload{ext}",
+        content_type=file.content_type,
+    )
+    url = storage.public_url_for(stored)
 
     return StockImage(
         id=None,

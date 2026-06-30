@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, RefreshCw, Layers, ArrowUpRight, BarChart3, ChevronLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button/button";
 import { Carousel } from "@/components/ui/carousel";
-import veilleService, { type ClusterResponse } from "@/lib/api/veille.service";
+import veilleService, { resolveImageUrl, type ClusterResponse } from "@/lib/api/veille.service";
 import { formatRelative, formatLongDate } from "@/lib/format-date";
 import { stripMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils/cn";
@@ -57,7 +57,7 @@ function filterByView(clusters: ClusterResponse[], view: FeedView): ClusterRespo
 
 function ClusterThumb({ cluster, className }: { cluster: ClusterResponse; className?: string }) {
     const { imageUrls } = veilleService.useClusterImage(cluster.cover_image_url ? null : cluster.id);
-    const thumb = cluster.cover_image_url || imageUrls?.[0];
+    const thumb = resolveImageUrl(cluster.cover_image_url || imageUrls?.[0]);
     return (
         <div
             className={cn("bg-cover bg-center", !thumb && "bg-black/10", className)}
@@ -188,7 +188,7 @@ function StatCard() {
 function ArticlePanel({ clusterId, onBack }: { clusterId: number; onBack: () => void }) {
     const { cluster, isLoading } = veilleService.useClusterDetail(clusterId);
     const { imageUrls } = veilleService.useClusterImage(clusterId);
-    const heroImage = cluster?.cover_image_url || imageUrls?.[0];
+    const heroImage = resolveImageUrl(cluster?.cover_image_url || imageUrls?.[0]);
 
     if (isLoading && !cluster) {
         return (
@@ -216,19 +216,22 @@ function ArticlePanel({ clusterId, onBack }: { clusterId: number; onBack: () => 
     // cluster fait "sortir" le résumé + les slides). Vide si pas encore générées
     // ou si le contenu premium a été verrouillé pour un visiteur anonyme.
     const slides = cluster.slides ?? [];
-    const slideItems = slides.map((item, idx) => (
+    const slideItems = slides.map((item, idx) => {
+        const slideImg = resolveImageUrl(item.image_url);
+        return (
         <div
             key={`${item.slide}-${idx}`}
             className="relative flex min-h-[220px] flex-col items-center justify-center overflow-hidden rounded-xl bg-black bg-cover bg-center px-10 py-8 text-center text-white"
-            style={item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined}
+            style={slideImg ? { backgroundImage: `url(${slideImg})` } : undefined}
         >
-            {item.image_url && <div className="absolute inset-0 bg-black/55" />}
+            {slideImg && <div className="absolute inset-0 bg-black/55" />}
             <div className="relative z-10">
                 <span className="text-xs opacity-70">{`Slide ${idx + 1} sur ${slides.length}`}</span>
                 <p className="mt-2 text-sm leading-relaxed">{item.texte}</p>
             </div>
         </div>
-    ));
+        );
+    });
 
     return (
         <article className="mx-auto max-w-2xl p-8 lg:p-10">
