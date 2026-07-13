@@ -13,7 +13,7 @@
 #     stale si le redeploy auto part avant la fin du build.
 #
 # Dokploy → Compose Path : backend/docker-compose.image.yml
-#   Domains : service api, port 8000, host veille-api.kortexai.dev, HTTPS, Path /.
+#   Domains : service api, port 8000, host veille-api.kortex.sbs, HTTPS, Path /.
 
 services:
   api:

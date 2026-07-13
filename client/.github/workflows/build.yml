@@ -41,7 +41,7 @@ jobs:
             ${{ env.IMAGE }}:${{ github.sha }}
           # NEXT_PUBLIC_* sont inlinées au build → on les fige ici.
           build-args: |
-            NEXT_PUBLIC_API_URL=https://veille-api.kortexai.dev/api
-            NEXT_PUBLIC_WS_URL=wss://veille-api.kortexai.dev/api
+            NEXT_PUBLIC_API_URL=https://veille-api.kortex.sbs/api
+            NEXT_PUBLIC_WS_URL=wss://veille-api.kortex.sbs/api
           cache-from: type=gha
           cache-to: type=gha,mode=max

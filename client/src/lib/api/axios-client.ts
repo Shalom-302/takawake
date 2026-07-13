@@ -1,10 +1,10 @@
 import axios from "axios";
 
 // API backend déployée (kaapi / Tekawake) :
-//   - Base API    : https://veille-api.kortexai.dev/api   (toutes les routes)
-//   - Swagger UI   : https://veille-api.kortexai.dev/docs
-//   - OpenAPI JSON : https://veille-api.kortexai.dev/openapi.json
-//   - Health       : https://veille-api.kortexai.dev/      → {"message":"Hello from Kaapi backend!"}
+//   - Base API    : https://veille-api.kortex.sbs/api   (toutes les routes)
+//   - Swagger UI   : https://veille-api.kortex.sbs/docs
+//   - OpenAPI JSON : https://veille-api.kortex.sbs/openapi.json
+//   - Health       : https://veille-api.kortex.sbs/      → {"message":"Hello from Kaapi backend!"}
 //
 // L'URL effective vient de NEXT_PUBLIC_API_URL (inlinée au build Docker —
 // cf. client/docker-compose.dokploy.yml). Fallback = backend local.
