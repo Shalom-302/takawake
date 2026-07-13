@@ -33,6 +33,18 @@ AES_KEY = os.getenv("KAAPI_AES_KEY")          # base64 de 16/24/32 octets
 FERNET_KEY = os.getenv("KAAPI_FERNET_KEY")    # clé Fernet (urlsafe base64)
 
 
+def _read_existing(client: hvac.Client, path: str) -> str | None:
+    """Valeur déjà stockée à `path`, ou None si le secret n'existe pas."""
+    try:
+        response = client.secrets.kv.v2.read_secret_version(path=path)
+        return response["data"]["data"]["value"]
+    except hvac.exceptions.InvalidPath:
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning(f"Lecture de {path} impossible : {exc}")
+        return None
+
+
 def main() -> None:
     if not AES_KEY:
         log.error(
@@ -50,12 +62,6 @@ def main() -> None:
         log.error(f"KAAPI_AES_KEY invalide (base64 attendu) : {exc}")
         sys.exit(1)
 
-    # Fernet : on génère une clé éphémère si non fournie (avertissement : instable).
-    fernet_key = FERNET_KEY
-    if not fernet_key:
-        fernet_key = Fernet.generate_key().decode()
-        log.warning("KAAPI_FERNET_KEY non fourni — clé Fernet générée à la volée (NON stable entre boots)")
-
     client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
 
     # Attendre que Vault soit prêt (le service démarre en parallèle).
@@ -69,6 +75,23 @@ def main() -> None:
     else:
         log.error(f"Vault injoignable / non authentifié après 60s sur {VAULT_ADDR}")
         sys.exit(1)
+
+    # Fernet : sans clé fournie, on RÉUTILISE celle déjà dans Vault avant d'en
+    # générer une. Plusieurs conteneurs (api, celery) exécutent ce script au
+    # démarrage ; générer à l'aveugle ferait écraser la clé de l'un par l'autre,
+    # rendant indéchiffrables les données chiffrées entre-temps.
+    fernet_key = FERNET_KEY
+    if not fernet_key:
+        fernet_key = _read_existing(client, "encryption/fernet-key")
+        if fernet_key:
+            log.warning("KAAPI_FERNET_KEY non fourni — réutilisation de la clé déjà présente dans Vault")
+        else:
+            fernet_key = Fernet.generate_key().decode()
+            log.warning(
+                "KAAPI_FERNET_KEY non fourni et absent de Vault — clé générée à la volée. "
+                "Vault étant en mode dev (store en mémoire), elle sera PERDUE au prochain "
+                "redémarrage de Vault : renseigne KAAPI_FERNET_KEY pour une clé stable."
+            )
 
     # KV v2 monté sur `secret/` en mode dev ; get_secret lit data.data.value.
     client.secrets.kv.v2.create_or_update_secret(

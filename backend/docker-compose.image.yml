@@ -27,6 +27,9 @@ services:
       - PYTHONUNBUFFERED=1
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      # Nécessaires au re-seed de Vault au démarrage (cf. `command` ci-dessous).
+      - KAAPI_AES_KEY=${KAAPI_AES_KEY:?clé AES base64 requise (cf. .env.dokploy.example)}
+      - KAAPI_FERNET_KEY=${KAAPI_FERNET_KEY:-}
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
@@ -57,9 +60,14 @@ services:
       - CLUSTER_MAX_SIZE=${CLUSTER_MAX_SIZE:-10}
       - MIN_CLUSTER_SIZE=${MIN_CLUSTER_SIZE:-2}
       - HF_HOME=/app/.hf_cache
-    # Applique les migrations Alembic AVANT de démarrer l'API (le code exige le
-    # schéma à jour, ex. clusters.veille_id). Idempotent : n'applique que le pending.
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    # Vault tourne en mode dev : son store est EN MÉMOIRE et se vide à chaque
+    # redémarrage du conteneur. Le one-shot `vault-seed` ne suffit donc pas — il
+    # ne rejoue pas quand seul `vault` redémarre, et l'API repart contre un Vault
+    # vide (InvalidPath sur encryption/aes-key → crash à l'import des modèles).
+    # On re-seede donc ici, à chaque boot : le script est idempotent et réécrit
+    # les mêmes valeurs tant que KAAPI_AES_KEY / KAAPI_FERNET_KEY ne changent pas.
+    # Puis migrations Alembic (le code exige le schéma à jour, ex. clusters.veille_id).
+    command: sh -c "python scripts/seed_vault.py && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     expose:
       - "8000"
     volumes:
@@ -85,13 +93,17 @@ services:
     image: ghcr.io/shalom-302/tekawake-backend:latest
     pull_policy: always
     restart: unless-stopped
-    command: python -m celery -A app.core.celery worker --loglevel=info
+    # Même raison que pour `api` : le worker importe les mêmes modèles et exige
+    # donc les clés dans Vault, y compris s'il redémarre seul après un reboot de Vault.
+    command: sh -c "python scripts/seed_vault.py && python -m celery -A app.core.celery worker --loglevel=info"
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@kaapi-db:5432/kaapi
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-dev-token}
+      - KAAPI_AES_KEY=${KAAPI_AES_KEY:?clé AES base64 requise (cf. .env.dokploy.example)}
+      - KAAPI_FERNET_KEY=${KAAPI_FERNET_KEY:-}
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
