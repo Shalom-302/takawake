@@ -258,6 +258,11 @@ class AgentState(TypedDict, total=False):
     http_client: httpx.AsyncClient
     found_articles: List[FoundArticle]
     prepared_articles: List[Dict[str, Any]]
+    # Compteurs de sortie des nœuds `analyze` / `index`. Doivent être déclarés
+    # ici, sinon LangGraph les écarte de l'état final et run_veille_workflow ne
+    # peut plus juger si la veille a réellement produit quelque chose.
+    processed_articles: int
+    indexed_articles: int
 
 
 # Prompt extrait au niveau module (recompilé une seule fois)
@@ -771,10 +776,33 @@ async def run_veille_workflow(
         try:
             result = await langgraph_app.ainvoke(initial_state)
 
+            # Les échecs LLM sont rattrapés article par article (l'article passe
+            # en FAILED, le workflow continue). Une panne globale du provider —
+            # quota épuisé, 402, 429 — ne lève donc rien ici : on ressortait avec
+            # 0 article analysé et une veille marquée SUCCESS, vide.
+            processed = result.get("processed_articles") or 0
+            if processed == 0:
+                candidates = len(result.get("prepared_articles") or [])
+                reason = (
+                    f"Aucun article analysé sur {candidates} candidat(s) : l'analyse LLM a échoué "
+                    f"pour tous (provider '{llm_provider}' — vérifier quota/clé API)."
+                    if candidates
+                    else "Aucun article exploitable trouvé pour cette requête."
+                )
+                await crud_session_veille.update(
+                    db,
+                    veille_id=veille_id,
+                    veille_in=veille_schema.VeilleUpdate(
+                        status=VeilleStatus.FAILED, status_message=reason
+                    ),
+                )
+                print(f"Workflow de veille ID {veille_id} : 0 article processed → statut FAILED. {reason}")
+                return result
+
             veille_update_data = veille_schema.VeilleUpdate(status=VeilleStatus.SUCCESS)
             await crud_session_veille.update(db, veille_id=veille_id, veille_in=veille_update_data)
 
-            print(f"Workflow de veille terminé pour ID {veille_id}. Statut mis à jour à SUCCESS.")
+            print(f"Workflow de veille terminé pour ID {veille_id} ({processed} article(s) analysé(s)). Statut mis à jour à SUCCESS.")
             return result
         except Exception as e:
             error_message = f"Échec du workflow de veille : {e}"

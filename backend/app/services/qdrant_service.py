@@ -9,8 +9,16 @@ Payload : métadonnées utiles aux filtres + au debug.
 from __future__ import annotations  # toutes les annotations sont des strings (PEP 563)
 
 import asyncio
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    # Vu du type-checker, les symboles sont toujours les vrais : le fallback
+    # `= None` ci-dessous les typerait sinon en `None`, et chaque `qm.X` /
+    # `QdrantClient(...)` remonterait en faux positif. À l'exécution, l'accès
+    # est gardé par QDRANT_AVAILABLE (cf. get_client()).
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as qm
 
 try:
     from qdrant_client import QdrantClient
@@ -19,8 +27,9 @@ try:
 except ImportError:
     # Module pas installé — l'app démarre quand même, le pipeline d'index sera skippé.
     # Utile en dev quand `pip install qdrant-client` n'a pas encore été fait.
-    QdrantClient = None  # type: ignore
-    qm = None  # type: ignore
+    if not TYPE_CHECKING:
+        QdrantClient = None
+        qm = None
     QDRANT_AVAILABLE = False
 
 from app.core.config import settings
@@ -328,13 +337,15 @@ async def collection_stats(collection_name: str) -> Dict[str, Any]:
 
 def _search_sync(vector: List[float], top_k: int, flt: Optional[qm.Filter]) -> List[qm.ScoredPoint]:
     client = get_client()
-    return client.search(
+    # `search()` a été retiré des versions récentes de qdrant-client (>=1.12) au
+    # profit de `query_points`, qui renvoie une QueryResponse enveloppant .points.
+    return client.query_points(
         collection_name=settings.QDRANT_COLLECTION,
-        query_vector=vector,
+        query=vector,
         query_filter=flt,
         limit=top_k,
         with_payload=True,
-    )
+    ).points
 
 
 async def search_nearest(
