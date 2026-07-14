@@ -8,7 +8,9 @@
 #     read:packages), OU rendre le package public.
 #
 # Dokploy → Compose Path : docker-compose.image.yml
-#   Domains : service web, port 3000, host tekawake.kortex.sbs, HTTPS.
+#   Domains : service web, port 3000, host tekawake.com, HTTPS, Path /.
+#   (Le backend est routé sur le MÊME host, sur /api, /docs et /openapi.json —
+#   ces routes doivent être prioritaires sur celle du front.)
 services:
   web:
     image: ghcr.io/shalom-302/tekawake-client:latest

@@ -28,7 +28,7 @@ OUTPUT_DIR = CODEMAP_DIR / "output"
 # --- Paramètres embeddings / Qdrant (lus depuis l'env du container, fallback) ----
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-base")
 EMBED_DIM = int(os.environ.get("EMBED_DIM", "768"))
-QDRANT_URL = os.environ.get("QDRANT_URL", "https://qdrant-client.kortexai.dev")
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
 # Collection DÉDIÉE à la mémoire du code — ne touche jamais `tekawake_articles`.
 QDRANT_COLLECTION = os.environ.get("CODEMAP_COLLECTION", "kaapi_backend_memory")

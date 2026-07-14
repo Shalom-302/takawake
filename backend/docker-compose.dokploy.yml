@@ -8,7 +8,7 @@
 #   - Services de données (db/redis/vault/minio) restent internes à kaapi-network.
 #
 # Dokploy → onglet "Domains" :
-#   - Service : api · Container port : 8000 · Host : veille-api.kortexai.dev
+#   - Service : api · Container port : 8000 · Host : tekawake.com (paths /api, /docs, /openapi.json)
 #   - HTTPS (Let's Encrypt) · Path / · Health check path : /
 #
 # ⚠️ Un backend kaapi tourne déjà sur ce VPS (projet "petroapi"). Déploie ceci
@@ -33,7 +33,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=false
-      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -73,7 +73,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=false
-      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

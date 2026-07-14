@@ -48,12 +48,14 @@ class Settings(BaseSettings):
     
     # CORS — origines explicites (allow_credentials=True interdit le wildcard "*").
     # Surchargeable via la variable d'env CORS_ORIGINS (format JSON), ex. dans Dokploy :
-    #   CORS_ORIGINS=["https://tekawake.kortex.sbs"]
+    #   CORS_ORIGINS=["https://tekawake.com"]
     CORS_ORIGINS: list[str] = [
         # Dev local
         "http://localhost:3000", "http://localhost:8000", "http://localhost:9000", "http://localhost:8501",
-        # Prod (client Next.js déployé via Dokploy)
-        "https://tekawake.kortex.sbs",
+        # Prod — domaine unique : le front et l'API sont servis par le même host
+        # (Traefik route /api, /docs, /openapi.json vers le backend).
+        "https://tekawake.com",
+        "https://www.tekawake.com",
     ]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
@@ -149,8 +151,8 @@ class Settings(BaseSettings):
     EMBED_MODEL: str = "intfloat/multilingual-e5-base"
     EMBED_DIM: int = 768
 
-    # Qdrant (vector DB) — instance partagée, voir https://qdrant-client.kortexai.dev/dashboard
-    QDRANT_URL: str = "https://qdrant-client.kortexai.dev"
+    # Qdrant (vector DB) — conteneur `qdrant` sur le réseau Docker du VPS.
+    QDRANT_URL: str = "http://qdrant:6333"
     QDRANT_API_KEY: Optional[str] = None
     QDRANT_COLLECTION: str = "tekawake_articles"
 

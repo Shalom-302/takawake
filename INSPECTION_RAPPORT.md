@@ -189,7 +189,7 @@
 - Scraping asynchrone (`httpx` + `asyncio.gather`), concurrence listings / fetch / LLM.
   Workflow passé de ~30 min à quelques minutes.
 - Embeddings basculés sur `sentence-transformers/multilingual-e5-base` (768 dim, CPU, gratuit).
-- Qdrant : instance distante partagée (`qdrant-client.kortexai.dev`), collection
+- Qdrant : conteneur `qdrant` du VPS (`http://qdrant:6333`), collection
   `tekawake_articles`. Les vecteurs sont écrits en fin de veille (étape `index`).
 
 **Clustering v2** — nouveau `app/services/clustering.py`

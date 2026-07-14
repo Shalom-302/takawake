@@ -33,23 +33,23 @@ quel client MCP (Claude Code / Desktop / claude.ai) via une URL + token Bearer.
 - Environment :
   ```
   MCP_API_TOKEN=<token long et aléatoire>
-  QDRANT_URL=https://qdrant-client.kortexai.dev
+  QDRANT_URL=http://qdrant:6333
   QDRANT_API_KEY=<clé Qdrant>
   CODEMAP_COLLECTION=kaapi_backend_memory
   ```
 - Onglet **Domains** : service `mcp-kaapi-codemap`, port `8000`,
-  domaine ex. `mcp-kaapi.kortexai.dev`, HTTPS activé, health check `/health`.
+  domaine ex. `mcp-kaapi.tekawake.com`, HTTPS activé, health check `/health`.
 - **Deploy** (1er build lourd : torch CPU + modèle e5 ≈ 1,1 Go, prévoir ≥ 2 Go RAM).
 
 Vérif :
 ```bash
-curl https://mcp-kaapi.kortexai.dev/health
+curl https://mcp-kaapi.tekawake.com/health
 ```
 
 Partage aux autres (client Claude Code) :
 ```bash
 claude mcp add --transport http kaapi-codemap \
-  https://mcp-kaapi.kortexai.dev/mcp \
+  https://mcp-kaapi.tekawake.com/mcp \
   --header "Authorization: Bearer LE_TOKEN"
 ```
 
@@ -68,8 +68,10 @@ claude mcp add --transport http kaapi-codemap \
   sans clé AES valide, l'API crashe au boot (chiffrement paiement). Générer :
   `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"`.
   ⚠️ Garder ces clés **stables** (sinon données chiffrées illisibles).
-- Onglet **Domains** : service `api`, port `8000`,
-  domaine `veille-api.kortexai.dev`, HTTPS activé, health check `/`.
+- Onglet **Domains** : service `api`, port `8000`, domaine `tekawake.com`,
+  HTTPS activé, health check `/`. **Paths** : `/api`, `/docs`, `/openapi.json`
+  (domaine unique, partagé avec le front — ces routes doivent être **prioritaires**
+  sur la route `/` du client, sinon Next.js répond 404 sur `/docs`).
 - **Deploy.**
 
 Topologie : `api` + `celery` + `metrics` partagent l'image `kaapi-app:latest` ;
@@ -78,8 +80,8 @@ attendent sa complétion. `kaapi-db` (+ backup), `redis`, `vault`, `minio` reste
 internes au réseau `kaapi-network`. Seul `api` est joignable par Traefik
 (`dokploy-network`).
 
-Vérif : `curl https://veille-api.kortexai.dev/` → `{"message":"Hello from Kaapi backend!"}`.
-Docs : `https://veille-api.kortexai.dev/docs`.
+Vérif : `curl https://tekawake.com/api/` → `{"message":"Hello from Kaapi backend!"}`.
+Docs : `https://tekawake.com/docs`.
 
 ---
 
@@ -91,13 +93,13 @@ Frontend qui consomme l'API. Exposé par domaine via Traefik, zéro port hôte.
 - Repository : ce dépôt · Branch : `deploy/dokploy-mcp-backend`
 - Compose path : `client/docker-compose.dokploy.yml`
 - Onglet **Domains** : service `web`, port `3000`,
-  domaine `tekawake.kortexai.dev`, HTTPS activé, Path `/`.
+  domaine `tekawake.com`, HTTPS activé, Path `/`.
 - Environment / build-args : cf. `client/.env.dokploy.example`
   (seuls `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` sont requis).
 - **Deploy.**
 
 > ⚠️ Les variables `NEXT_PUBLIC_*` sont **inlinées au build** (pas au runtime).
-> L'URL de l'API est passée en **build-arg** (défaut `https://veille-api.kortexai.dev/api`
+> L'URL de l'API est passée en **build-arg** (défaut `https://tekawake.com/api`
 > dans le compose). Pour changer d'API → modifier `NEXT_PUBLIC_API_URL` et
 > **rebuild**. L'onglet Environment runtime ne suffit pas pour ces variables.
 

@@ -13,7 +13,9 @@
 #     stale si le redeploy auto part avant la fin du build.
 #
 # Dokploy → Compose Path : backend/docker-compose.image.yml
-#   Domains : service api, port 8000, host veille-api.kortex.sbs, HTTPS, Path /.
+#   Domains : service api, port 8000, host tekawake.com, HTTPS.
+#   Domaine unique : Traefik route /api, /docs, /openapi.json vers `api` (8000)
+#   et tout le reste vers le client Next.js (3000).
 
 services:
   api:
@@ -34,7 +36,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=false
-      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -108,7 +110,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=false
-      - QDRANT_URL=${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

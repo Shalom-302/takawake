@@ -52,7 +52,7 @@ Vérifié dans le code : la fonction `cluster_articles_for_veille` (`backend/app
 ## 5. Lots de travail
 
 ### Lot 0 — Pré-requis (déjà fait / en cours)
-- [x] CORS prod corrigé (origine `tekawake.kortexai.dev`) + image backend rebuildée sur GHCR.
+- [x] CORS prod corrigé (origine `tekawake.com`) + image backend rebuildée sur GHCR.
 - [ ] Confirmer le redeploy Dokploy backend (image `:latest`).
 
 ### Lot 1 — Backend : FK `veille_id` sur Cluster + filtre *(repo tekawake-plateform)*

@@ -8,7 +8,7 @@
 # Dokploy → onglet "Domains" :
 #   - Service        : mcp-kaapi-codemap
 #   - Container port : 8000
-#   - Host (domaine) : ex. mcp-kaapi.kortexai.dev
+#   - Host (domaine) : ex. mcp-kaapi.tekawake.com
 #   - HTTPS          : activé (Let's Encrypt)
 #   - Path           : /
 # Health check path  : /health
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     environment:
       MCP_API_TOKEN: ${MCP_API_TOKEN:?token requis}
-      QDRANT_URL: ${QDRANT_URL:-https://qdrant-client.kortexai.dev}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       CODEMAP_COLLECTION: ${CODEMAP_COLLECTION:-kaapi_backend_memory}
       EMBED_MODEL: ${EMBED_MODEL:-intfloat/multilingual-e5-base}
@@ -32,7 +32,7 @@ services:
     # (décommenter + remplacer le domaine). NE PAS cumuler avec l'onglet Domains.
     # labels:
     #   - traefik.enable=true
-    #   - traefik.http.routers.mcp-kaapi.rule=Host(`mcp-kaapi.kortexai.dev`)
+    #   - traefik.http.routers.mcp-kaapi.rule=Host(`mcp-kaapi.tekawake.com`)
     #   - traefik.http.routers.mcp-kaapi.entrypoints=websecure
     #   - traefik.http.routers.mcp-kaapi.tls.certresolver=letsencrypt
     #   - traefik.http.services.mcp-kaapi.loadbalancer.server.port=8000

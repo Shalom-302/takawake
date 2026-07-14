@@ -48,12 +48,12 @@ curl http://localhost:8000/health
 3. **Environment** :
    ```
    MCP_API_TOKEN=<token long et aléatoire>
-   QDRANT_URL=https://qdrant-client.kortexai.dev
+   QDRANT_URL=http://qdrant:6333
    QDRANT_API_KEY=<clé Qdrant>
    CODEMAP_COLLECTION=kaapi_backend_memory
    ```
 4. **Domains / Ports** : container port **8000**, génère un domaine
-   (ex. `mcp-kaapi.kortexai.dev`), active **HTTPS** (Let's Encrypt).
+   (ex. `mcp-kaapi.tekawake.com`), active **HTTPS** (Let's Encrypt).
    *Health check path* : `/health`.
 5. **Deploy.**
 
@@ -67,9 +67,9 @@ renseigne les mêmes variables d'env. Dokploy gère le domaine + TLS via Traefik
 
 ### Vérifier après déploiement
 ```bash
-curl https://mcp-kaapi.kortexai.dev/health
+curl https://mcp-kaapi.tekawake.com/health
 # initialize MCP (doit répondre, sinon 401 si mauvais token)
-curl -s https://mcp-kaapi.kortexai.dev/mcp \
+curl -s https://mcp-kaapi.tekawake.com/mcp \
   -H "Authorization: Bearer $MCP_API_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
@@ -83,7 +83,7 @@ Donne à chaque personne **l'URL + le token**. Puis :
 ### Claude Code (CLI)
 ```bash
 claude mcp add --transport http kaapi-codemap \
-  https://mcp-kaapi.kortexai.dev/mcp \
+  https://mcp-kaapi.tekawake.com/mcp \
   --header "Authorization: Bearer LE_TOKEN"
 ```
 ou, en projet partagé, un `.mcp.json` :
@@ -92,7 +92,7 @@ ou, en projet partagé, un `.mcp.json` :
   "mcpServers": {
     "kaapi-codemap": {
       "type": "http",
-      "url": "https://mcp-kaapi.kortexai.dev/mcp",
+      "url": "https://mcp-kaapi.tekawake.com/mcp",
       "headers": { "Authorization": "Bearer LE_TOKEN" }
     }
   }
@@ -101,7 +101,7 @@ ou, en projet partagé, un `.mcp.json` :
 
 ### Claude Desktop / claude.ai
 Ajouter un **connecteur personnalisé** (Custom connector / MCP) :
-- URL : `https://mcp-kaapi.kortexai.dev/mcp`
+- URL : `https://mcp-kaapi.tekawake.com/mcp`
 - En-tête : `Authorization: Bearer LE_TOKEN`
 
 Une fois ajouté, l'agent dispose de `search_code` et `architecture_overview`.

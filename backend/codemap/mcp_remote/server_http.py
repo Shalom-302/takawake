@@ -16,7 +16,7 @@ requête se fait côté serveur ; la collection Qdrant doit déjà être indexé
 
 Config (env) :
   MCP_API_TOKEN      (obligatoire) token Bearer attendu des clients
-  QDRANT_URL         défaut https://qdrant-client.kortexai.dev
+  QDRANT_URL         défaut http://qdrant:6333
   QDRANT_API_KEY     clé Qdrant
   CODEMAP_COLLECTION défaut kaapi_backend_memory
   EMBED_MODEL        défaut intfloat/multilingual-e5-base
@@ -40,7 +40,7 @@ os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-base")
-QDRANT_URL = os.environ.get("QDRANT_URL", "https://qdrant-client.kortexai.dev")
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
 COLLECTION = os.environ.get("CODEMAP_COLLECTION", "kaapi_backend_memory")
 API_TOKEN = os.environ.get("MCP_API_TOKEN")
